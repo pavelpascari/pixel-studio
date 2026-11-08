@@ -42,6 +42,7 @@ import { clock, BurstDetector } from './pixel-sprite.js';
 
 const FLAGS = ['surface', 'climbable', 'perch', 'hide', 'occluder', 'avoid'];
 const SELECTOR = FLAGS.map((f) => `[data-pixel-${f}]`).join(',');
+const ORDERS = ['goTo', 'hideBehind', 'perform', 'shoo'];
 const ROLES = {
   idle: ['idle'], walk: ['walk', 'waddle', 'trot', 'travel'], run: ['run', 'trot', 'travel', 'walk', 'waddle'],
   jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
@@ -186,6 +187,70 @@ export class PixelStage extends Base {
   }
 
   get actors() { return [...this.querySelectorAll('pixel-actor')]; }
+
+  /** The scene playing now ({name, finished, stop}) or null. */
+  get scene() { return this._scene ?? null; }
+
+  /**
+   * Play a scene: an object, JSON text, or a selector for a <script type="application/json"> holding one.
+   * Returns {name, finished: Promise<boolean>, stop()}; a new scene stops the one playing. Throws an Error
+   * listing every problem (err.errors = [{path, message}]) if the scene is not valid.
+   */
+  playScene(scene) {
+    if (typeof scene === 'string') {
+      const t = scene.trim();
+      const text = t.startsWith('{') ? t : document.querySelector(t)?.textContent;
+      if (text == null) throw new Error(`playScene: nothing found for "${t}"`);
+      scene = JSON.parse(text);
+    }
+    const names = scene?.cast && typeof scene.cast === 'object' ? Object.keys(scene.cast) : this.actors.map((a) => a.id).filter(Boolean);
+    const errors = checkScene(scene, names);
+    if (errors.length) {
+      const e = new Error(`playScene: invalid scene\n${errors.map((x) => `  ${x.path}: ${x.message}`).join('\n')}`);
+      e.errors = errors;
+      throw e;
+    }
+    const find = (sel) => { try { return document.querySelector(sel); } catch { return null; } };
+    const castEl = (name) => { const el = find(scene.cast?.[name] ?? `#${name}`); return el instanceof PixelActor ? el : null; };
+    const cast = names.map(castEl).filter(Boolean);
+    this._scene?.stop();
+    let stop;
+    const stopped = new Promise((r) => (stop = r));
+    const was = cast.map((a) => a.directed);
+    if (scene.directed !== false) for (const a of cast) a.directed = true;
+    const env = {
+      actor: (n) => (names.includes(n) ? castEl(n) : null),
+      element: find,
+      beside: (a, b) => ({ x: b.x + (a.x < b.x ? -1 : 1) * (a.W + b.W) * 0.4, y: b.y - 1 }),
+      along: (el, at) => { const r = el.getBoundingClientRect(), o = this.getBoundingClientRect(); return { x: r.left - o.left + r.width * (0.08 + 0.84 * at), y: r.top - o.top - 1 }; },   // off the rounded corners
+      wait: (ms) => new Promise((r) => setTimeout(() => r(true), ms)),
+      listen: (t, ev, timeout) => new Promise((r) => {
+        const el = t === 'stage' ? this : t;
+        if (!el?.addEventListener) return r(false);
+        let timer = 0;
+        const on = () => { clearTimeout(timer); r(true); };
+        el.addEventListener(ev, on, { once: true });
+        if (timeout) timer = setTimeout(() => { el.removeEventListener(ev, on); r(false); }, timeout);
+        stopped.then(() => { clearTimeout(timer); el.removeEventListener(ev, on); });
+      }),
+      emit: (name, detail) => this.dispatchEvent(new CustomEvent('sceneevent', { detail: { scene: scene.name, name, detail } })),
+      onStep: (step, path) => this.dispatchEvent(new CustomEvent('scenestep', { detail: { scene: scene.name, step, path } })),
+      stopped,
+    };
+    // Characters must be loaded and standing somewhere before they take orders.
+    const placed = (a) => new Promise((r) => { const t0 = performance.now(); const poll = () => (a._placed || performance.now() - t0 > 10000 ? r() : setTimeout(poll, 50)); poll(); });
+    const handle = { name: scene.name ?? null, stop: () => stop(), finished: null };
+    handle.finished = Promise.race([Promise.all(cast.map(placed)).then(() => runScene(scene, env)), stopped.then(() => false)])
+      .then((completed) => {
+        cast.forEach((a, i) => (a.directed = was[i]));
+        if (this._scene === handle) this._scene = null;
+        stop();
+        this.dispatchEvent(new CustomEvent('sceneend', { detail: { scene: scene.name, completed } }));
+        return completed;
+      });
+    this._scene = handle;
+    return handle;
+  }
   get paused() { return this._paused; }
 
   connectedCallback() {
@@ -198,10 +263,16 @@ export class PixelStage extends Base {
     this._input();
     this._scrolling();
     this._sync();
+    // <pixel-stage scene="#intro">: play that scene once the page is parsed.
+    if (this.hasAttribute('scene')) {
+      const auto = () => { try { this.playScene(this.getAttribute('scene')); } catch (e) { console.error(e); } };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else setTimeout(auto);
+    }
   }
 
   disconnectedCallback() {
     clock.remove(this._tick);
+    this._scene?.stop();
     this.world.disconnect();
     this._rm?.removeEventListener?.('change', this._onRm);
     this._unscroll?.();
@@ -309,6 +380,7 @@ export class PixelStage extends Base {
       // Taps in quick succession are a burst (rage taps): the character panics instead.
       const det = (a._bursts ??= new BurstDetector());
       const b = det.hit(performance.now());
+      a.dispatchEvent(new CustomEvent('tap', { detail: { count: b.count } }));
       if (b.burst) a._rage({ ...b, min: det.min }, local(e)); else a.shoo(local(e));
     };
     const onClick = (e) => { if (performance.now() < swallow) { e.preventDefault(); e.stopPropagation(); swallow = 0; } };
@@ -336,7 +408,7 @@ export class PixelActor extends Base {
     this.sprite = root.querySelector('pixel-sprite');
     this._bubble = root.querySelector('.say');
     this.x = 0; this.y = 0; this.facing = 1; this.state = 'idle';
-    this.plan = []; this.behind = new Set();
+    this.plan = []; this.behind = new Set(); this._orders = [];
     this.sprite.addEventListener('ready', () => this._onReady());
     this.sprite.addEventListener('spriteevent', (e) => this._onEvent(e.detail));
     this.sprite.addEventListener('spriteend', (e) => { if (this._step?.waitEnd === e.detail.anim) this._step.done = true; });
@@ -436,13 +508,66 @@ export class PixelActor extends Base {
     this._bubble.textContent = text;
     this._bubble.classList.add('on');
     this._sayUntil = performance.now() + ms;
+    return new Promise((ok) => setTimeout(() => ok(true), ms));
+  }
+
+  /** Turn to face 'left', 'right', another actor, or an element. */
+  face(what) {
+    if (what === 'left' || what === 'right') { this.facing = what === 'left' ? -1 : 1; return true; }
+    const box = (el) => { const r = el.getBoundingClientRect(), o = this.stage.getBoundingClientRect(); return r.left + r.width / 2 - o.left; };
+    const x = what instanceof PixelActor ? what.x : what instanceof Element && this.stage ? box(what) : what?.x;
+    if (x == null || x === this.x) return false;
+    this.facing = x > this.x ? 1 : -1;
+    return true;
+  }
+
+  /** Directed characters do nothing on their own between orders: they idle where they are (scenes set this). */
+  get directed() { return this.hasAttribute('directed'); }
+  set directed(v) { this.toggleAttribute('directed', !!v); }
+
+  /**
+   * Awaitable orders for scripts and scenes: run('goTo', el, {then}), run('hideBehind', el), run('perform', name, {ms}),
+   * run('shoo', from?). Resolves true when the order is carried out (arrived, sitting, hidden, animation played),
+   * false if it is impossible or gets interrupted (a tap, a drag, another order to the same character). Waits for
+   * the character to land first if it is in the air.
+   */
+  run(action, ...args) {
+    if (!ORDERS.includes(action)) return Promise.reject(new Error(`pixel-actor.run: unknown action "${action}" (${ORDERS.join(', ')})`));
+    return new Promise((resolve) => {
+      const start = () => {
+        if (this._pendingOrder?.start === start) this._pendingOrder = null;
+        if (!this[action](...args)) return resolve(false);
+        // Done on arrival: before the closing rest (idle, sit, hide), not after it.
+        const step = { type: 'done' };
+        const rest = this.plan.findLastIndex((st) => ['idle', 'sit', 'hide'].includes(st.type));
+        const at = rest >= 0 && this.plan.slice(rest + 1).every((st) => st.type === 'arrive') ? rest : this.plan.length;
+        this.plan.splice(at, 0, step);
+        this._orders.push({ step, resolve });
+      };
+      if (!this._ready || !this._placed || this._busy()) {
+        this._pendingOrder?.resolve(false);
+        this._pending = start; this._pendingOrder = { start, resolve };
+      } else start();
+    });
+  }
+
+  _do_done(st) {
+    const i = this._orders.findIndex((o) => o.step === st);
+    if (i >= 0) { this._orders[i].resolve(true); this._orders.splice(i, 1); }
+    return true;
+  }
+
+  /** Orders whose plan was replaced (tap, drag, a new order) end with false. */
+  _sweepOrders() {
+    if (this._orders.length) this._orders = this._orders.filter((o) => o.step === this._step || this.plan.includes(o.step) || void o.resolve(false));
+    if (this._pendingOrder && this._pending !== this._pendingOrder.start) { this._pendingOrder.resolve(false); this._pendingOrder = null; }
   }
 
   /** Startle: react, then run somewhere away from `from` (stage coordinates). */
   shoo(from = { x: this.x, y: this.y }, { react = true } = {}) {
     const w = this.stage?.world;
-    if (!w || !this._ready) return;
-    if (this._busy()) { this._pending = () => this.shoo(from, { react }); return; }
+    if (!w || !this._ready) return false;
+    if (this._busy()) { this._pending = () => this.shoo(from, { react }); return true; }
     this.facing = from.x > this.x ? -1 : 1;
     const away = w.platforms.filter((p) => p.y <= w.viewport().b + this.H && p.y >= w.viewport().t)
       .map((p) => ({ p, x: clampTo(p, from.x > this.x ? p.x1 + this.W : p.x2 - this.W, this.W) }))
@@ -453,9 +578,10 @@ export class PixelActor extends Base {
       if (path) {
         this.plan = [...(react && this.anims.react ? [{ type: 'react' }] : []), ...path, { type: 'idle', ms: rand(800, 1600) }];
         this._step = null;
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   /**
@@ -651,8 +777,9 @@ export class PixelActor extends Base {
       if (this.x < this.platform.x1 - 2 || this.x > this.platform.x2 + 2) { this._fall(0); return; }
     }
     if (this._pending && !this._busy()) { const run = this._pending; this._pending = null; run(); }
+    this._sweepOrders();
     if (!this._step) {
-      if (!this.plan.length) this._choose(w);
+      if (!this.plan.length) { if (this.directed) this.plan = [{ type: 'idle', ms: 400 }]; else this._choose(w); }
       this._step = this.plan.shift() || { type: 'idle', ms: 1000 };
       this._step.t = 0;
     }
@@ -766,7 +893,7 @@ export class PixelActor extends Base {
     this._setState('sitting');
     if (st.facing) this.facing = st.facing;
     this._play('sit');
-    return st.t >= st.ms;
+    return st.t >= st.ms && !this.directed;   // directed: stay seated until the next order
   }
 
   _do_hide(st, dt, w) {
@@ -775,7 +902,7 @@ export class PixelActor extends Base {
     // Duck, and every few seconds peek out over the top.
     const cycle = st.t % 3200;
     this._play(cycle > 2000 && this.anims.peek ? 'peek' : 'duck');
-    if (st.t >= st.ms) {
+    if (st.t >= st.ms && !this.directed) {   // directed: stay hidden until the next order
       // Walk out from behind it.
       const it = st.item, out = this.x < (it.l + it.r) / 2 ? it.l - this.W * 0.6 : it.r + this.W * 0.6;
       this.plan.unshift({ type: 'walk', x: clampTo(this.platform, out, this.W) });
@@ -1005,6 +1132,110 @@ function clampTo(p, x, margin) {
   if (!p) return x;
   const lo = p.x1 + margin, hi = p.x2 - margin;
   return lo > hi ? (p.x1 + p.x2) / 2 : Math.min(hi, Math.max(lo, x));
+}
+
+// ---------- scenes: scripted moments as data ----------
+//
+// { "cast": {"goose": "#goose"}, "loop": false, "steps": [
+//     {"actor": "goose", "goTo": "#bench", "then": "sit"},
+//     {"together": [{"actor": "goose", "say": "honk?"}, {"actor": "clawd", "perform": "think", "ms": 2000}]},
+//     {"wait": 500}, {"waitFor": "tap", "on": "clawd"}, {"emit": "chapter-2"} ] }
+
+const SCENE_ACTIONS = ['goTo', 'hideBehind', 'perform', 'say', 'shoo', 'face'];
+const SCENE_FLOW = ['wait', 'together', 'waitFor', 'emit'];
+const SCENE_EXTRA = { goTo: ['then', 'at'], perform: ['ms'], say: ['ms'], waitFor: ['on', 'timeout'], emit: ['detail'] };
+const SCENE_COMMON = ['actor', 'async', 'note'];
+
+/** Check a scene. Returns [{path, message}]; empty when it can be played. `castNames` lists the actors it may use. */
+export function checkScene(scene, castNames = null) {
+  const errors = [], err = (path, message) => errors.push({ path, message });
+  if (!scene || typeof scene !== 'object' || Array.isArray(scene)) { err('$', 'a scene is an object with "steps"'); return errors; }
+  for (const k of Object.keys(scene)) if (!['name', 'cast', 'steps', 'loop', 'directed', 'note'].includes(k)) err(`$.${k}`, `unknown key (name, cast, steps, loop, directed)`);
+  if (scene.cast != null && (typeof scene.cast !== 'object' || Array.isArray(scene.cast))) err('$.cast', 'cast maps names to selectors: {"goose": "#goose"}');
+  if (scene.loop != null && typeof scene.loop !== 'boolean' && !(Number.isInteger(scene.loop) && scene.loop > 0)) err('$.loop', 'loop is true, false or a number of times');
+  const names = castNames ?? (scene.cast ? Object.keys(scene.cast) : null);
+  const steps = (list, path) => {
+    if (!Array.isArray(list) || !list.length) return err(path, 'a non-empty list of steps');
+    list.forEach((st, i) => step(st, `${path}[${i}]`));
+  };
+  const step = (st, p) => {
+    if (!st || typeof st !== 'object' || Array.isArray(st)) return err(p, 'a step is an object, like {"actor": "goose", "goTo": "#bench"}');
+    const kinds = [...SCENE_ACTIONS, ...SCENE_FLOW].filter((k) => k in st);
+    if (kinds.length !== 1) return err(p, kinds.length ? `one action per step (found ${kinds.join(', ')}); use "together" to run several at once` : `no action: use one of ${[...SCENE_ACTIONS, ...SCENE_FLOW].join(', ')}`);
+    const kind = kinds[0];
+    const allowed = [kind, ...SCENE_COMMON, ...(SCENE_EXTRA[kind] ?? [])];
+    for (const k of Object.keys(st)) if (!allowed.includes(k)) err(`${p}.${k}`, `not used by "${kind}" (allowed: ${allowed.join(', ')})`);
+    if (SCENE_ACTIONS.includes(kind)) {
+      if (typeof st.actor !== 'string') err(`${p}.actor`, `"${kind}" needs an "actor"`);
+      else if (names && !names.includes(st.actor)) err(`${p}.actor`, `"${st.actor}" is not in the cast (${names.join(', ')})`);
+    }
+    const v = st[kind];
+    const num = (x, path, what) => { if (typeof x !== 'number' || !Number.isFinite(x) || x < 0) err(path, `${what} must be a number of milliseconds`); };
+    if (kind === 'goTo' && typeof v !== 'string' && !(v && typeof v === 'object' && Number.isFinite(v.x))) err(`${p}.goTo`, 'a selector, a cast name, or {"x": …, "y": …}');
+    if (kind === 'goTo' && st.at != null && !(typeof st.at === 'number' && st.at >= 0 && st.at <= 1)) err(`${p}.at`, 'at is where along the surface: 0 (left end) … 1 (right end)');
+    if (kind === 'goTo' && st.then != null && !['idle', 'sit', 'hide'].includes(st.then)) err(`${p}.then`, 'then is idle, sit or hide');
+    if ((kind === 'hideBehind') && typeof v !== 'string') err(`${p}.${kind}`, 'a selector');
+    if (kind === 'perform' && typeof v !== 'string') err(`${p}.perform`, 'the name of one of the actor\'s animations');
+    if (kind === 'say' && typeof v !== 'string') err(`${p}.say`, 'the text to show');
+    if (kind === 'shoo' && v !== true && typeof v !== 'string') err(`${p}.shoo`, 'true, or what to run from (a selector or cast name)');
+    if (kind === 'face' && typeof v !== 'string') err(`${p}.face`, '"left", "right", a cast name or a selector');
+    if (kind === 'wait') num(v, `${p}.wait`, 'wait');
+    if (kind === 'together') steps(v, `${p}.together`);
+    if (kind === 'waitFor') {
+      if (typeof v !== 'string') err(`${p}.waitFor`, 'an event name, like "tap", "click" or "arrive"');
+      if (typeof st.on !== 'string') err(`${p}.on`, 'what to listen on: a cast name, a selector, or "stage"');
+      if (st.timeout != null) num(st.timeout, `${p}.timeout`, 'timeout');
+    }
+    if (kind === 'emit' && typeof v !== 'string') err(`${p}.emit`, 'an event name');
+    if (('ms' in st)) num(st.ms, `${p}.ms`, 'ms');
+  };
+  steps(scene.steps, '$.steps');
+  return errors;
+}
+
+/**
+ * Play a checked scene. `env` connects it to the page (the stage provides one; tests pass fakes):
+ *   actor(name) → actor | null, element(sel) → Element | null, wait(ms) → Promise,
+ *   listen(target, event, timeout) → Promise<boolean>, emit(name, detail), onStep(step, path), stopped: Promise
+ * Resolves true when every step ran (steps that fail, like an unreachable goTo, are skipped), false if stopped.
+ */
+export async function runScene(scene, env) {
+  let stopped = false;
+  const halt = env.stopped.then(() => { stopped = true; return false; });
+  const target = (v) => (typeof v !== 'string' ? v : env.actor(v) ?? env.element(v));
+  const exec = async (st, path) => {
+    if ('wait' in st) return env.wait(st.wait);
+    if ('together' in st) return (await Promise.all(st.together.map((s, i) => run(s, `${path}.together[${i}]`)))).every(Boolean);
+    if ('waitFor' in st) return env.listen(st.on === 'stage' ? 'stage' : target(st.on), st.waitFor, st.timeout);
+    if ('emit' in st) { env.emit(st.emit, st.detail); return true; }
+    const a = env.actor(st.actor);
+    if (!a) return false;
+    if ('say' in st) return a.say(st.say, st.ms ?? 1800);
+    if ('face' in st) return a.face(['left', 'right'].includes(st.face) ? st.face : target(st.face));
+    if ('goTo' in st) {
+      const t = env.actor(st.goTo) ?? target(st.goTo);
+      if (!t) return false;
+      // Another actor: stand next to it, on the side we come from. An element with "at": that spot along its top.
+      const dest = t.run ? env.beside(a, t) : st.at != null && typeof st.goTo === 'string' ? env.along(t, st.at) : t;
+      return dest ? a.run('goTo', dest, { then: st.then ?? 'idle' }) : false;
+    }
+    if ('hideBehind' in st) { const el = env.element(st.hideBehind); return el ? a.run('hideBehind', el) : false; }
+    if ('perform' in st) return a.run('perform', st.perform, st.ms != null ? { ms: st.ms } : undefined);
+    if ('shoo' in st) return a.run('shoo', ...(st.shoo === true ? [] : [target(st.shoo)].filter(Boolean)));
+    return false;
+  };
+  const run = async (st, path) => {
+    if (stopped) return false;
+    env.onStep?.(st, path);
+    const p = exec(st, path);
+    if (st.async) { p.catch(() => {}); return true; }
+    return Promise.race([p, halt]);
+  };
+  const times = scene.loop === true ? Infinity : scene.loop || 1;
+  for (let n = 0; n < times && !stopped; n++) {
+    for (let i = 0; i < scene.steps.length && !stopped; i++) await run(scene.steps[i], `$.steps[${i}]`);
+  }
+  return !stopped;
 }
 
 /**

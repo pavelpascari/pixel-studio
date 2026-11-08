@@ -6,6 +6,16 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Scenes
+- `stage.playScene(scene)`: scripted moments as JSON (in a `<script type="application/json">`, as text or an object).
+  Steps `goTo` (selector, cast name or point; `then`, `at`), `hideBehind`, `perform`, `say`, `face`, `shoo`, `wait`,
+  `together` (parallel), `waitFor` (an event on a character, element or the stage), `emit`; `async` on any step; `loop`.
+  Returns `{finished, stop()}`; `scenestep`, `sceneevent` and `sceneend` events; `<pixel-stage scene="#intro">` autoplays.
+  Scenes are checked first, with JSON paths in the errors (`checkScene`). Steps that cannot happen are skipped.
+- Actors: `run(action, ...args)` returns a promise (true when done, false if impossible or interrupted); `say()` returns
+  a promise; `face()`; a `directed` mode (no wandering between orders, stays seated or hidden); a `tap` event.
+- The stage demo plays "The plan" (goose, Clawd and Pip); the docs site's stage page plays a race.
+
 ### Clawd
 - New example character `examples/clawd.json`, a blocky orange critter after the Claude Code mascot: 12 animations
   (idle, a "thinking" shuffle, a sideways scuttle walk and run, hop, wave, jump, fall, climb, sit, duck, peek), all

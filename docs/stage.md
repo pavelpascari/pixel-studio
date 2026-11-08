@@ -12,6 +12,7 @@ Demo: `npm run studio` and open `http://localhost:5173/demo/stage.html`. The des
 - [Marking up the page](#marking-up-the-page)
 - [Elements and attributes](#elements-and-attributes)
 - [JavaScript API](#javascript-api)
+- [Scenes](#scenes)
 - [What the characters do](#what-the-characters-do)
 - [What a character needs from its bundle](#what-a-character-needs-from-its-bundle)
 - [How it works](#how-it-works)
@@ -102,14 +103,83 @@ stage.world.invalidate();                                          // after movi
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
 | `actor.catchUp()` | Come back into view now, the way `keep-in-view` does. Returns `'run'`, `'drop'` or `null` (nothing visible to stand on). |
 | `actor.shoo(from?)` | React (`honk`, `wave`, …) and run to the farthest reachable place on screen. Tapping a character does this. |
+| `actor.run(action, ...args)` | The orders above as promises, for scripts: `await actor.run('goTo', el, {then: 'sit'})`, `run('hideBehind', el)`, `run('perform', name, {ms})`, `run('shoo', from?)`. Resolves `true` once carried out (arrived, sitting, hidden, played), `false` if impossible or interrupted (a tap, a drag, another order to the same character). |
+| `actor.say(text, ms)` → Promise | Resolves when the bubble goes away. |
+| `actor.face('left' \| 'right' \| actor \| element)` | Turn to face a side or something on the page. |
+| `actor.directed` | `directed` attribute: the character does nothing on its own between orders and stays seated or hidden until told otherwise. Scenes set it on their cast while they play. |
 | `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`. |
 | `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
-| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`. |
+| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`, `tap` (tapped or clicked). |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
 | `stage.scrollSpeed` | How fast the page is scrolling, px/s (+ down), smoothed. |
+| `stage.playScene(scene)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`. Returns `{name, finished, stop()}`; `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
+| `stage.scene` | The scene playing now, or null. |
+| `scene` attribute | `<pixel-stage scene="#intro">` plays that scene once the page is parsed. |
+| stage events | `scenestep` `{scene, step, path}`, `sceneevent` `{scene, name, detail}` (from `emit` steps), `sceneend` `{scene, completed}`. |
 | stage events | `fastscroll` `{speed}` when scrolling goes faster than 1.5 screen heights a second; `scrollsettle` when it stops. |
 
-The module also exports `World`, `PixelStage`, `PixelActor`, `jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
+The module also exports `World`, `PixelStage`, `PixelActor`, `checkScene(scene, castNames?)`, `runScene(scene, env)`,
+`jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
+
+## Scenes
+
+A scene is a scripted moment written as data: who goes where, says what, and when. Put it in the page and play it.
+
+```html
+<script type="application/json" id="the-plan">
+{
+  "name": "the plan",
+  "cast": {"goose": "#goose", "clawd": "#clawd"},
+  "steps": [
+    {"together": [
+      {"actor": "goose", "goTo": "#lakeside", "at": 0.2},
+      {"actor": "clawd", "goTo": "#lakeside", "at": 0.85}
+    ]},
+    {"actor": "goose", "face": "clawd"},
+    {"actor": "goose", "say": "honk?", "ms": 1400},
+    {"actor": "clawd", "perform": "think", "ms": 2400, "async": true},
+    {"actor": "clawd", "say": "Let me think about that…", "ms": 2600},
+    {"waitFor": "tap", "on": "clawd", "timeout": 8000},
+    {"actor": "goose", "goTo": "#summit", "then": "sit"}
+  ]
+}
+</script>
+<script type="module">
+  const run = document.querySelector('pixel-stage').playScene('#the-plan');
+  await run.finished;   // or run.stop()
+</script>
+```
+
+Steps run one after another. Each step does one thing:
+
+| step | does | extra keys |
+|---|---|---|
+| `{"actor": a, "goTo": target}` | walk there (dropping, jumping, climbing). `target`: a selector, a cast name (stand next to them), or `{"x", "y"}` | `then`: `idle` `sit` `hide`; `at`: 0–1, where along the element's top |
+| `{"actor": a, "hideBehind": selector}` | go behind a `data-pixel-hide` element | |
+| `{"actor": a, "perform": name}` | play one of its animations in place | `ms` for a looping one (default 2400) |
+| `{"actor": a, "say": text}` | speech bubble | `ms` (default 1800) |
+| `{"actor": a, "face": dir}` | turn: `left`, `right`, a cast name or a selector | |
+| `{"actor": a, "shoo": true}` | startle and run off (or `"shoo": what` to run from) | |
+| `{"wait": ms}` | pause | |
+| `{"together": [steps]}` | run steps at the same time; continue when all are done | |
+| `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … | `timeout` (ms) |
+| `{"emit": name}` | fire `sceneevent` on the stage for page code | `detail` |
+
+Any step can add `"async": true` (start it and move straight on) and `"note"` (a comment). Top level: `cast` maps names
+to selectors (default: the stage's actors by `id`), `loop` (`true` or a number of times), `directed` (default `true`).
+
+- **The cast is directed** while a scene plays: characters wait for their next step instead of wandering off, and stay
+  seated or hidden until the scene moves them. Their own setting comes back when it ends.
+- **Steps that cannot happen are skipped**: no route, an unknown animation, a tap that startles the character mid-walk.
+  The scene carries on, so a reader poking at the characters never jams it. A new order to a character interrupts its
+  previous one (a looping `perform` that is still going, say).
+- **Characters wait for each other only where you say so**: `together` waits for all of its steps; `async` waits for none.
+- `playScene` checks the whole scene first and throws with JSON paths (`$.steps[3].actor: "fox" is not in the cast`).
+  `checkScene(scene)` returns the same list without playing.
+- While the stage is paused (or the reader prefers reduced motion) characters do not move, so a scene waits with them.
+
+The [stage demo](../demo/stage.html) plays one ("Play a scene"). From code, the same orders are awaitable on each
+actor: `await goose.run('goTo', el)`, `await goose.say('hi')`.
 
 ## What the characters do
 

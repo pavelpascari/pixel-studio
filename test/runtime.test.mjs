@@ -212,3 +212,77 @@ test('state machine: node rates follow inputs; burst and calm interactions pass 
   assert.equal(sm.node, 'idle');
   assert.equal(rates.at(-1), 1);
 });
+
+// ---------- scenes ----------
+import { checkScene, runScene } from '../src/runtime/pixel-stage.js';
+
+test('checkScene: accepts a valid scene and reports problems with JSON paths', () => {
+  const ok = { cast: { goose: '#goose', clawd: '#clawd' }, loop: 2, steps: [
+    { actor: 'goose', goTo: '#bench', then: 'sit' },
+    { together: [{ actor: 'goose', say: 'honk?', ms: 900 }, { actor: 'clawd', perform: 'think', ms: 1200, async: true }] },
+    { wait: 300 }, { waitFor: 'tap', on: 'clawd', timeout: 5000 }, { emit: 'done' }, { actor: 'clawd', face: 'goose' },
+  ] };
+  assert.deepEqual(checkScene(ok), []);
+  const paths = (s, names) => checkScene(s, names).map((e) => e.path);
+  assert.deepEqual(paths({ steps: [] }), ['$.steps']);
+  assert.deepEqual(paths({ steps: [{ actor: 'goose', goTo: '#a', say: 'hi' }] }), ['$.steps[0]']);           // two actions
+  assert.deepEqual(paths({ steps: [{ actor: 'fox', goTo: '#a' }] }, ['goose']), ['$.steps[0].actor']);          // not in the cast
+  assert.deepEqual(paths({ steps: [{ goTo: '#a' }] }), ['$.steps[0].actor']);                                   // no actor
+  assert.deepEqual(paths({ steps: [{ actor: 'g', goTo: '#a', then: 'dance' }] }), ['$.steps[0].then']);
+  assert.deepEqual(paths({ steps: [{ wait: -1 }, { actor: 'g', perform: 'x', speed: 2 }] }), ['$.steps[0].wait', '$.steps[1].speed']);
+  assert.deepEqual(paths({ steps: [{ together: [{ jump: 1 }] }] }), ['$.steps[0].together[0]']);
+  assert.deepEqual(paths({ steps: [{ waitFor: 'tap' }], loop: 'yes' }), ['$.loop', '$.steps[0].on']);
+});
+
+/** Fake actors: each order takes `ms` and resolves true, or false when told to fail. */
+function fakeEnv({ fail = [], log = [] } = {}) {
+  let stop;
+  const stopped = new Promise((r) => (stop = r));
+  const actor = (name) => ({
+    name,
+    run: (action, ...args) => new Promise((r) => { log.push(`${name}.${action}:start`); setTimeout(() => { log.push(`${name}.${action}:end`); r(!fail.includes(action)); }, 20); }),
+    say: (text) => { log.push(`${name}.say ${text}`); return Promise.resolve(true); },
+    face: (dir) => { log.push(`${name}.face ${typeof dir === 'string' ? dir : dir.name}`); return true; },
+  });
+  const cast = { goose: actor('goose'), clawd: actor('clawd') };
+  return { log, stop, env: {
+    actor: (n) => cast[n] ?? null, element: (sel) => ({ sel }), stopped,
+    wait: (ms) => new Promise((r) => setTimeout(() => r(true), ms)),
+    listen: () => new Promise((r) => setTimeout(() => r(true), 10)),
+    emit: (name) => log.push(`emit ${name}`),
+  } };
+}
+
+test('runScene: steps run in order, "together" in parallel, async does not wait, failures are skipped', async () => {
+  const { env, log } = fakeEnv({ fail: ['hideBehind'] });
+  const done = await runScene({ steps: [
+    { actor: 'goose', goTo: '#bench' },
+    { together: [{ actor: 'goose', perform: 'honk' }, { actor: 'clawd', goTo: '#hill' }] },
+    { actor: 'clawd', hideBehind: '#crate' },          // fails: the scene carries on
+    { actor: 'goose', perform: 'idle', async: true },  // started, not awaited
+    { actor: 'clawd', face: 'goose' },
+    { emit: 'end' },
+  ] }, env);
+  assert.equal(done, true);
+  const ends = () => log.filter((l) => l === 'goose.perform:end').length;
+  assert.equal(ends(), 1);   // the scene finished before its async step did
+  await new Promise((r) => setTimeout(r, 40));
+  assert.deepEqual(log.slice(0, 6), ['goose.goTo:start', 'goose.goTo:end', 'goose.perform:start', 'clawd.goTo:start', 'goose.perform:end', 'clawd.goTo:end']);
+  assert.ok(log.indexOf('goose.perform:start', 3) < log.indexOf('clawd.face goose'));   // async step started before the next one
+  assert.equal(ends(), 2);   // …which still completes afterwards
+  assert.ok(log.includes('emit end'));
+});
+
+test('runScene: loops a number of times, and stop() ends it mid-step', async () => {
+  const a = fakeEnv();
+  assert.equal(await runScene({ loop: 3, steps: [{ emit: 'tick' }] }, a.env), true);
+  assert.equal(a.log.filter((l) => l === 'emit tick').length, 3);
+  const b = fakeEnv();
+  const p = runScene({ loop: true, steps: [{ wait: 15 }, { emit: 'tick' }] }, b.env);
+  await new Promise((r) => setTimeout(r, 60));
+  b.stop();
+  assert.equal(await p, false);
+  const n = b.log.length;
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(b.log.length, n);   // nothing runs after stop
+});

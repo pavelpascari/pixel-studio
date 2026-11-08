@@ -40,8 +40,21 @@
         <button id="st-sit">goose.goTo(Lakeside, {then: 'sit'})</button>
         <button id="st-climb">goose.goTo(Ridge loop)</button>
         <button id="st-say">goose.say('honk?')</button>
+        <button id="st-scene">stage.playScene('#race')</button>
         <span class="readout" id="st-out"></span>
       </div>
+      <script type="application/json" id="race">
+        {"cast": {"goose": "#st-goose", "pip": "#st-pip"}, "steps": [
+          {"together": [{"actor": "goose", "goTo": "#st-low", "at": 0.2}, {"actor": "pip", "goTo": "#st-low", "at": 0.8}]},
+          {"together": [{"actor": "goose", "face": "pip"}, {"actor": "pip", "face": "goose"}]},
+          {"actor": "pip", "say": "Race you to the top?", "ms": 1600},
+          {"actor": "goose", "say": "HONK", "ms": 900},
+          {"together": [{"actor": "goose", "goTo": "#st-tall"}, {"actor": "pip", "goTo": "#st-mid"}]},
+          {"actor": "goose", "say": "first!", "ms": 1400, "async": true},
+          {"actor": "pip", "perform": "wave"},
+          {"actor": "pip", "goTo": "#st-mid", "then": "sit"}
+        ]}
+      </script>
       <pixel-stage controls="none" floor="none">
         <pixel-actor id="st-goose" src="../demo/assets/goose-root.bundle.json" size="72" start="#st-low" alt="a goose"></pixel-actor>
         <pixel-actor id="st-pip" src="../demo/assets/pip.bundle.json" size="64" start="#st-mid" alt="Pip"></pixel-actor>
@@ -55,6 +68,10 @@
         document.getElementById('st-sit').onclick = () => say(goose.goTo(document.getElementById('st-low'), { then: 'sit' }), 'going to sit');
         document.getElementById('st-climb').onclick = () => say(goose.goTo(document.getElementById('st-tall')), 'off to Ridge loop');
         document.getElementById('st-say').onclick = () => goose.say('honk?');
+        const stage = document.querySelector('pixel-stage'), sceneBtn = document.getElementById('st-scene');
+        sceneBtn.onclick = () => (stage.scene ? stage.scene.stop() : stage.playScene('#race'));
+        stage.addEventListener('scenestep', (e) => (out.textContent = `scene: ${e.detail.path}`));
+        stage.addEventListener('sceneend', (e) => (out.textContent = e.detail.completed ? 'scene: the end' : 'scene: stopped'));
       </script>
     </template>
   </div>
@@ -73,6 +90,38 @@
     goose.addEventListener('catchup', () => console.log('coming back'));
     goose.addEventListener('burst', (e) => console.log('rage taps', e.detail.count));   // tapping fast makes it panic
   </pre>
+
+  <h2 id="scenes">Scenes</h2>
+  <p>A scene is a scripted moment written as data: who goes where, says what, and when. Steps run in order;
+    <code>together</code> runs several at once, <code>"async": true</code> starts one without waiting, and
+    <code>waitFor</code> pauses until something happens (a tap on a character, a click on a button). The cast is
+    <em>directed</em> while it plays: characters wait for their next line instead of wandering off. Steps that cannot
+    happen (no route, a tap that startles a character) are skipped, so readers poking at the characters never jam it.
+    Press <b>stage.playScene('#race')</b> in the example above to play this one.</p>
+  <pre class="snippet" data-lang="json">
+    {"cast": {"goose": "#st-goose", "pip": "#st-pip"}, "steps": [
+      {"together": [{"actor": "goose", "goTo": "#st-low", "at": 0.2}, {"actor": "pip", "goTo": "#st-low", "at": 0.8}]},
+      {"together": [{"actor": "goose", "face": "pip"}, {"actor": "pip", "face": "goose"}]},
+      {"actor": "pip", "say": "Race you to the top?", "ms": 1600},
+      {"actor": "goose", "say": "HONK", "ms": 900},
+      {"together": [{"actor": "goose", "goTo": "#st-tall"}, {"actor": "pip", "goTo": "#st-mid"}]},
+      {"actor": "goose", "say": "first!", "ms": 1400, "async": true},
+      {"actor": "pip", "perform": "wave"},
+      {"actor": "pip", "goTo": "#st-mid", "then": "sit"}
+    ]}
+  </pre>
+  <pre class="snippet" data-lang="js">
+    const run = stage.playScene('#race');      // an object, JSON text, or a &lt;script type="application/json"&gt;
+    await run.finished;                        // true at the end, false if run.stop() was called
+    stage.addEventListener('sceneevent', (e) =&gt; console.log(e.detail.name));   // from {"emit": "…"} steps
+
+    // The same orders, awaitable from code: true when done, false if impossible or interrupted.
+    if (await goose.run('goTo', summit, { then: 'sit' })) await goose.say('made it');
+  </pre>
+  <p>Steps: <code>goTo</code> (a selector, a cast name, or a point; <code>then</code>, <code>at</code>),
+    <code>hideBehind</code>, <code>perform</code>, <code>say</code>, <code>face</code>, <code>shoo</code>, <code>wait</code>,
+    <code>together</code>, <code>waitFor</code>, <code>emit</code>. <code>&lt;pixel-stage scene="#intro"&gt;</code> plays one
+    when the page loads. The full table is in <a href="../docs/stage.md#scenes">docs/stage.md</a>.</p>
 
   <h2 id="markup">Marking up your page</h2>
   <table>

@@ -118,6 +118,7 @@
     <button id="shoo">Shoo everyone</button>
     <button id="say">Goose: say something</button>
     <button id="think">Clawd: think</button>
+    <button id="scene">Play a scene: “The plan”</button>
     <div id="log" aria-live="polite"></div>
   </section>
 </main>
@@ -129,6 +130,36 @@
   <pixel-actor id="slime" src="assets/slime.bundle.json" size="56" alt="a slime" behaviours="wander hide" start="#card-d"></pixel-actor>
   <pixel-actor id="clawd" src="assets/clawd.bundle.json" size="112" alt="Clawd, a blocky orange critter" start="#card-a"></pixel-actor>
 </pixel-stage>
+
+<!-- A scene is data: steps run in order, "together" runs steps at once, "async" starts one without waiting. -->
+<script type="application/json" id="the-plan">
+{
+  "name": "the plan",
+  "cast": {"goose": "#goose", "clawd": "#clawd", "pip": "#pip"},
+  "steps": [
+    {"together": [
+      {"actor": "goose", "goTo": "#card-b", "at": 0.2},
+      {"actor": "clawd", "goTo": "#card-b", "at": 0.85}
+    ]},
+    {"together": [{"actor": "goose", "face": "clawd"}, {"actor": "clawd", "face": "goose"}]},
+    {"actor": "goose", "say": "honk?", "ms": 1400},
+    {"actor": "clawd", "perform": "think", "ms": 2400, "async": true},
+    {"actor": "clawd", "say": "Let me think about that…", "ms": 2600},
+    {"actor": "clawd", "say": "Here's a plan!", "ms": 1200, "async": true},
+    {"actor": "clawd", "perform": "wave"},
+    {"together": [
+      {"actor": "goose", "perform": "honk"},
+      {"actor": "pip", "goTo": "goose"}
+    ]},
+    {"actor": "pip", "say": "what did I miss?", "ms": 1600},
+    {"together": [
+      {"actor": "goose", "goTo": "#card-d", "then": "sit"},
+      {"actor": "clawd", "goTo": "#card-a"},
+      {"actor": "pip", "say": "wait up!", "ms": 1200}
+    ]}
+  ]
+}
+</script>
 
 <script type="module">
   await customElements.whenDefined('pixel-stage');
@@ -165,6 +196,14 @@
   };
   sizeIn.oninput = () => { resize(Number(sizeIn.value)); try { localStorage.setItem('stage-size', sizeIn.value); } catch {} };
   try { const saved = Number(localStorage.getItem('stage-size')); if (saved >= 50 && saved <= 200) resize(saved); } catch {}
+  $('#scene').onclick = () => {
+    const playing = stageEl.scene;
+    if (playing) return playing.stop();
+    stageEl.playScene('#the-plan');
+    $('#scene').textContent = 'Stop the scene';
+  };
+  stageEl.addEventListener('scenestep', (e) => { const s = e.detail.step; if (s.actor && !s.face) log(s.actor, Object.entries(s).filter(([k]) => k !== 'actor').map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')); });
+  stageEl.addEventListener('sceneend', (e) => { log('scene', e.detail.completed ? 'the end' : 'stopped'); $('#scene').textContent = 'Play a scene: “The plan”'; });
   $('#think').onclick = () => { const c = $('#clawd'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>
