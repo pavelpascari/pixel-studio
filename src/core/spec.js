@@ -1,6 +1,6 @@
 // Character spec: validation (agent-friendly errors with JSON paths) and compilation.
 import { parseHex } from './color.js';
-import { SHAPE_TYPES, compileShape } from './shapes.js';
+import { SHAPE_TYPES, SHAPE_REQUIRED, SHAPE_KEYS, compileShape } from './shapes.js';
 import { TEXTURES } from './textures.js';
 import { mergeVariant } from './extend.js';
 import { buildMixes } from './mix.js';
@@ -35,20 +35,12 @@ function lev(a, b) {
   return dp[a.length][b.length];
 }
 
-const SHAPE_REQUIRED = {
-  rect: ['x', 'y', 'w', 'h'],
-  ellipse: ['cx', 'cy'],
-  circle: ['cx', 'cy', 'r'],
-  capsule: ['x1', 'y1', 'x2', 'y2'],
-  polygon: [],
-};
 
 const KNOWN = {
   top: ['name', 'size', 'materials', 'parts', 'animations', 'style', 'description', '$schema', 'figure', 'points', 'ground', 'skins', 'states', 'mixes'],
   material: ['color', 'texture', 'textureStrength', 'textureScale', 'shine', 'flat', 'outline', 'tones'],
   part: ['id', 'parent', 'pivot', 'z', 'shade', 'x', 'y', 'rot', 'sx', 'sy', 'show', 'shapes', 'tip', 'follow'],
-  shape: ['type', 'material', 'op', 'minDetail', 'maxDetail', 'profile', 'shade', 'x', 'y', 'w', 'h', 'r', 'rot',
-    'cx', 'cy', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'r2', 'points'],
+  shape: SHAPE_KEYS,   // shared with plug-in shapes
   animation: ['frames', 'fps', 'loop', 'tracks', 'reach', 'speed', 'motion', 'events', 'holds', 'speedY', 'wall'],
   point: ['part', 'at'],
   event: ['frame', 'name', 'data'],

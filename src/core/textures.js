@@ -2,6 +2,8 @@
 // a moving limb instead of swimming. Each returns a brightness offset roughly in [-1, 1].
 
 export const TEXTURES = ['noise', 'fur', 'scales', 'stripes', 'checker', 'cloth', 'bricks', 'spots', 'metal'];
+/** Plug-in textures: name → (x, y, scale) → -1..1. */
+export const customTextures = new Map();
 
 export function hash2(x, y) {
   let h = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263)) | 0;
@@ -50,7 +52,9 @@ export function sampleTexture(name, x, y, s = 1) {
     }
     case 'metal':
       return (hash2(3, Math.floor(y / s)) - 0.5) * 0.5;
-    default:
-      return 0;
+    default: {
+      const custom = customTextures.get(name);
+      return custom ? Math.max(-1.5, Math.min(1.5, Number(custom(x, y, s)) || 0)) : 0;
+    }
   }
 }

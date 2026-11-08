@@ -75,7 +75,7 @@ example next to its code, with spec playgrounds that render as you type. The ref
 | `src/core/` | Isomorphic engine: spec validation (JSON paths + did-you-mean), SDF shapes, animation tracks, rasterizer + shader (hue-shifted ramps, lighting, textures, dither, outlines, inner lines, contact shadows), sheets, bundles, ASCII. |
 | `src/runtime/pixel-sprite.js` | The web component. Picks the resolution variant like `srcset`, scales in whole device pixels (crisp on phones), reserves its box and shows a poster until loaded, `ready`/`error`/`spriteend`/`spriteevent` events, attachment points and hit testing, a state machine and skins from the bundle, hover for mouse and tap for touch, reduced motion, off-screen pause, and a shared frame clock for moving sprites across a page. One failing sprite cannot stop the others. |
 | `src/runtime/pixel-stage.js` | `<pixel-stage>`: characters living on a page. Reads `data-pixel-*` elements as platforms, walls and hiding spots, plans routes (walk, drop, jump, climb), cuts occluders out with `clip-path`, tap to shoo, a pause button. |
-| `bin/pixel.mjs` | CLI for agents. |
+| `bin/pixel.mjs` | CLI for agents. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
 | `studio/figures.html` | Figure viewer: each skeleton as dots and lines, with moving ground, foot trails and onion skin. |
 | `studio/` | Studio: live JSON editor, animated stage (grid, onion skin, scrubbing), a strip showing all detail levels at once, shader knobs, sprite sheet, a live `<pixel-sprite>` preview, export, and the **Agent** tab. |
 | `examples/` | `goose-base` + four variants (`goose-root`, `-sudo`, `-phreak`, `-kiddie`); `pip` (written by me); `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` + the CLI). |
@@ -153,7 +153,7 @@ Describe a character, then **Generate**: Claude writes the spec, the studio vali
 
 ## Out of scope for now
 
-Pixel-level touch-up layers, mesh deformation (parts are rigid), palette constraints across characters, GIF/APNG export, pre-rendered transition clips between animations, plug-in registries for shapes and motions, hosting and accounts. See `docs/DESIGN.md` and `docs/research/`.
+Pixel-level touch-up layers, mesh deformation (parts are rigid), palette constraints across characters, GIF/APNG export, hosting and accounts. See `docs/DESIGN.md` and `docs/research/`.
 
 ## Contributing and license
 

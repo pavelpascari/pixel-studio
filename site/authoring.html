@@ -134,6 +134,43 @@
     </script>
   </div>
 
+  <h2 id="plugins">Plug-ins: new shapes, textures and motions</h2>
+  <p>A plug-in registers new building blocks; specs then use them like built-ins, with the same validation. This playground
+    loads <code>examples/plugins/extras.mjs</code>, which adds a <code>star</code> shape, a <code>feathers</code> texture and a
+    <code>float</code> motion.</p>
+  <pre class="snippet" data-lang="js">
+    export default function setup({ registerShape, registerTexture, registerMotion }) {
+      registerShape('star', { required: ['cx', 'cy', 'r'], keys: ['r2', 'tips', 'round', 'rot'], compile: (s) => ({ sdf, R, bbox }) });
+      registerTexture('feathers', (x, y, scale) => brightness);
+      registerMotion('float', { generate: ({ rig, params, samples }) => ({ tracks: { [rig.root]: { y: [...], rot: [...] } } }) });
+    }
+    // CLI: node bin/pixel.mjs preview starfish.json --plugin extras.mjs
+  </pre>
+  <div class="playground" data-title="A starfish made of plug-ins" data-plugin="../examples/plugins/extras.mjs" data-res="48">
+    <script type="application/json">
+{
+  "name": "Twinkle the starfish",
+  "figure": {"use": "blob"},
+  "materials": {
+    "star": {"color": "#ff9a5c", "texture": "spots", "textureStrength": 0.4},
+    "frill": {"color": "#f4d35e", "texture": "feathers", "textureStrength": 0.6},
+    "eye": {"color": "#2a1f2d", "flat": true, "outline": false}
+  },
+  "parts": [
+    {"id": "body", "shapes": [{"type": "star", "cx": 50, "cy": 58, "r": 30, "r2": 15, "round": 2.5, "material": "star"}]},
+    {"id": "top", "shapes": [{"type": "ellipse", "cx": 50, "cy": 40, "rx": 9, "ry": 6, "material": "frill"}]},
+    {"id": "eyes", "bone": "body", "pivot": [50, 56], "z": 5, "shapes": [
+      {"type": "circle", "cx": 44, "cy": 56, "r": 2.2, "material": "eye"},
+      {"type": "circle", "cx": 56, "cy": 56, "r": 2.2, "material": "eye"}
+    ]}
+  ],
+  "animations": {
+    "float": {"motion": "float", "frames": 12, "fps": 8, "height": 5, "tilt": 8}
+  }
+}
+    </script>
+  </div>
+
   <h2 id="more">Points, events, skins, state machines</h2>
   <p>Specs can also name attachment points, add events, define skins and carry a state machine. See
     <a href="events.html">Events, points and the foot line</a> and <a href="states.html">State machines and skins</a>, and the

@@ -9,7 +9,7 @@
 //     <script type="application/json"> { …spec… } </script>
 //   </div>
 
-import { validate, compile, renderFrame, resolveStyle, resolveSpec } from '../src/core/index.js';
+import { validate, compile, renderFrame, resolveStyle, resolveSpec, usePlugin } from '../src/core/index.js';
 
 const PAGES = [
   ['index.html', 'Overview'],
@@ -156,6 +156,12 @@ const loadRef = async (ref) => {
   return r.json();
 };
 
+const pluginsLoaded = new Map();
+const loadPlugin = (url) => {
+  if (!pluginsLoaded.has(url)) pluginsLoaded.set(url, import(url).then(usePlugin));
+  return pluginsLoaded.get(url);
+};
+
 function playgrounds() {
   for (const box of document.querySelectorAll('.playground')) {
     const src = dedent(box.querySelector('script[type="application/json"]').textContent);
@@ -180,6 +186,7 @@ function playgrounds() {
 
     async function rebuild() {
       const seq = ++state.seq;
+      if (box.dataset.plugin) await loadPlugin(box.dataset.plugin);
       let spec;
       try { spec = JSON.parse(ta.value); } catch (e) { return show('err', `JSON: ${e.message}`); }
       const notes = [];

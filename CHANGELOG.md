@@ -6,6 +6,11 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Plug-ins
+- `registerShape`, `registerTexture`, `registerMotion` (and `usePlugin`, `registeredPlugins`): new shapes, textures
+  and motion models validate, render and animate like built-ins, and `pixel brief` lists them. CLI `--plugin`.
+  Example: `examples/plugins/extras.mjs` (star shape, feathers texture, float motion) and `starfish.json`.
+
 ### Transition clips
 - `mixes` in specs (`"waddle>idle": {"frames": 3}`) bake in-between frames that blend the end of one animation
   into the start of another. `<pixel-sprite>` plays them when a switch happens at a boundary (loop end or after a

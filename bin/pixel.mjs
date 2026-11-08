@@ -24,10 +24,10 @@
 //   pixel brief                                      print the agent brief (spec format docs)
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validate, compile, renderSheet, renderAnimation, renderFrame, resolveStyle,
-  contactSheet, frameToAscii, buildBundle, exportSheet, DETAIL_NAMES, resolveSpec, checkBounds, samplePose, worldMatrices,
+  contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, samplePose, worldMatrices,
 } from '../src/core/index.js';
 import { encodePNG } from '../src/node/png.js';
 
@@ -127,6 +127,13 @@ const pngDataURL = (w, h, rgba) => 'data:image/png;base64,' + encodePNG(w, h, rg
 
 const [cmd, ...rest] = process.argv.slice(2);
 const args = parseArgs(rest);
+// Plug-ins (--plugin ./a.mjs,./b.mjs): register shapes, textures and motion models before anything runs.
+if (args.plugin) {
+  for (const p of String(args.plugin).split(',')) {
+    try { await usePlugin(await import(pathToFileURL(resolve(p.trim())).href)); }
+    catch (e) { fail(`--plugin ${p}: ${e.message}`); }
+  }
+}
 
 switch (cmd) {
   case 'figures': {
@@ -247,6 +254,8 @@ switch (cmd) {
   }
   case 'brief': {
     process.stdout.write(readFileSync(join(ROOT, 'docs/SPEC.md'), 'utf8'));
+    const extra = registeredPlugins();
+    if (extra.length) process.stdout.write(`\n## Plug-ins loaded for this project\n\n${extra.map((p) => `- ${p.kind} \`${p.name}\`${p.describe ? `: ${p.describe}` : ''}`).join('\n')}\n`);
     break;
   }
   default:

@@ -33,6 +33,8 @@ import { sampleValue } from './animate.js';
 export const MOTION_MODELS = ['gait', 'idle', 'pose', 'hop', 'jump', 'climb', 'fall', 'sit'];
 /** Models that need rig.legs. */
 export const LEGGED_MODELS = ['gait', 'pose', 'jump', 'climb', 'sit'];
+/** Plug-in motion models: name → generate(context). */
+export const customMotions = new Map();
 export const OVERSAMPLE = 4; // samples per frame in generated tracks (smooth input for follow-through)
 
 const TAU = Math.PI * 2;
@@ -56,6 +58,8 @@ export function generateMotion(parts, rig, m) {
   const M = loop ? frames * OVERSAMPLE : (frames - 1) * OVERSAMPLE + 1;
   const cycleT = frames / fps;
   const notes = [];
+  const plugin = customMotions.get(m.model);
+  if (plugin) return pluginMotion(plugin, parts, rig, m, { frames, fps, loop, M });
 
   // Rest pose and helpers.
   const restPose = () => new Map(parts.map((p) => [p.id, { ...p.base, show: p.base.show >= 0.5 }]));
@@ -459,6 +463,23 @@ function hopState(s, duty, m, D) {
   }
   const k = (s - duty) / (1 - duty);
   return { x: -a + 2 * a * k, y: -H * 4 * k * (1 - k), sy: 1 + st * Math.abs(1 - 2 * k), rot: lean * Math.cos(Math.PI * k) };
+}
+
+/** Run a plug-in motion model and normalize what it returns. */
+function pluginMotion(generate, parts, rig, m, { frames, fps, loop, M }) {
+  const out = generate({ parts, rig, params: m, samples: M, loop, frames, fps }) ?? {};
+  const ids = new Set(parts.map((p) => p.id));
+  const tracks = {};
+  for (const [id, props] of Object.entries(out.tracks ?? {})) {
+    if (!ids.has(id)) throw new Error(`motion "${m.model}" returned a track for unknown part "${id}"`);
+    tracks[id] = {};
+    for (const [k, v] of Object.entries(props)) {
+      if (!['x', 'y', 'rot', 'sx', 'sy'].includes(k)) throw new Error(`motion "${m.model}": track property "${k}" (use x, y, rot, sx, sy)`);
+      if (Array.isArray(v) && v.length !== M) throw new Error(`motion "${m.model}": ${id}.${k} has ${v.length} values, needs ${M} (one per sample)`);
+      tracks[id][k] = Array.isArray(v) ? v.map(round) : round(v);
+    }
+  }
+  return { tracks, speed: round(out.speed ?? 0), speedY: round(out.speedY ?? 0), wall: out.wall, events: out.events ?? [], notes: out.notes ?? [] };
 }
 
 /** Phase boundaries of a jump: crouch until c0 (launch), airborne until c1 (land), then recover. */

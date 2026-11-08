@@ -5,6 +5,19 @@
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 export const SHAPE_TYPES = ['rect', 'ellipse', 'circle', 'capsule', 'polygon'];
+/** Numeric keys each shape type requires (plug-ins add theirs). */
+export const SHAPE_REQUIRED = {
+  rect: ['x', 'y', 'w', 'h'],
+  ellipse: ['cx', 'cy'],
+  circle: ['cx', 'cy', 'r'],
+  capsule: ['x1', 'y1', 'x2', 'y2'],
+  polygon: [],
+};
+/** Keys a shape may have (plug-ins add theirs). */
+export const SHAPE_KEYS = ['type', 'material', 'op', 'minDetail', 'maxDetail', 'profile', 'shade', 'x', 'y', 'w', 'h', 'r', 'rot',
+  'cx', 'cy', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'r2', 'points'];
+/** Plug-in shapes: type → compile(shape) → {sdf, R, bbox}. */
+export const customShapes = new Map();
 
 function rotateInto(px, py, cx, cy, deg) {
   const dx = px - cx, dy = py - cy;
@@ -96,8 +109,11 @@ export function compileShape(s) {
       }
       break;
     }
-    default:
-      throw new Error(`unknown shape type ${s.type}`);
+    default: {
+      const custom = customShapes.get(s.type);
+      if (!custom) throw new Error(`unknown shape type ${s.type}`);
+      ({ sdf, R, bbox } = custom(s));
+    }
   }
   return { sdf, R: Math.max(R, 0.01), bbox };
 }

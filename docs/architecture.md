@@ -700,6 +700,15 @@ wave phases, unvalidated style/material/track values, CLI argument handling, `re
 
 ## 9. How to extend
 
+**Without touching the engine: plug-ins.** `src/core/plugins.js` exposes `registerShape`, `registerTexture` and
+`registerMotion`. Registered names join `SHAPE_TYPES` / `SHAPE_REQUIRED` / `SHAPE_KEYS`, `TEXTURES`, and `MOTION_MODELS`
+(and `LEGGED_MODELS`), so validation, did-you-mean warnings and `pixel brief` treat them like built-ins; `compileShape`,
+`sampleTexture` and `generateMotion` fall back to the registered functions (`customShapes`, `customTextures`,
+`customMotions`). Plug-in motions return per-sample tracks, normalized and checked by `pluginMotion` in `motion.js`. The CLI
+loads plug-in modules with `--plugin` (`usePlugin`); `examples/plugins/extras.mjs` is a working example, tested in
+`test/plugins.test.mjs` (in its own process, since registries are global). Bundles stay data-only, so the runtime is
+unaffected. The recipes below are for changing the engine itself.
+
 In every recipe, run `npm test` and then render something with `node bin/pixel.mjs preview <spec>`
 to look at the result. Rendering changes are visual; the tests only catch structure and regressions.
 

@@ -29,6 +29,7 @@ node bin/pixel.mjs <command> [args]
 - Flags can be written `--name value`, `--name=value`, or `--name` alone (which means `true`). A value is taken from the next argument only if that argument does not start with `--`.
 - `--flip` is a pure switch and never takes the next argument, so `render --flip examples/fox.json` works. `--flip=false` turns it off.
 - `--skin <name>` makes `preview`, `ascii`, `render`, `export` and `where` use one of the spec's `skins` ([SPEC.md](SPEC.md)) instead of the default look. A name the spec does not define prints `error   unknown skin "<name>" (skins: <names or none>)` and exits with 1. `bundle` ignores `--skin` because it always bakes every skin; `validate` and `resolve` ignore it too.
+- `--plugin ./a.mjs[,./b.mjs]` loads plug-in modules before the command runs: their shapes, textures and motion models become valid in specs, and `brief` lists them for agents. A plug-in default-exports `setup({ registerShape, registerTexture, registerMotion })`; see [api.md](api.md#plug-ins) and `examples/plugins/extras.mjs`. A plug-in that fails to load prints `error: --plugin <path>: <message>` and exits with 1.
 - Unknown flags are ignored.
 
 ## Exit codes and output streams

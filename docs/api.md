@@ -52,6 +52,7 @@ Units and conventions used throughout:
 - [Motion](#motion): `generateMotion`, `MOTION_MODELS`, `LEGGED_MODELS`
 - [Bundles](#bundles): `buildBundle`, `bakePoints`, `BUNDLE_FORMAT`
 - Transition clips: [`buildMixes`](#buildmixes)
+- [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`
 - [Game-engine export](#game-engine-export): `exportSheet`
 - [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `TEXTURES`, `SHAPE_TYPES`
 - [Node: PNG encoding](#node-png-encoding): `encodePNG`
@@ -1715,3 +1716,33 @@ part of the public API and may change or disappear without notice.
 | `image.js` | `checker` |
 | `motion.js` | `OVERSAMPLE` (4 samples per frame in generated tracks) |
 | `spec.js` | `skinSpec(spec, patch)`: the plain spec a skin produces (the spec without `skins` and `states`, merged with the patch by `mergeVariant`); `compile` and `validate` use it |
+
+## Plug-ins
+
+Add shapes, textures and motion models without changing the engine. Registrations are process-wide and must happen
+before specs that use them are validated. Bundles stay pure data, so pages need nothing extra.
+
+```ts
+registerShape(type: string, { required?: string[], keys?: string[], compile(shape): { sdf(x, y): number, R: number, bbox: [x0, y0, x1, y1] }, describe?: string }): void
+registerTexture(name: string, fn: (x: number, y: number, scale: number) => number, { describe?: string }?): void
+registerMotion(name: string, { generate(ctx): { tracks, speed?, speedY?, wall?, events?: { u, name, data? }[] }, legged?: boolean, describe?: string }): void
+registeredPlugins(): { kind: 'shape' | 'texture' | 'motion', name, describe, ... }[]
+usePlugin(module: { default: (api) => void } | ((api) => void)): Promise<void>
+```
+
+- **Shapes.** `required` keys must be numbers; `keys` are other allowed keys (unknown ones get did-you-mean warnings).
+  `compile` returns a signed distance in part-local units (negative inside), the thickness `R` used for lighting, and a
+  bounding box that contains the shape.
+- **Textures** return a brightness offset of about −1..1 (clamped to ±1.5) for integer part-local pixel coordinates;
+  `scale` is the material's `textureScale` in pixels per feature.
+- **Motions** get `{ parts, rig, params, samples, loop, frames, fps }` and return tracks keyed by part id with `x`, `y`,
+  `rot` (added to the rest pose) and `sx`, `sy` (multiplied), each a number or an array of exactly `samples` values
+  (`frames × 4` for loops, `(frames − 1) × 4 + 1` otherwise). Events use normalized time `u` (0..1) and become frame
+  numbers like the built-in models' events. `legged: true` requires `rig.legs`.
+- Names start with a letter and use letters, digits, `_` or `-`; reusing a name throws.
+
+```js
+import { usePlugin, resolveSpec, compile } from 'pixel-studio';
+await usePlugin(await import('./examples/plugins/extras.mjs'));   // star shape, feathers texture, float motion
+```
+
