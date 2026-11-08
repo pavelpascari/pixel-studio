@@ -156,7 +156,10 @@ const persist = () => history.replaceState(null, '', '#' + encodeURIComponent(JS
 const cache = new Map();
 const loadJSON = async (url) => { if (!cache.has(url)) cache.set(url, fetch(url, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); })); return cache.get(url); };
 const FEATURES = (await loadJSON('goose-features.json')).features;
-const featureParts = new Set(FEATURES.flatMap((f) => f.parts.filter((p) => !p.addShapes).map((p) => p.id)));
+const featureParts = new Set(FEATURES.flatMap((f) => [
+  ...f.parts.filter((p) => !p.addShapes).map((p) => p.id),
+  ...Object.entries(f.views ?? {}).flatMap(([v, vs]) => vs.parts.filter((p) => !p.addShapes).map((p) => `${v}.${p.id}`)),
+]));
 
 let resolved, compiled, view, frames = new Map(), baseMap = {};
 
@@ -176,6 +179,8 @@ function variantSpec({ forExport = false } = {}) {
   // Features are written for the plain goose; a variant that renames a material (root: plumage → hoodie) gets its own.
   const map = (parts) => JSON.parse(JSON.stringify(parts), (k, v) => (k === 'material' && baseMap[v] ? baseMap[v] : v));
   const spec = { extends: `${S.base}.json`, materials: Object.assign({}, ...on.map((f) => f.materials ?? {})), parts: map(on.flatMap((f) => f.parts)) };
+  // The same features seen from the front and from behind.
+  for (const f of on) for (const [v, vs] of Object.entries(f.views ?? {})) ((spec.views ??= {})[v] ??= { parts: [] }).parts.push(...map(vs.parts));
   if (forExport && resolved) {
     // One patch per part: added shapes merged; a part with hidden shapes is written out whole, without them;
     // a hidden part keeps its bone (its children still move) but has no shapes.
@@ -199,7 +204,15 @@ function variantSpec({ forExport = false } = {}) {
     // Parts of another view ("front.body") are patched inside that view.
     for (const t of touched.values()) {
       const m = /^([a-z][\w-]*)\.(.+)$/.exec(t.id);
-      if (m && viewNames().includes(m[1])) (((spec.views ??= {})[m[1]] ??= { parts: [] }).parts).push({ ...t, id: m[2] });
+      if (m && viewNames().includes(m[1])) {
+        // The full shape list written for a view part already holds what features added to it.
+        const vp = ((spec.views ??= {})[m[1]] ??= { parts: [] }).parts;
+        // A feature's own part that is hidden is simply left out.
+        const own = vp.some((q) => q.id === m[2] && !q.addShapes);
+        vp.splice(0, vp.length, ...vp.filter((q) => q.id !== m[2] || (!q.addShapes && !t.remove)));
+        if (own && !t.remove) { const q = vp.find((x) => x.id === m[2]); q.shapes = t.shapes; }
+        else if (!own) vp.push({ ...t, id: m[2] });
+      }
       else spec.parts.push(t);
     }
   }

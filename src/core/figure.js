@@ -81,7 +81,9 @@ async function addViews(out, views, loadFigure, warn) {
   const errors = [];
   const err = (path, message) => errors.push({ path, message });
   if (!isObj(views)) throw figureError([{ path: '$.views', message: 'views must be an object like {"front": {"figure": "goose-front", "parts": [...]}}' }]);
+  // Top-level parts; those hidden by default (props like a server rack) stay hidden in turns too.
   const sideRoots = out.parts.filter((p) => isObj(p) && !p.parent).map((p) => p.id);
+  const sideShown = out.parts.filter((p) => isObj(p) && !p.parent && p.show !== 0).map((p) => p.id);
   const byId = Object.fromEntries(out.parts.filter(isObj).map((p) => [p.id, p]));
   const built = [];
   for (const [view, v] of Object.entries(views)) {
@@ -108,31 +110,38 @@ async function addViews(out, views, loadFigure, warn) {
     const pre = (id) => `${view}.${id}`;
     const parts = sub.parts.map((p) => ({ ...p, id: pre(p.id), ...(p.parent ? { parent: pre(p.parent) } : {}) }));
     const roots = parts.filter((p) => !p.parent).map((p) => p.id);
+    const shown = parts.filter((p) => !p.parent && p.show !== 0).map((p) => p.id);
     for (const p of parts) if (!p.parent) p.show = 0;
     out.parts.push(...parts);
     for (const [n, pt] of Object.entries(sub.points ?? {})) (out.points ??= {})[`${n}@${view}`] = { part: pre(pt.part), at: pt.at };
     const look = v.look == null ? null : lookPart(v.look, `${path}.look`, view, parts, byId, err);
     if (look) out.parts.push(...look.parts);
-    built.push({ view, roots, prefix: pre, sub, look });
+    built.push({ view, roots, shown, prefix: pre, sub, look });
   }
   if (errors.length) throw figureError(errors);
 
   const allRoots = [...sideRoots, ...built.flatMap((b) => b.roots), ...built.filter((b) => b.look).map((b) => b.look.root)];
   const showOnly = (visible) => Object.fromEntries(allRoots.map((id) => [id, { show: visible.includes(id) ? 1 : 0 }]));
+  // In a view's own animation its hidden props keep whatever the animation says (a track can show them).
+  const viewTracks = (b, tracks) => {
+    const t = { ...tracks, ...showOnly(b.shown) };
+    for (const id of b.roots) if (!b.shown.includes(id)) t[id] = tracks[id] ?? { show: 0 };
+    return t;
+  };
   const idleName = out.animations.idle ? 'idle' : Object.keys(out.animations)[0];
   for (const b of built) {
     for (const [name, a] of Object.entries(b.sub.animations)) {
       if (!isObj(a)) continue;
       const tracks = {};
       for (const [id, t] of Object.entries(a.tracks ?? {})) tracks[b.prefix(id)] = t;
-      out.animations[`${name}@${b.view}`] = { ...a, tracks: { ...tracks, ...showOnly(b.roots) } };
+      out.animations[`${name}@${b.view}`] = { ...a, tracks: viewTracks(b, tracks) };
     }
     // The turn: side (or the three-quarter look) → squeezed → the view squeezed → the view.
-    const from = b.look ? [...sideRoots, b.look.root] : sideRoots;
+    const from = b.look ? [...sideShown, b.look.root] : sideShown;
     const turn = { frames: 4, fps: TURN_FPS, loop: false, tracks: {} };
     for (const id of allRoots) turn.tracks[id] = { show: [0, 0, 0, 0] };
     for (const id of from) turn.tracks[id] = { show: [1, 1, 0, 0], sx: [1, 0.86, 1, 1] };
-    for (const id of b.roots) turn.tracks[id] = { show: [0, 0, 1, 1], sx: [1, 1, 0.86, 1] };
+    for (const id of b.shown) turn.tracks[id] = { show: [0, 0, 1, 1], sx: [1, 1, 0.86, 1] };
     if (b.look) turn.tracks[b.look.replaces] = { show: 0 };
     const rev = (t) => Object.fromEntries(Object.entries(t).map(([id, props]) => [id, Object.fromEntries(Object.entries(props).map(([k, v]) => [k, Array.isArray(v) ? [...v].reverse() : v]))]));
     out.animations[`turn@${b.view}`] = turn;

@@ -8,6 +8,36 @@
     "glint": {"color": "#ffffff", "flat": true, "outline": false}
   },
   "materialMap": {"feather": "fluff", "plumage": "fluff"},
+  "views": {
+    "front": {"parts": [
+      {"id": "body", "pivot": [50, 92], "sx": 0.82, "sy": 0.8},
+      {"id": "neck", "shapes": [{"type": "capsule", "x1": 50, "y1": 60, "x2": 50, "y2": 51, "r": 7.5, "r2": 7, "material": "fluff"}]},
+      {"id": "neckUp", "pivot": [50, 51], "shapes": [{"type": "capsule", "x1": 50, "y1": 51, "x2": 50, "y2": 44, "r": 7, "r2": 6.5, "material": "fluff"}]},
+      {"id": "head", "x": 0, "y": 13, "sx": 1.3, "sy": 1.3, "shapes": [
+        {"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.8, "ry": 7, "material": "fluff"},
+        {"type": "polygon", "points": [[47.4, 25.6], [52.6, 25.6], [51.8, 29.4], [50, 30.2], [48.2, 29.4]], "r": 1, "material": "beak"}
+      ]},
+      {"id": "jaw", "shapes": [{"type": "polygon", "points": [[48.2, 29.6], [51.8, 29.6], [51, 31.2], [49, 31.2]], "r": 0.8, "material": "beak", "shade": -0.2}]},
+      {"id": "eye", "addShapes": [
+        {"type": "circle", "cx": 44.8, "cy": 22.4, "r": 0.5, "material": "glint", "minDetail": 3},
+        {"type": "circle", "cx": 54.4, "cy": 22.4, "r": 0.5, "material": "glint", "minDetail": 3}
+      ]},
+      {"id": "cap", "parent": "head", "pivot": [50, 18], "z": 8, "shapes": [
+        {"type": "polygon", "points": [[43, 20], [44, 15.5], [50, 13], [56, 15.5], [57, 20]], "r": 1.5, "material": "cap"},
+        {"type": "ellipse", "cx": 50, "cy": 20, "rx": 7, "ry": 1.5, "material": "cap", "shade": -0.25}
+      ]}
+    ]},
+    "back": {"parts": [
+      {"id": "body", "pivot": [50, 92], "sx": 0.82, "sy": 0.8},
+      {"id": "neck", "shapes": [{"type": "capsule", "x1": 50, "y1": 60, "x2": 50, "y2": 51, "r": 7.5, "r2": 7, "material": "fluff"}]},
+      {"id": "neckUp", "pivot": [50, 51], "shapes": [{"type": "capsule", "x1": 50, "y1": 51, "x2": 50, "y2": 44, "r": 7, "r2": 6.5, "material": "fluff"}]},
+      {"id": "head", "x": 0, "y": 13, "sx": 1.3, "sy": 1.3, "shapes": [{"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.8, "ry": 7, "material": "fluff"}]},
+      {"id": "cap", "parent": "head", "pivot": [50, 18], "z": 2.6, "shapes": [
+        {"type": "polygon", "points": [[43, 21], [44, 15.5], [50, 13], [56, 15.5], [57, 21]], "r": 1.5, "material": "cap"},
+        {"type": "ellipse", "cx": 50, "cy": 20.5, "rx": 2.2, "ry": 1.2, "material": "fluff", "minDetail": 2}
+      ]}
+    ]}
+  },
   "parts": [
     {"id": "body", "pivot": [44, 92], "sx": 0.82, "sy": 0.8},
     {"id": "wing", "shade": -0.12},

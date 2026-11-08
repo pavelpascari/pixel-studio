@@ -13,6 +13,39 @@
     "band": {"color": "#2b2b33"},
     "bandana": {"color": "#d8443a", "texture": "spots", "textureStrength": 0.5}
   },
+  "views": {
+    "front": {"parts": [
+      {"id": "body", "addShapes": [{"type": "ellipse", "cx": 50, "cy": 74, "rx": 11, "ry": 5.5, "material": "belly"}]},
+      {"id": "neck", "addShapes": [
+        {"type": "capsule", "x1": 44, "y1": 57, "x2": 56, "y2": 57, "r": 3, "material": "bandana"},
+        {"type": "polygon", "points": [[45.5, 58], [54.5, 58], [50, 65.5]], "r": 1, "material": "bandana"}
+      ]},
+      {"id": "head", "addShapes": [
+        {"type": "ellipse", "cx": 45, "cy": 27.6, "rx": 1.8, "ry": 3, "rot": 15, "material": "strap"},
+        {"type": "ellipse", "cx": 55, "cy": 27.6, "rx": 1.8, "ry": 3, "rot": -15, "material": "strap"}
+      ]},
+      {"id": "phones", "parent": "head", "pivot": [50, 22], "z": 7, "shapes": [
+        {"type": "capsule", "x1": 43.4, "y1": 23, "x2": 45.2, "y2": 17.4, "r": 1.2, "material": "band"},
+        {"type": "capsule", "x1": 45.2, "y1": 17.4, "x2": 54.8, "y2": 17.4, "r": 1.2, "material": "band"},
+        {"type": "capsule", "x1": 54.8, "y1": 17.4, "x2": 56.6, "y2": 23, "r": 1.2, "material": "band"},
+        {"type": "ellipse", "cx": 43.2, "cy": 24.5, "rx": 2.2, "ry": 3.6, "material": "phones"},
+        {"type": "ellipse", "cx": 56.8, "cy": 24.5, "rx": 2.2, "ry": 3.6, "material": "phones"}
+      ]}
+    ]},
+    "back": {"parts": [
+      {"id": "bandana", "parent": "neck", "pivot": [50, 56], "z": 5.6, "shapes": [
+        {"type": "capsule", "x1": 44.5, "y1": 56, "x2": 55.5, "y2": 56, "r": 2.6, "material": "bandana"},
+        {"type": "circle", "cx": 50, "cy": 56.5, "r": 2.2, "material": "bandana", "shade": -0.2}
+      ]},
+      {"id": "phones", "parent": "head", "pivot": [50, 22], "z": 2.6, "shapes": [
+        {"type": "capsule", "x1": 43.4, "y1": 23, "x2": 45.2, "y2": 17.4, "r": 1.2, "material": "band"},
+        {"type": "capsule", "x1": 45.2, "y1": 17.4, "x2": 54.8, "y2": 17.4, "r": 1.2, "material": "band"},
+        {"type": "capsule", "x1": 54.8, "y1": 17.4, "x2": 56.6, "y2": 23, "r": 1.2, "material": "band"},
+        {"type": "ellipse", "cx": 43.2, "cy": 24.5, "rx": 2.2, "ry": 3.6, "material": "phones"},
+        {"type": "ellipse", "cx": 56.8, "cy": 24.5, "rx": 2.2, "ry": 3.6, "material": "phones"}
+      ]}
+    ]}
+  },
   "parts": [
     {"id": "body", "addShapes": [
       {"type": "ellipse", "cx": 48, "cy": 73, "rx": 15, "ry": 6, "rot": -8, "material": "belly"}

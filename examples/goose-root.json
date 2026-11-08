@@ -50,6 +50,35 @@
     ],
     "interactions": [{"on": "click", "fire": "honk"}, {"on": "burst", "set": {"fury": "$rate"}}, {"on": "calm", "set": {"fury": 1}}, {"on": "enter", "set": {"hovered": true}}, {"on": "leave", "set": {"hovered": false}}]
   },
+  "views": {
+    "front": {"parts": [
+      {"id": "eye", "remove": true},
+      {"id": "body", "addShapes": [
+        {"type": "ellipse", "cx": 50, "cy": 57.5, "rx": 10.5, "ry": 5, "material": "hoodie", "shade": -0.2}
+      ]},
+      {"id": "neck", "addShapes": [
+        {"type": "capsule", "x1": 46.8, "y1": 57.5, "x2": 46.4, "y2": 67, "r": 0.6, "material": "string", "minDetail": 3},
+        {"type": "capsule", "x1": 53.2, "y1": 57.5, "x2": 53.6, "y2": 67, "r": 0.6, "material": "string", "minDetail": 3}
+      ]},
+      {"id": "glasses", "parent": "head", "pivot": [50, 22], "z": 7, "shapes": [
+        {"type": "rect", "x": 43, "y": 21.2, "w": 14, "h": 1.4, "material": "shades", "minDetail": 2},
+        {"type": "rect", "x": 42.6, "y": 20, "w": 6.2, "h": 4.4, "r": 1.2, "material": "shades", "minDetail": 2},
+        {"type": "rect", "x": 51.2, "y": 20, "w": 6.2, "h": 4.4, "r": 1.2, "material": "shades", "minDetail": 2},
+        {"type": "rect", "x": 43.6, "y": 21, "w": 4.2, "h": 1.3, "material": "lens", "minDetail": 2},
+        {"type": "rect", "x": 52.2, "y": 21, "w": 4.2, "h": 1.3, "material": "lens", "minDetail": 2},
+        {"type": "rect", "x": 42.2, "y": 19.4, "w": 15.6, "h": 5.6, "material": "lens", "maxDetail": 1}
+      ]}
+    ]},
+    "back": {"parts": [
+      {"id": "hood", "parent": "body", "pivot": [50, 57], "z": 5.5, "shapes": [
+        {"type": "ellipse", "cx": 50, "cy": 57.5, "rx": 9.5, "ry": 6, "material": "hoodie", "shade": -0.2},
+        {"type": "ellipse", "cx": 50, "cy": 58.5, "rx": 5.5, "ry": 3, "material": "hoodie", "shade": -0.4, "minDetail": 2}
+      ]},
+      {"id": "strap", "parent": "head", "pivot": [50, 22], "z": 7, "shapes": [
+        {"type": "rect", "x": 43.4, "y": 21.2, "w": 13.2, "h": 1.4, "material": "shades", "minDetail": 2}
+      ]}
+    ]}
+  },
   "parts": [
     {"id": "eye", "remove": true},
     {"id": "body", "addShapes": [

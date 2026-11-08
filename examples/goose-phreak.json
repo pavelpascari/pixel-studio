@@ -10,6 +10,32 @@
     "label": {"color": "#f2f2f2", "flat": true, "outline": false},
     "shutter": {"color": "#b8bcc8", "flat": true}
   },
+  "views": {
+    "front": {"parts": [
+      {"id": "neckUp", "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "mask"}]},
+      {"id": "head", "shapes": [
+        {"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "mask"},
+        {"type": "polygon", "points": [[46.8, 25.2], [53.2, 25.2], [52.3, 30.8], [50, 31.8], [47.7, 30.8]], "r": 1, "material": "beak"}
+      ]},
+      {"id": "slit", "bone": "head", "pivot": [50, 22], "z": 6.9, "shapes": [
+        {"type": "rect", "x": 43.2, "y": 20.2, "w": 13.6, "h": 4.4, "r": 1, "material": "eyewhite"}
+      ]},
+      {"id": "eye", "shapes": [
+        {"type": "rect", "x": 45, "y": 21.4, "w": 2, "h": 2.2, "material": "eye"},
+        {"type": "rect", "x": 53, "y": 21.4, "w": 2, "h": 2.2, "material": "eye"}
+      ]},
+      {"id": "pompom", "parent": "head", "pivot": [50, 16], "z": 5, "shapes": [
+        {"type": "circle", "cx": 50, "cy": 16.2, "r": 3.2, "material": "mask", "shade": 0.15}
+      ]}
+    ]},
+    "back": {"parts": [
+      {"id": "neckUp", "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "mask"}]},
+      {"id": "head", "shapes": [{"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "mask"}]},
+      {"id": "pompom", "parent": "head", "pivot": [50, 16], "z": 2.6, "shapes": [
+        {"type": "circle", "cx": 50, "cy": 16.2, "r": 3.2, "material": "mask", "shade": 0.15}
+      ]}
+    ]}
+  },
   "parts": [
     {"id": "wing", "shade": -0.3},
     {"id": "neckUp", "shapes": [

@@ -1,110 +1,22 @@
 {
-  "note": "Optional features for the goose workbench (studio/goose.html). Each is a variant patch applied on top of the chosen goose: materials to add, parts to patch (addShapes on a bone's part) or new parts riding a bone. Coordinates are the goose figure's 100-unit space (facing right; beak tip at 84,26).",
+  "note": "Optional features for the goose workbench (studio/goose.html). Each is a variant patch applied on top of the chosen goose: materials to add, parts to patch (addShapes on a bone's part) or new parts riding a bone. Coordinates are the goose figure's 100-unit space (facing right; beak tip at 84,26). \"views\" holds the same feature for the front and back views (goose-front figure, beak toward the viewer).",
   "features": [
-    {"id": "beakNail", "group": "Head", "label": "Beak nail", "note": "the hard pale tip of the upper bill every goose has",
-     "materials": {"nail": {"color": "#f2dfc0", "shine": 0.3}},
-     "parts": [{"id": "head", "addShapes": [{"type": "polygon", "points": [[80.5, 24.3], [84, 26], [81, 27.2]], "r": 0.6, "material": "nail"}]}]},
-    {"id": "nostril", "group": "Head", "label": "Nostril", "note": "an oval slit on the upper bill, near its base",
-     "materials": {"nostril": {"color": "#6b2c10", "flat": true, "outline": false}},
-     "parts": [{"id": "head", "addShapes": [{"type": "ellipse", "cx": 74.2, "cy": 23.7, "rx": 1.3, "ry": 0.55, "rot": 16, "material": "nostril"}]}]},
-    {"id": "billLine", "group": "Head", "label": "Bill line", "note": "the gape: where upper and lower bill meet, curving up at the corner",
-     "materials": {"gape": {"color": "#a84a14", "flat": true, "outline": false}},
-     "parts": [{"id": "head", "addShapes": [
-       {"type": "capsule", "x1": 70, "y1": 27.4, "x2": 82.5, "y2": 27.6, "r": 0.35, "material": "gape"},
-       {"type": "capsule", "x1": 69.2, "y1": 26.4, "x2": 70.2, "y2": 27.5, "r": 0.35, "material": "gape"}
-     ]}]},
-    {"id": "eyeRing", "group": "Head", "label": "Eye ring", "note": "a thin bare ring around the eye (orange in greylags)",
-     "materials": {"eyeRing": {"color": "#f08a3c", "flat": true}},
-     "parts": [{"id": "eyeRing", "bone": "head", "pivot": [67, 23], "z": 6.9, "shapes": [{"type": "circle", "cx": 66.9, "cy": 23.1, "r": 2.1, "material": "eyeRing"}]}]},
-    {"id": "eyeGlint", "group": "Head", "label": "Eye glint", "note": "a catchlight; shows at large sizes only",
-     "materials": {"glint": {"color": "#ffffff", "flat": true, "outline": false}},
-     "parts": [{"id": "eye", "addShapes": [{"type": "circle", "cx": 67.4, "cy": 22.5, "r": 0.6, "material": "glint", "minDetail": 3}]}]},
-    {"id": "knob", "group": "Head", "label": "Bill knob (Chinese goose)", "note": "a breed feature: the bump at the base of the bill",
-     "materials": {"knob": {"color": "#d0641e", "shine": 0.2}},
-     "parts": [{"id": "head", "addShapes": [{"type": "circle", "cx": 69.6, "cy": 20.2, "r": 2.4, "material": "knob"}]}]},
-
-    {"id": "neckFurrows", "group": "Neck", "label": "Neck furrows", "note": "greylag-type necks have feathers in dark grooves down the back and sides",
-     "materials": {"furrow": {"color": "#a9a294", "flat": true, "outline": false}},
-     "parts": [
-       {"id": "neck", "addShapes": [
-         {"type": "capsule", "x1": 53.6, "y1": 57, "x2": 55.6, "y2": 55.4, "r": 0.45, "material": "furrow"},
-         {"type": "capsule", "x1": 53.8, "y1": 52.5, "x2": 56, "y2": 51, "r": 0.45, "material": "furrow"},
-         {"type": "capsule", "x1": 54.1, "y1": 48, "x2": 56.4, "y2": 46.6, "r": 0.45, "material": "furrow"}
-       ]},
-       {"id": "neckUp", "addShapes": [
-         {"type": "capsule", "x1": 55.7, "y1": 41, "x2": 57.8, "y2": 39.7, "r": 0.4, "material": "furrow"},
-         {"type": "capsule", "x1": 56.3, "y1": 36.5, "x2": 58.3, "y2": 35.3, "r": 0.4, "material": "furrow"}
-       ]}
-     ]},
-    {"id": "throat", "group": "Neck", "label": "Pale throat", "note": "a lighter front of the neck, catching the light",
-     "materials": {"throat": {"color": "#f7f3ea", "texture": "fur", "textureStrength": 0.15}},
-     "parts": [
-       {"id": "neck", "addShapes": [{"type": "capsule", "x1": 61.5, "y1": 58, "x2": 63.2, "y2": 44, "r": 2.6, "r2": 2.2, "material": "throat"}]},
-       {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 63.2, "y1": 43, "x2": 64.8, "y2": 31.5, "r": 2.2, "r2": 1.8, "material": "throat"}]}
-     ]},
-
-    {"id": "belly", "group": "Body", "label": "Pale belly", "note": "lighter underparts below the wing line",
-     "materials": {"belly": {"color": "#efe9dd", "texture": "fur", "textureStrength": 0.2}},
-     "parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 45, "cy": 72.5, "rx": 16, "ry": 6, "rot": -8, "material": "belly"}]}]},
-    {"id": "vent", "group": "Body", "label": "White stern", "note": "the white under-tail coverts of greylags and most farm geese",
-     "materials": {"stern": {"color": "#fbfaf6", "texture": "fur", "textureStrength": 0.1}},
-     "parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 25.5, "cy": 67.5, "rx": 6, "ry": 4, "rot": 20, "material": "stern"}]}]},
-    {"id": "flankBars", "group": "Body", "label": "Flank barring", "note": "pale-edged flank feathers in rows along the side",
-     "materials": {"flankBar": {"color": "#aaa395", "flat": true, "outline": false}},
-     "parts": [{"id": "body", "addShapes": [
-       {"type": "capsule", "x1": 50, "y1": 72.5, "x2": 56, "y2": 70.5, "r": 0.45, "material": "flankBar"},
-       {"type": "capsule", "x1": 40, "y1": 74.5, "x2": 47, "y2": 73.2, "r": 0.45, "material": "flankBar"},
-       {"type": "capsule", "x1": 31, "y1": 73.5, "x2": 37, "y2": 74.6, "r": 0.45, "material": "flankBar"}
-     ]}]},
-
-    {"id": "farWing", "group": "Wings", "label": "Far wing", "note": "the other wing, a sliver above the back",
-     "parts": [{"id": "farWing", "bone": "body", "pivot": [54, 58], "z": 2.5, "shapes": [
-       {"type": "polygon", "points": [[55, 56.5], [42, 53.5], [24, 57.5], [30, 60], [50, 59.5]], "r": 2, "material": "plumage", "shade": -0.35}
-     ]}]},
-    {"id": "coverts", "group": "Wings", "label": "Wing coverts", "note": "rows of pale-edged feathers across the folded wing",
-     "materials": {"covertDark": {"color": "#9c9588", "flat": true, "outline": false}, "covertEdge": {"color": "#e8e2d5", "flat": true, "outline": false}},
-     "parts": [{"id": "wing", "addShapes": [
-       {"type": "capsule", "x1": 53, "y1": 60.5, "x2": 34, "y2": 62, "r": 0.5, "material": "covertDark"},
-       {"type": "capsule", "x1": 53, "y1": 61.5, "x2": 34, "y2": 63, "r": 0.4, "material": "covertEdge"},
-       {"type": "capsule", "x1": 51, "y1": 65, "x2": 31, "y2": 66.5, "r": 0.5, "material": "covertDark"},
-       {"type": "capsule", "x1": 51, "y1": 66, "x2": 31, "y2": 67.5, "r": 0.4, "material": "covertEdge"}
-     ]}]},
-    {"id": "primaries", "group": "Wings", "label": "Dark flight feathers", "note": "long darker primaries crossing over the tail",
-     "materials": {"primary": {"color": "#77736c", "texture": "fur", "textureStrength": 0.2}},
-     "parts": [{"id": "wing", "addShapes": [
-       {"type": "polygon", "points": [[31, 61.5], [15, 59], [17.5, 61], [29, 64]], "r": 1, "material": "primary"},
-       {"type": "polygon", "points": [[31, 64.5], [17, 63], [19, 65], [29, 67.5]], "r": 1, "material": "primary", "shade": -0.15}
-     ]}]},
-
-    {"id": "tailLayers", "group": "Tail", "label": "Layered tail", "note": "a darker band under the pale tail tip",
-     "materials": {"tailDark": {"color": "#a39c8f", "texture": "fur", "textureStrength": 0.3}},
-     "parts": [{"id": "tail", "addShapes": [
-       {"type": "polygon", "points": [[27, 63], [16, 55], [16.5, 60], [26.5, 66]], "r": 1, "material": "tailDark"}
-     ]}]},
-
-    {"id": "webbing", "group": "Legs & feet", "label": "Webbed toes", "note": "three toes with webs between them: darker toe lines and claws",
-     "materials": {"toe": {"color": "#c55a1c", "flat": true, "outline": false}, "claw": {"color": "#3d2a22", "flat": true, "outline": false}},
-     "parts": [
-       {"id": "footNear", "addShapes": [
-         {"type": "capsule", "x1": 39, "y1": 90, "x2": 47.5, "y2": 90.6, "r": 0.3, "material": "toe"},
-         {"type": "circle", "cx": 48, "cy": 91, "r": 0.6, "material": "claw"}
-       ]},
-       {"id": "footFar", "addShapes": [
-         {"type": "capsule", "x1": 47, "y1": 90, "x2": 55.5, "y2": 90.6, "r": 0.3, "material": "toe"},
-         {"type": "circle", "cx": 56, "cy": 91, "r": 0.6, "material": "claw"}
-       ]}
-     ]},
-    {"id": "legScales", "group": "Legs & feet", "label": "Scaly shins", "note": "fine darker bands down the bare shin",
-     "materials": {"scale": {"color": "#cf6522", "flat": true, "outline": false}},
-     "parts": [
-       {"id": "shinNear", "addShapes": [
-         {"type": "capsule", "x1": 36.4, "y1": 82.5, "x2": 38.4, "y2": 82, "r": 0.25, "material": "scale"},
-         {"type": "capsule", "x1": 37, "y1": 85.5, "x2": 39, "y2": 85, "r": 0.25, "material": "scale"}
-       ]},
-       {"id": "shinFar", "addShapes": [
-         {"type": "capsule", "x1": 44.4, "y1": 82.5, "x2": 46.4, "y2": 82, "r": 0.25, "material": "scale"},
-         {"type": "capsule", "x1": 45, "y1": 85.5, "x2": 47, "y2": 85, "r": 0.25, "material": "scale"}
-       ]}
-     ]}
+    {"id": "beakNail", "group": "Head", "label": "Beak nail", "note": "the hard pale tip of the upper bill every goose has", "materials": {"nail": {"color": "#f2dfc0", "shine": 0.3}}, "parts": [{"id": "head", "addShapes": [{"type": "polygon", "points": [[80.5, 24.3], [84, 26], [81, 27.2]], "r": 0.6, "material": "nail"}]}], "views": {"front": {"parts": [{"id": "head", "addShapes": [{"type": "ellipse", "cx": 50, "cy": 31.2, "rx": 1.3, "ry": 0.7, "material": "nail"}]}]}}},
+    {"id": "nostril", "group": "Head", "label": "Nostril", "note": "an oval slit on the upper bill, near its base", "materials": {"nostril": {"color": "#6b2c10", "flat": true, "outline": false}}, "parts": [{"id": "head", "addShapes": [{"type": "ellipse", "cx": 74.2, "cy": 23.7, "rx": 1.3, "ry": 0.55, "rot": 16, "material": "nostril"}]}], "views": {"front": {"parts": [{"id": "head", "addShapes": [{"type": "ellipse", "cx": 48.6, "cy": 26.8, "rx": 0.45, "ry": 0.7, "material": "nostril"}, {"type": "ellipse", "cx": 51.4, "cy": 26.8, "rx": 0.45, "ry": 0.7, "material": "nostril"}]}]}}},
+    {"id": "billLine", "group": "Head", "label": "Bill line", "note": "the gape: where upper and lower bill meet, curving up at the corner", "materials": {"gape": {"color": "#a84a14", "flat": true, "outline": false}}, "parts": [{"id": "head", "addShapes": [{"type": "capsule", "x1": 70, "y1": 27.4, "x2": 82.5, "y2": 27.6, "r": 0.35, "material": "gape"}, {"type": "capsule", "x1": 69.2, "y1": 26.4, "x2": 70.2, "y2": 27.5, "r": 0.35, "material": "gape"}]}], "views": {"front": {"parts": [{"id": "head", "addShapes": [{"type": "capsule", "x1": 47.4, "y1": 30.9, "x2": 52.6, "y2": 30.9, "r": 0.3, "material": "gape"}]}]}}},
+    {"id": "eyeRing", "group": "Head", "label": "Eye ring", "note": "a thin bare ring around the eye (orange in greylags)", "materials": {"eyeRing": {"color": "#f08a3c", "flat": true}}, "parts": [{"id": "eyeRing", "bone": "head", "pivot": [67, 23], "z": 6.9, "shapes": [{"type": "circle", "cx": 66.9, "cy": 23.1, "r": 2.1, "material": "eyeRing"}]}], "views": {"front": {"parts": [{"id": "eyeRing", "bone": "head", "pivot": [50, 23], "z": 6.9, "shapes": [{"type": "circle", "cx": 45.2, "cy": 22.9, "r": 1.9, "material": "eyeRing"}, {"type": "circle", "cx": 54.8, "cy": 22.9, "r": 1.9, "material": "eyeRing"}]}]}}},
+    {"id": "eyeGlint", "group": "Head", "label": "Eye glint", "note": "a catchlight; shows at large sizes only", "materials": {"glint": {"color": "#ffffff", "flat": true, "outline": false}}, "parts": [{"id": "eye", "addShapes": [{"type": "circle", "cx": 67.4, "cy": 22.5, "r": 0.6, "material": "glint", "minDetail": 3}]}], "views": {"front": {"parts": [{"id": "eye", "addShapes": [{"type": "circle", "cx": 45.7, "cy": 22.4, "r": 0.5, "material": "glint", "minDetail": 3}, {"type": "circle", "cx": 55.3, "cy": 22.4, "r": 0.5, "material": "glint", "minDetail": 3}]}]}}},
+    {"id": "knob", "group": "Head", "label": "Bill knob (Chinese goose)", "note": "a breed feature: the bump at the base of the bill", "materials": {"knob": {"color": "#d0641e", "shine": 0.2}}, "parts": [{"id": "head", "addShapes": [{"type": "circle", "cx": 69.6, "cy": 20.2, "r": 2.4, "material": "knob"}]}], "views": {"front": {"parts": [{"id": "head", "addShapes": [{"type": "circle", "cx": 50, "cy": 24.4, "r": 2.4, "material": "knob"}]}]}}},
+    {"id": "neckFurrows", "group": "Neck", "label": "Neck furrows", "note": "greylag-type necks have feathers in dark grooves down the back and sides", "materials": {"furrow": {"color": "#a9a294", "flat": true, "outline": false}}, "parts": [{"id": "neck", "addShapes": [{"type": "capsule", "x1": 53.6, "y1": 57, "x2": 55.6, "y2": 55.4, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 53.8, "y1": 52.5, "x2": 56, "y2": 51, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 54.1, "y1": 48, "x2": 56.4, "y2": 46.6, "r": 0.45, "material": "furrow"}]}, {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 55.7, "y1": 41, "x2": 57.8, "y2": 39.7, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 56.3, "y1": 36.5, "x2": 58.3, "y2": 35.3, "r": 0.4, "material": "furrow"}]}], "views": {"front": {"parts": [{"id": "neck", "addShapes": [{"type": "capsule", "x1": 44.6, "y1": 56, "x2": 46.2, "y2": 55, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 44.6, "y1": 51.5, "x2": 46.2, "y2": 50.5, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 44.6, "y1": 47, "x2": 46.2, "y2": 46, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 55.4, "y1": 56, "x2": 53.8, "y2": 55, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 55.4, "y1": 51.5, "x2": 53.8, "y2": 50.5, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 55.4, "y1": 47, "x2": 53.8, "y2": 46, "r": 0.4, "material": "furrow"}]}, {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 45.2, "y1": 41, "x2": 46.6, "y2": 40, "r": 0.35, "material": "furrow"}, {"type": "capsule", "x1": 45.2, "y1": 36.5, "x2": 46.6, "y2": 35.5, "r": 0.35, "material": "furrow"}, {"type": "capsule", "x1": 54.8, "y1": 41, "x2": 53.4, "y2": 40, "r": 0.35, "material": "furrow"}, {"type": "capsule", "x1": 54.8, "y1": 36.5, "x2": 53.4, "y2": 35.5, "r": 0.35, "material": "furrow"}]}]}, "back": {"parts": [{"id": "neck", "addShapes": [{"type": "capsule", "x1": 46, "y1": 56, "x2": 49.4, "y2": 54.8, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 54, "y1": 56, "x2": 50.6, "y2": 54.8, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 46, "y1": 51.5, "x2": 49.4, "y2": 50.3, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 54, "y1": 51.5, "x2": 50.6, "y2": 50.3, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 46, "y1": 47, "x2": 49.4, "y2": 45.8, "r": 0.45, "material": "furrow"}, {"type": "capsule", "x1": 54, "y1": 47, "x2": 50.6, "y2": 45.8, "r": 0.45, "material": "furrow"}]}, {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 46.4, "y1": 41, "x2": 49.4, "y2": 40, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 53.6, "y1": 41, "x2": 50.6, "y2": 40, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 46.4, "y1": 36.5, "x2": 49.4, "y2": 35.5, "r": 0.4, "material": "furrow"}, {"type": "capsule", "x1": 53.6, "y1": 36.5, "x2": 50.6, "y2": 35.5, "r": 0.4, "material": "furrow"}]}]}}},
+    {"id": "throat", "group": "Neck", "label": "Pale throat", "note": "a lighter front of the neck, catching the light", "materials": {"throat": {"color": "#f7f3ea", "texture": "fur", "textureStrength": 0.15}}, "parts": [{"id": "neck", "addShapes": [{"type": "capsule", "x1": 61.5, "y1": 58, "x2": 63.2, "y2": 44, "r": 2.6, "r2": 2.2, "material": "throat"}]}, {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 63.2, "y1": 43, "x2": 64.8, "y2": 31.5, "r": 2.2, "r2": 1.8, "material": "throat"}]}], "views": {"front": {"parts": [{"id": "neck", "addShapes": [{"type": "capsule", "x1": 50, "y1": 59, "x2": 50, "y2": 44, "r": 3, "material": "throat", "r2": 2.6}]}, {"id": "neckUp", "addShapes": [{"type": "capsule", "x1": 50, "y1": 44, "x2": 50, "y2": 31.5, "r": 2.6, "material": "throat", "r2": 2.2}]}]}}},
+    {"id": "belly", "group": "Body", "label": "Pale belly", "note": "lighter underparts below the wing line", "materials": {"belly": {"color": "#efe9dd", "texture": "fur", "textureStrength": 0.2}}, "parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 45, "cy": 72.5, "rx": 16, "ry": 6, "rot": -8, "material": "belly"}]}], "views": {"front": {"parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 50, "cy": 74, "rx": 11, "ry": 5.5, "material": "belly"}]}]}}},
+    {"id": "vent", "group": "Body", "label": "White stern", "note": "the white under-tail coverts of greylags and most farm geese", "materials": {"stern": {"color": "#fbfaf6", "texture": "fur", "textureStrength": 0.1}}, "parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 25.5, "cy": 67.5, "rx": 6, "ry": 4, "rot": 20, "material": "stern"}]}], "views": {"back": {"parts": [{"id": "body", "addShapes": [{"type": "ellipse", "cx": 50, "cy": 73.5, "rx": 6, "ry": 4, "material": "stern"}]}]}}},
+    {"id": "flankBars", "group": "Body", "label": "Flank barring", "note": "pale-edged flank feathers in rows along the side", "materials": {"flankBar": {"color": "#aaa395", "flat": true, "outline": false}}, "parts": [{"id": "body", "addShapes": [{"type": "capsule", "x1": 50, "y1": 72.5, "x2": 56, "y2": 70.5, "r": 0.45, "material": "flankBar"}, {"type": "capsule", "x1": 40, "y1": 74.5, "x2": 47, "y2": 73.2, "r": 0.45, "material": "flankBar"}, {"type": "capsule", "x1": 31, "y1": 73.5, "x2": 37, "y2": 74.6, "r": 0.45, "material": "flankBar"}]}], "views": {"front": {"parts": [{"id": "body", "addShapes": [{"type": "capsule", "x1": 35.5, "y1": 70, "x2": 38.5, "y2": 70.8, "r": 0.45, "material": "flankBar"}, {"type": "capsule", "x1": 36, "y1": 74.5, "x2": 39, "y2": 75, "r": 0.45, "material": "flankBar"}, {"type": "capsule", "x1": 64.5, "y1": 70, "x2": 61.5, "y2": 70.8, "r": 0.45, "material": "flankBar"}, {"type": "capsule", "x1": 64, "y1": 74.5, "x2": 61, "y2": 75, "r": 0.45, "material": "flankBar"}]}]}}},
+    {"id": "farWing", "group": "Wings", "label": "Far wing", "note": "the other wing, a sliver above the back", "parts": [{"id": "farWing", "bone": "body", "pivot": [54, 58], "z": 2.5, "shapes": [{"type": "polygon", "points": [[55, 56.5], [42, 53.5], [24, 57.5], [30, 60], [50, 59.5]], "r": 2, "material": "plumage", "shade": -0.35}]}]},
+    {"id": "coverts", "group": "Wings", "label": "Wing coverts", "note": "rows of pale-edged feathers across the folded wing", "materials": {"covertDark": {"color": "#9c9588", "flat": true, "outline": false}, "covertEdge": {"color": "#e8e2d5", "flat": true, "outline": false}}, "parts": [{"id": "wing", "addShapes": [{"type": "capsule", "x1": 53, "y1": 60.5, "x2": 34, "y2": 62, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 53, "y1": 61.5, "x2": 34, "y2": 63, "r": 0.4, "material": "covertEdge"}, {"type": "capsule", "x1": 51, "y1": 65, "x2": 31, "y2": 66.5, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 51, "y1": 66, "x2": 31, "y2": 67.5, "r": 0.4, "material": "covertEdge"}]}], "views": {"back": {"parts": [{"id": "wingL", "addShapes": [{"type": "capsule", "x1": 36, "y1": 64, "x2": 47.5, "y2": 61.5, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 36, "y1": 65, "x2": 47.5, "y2": 62.5, "r": 0.4, "material": "covertEdge"}, {"type": "capsule", "x1": 36, "y1": 70, "x2": 46.5, "y2": 67.5, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 36, "y1": 71, "x2": 46.5, "y2": 68.5, "r": 0.4, "material": "covertEdge"}]}, {"id": "wingR", "addShapes": [{"type": "capsule", "x1": 64, "y1": 64, "x2": 52.5, "y2": 61.5, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 64, "y1": 65, "x2": 52.5, "y2": 62.5, "r": 0.4, "material": "covertEdge"}, {"type": "capsule", "x1": 64, "y1": 70, "x2": 53.5, "y2": 67.5, "r": 0.5, "material": "covertDark"}, {"type": "capsule", "x1": 64, "y1": 71, "x2": 53.5, "y2": 68.5, "r": 0.4, "material": "covertEdge"}]}]}}},
+    {"id": "primaries", "group": "Wings", "label": "Dark flight feathers", "note": "long darker primaries crossing over the tail", "materials": {"primary": {"color": "#77736c", "texture": "fur", "textureStrength": 0.2}}, "parts": [{"id": "wing", "addShapes": [{"type": "polygon", "points": [[31, 61.5], [15, 59], [17.5, 61], [29, 64]], "r": 1, "material": "primary"}, {"type": "polygon", "points": [[31, 64.5], [17, 63], [19, 65], [29, 67.5]], "r": 1, "material": "primary", "shade": -0.15}]}], "views": {"back": {"parts": [{"id": "wingL", "addShapes": [{"type": "polygon", "points": [[43, 72], [49.5, 74], [49, 79], [42, 78]], "r": 1, "material": "primary"}]}, {"id": "wingR", "addShapes": [{"type": "polygon", "points": [[57, 72], [50.5, 74], [51, 79], [58, 78]], "r": 1, "material": "primary", "shade": -0.15}]}]}}},
+    {"id": "tailLayers", "group": "Tail", "label": "Layered tail", "note": "a darker band under the pale tail tip", "materials": {"tailDark": {"color": "#a39c8f", "texture": "fur", "textureStrength": 0.3}}, "parts": [{"id": "tail", "addShapes": [{"type": "polygon", "points": [[27, 63], [16, 55], [16.5, 60], [26.5, 66]], "r": 1, "material": "tailDark"}]}], "views": {"back": {"parts": [{"id": "tail", "addShapes": [{"type": "polygon", "points": [[46.5, 65.5], [53.5, 65.5], [53.2, 63], [46.8, 63]], "r": 1, "material": "tailDark"}]}]}}},
+    {"id": "webbing", "group": "Legs & feet", "label": "Webbed toes", "note": "three toes with webs between them: darker toe lines and claws", "materials": {"toe": {"color": "#c55a1c", "flat": true, "outline": false}, "claw": {"color": "#3d2a22", "flat": true, "outline": false}}, "parts": [{"id": "footNear", "addShapes": [{"type": "capsule", "x1": 39, "y1": 90, "x2": 47.5, "y2": 90.6, "r": 0.3, "material": "toe"}, {"type": "circle", "cx": 48, "cy": 91, "r": 0.6, "material": "claw"}]}, {"id": "footFar", "addShapes": [{"type": "capsule", "x1": 47, "y1": 90, "x2": 55.5, "y2": 90.6, "r": 0.3, "material": "toe"}, {"type": "circle", "cx": 56, "cy": 91, "r": 0.6, "material": "claw"}]}], "views": {"front": {"parts": [{"id": "footL", "addShapes": [{"type": "capsule", "x1": 45, "y1": 88.8, "x2": 42, "y2": 91.2, "r": 0.3, "material": "toe"}, {"type": "capsule", "x1": 45, "y1": 88.8, "x2": 48, "y2": 91.2, "r": 0.3, "material": "toe"}, {"type": "circle", "cx": 40.9, "cy": 91.4, "r": 0.5, "material": "claw"}, {"type": "circle", "cx": 49.1, "cy": 91.4, "r": 0.5, "material": "claw"}]}, {"id": "footR", "addShapes": [{"type": "capsule", "x1": 55, "y1": 88.8, "x2": 52, "y2": 91.2, "r": 0.3, "material": "toe"}, {"type": "capsule", "x1": 55, "y1": 88.8, "x2": 58, "y2": 91.2, "r": 0.3, "material": "toe"}, {"type": "circle", "cx": 50.9, "cy": 91.4, "r": 0.5, "material": "claw"}, {"type": "circle", "cx": 59.1, "cy": 91.4, "r": 0.5, "material": "claw"}]}]}}},
+    {"id": "legScales", "group": "Legs & feet", "label": "Scaly shins", "note": "fine darker bands down the bare shin", "materials": {"scale": {"color": "#cf6522", "flat": true, "outline": false}}, "parts": [{"id": "shinNear", "addShapes": [{"type": "capsule", "x1": 36.4, "y1": 82.5, "x2": 38.4, "y2": 82, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 37, "y1": 85.5, "x2": 39, "y2": 85, "r": 0.25, "material": "scale"}]}, {"id": "shinFar", "addShapes": [{"type": "capsule", "x1": 44.4, "y1": 82.5, "x2": 46.4, "y2": 82, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 45, "y1": 85.5, "x2": 47, "y2": 85, "r": 0.25, "material": "scale"}]}], "views": {"front": {"parts": [{"id": "shinL", "addShapes": [{"type": "capsule", "x1": 44, "y1": 82.6, "x2": 46, "y2": 82.2, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 44, "y1": 85.6, "x2": 46, "y2": 85.2, "r": 0.25, "material": "scale"}]}, {"id": "shinR", "addShapes": [{"type": "capsule", "x1": 54, "y1": 82.6, "x2": 56, "y2": 82.2, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 54, "y1": 85.6, "x2": 56, "y2": 85.2, "r": 0.25, "material": "scale"}]}]}, "back": {"parts": [{"id": "shinL", "addShapes": [{"type": "capsule", "x1": 44, "y1": 82.6, "x2": 46, "y2": 82.2, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 44, "y1": 85.6, "x2": 46, "y2": 85.2, "r": 0.25, "material": "scale"}]}, {"id": "shinR", "addShapes": [{"type": "capsule", "x1": 54, "y1": 82.6, "x2": 56, "y2": 82.2, "r": 0.25, "material": "scale"}, {"type": "capsule", "x1": 54, "y1": 85.6, "x2": 56, "y2": 85.2, "r": 0.25, "material": "scale"}]}]}}}
   ]
 }
