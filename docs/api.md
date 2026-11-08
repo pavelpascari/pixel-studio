@@ -51,6 +51,7 @@ Units and conventions used throughout:
 - [Lint](#lint): `checkBounds`
 - [Motion](#motion): `generateMotion`, `MOTION_MODELS`, `LEGGED_MODELS`
 - [Bundles](#bundles): `buildBundle`, `bakePoints`, `BUNDLE_FORMAT`
+- Transition clips: [`buildMixes`](#buildmixes)
 - [Game-engine export](#game-engine-export): `exportSheet`
 - [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `TEXTURES`, `SHAPE_TYPES`
 - [Node: PNG encoding](#node-png-encoding): `encodePNG`
@@ -875,6 +876,19 @@ console.log(sheet.meta);
 //   animations: { idle: { row: 0, frames: 4, fps: 8, loop: true }, jump: { row: 1, frames: 6, fps: 12, loop: false } } }
 ```
 
+### `buildMixes`
+
+```ts
+buildMixes(compiled: CompiledSpec, mixes: { [ "from>to" ]: { frames?, ease?, fps? } }): string[]
+```
+
+Adds a transition clip to `compiled.animations` for each mix, named `"from>to"`, and returns the names. `compile` calls
+it for a spec's `mixes`, after the animations they blend. Each clip has `frames` frames (default 2) that interpolate every
+part's `x`, `y`, `rot` (the short way round), `sx` and `sy` from the pose in the last frame of `from` (frame 0 for a loop)
+to the pose in frame 0 of `to`, with `ease` `smooth` (default) or `linear`; `show` switches halfway. Clips are
+`loop: false`, carry `mix: { from, to }` and `follow: false` (their end poses already include follow-through), and play
+at `to`'s fps unless `fps` is given.
+
 ### `animationMeta`
 
 ```ts
@@ -892,6 +906,7 @@ The playback description of one compiled animation, as sheets, bundles and `rend
 | `wall` | `anim.wall` is not null | x of the climbed wall, in units |
 | `events` | `anim.events` is non-empty | a copy of `[{ frame, name, data? }]` |
 | `durations` | `anim.holds` has entries | ms per frame: `1000 / fps × (holds[f] ?? 1)`, rounded to 0.01 |
+| `mix` | the animation is a transition clip | `{ from, to }` |
 
 ```js
 import { compile, animationMeta } from './src/core/index.js';

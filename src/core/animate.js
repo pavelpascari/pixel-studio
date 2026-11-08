@@ -120,6 +120,7 @@ function centerOf(p) {
 }
 
 export function followOffsets(compiled, anim) {
+  if (anim.follow === false) return null;   // mixes: their poses already include follow-through
   if (followCache.has(anim)) return followCache.get(anim);
   const followers = compiled.parts.filter((p) => p.follow);
   if (!followers.length || anim.frames < 2) { followCache.set(anim, null); return null; }

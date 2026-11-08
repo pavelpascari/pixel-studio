@@ -41,6 +41,7 @@
       {"type": "polygon", "points": [[56, 58], [44, 56], [26, 60], [20, 66], [36, 72], [54, 70]], "r": 3, "material": "plumage", "shade": -0.1}
     ]}
   ],
+  "mixes": {"waddle>idle": {"frames": 3}, "run>idle": {"frames": 3}, "idle>waddle": {"frames": 2}},
   "animations": {
     "idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}}},
     "waddle": {"motion": "walk"},

@@ -3,6 +3,7 @@ import { parseHex } from './color.js';
 import { SHAPE_TYPES, compileShape } from './shapes.js';
 import { TEXTURES } from './textures.js';
 import { mergeVariant } from './extend.js';
+import { buildMixes } from './mix.js';
 
 export const TRACK_PROPS = ['x', 'y', 'rot', 'sx', 'sy', 'show'];
 const PROFILES = ['dome', 'flat', 'none'];
@@ -43,7 +44,7 @@ const SHAPE_REQUIRED = {
 };
 
 const KNOWN = {
-  top: ['name', 'size', 'materials', 'parts', 'animations', 'style', 'description', '$schema', 'figure', 'points', 'ground', 'skins', 'states'],
+  top: ['name', 'size', 'materials', 'parts', 'animations', 'style', 'description', '$schema', 'figure', 'points', 'ground', 'skins', 'states', 'mixes'],
   material: ['color', 'texture', 'textureStrength', 'textureScale', 'shine', 'flat', 'outline', 'tones'],
   part: ['id', 'parent', 'pivot', 'z', 'shade', 'x', 'y', 'rot', 'sx', 'sy', 'show', 'shapes', 'tip', 'follow'],
   shape: ['type', 'material', 'op', 'minDetail', 'maxDetail', 'profile', 'shade', 'x', 'y', 'w', 'h', 'r', 'rot',
@@ -239,6 +240,20 @@ export function validate(spec) {
       if (!(isPt(pt.at) || pt.at === 'pivot' || (pt.at === 'tip' && (!byIdPt || byIdPt.tip)))) err(`${pp}.at`, pt.at === 'tip' ? `part "${pt.part}" has no tip (only bones do); use [x, y] or "pivot"` : 'at must be [x, y] in rest-pose canvas units, "pivot" or "tip"');
     }
   }
+  if (spec.mixes != null) {
+    if (!spec.mixes || typeof spec.mixes !== 'object' || Array.isArray(spec.mixes)) err('$.mixes', 'mixes must be {"walk>idle": {"frames": 3}}');
+    else for (const [name, m] of Object.entries(spec.mixes)) {
+      const mp = `$.mixes.${name}`, names = Object.keys(spec.animations ?? {});
+      const [from, to, extra] = name.split('>');
+      if (extra != null || !from || !to) { err(mp, 'a mix is named "from>to", e.g. "walk>idle"'); continue; }
+      for (const n of [from, to]) if (!names.includes(n)) err(mp, `unknown animation "${n}"${didYouMean(n, names)}`);
+      if (from === to) err(mp, 'a mix needs two different animations');
+      if (!m || typeof m !== 'object' || Array.isArray(m)) { err(mp, 'a mix is {"frames": 2, "ease": "smooth"}'); continue; }
+      if (m.frames != null && !(Number.isInteger(m.frames) && m.frames >= 1 && m.frames <= 8)) err(`${mp}.frames`, 'frames must be a whole number 1..8');
+      if (m.ease != null && !['linear', 'smooth'].includes(m.ease)) err(`${mp}.ease`, 'ease must be "linear" or "smooth"');
+      if (m.fps != null && !(isNum(m.fps) && m.fps >= 1 && m.fps <= 60)) err(`${mp}.fps`, 'fps must be 1..60');
+    }
+  }
   if (spec.states != null) validateStates(spec.states, spec.animations ?? {}, err, warn);
   if (spec.skins != null) {
     if (!spec.skins || typeof spec.skins !== 'object' || Array.isArray(spec.skins)) err('$.skins', 'skins must be {"name": {"parts": [...], "materials": {...}}}');
@@ -419,5 +434,7 @@ export function compile(spec) {
   }
   // Skins compile to whole characters of their own (same animations, different parts and colours).
   const skins = spec.skins ? Object.fromEntries(Object.entries(spec.skins).map(([n, patch]) => [n, compile(skinSpec(spec, patch))])) : null;
-  return { name: spec.name ?? 'character', size, materials, parts, animations, style: spec.style ?? {}, points, ground: spec.ground ?? null, skins, states: spec.states ?? null };
+  const out = { name: spec.name ?? 'character', size, materials, parts, animations, style: spec.style ?? {}, points, ground: spec.ground ?? null, skins, states: spec.states ?? null };
+  if (spec.mixes) buildMixes(out, spec.mixes);   // after the animations they blend
+  return out;
 }

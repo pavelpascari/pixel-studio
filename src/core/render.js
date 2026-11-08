@@ -283,6 +283,7 @@ export function animationMeta(anim) {
   if (anim.speed) m.speed = anim.speed;
   if (anim.speedY) m.speedY = anim.speedY;
   if (anim.wall != null) m.wall = anim.wall;
+  if (anim.mix) m.mix = { ...anim.mix };
   if (anim.events?.length) m.events = anim.events.map((e) => ({ ...e }));
   if (anim.holds && Object.keys(anim.holds).length) {
     const base = 1000 / anim.fps;

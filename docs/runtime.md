@@ -98,7 +98,7 @@ Attribute changes made before the element is first connected (including the attr
 | `el.state` | `'idle'`, `'loading'`, `'ready'` or `'error'`. |
 | `el.displaySize` | `{ width, height }` in CSS px as displayed, or `null` before load. |
 | `el.pxPerSecond(name = currentAnim)` | CSS px per second that animation should travel for its feet not to slide, at the displayed size; `null` if it has no `speed`. |
-| `el.play(name, { once = false, restart = once } = {})` | Play `name`. With `once: true` it plays to the end, fires `spriteend`, then returns to `hover-anim` (if a mouse is over it) or the base animation. If `name` is already playing (looping, not a one-shot) the call does nothing unless `restart: true`, so hovering in and out does not restart a walk cycle. Returns `false` for unknown names or before load. Does not change the `anim` attribute. |
+| `el.play(name, { once = false, restart = once, mix = true } = {})` | Play `name`. If the bundle has a transition clip from the current animation to `name` (`waddle>idle`) and the switch happens at a boundary (the current animation is on its first frame, i.e. a loop's end, or a one-shot finished), the clip plays first; `mix: false` skips it. With `once: true` it plays to the end, fires `spriteend`, then returns to `hover-anim` (if a mouse is over it) or the base animation. If `name` is already playing (looping, not a one-shot) the call does nothing unless `restart: true`, so hovering in and out does not restart a walk cycle. Returns `false` for unknown names or before load. Does not change the `anim` attribute. |
 | `el.pxPerSecondY(name)` | The same for climbing animations (`speedY`): CSS px per second upward. |
 | `el.groundOffset` | CSS px from the top of the box down to the foot line (bundle `ground`): place the box at `feetY − groundOffset` to stand on something. |
 | `el.point(name, { relative = false })` | Where an attachment point (bundle `points`, e.g. `beak`) is in the frame showing now: `{ x, y, rot }` in client px, or relative to the box. Mirrored with `flip`. `null` if the bundle has no such point. |
@@ -514,6 +514,7 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 | `wall` | number, optional | Climbing: the x (units) of the wall the feet hold, to line the sprite up with an element's side. |
 | `events` | array, optional | `[{frame, name, data?}]`, fired as `spriteevent`. |
 | `durations` | array, optional | Milliseconds per frame, present when the spec has `holds`. |
+| `mix` | object, optional | `{from, to}` on transition clips, which are animations named `"from>to"`. |
 
 ### `variants[i]`
 

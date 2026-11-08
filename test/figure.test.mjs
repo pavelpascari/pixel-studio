@@ -298,3 +298,18 @@ test('skins that move parts get their own attachment points', async () => {
   assert.deepEqual(Object.keys(b.skinPoints), ['tall']);
   assert.ok(Math.abs(b.skinPoints.tall.beak.idle[0][1] - (b.points.beak.idle[0][1] - 6)) < 0.5, 'beak 6 units higher');
 });
+
+test('mixes: baked transition clips blend the end of one animation into the start of another', () => {
+  const spec = expandFigure({ animations: { idle: { motion: 'idle' }, walk: { motion: 'walk' } }, mixes: { 'walk>idle': { frames: 3 } } }, fig('goose'));
+  assert.deepEqual(validate(spec).errors, []);
+  const c = compile(spec);
+  const m = c.animations['walk>idle'];
+  assert.deepEqual([m.frames, m.loop, m.mix], [3, false, { from: 'walk', to: 'idle' }]);
+  const toe = (anim, f) => toes(c, anim, f).footNear[0];
+  const a = toe('walk', 0), b = toe('idle', 0), xs = [0, 1, 2].map((f) => toe('walk>idle', f));
+  assert.ok(xs.every((x) => x >= Math.min(a, b) - 0.6 && x <= Math.max(a, b) + 0.6), `in-betweens lie between the end poses (${a.toFixed(1)} → ${xs.map((x) => x.toFixed(1))} → ${b.toFixed(1)})`);
+  const bad = (mixes) => validate({ ...spec, mixes }).errors.map((e) => `${e.path} ${e.message}`).join('\n');
+  assert.match(bad({ 'walk>idel': {} }), /unknown animation "idel" — did you mean "idle"\?/);
+  assert.match(bad({ walk: {} }), /named "from>to"/);
+  assert.match(bad({ 'walk>idle': { frames: 20 } }), /frames must be a whole number 1\.\.8/);
+});

@@ -273,6 +273,20 @@ await check('skins: the skin attribute swaps the sheet without restarting', asyn
   return { ok: swapped && !el._variant.skin && el.bundle.skins.includes('party'), note: `skins ${el.bundle.skins}; unknown skin → default` };
 });
 
+await check('transition clips: waddle → idle at a loop end plays "waddle>idle" first', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'waddle' });
+  await playing(el);
+  const seen = [];
+  const t0 = performance.now();
+  // switch exactly at the loop's end, as a state machine "at: end" does
+  await new Promise((r) => { const f = () => (el.frame === 0 && performance.now() - t0 > 200 ? r() : requestAnimationFrame(f)); f(); });
+  el.play('idle');
+  seen.push(el.currentAnim);
+  for (let i = 0; i < 40 && el.currentAnim !== 'idle'; i++) await sleep(25);
+  seen.push(el.currentAnim);
+  return { ok: seen[0] === 'waddle>idle' && seen[1] === 'idle', note: seen.join(' → ') };
+});
+
 const failed = results.filter((r) => !r.ok).length;
 scrollTo(0, 0);
 document.getElementById('summary').textContent = (failed ? results.filter((r) => !r.ok).map((r) => `FAIL ${r.name}: ${r.note}`).join(' • ') + ' • ' : '') +

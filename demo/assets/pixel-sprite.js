@@ -12,7 +12,7 @@
 // Attributes: src, anim, size (CSS px, default 128), res (force a variant), fps (override),
 //             hover-anim, click-anim, paused, flip, alt ("" = decorative)
 //             state (set by the element: loading | ready | error)
-// API:        el.play(name, {once, restart}), el.pause(), el.resume(), el.reload(),
+// API:        el.play(name, {once, restart, mix}), el.pause(), el.resume(), el.reload(),
 //             el.bundle, el.animations, el.currentAnim, el.frame, el.displaySize, el.groundOffset,
 //             el.pxPerSecond(name), el.pxPerSecondY(name), el.point(name, {relative}), el.hitTest(x, y)
 // Events:     'ready'; 'error' (detail: {error}); 'spriteend' (bubbles; detail: {anim}) when a one-shot or
@@ -445,16 +445,33 @@ export class PixelSprite extends Base {
    * Calling play with the animation already running is a no-op unless `restart` (default: `once`).
    * Returns false if the animation does not exist (or nothing is loaded yet).
    */
-  play(name, { once = false, restart = once } = {}) {
-    if (!this._bundle?.animations[name]) return false;
+  play(name, { once = false, restart = once, mix = true } = {}) {
+    const anims = this._bundle?.animations;
+    if (!anims?.[name]) return false;
+    // Already blending into this animation through a transition clip: let the clip finish.
+    if (!restart && this._then?.name === name) return true;
     if (!restart && name === this._anim && !this._once && !this._ended) return true;
+    // A baked transition clip "A>B" plays first when the switch happens where A ends: on its first
+    // frame (a loop's end) or after a one-shot finished.
+    const clip = mix && this._anim && this._anim !== name && anims[`${this._anim}>${name}`];
+    const atBoundary = this._ended || this._frame === 0 || (this._once && this._frame === anims[this._anim]?.frames - 1);
+    this._then = null;
+    if (clip && atBoundary) {
+      this._start(`${this._anim}>${name}`, true);
+      this._then = { name, once };
+      return true;
+    }
+    this._start(name, once);
+    return true;
+  }
+
+  _start(name, once) {
     this._stopTimer();
     this._anim = name; this._frame = 0; this._acc = 0; this._once = once; this._ended = false;
     this._plays = (this._plays || 0) + 1;
     this._draw();
     this._sync();
     if (this._running) this._emit(0);
-    return true;
   }
   /** State machine: set an input (number / boolean). */
   set(name, value) { this._sm?.set(name, value); }
@@ -683,6 +700,12 @@ export class PixelSprite extends Base {
 
   _end() {
     const done = this._anim;
+    if (this._then) {   // a transition clip finished: on to the animation it leads into (no spriteend)
+      const { name, once } = this._then;
+      this._then = null;
+      this._start(name, once);
+      return;
+    }
     const fire = () => this.dispatchEvent(new CustomEvent('spriteend', { detail: { anim: done }, bubbles: true }));
     if (this._sm) {
       const plays = this._plays;

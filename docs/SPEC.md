@@ -162,6 +162,17 @@ A skin is a patch like a variant (`parts`, `materials`, `materialMap`, `style`; 
 shares. The bundle carries each skin; a page picks one with `<pixel-sprite skin="party">`. Each skin adds about as much
 to the bundle as the default look. Preview one with `pixel preview spec.json --skin party`.
 
+### Transition clips
+
+```json
+"mixes": { "waddle>idle": {"frames": 3}, "idle>waddle": {"frames": 2, "ease": "linear"} }
+```
+
+A mix bakes a few in-between frames from the end of one animation into the start of another (poses are blended, not
+pixels). The runtime plays `waddle>idle` when the goose switches from waddle to idle at a natural boundary: on the
+waddle's first frame (where a loop ends) or after a one-shot finished. `frames` 1..8 (default 2), `ease` `smooth`
+(default) or `linear`. Use them for stops and starts that would otherwise pop.
+
 ### State machine
 
 `"states"` lets the page set intent (`speed`, a `honk` trigger) while the character chooses its animations. See

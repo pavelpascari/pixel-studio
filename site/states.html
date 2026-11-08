@@ -69,6 +69,36 @@
     <tr><td>an event name</td><td>on the next such event: <code>footstep</code> stops with the feet together</td></tr>
   </table>
 
+  <h2 id="mixes">Transition clips</h2>
+  <p>Switching animations swaps pictures, which can pop. A spec's <code>mixes</code> bake a few in-between frames
+    (blended poses, not faded pixels), and the element plays them when the switch happens where the old animation ends.</p>
+  <div class="demo" data-title="Stopping: without and with a clip">
+    <template>
+      <figure><pixel-sprite id="mx-a" src="../demo/assets/goose-root.bundle.json" anim="waddle" size="128" states="off"></pixel-sprite><figcaption>mix: false</figcaption></figure>
+      <figure><pixel-sprite id="mx-b" src="../demo/assets/goose-root.bundle.json" anim="waddle" size="128" states="off"></pixel-sprite><figcaption>with "waddle&gt;idle"</figcaption></figure>
+      <div class="controls"><button id="mx-go">stop both at the end of the stride</button><span class="readout" id="mx-out"></span></div>
+      <script type="module">
+        const a = document.getElementById('mx-a'), b = document.getElementById('mx-b');
+        document.getElementById('mx-go').onclick = () => {
+          for (const el of [a, b]) el.play('waddle', { restart: true });
+          // wait for the stride to come round to its first frame, then stop
+          const stop = () => {
+            if (a.frame !== 0 || performance.now() - t0 < 300) return requestAnimationFrame(stop);
+            a.play('idle', { mix: false });
+            b.play('idle');
+            document.getElementById('mx-out').textContent = `right: ${b.currentAnim}`;
+            setTimeout(() => { for (const el of [a, b]) el.play('waddle'); }, 1500);
+          };
+          const t0 = performance.now();
+          stop();
+        };
+      </script>
+    </template>
+  </div>
+  <pre class="snippet" data-lang="json">
+    "mixes": { "waddle>idle": {"frames": 3}, "run>idle": {"frames": 3}, "idle>waddle": {"frames": 2} }
+  </pre>
+
   <h2 id="skins">Skins</h2>
   <p>A skin is a patch (extra parts, other colours) that every animation shares. All skins are baked into the bundle;
     the <code>skin</code> attribute switches live, without restarting the animation.</p>

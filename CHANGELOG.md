@@ -6,6 +6,11 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Transition clips
+- `mixes` in specs (`"waddle>idle": {"frames": 3}`) bake in-between frames that blend the end of one animation
+  into the start of another. `<pixel-sprite>` plays them when a switch happens at a boundary (loop end or after a
+  one-shot), so stops and starts no longer pop; `play(name, {mix: false})` skips them. The geese have them.
+
 ### Docs site
 - `site/`: nine pages where every feature is a live example next to its code (copyable, highlighted), and spec
   playgrounds that render a character with the real engine as you edit it. Overview, sprites, events and points,
