@@ -24,6 +24,9 @@ import { sampleValue } from './animate.js';
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
+/** Keys that must never be used to index a plain object built from spec data. */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function figureError(errors) {
   const e = new Error(errors.map((x) => `${x.path}: ${x.message}`).join('; '));
   e.errors = errors;
@@ -59,7 +62,7 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
   const bones = fig.bones.map((b) => ({ ...b, from: tf(b.from), to: tf(b.to) }));
   const boneById = Object.fromEntries(bones.map((b) => [b.id, b]));
   for (const [id, patch] of Object.entries(fit.bones ?? {})) {
-    if (!boneById[id]) { err(`$.figure.bones.${id}`, `the figure has no bone "${id}" (bones: ${bones.map((b) => b.id).join(', ')})`); continue; }
+    if (!Object.hasOwn(boneById, id)) { err(`$.figure.bones.${id}`, `the figure has no bone "${id}" (bones: ${bones.map((b) => b.id).join(', ')})`); continue; }
     Object.assign(boneById[id], clone(patch));
   }
 
@@ -81,7 +84,7 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
   const partById = Object.fromEntries(parts.map((p) => [p.id, p]));
   for (const [i, p] of (stick ? [] : spec.parts).entries()) {
     if (!isObj(p)) { parts.push(p); continue; }
-    if (p.id in partById && partById[p.id].tip) {
+    if (Object.hasOwn(partById, p.id) && partById[p.id].tip) {
       // Dress the bone: shapes and fields (z, shade, x, y, sx, sy, show, follow, even pivot) apply to it.
       const { bone, ...fields } = p;
       Object.assign(partById[p.id], clone(fields));
@@ -89,7 +92,7 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
     }
     const { bone, ...rest } = p;
     if (bone != null) {
-      const b = boneById[bone];
+      const b = Object.hasOwn(boneById, bone) ? boneById[bone] : null;
       if (!b) { err(`$.parts[${i}].bone`, `unknown bone "${bone}" (bones: ${bones.map((x) => x.id).join(', ')})`); continue; }
       parts.push(clone({ parent: bone, pivot: b.from, z: (b.z ?? 0) + 0.5, ...rest }));
     } else parts.push(clone(rest));
@@ -156,7 +159,7 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
   const figPoints = fig.points ?? {};
   if (Object.keys(figPoints).length || out.points) {
     const pts = {};
-    for (const [name, pt] of Object.entries(figPoints)) if (partById[pt.part]) pts[name] = { part: pt.part, at: Array.isArray(pt.at) ? tf(pt.at) : pt.at };
+    for (const [name, pt] of Object.entries(figPoints)) if (Object.hasOwn(partById, pt.part)) pts[name] = { part: pt.part, at: Array.isArray(pt.at) ? tf(pt.at) : pt.at };
     out.points = { ...pts, ...(out.points ?? {}) };
     for (const [k, v] of Object.entries(out.points)) if (v === null) delete out.points[k];
   }
@@ -181,8 +184,9 @@ function groundOf(rig, boneById) {
 function layerTracks(gen, user, M, loop = true) {
   const out = clone(gen);
   for (const [pid, props] of Object.entries(user)) {
-    if (!isObj(props)) continue;
+    if (!isObj(props) || UNSAFE_KEYS.has(pid)) continue;
     for (const [prop, v] of Object.entries(props)) {
+      if (UNSAFE_KEYS.has(prop)) continue;
       const g = out[pid]?.[prop];
       out[pid] ??= {};
       if (g == null || prop === 'show') { out[pid][prop] = clone(v); continue; }

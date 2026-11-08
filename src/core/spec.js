@@ -10,6 +10,8 @@ const WAVE_SHAPES = ['sin', 'tri', 'square', 'bounce'];
 const EASES = ['linear', 'smooth', 'step'];
 const OUTLINES = ['none', 'dark', 'selective'];
 
+/** Names that would reach Object.prototype when used as keys. */
+const UNSAFE_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const isPt = (p) => Array.isArray(p) && p.length === 2 && isNum(p[0]) && isNum(p[1]);
 const isTrackValue = (v) => isNum(v) || (Array.isArray(v) && v.length > 0 && v.every(isNum)) ||
@@ -112,6 +114,7 @@ export function validate(spec) {
       if (!part || typeof part !== 'object') return err(p, 'part must be an object');
       unknownKeys(part, 'part', p, warn);
       if (typeof part.id !== 'string' || !part.id) err(`${p}.id`, 'part needs a string id');
+      else if (UNSAFE_NAMES.has(part.id)) err(`${p}.id`, `"${part.id}" cannot be used as an id`);
       else if (partIds.has(part.id)) err(`${p}.id`, `duplicate part id "${part.id}"`);
       else partIds.add(part.id);
       if (part.pivot != null && !isPt(part.pivot)) err(`${p}.pivot`, 'pivot must be [x, y]');
@@ -179,6 +182,7 @@ export function validate(spec) {
   if (typeof anims !== 'object' || Array.isArray(anims)) err('$.animations', 'animations must be an object keyed by name');
   else for (const [name, a] of Object.entries(anims)) {
     const p = `$.animations.${name}`;
+    if (UNSAFE_NAMES.has(name)) { err(p, `"${name}" cannot be used as an animation name`); continue; }
     if (!a || typeof a !== 'object') { err(p, 'animation must be an object'); continue; }
     unknownKeys(a, 'animation', p, warn);
     if (!Number.isInteger(a.frames) || a.frames < 1 || a.frames > 64) err(`${p}.frames`, 'frames must be an integer 1..64');

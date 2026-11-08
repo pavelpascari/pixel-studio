@@ -88,12 +88,12 @@ export function checkBundle(b, where = 'bundle') {
   const anims = b.animations && typeof b.animations === 'object' ? Object.entries(b.animations) : [];
   if (!anims.length) fail('has no animations');
   for (const [name, a] of anims) {
-    if (!(Number.isInteger(a?.row) && a.row >= 0 && Number.isInteger(a.frames) && a.frames >= 1 && a.fps > 0))
-      fail(`animation "${name}" needs integer row >= 0, integer frames >= 1 and fps > 0`);
+    if (!(Number.isInteger(a?.row) && a.row >= 0 && Number.isInteger(a.frames) && a.frames >= 1 && a.frames <= 256 && a.fps > 0 && a.fps <= 60))
+      fail(`animation "${name}" needs integer row >= 0, integer frames 1..256 and fps above 0 and at most 60`);
   }
   for (const [name, a] of anims) {
-    if (a.durations != null && !(Array.isArray(a.durations) && a.durations.length === a.frames && a.durations.every((d) => d > 0)))
-      fail(`animation "${name}": durations must list one positive number of ms per frame`);
+    if (a.durations != null && !(Array.isArray(a.durations) && a.durations.length === a.frames && a.durations.every((d) => Number.isFinite(d) && d >= 1)))
+      fail(`animation "${name}": durations must list one number of ms (>= 1) per frame`);
     if (a.events != null && !(Array.isArray(a.events) && a.events.every((e) => Number.isInteger(e?.frame) && e.frame >= 0 && e.frame < a.frames && typeof e.name === 'string')))
       fail(`animation "${name}": events must be [{frame, name}] with frames inside the animation`);
   }
@@ -347,7 +347,7 @@ export class PixelSprite extends Base {
     observe(this, true);
     if (this._inited) { this._layout(); this._sync(); return; }   // moved in the DOM: resume, don't restart
     this._inited = true;
-    this._fps = Number(this.getAttribute('fps')) || 0;
+    this._fps = Math.min(60, Number(this.getAttribute('fps')) || 0);
     this._userLabel = this.hasAttribute('aria-label');
     for (const t of ['pointerenter', 'pointerleave', 'pointerdown', 'click']) this.addEventListener(t, this);
     this._a11y();
@@ -368,7 +368,7 @@ export class PixelSprite extends Base {
     else if (name === 'anim') { if (!this._sm) this.play(newV); }
     else if (name === 'size' || name === 'res' || name === 'skin') this._layout();
     else if (name === 'paused') this._sync();
-    else if (name === 'fps') this._fps = Number(newV) || 0;
+    else if (name === 'fps') this._fps = Math.min(60, Number(newV) || 0);
     else if (name === 'alt') this._a11y();
   }
 
@@ -650,8 +650,9 @@ export class PixelSprite extends Base {
     const a = this._bundle.animations[this._anim];
     const plays = this._plays;
     this._acc += dt;
-    let f = this._frame;
+    let f = this._frame, steps = 0;
     while (this._acc >= this._frameMs(a, f)) {
+      if (++steps > a.frames * 2) { this._acc = 0; break; }   // never spin: at most two loops per tick
       this._acc -= this._frameMs(a, f);
       if (f + 1 < a.frames) f++;
       else if (a.loop && !this._once) {

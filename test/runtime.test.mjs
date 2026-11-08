@@ -168,3 +168,9 @@ test('state machine: triggers fire one-shots that return to the previous node; r
   assert.equal(sm.node, 'idle');
   assert.deepEqual(played.at(-1)[0], 'idle');
 });
+
+test('checkBundle bounds fps and durations (a hostile bundle cannot spin the frame loop)', () => {
+  const ok = { format: 'pixel-sprite/1', animations: { a: { row: 0, frames: 2, fps: 8 } }, variants: [{ res: 16, frameW: 16, frameH: 16, image: 'data:,' }] };
+  assert.throws(() => checkBundle({ ...ok, animations: { a: { row: 0, frames: 2, fps: 1e9 } } }), /at most 60/);
+  assert.throws(() => checkBundle({ ...ok, animations: { a: { row: 0, frames: 2, fps: 8, durations: [1e-9, 100] } } }), /durations/);
+});

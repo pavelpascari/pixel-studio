@@ -9,7 +9,8 @@
 //
 // The SDK is loaded lazily from a CDN so the rest of the studio works offline.
 
-const SDK_URL = 'https://esm.sh/@anthropic-ai/sdk@latest';
+// Pinned: the key is handed to this code, so never load a moving target.
+const SDK_URL = 'https://esm.sh/@anthropic-ai/sdk@1.6.0';
 const KEY_STORAGE = 'pixel-studio:anthropic-key';
 const MAX_FIX_ATTEMPTS = 2;
 

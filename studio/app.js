@@ -23,6 +23,8 @@ const state = {
 };
 
 // ---------- helpers ----------
+// Escape a value for a double-quoted HTML attribute (snippets the user copies into their pages).
+const attr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function toCanvas(fr) {
   const c = document.createElement('canvas');
   c.width = fr.w; c.height = fr.h;
@@ -375,7 +377,7 @@ function openExport() {
 `<script type="module" src="/pixel-sprite.js"></script>
 
 <pixel-sprite src="/sprites/${name}.bundle.json"
-              anim="${anims[0]}" size="128"${anims[1] ? `\n              hover-anim="${anims[1]}"` : ''}${anims[2] ? ` click-anim="${anims[2]}"` : ''}
+              anim="${attr(anims[0])}" size="128"${anims[1] ? `\n              hover-anim="${attr(anims[1])}"` : ''}${anims[2] ? ` click-anim="${attr(anims[2])}"` : ''}
               alt="${state.compiled.name.replace(/"/g, '&quot;')}"></pixel-sprite>`;
   $('#inline-size').textContent = '';
   $('#export-dialog').showModal();
@@ -477,7 +479,7 @@ async function init() {
     const b = await exportBundle();
     const anims = Object.keys(b.animations);
     const runtime = await (await fetch('../src/runtime/pixel-sprite.js')).text();
-    const snippet = `<pixel-sprite anim="${anims[0]}" size="128"${anims[1] ? ` hover-anim="${anims[1]}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
+    const snippet = `<pixel-sprite anim="${attr(anims[0])}" size="128"${anims[1] ? ` hover-anim="${attr(anims[1])}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
     await navigator.clipboard.writeText(snippet);
     $('#inline-size').textContent = `copied · ${(snippet.length / 1024).toFixed(1)} KB`;
   };
