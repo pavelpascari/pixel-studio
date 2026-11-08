@@ -14,5 +14,6 @@ export { resolveExtends, mergeVariant, resolveSpec } from './extend.js';
 export { resolveFigure, expandFigure } from './figure.js';
 export { generateMotion, MOTION_MODELS, LEGGED_MODELS } from './motion.js';
 export { exportSheet } from './export.js';
+export { pngBytes, paletteOf } from './png.js';
 export { buildMixes } from './mix.js';
 export { registerShape, registerTexture, registerMotion, registeredPlugins, usePlugin } from './plugins.js';

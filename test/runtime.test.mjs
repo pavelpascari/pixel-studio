@@ -60,6 +60,11 @@ test('checkBundle: clear errors for wrong or broken bundles', () => {
   assert.throws(() => checkBundle({ ...ok, animations: { idle: { row: 0, frames: 0, fps: 8 } } }), /animation "idle"/);
   assert.throws(() => checkBundle({ ...ok, variants: [] }), /no variants/);
   assert.throws(() => checkBundle(null, 'x.json'), /x\.json: not a JSON object/);
+  // A skin stored as a change to the default sheet of the same size.
+  const skin = { res: 16, frameW: 16, frameH: 16, skin: 'red', recolor: [['ff0000ff', '0000ffff']], overlay: 'data:,' };
+  assert.ok(checkBundle({ ...ok, variants: [...ok.variants, skin] }));
+  assert.throws(() => checkBundle({ ...ok, variants: [...ok.variants, { ...skin, res: 32 }] }), /variant 32 needs an image/);
+  assert.throws(() => checkBundle({ ...ok, variants: [...ok.variants, { ...skin, recolor: [['red', 'blue']] }] }), /recolor must be/);
 });
 
 test('deviceScale: whole device pixels per sprite pixel at any DPR', () => {

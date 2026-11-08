@@ -1,5 +1,5 @@
 import {
-  validate, compile, renderAnimation, renderSheet, resolveStyle, buildBundle, contactSheet, DETAIL_NAMES,
+  validate, compile, renderAnimation, renderSheet, resolveStyle, buildBundle, contactSheet, DETAIL_NAMES, pngBytes,
   resolveSpec, checkBounds, samplePose, sampleValue, frameTime, worldMatrices,
 } from '../src/core/index.js';
 import '../src/runtime/pixel-sprite.js';
@@ -34,6 +34,16 @@ function toCanvas(fr) {
 function encodePNG(w, h, rgba) {
   const c = toCanvas({ w, h, rgba });
   return c.toDataURL('image/png');
+}
+// Bundle sheets: the shared encoder (indexed PNG, ~40% smaller than the canvas's RGBA) with the
+// browser's zlib; the canvas encoder where CompressionStream is missing.
+async function encodeSheet(w, h, rgba) {
+  if (typeof CompressionStream !== 'function') return encodePNG(w, h, rgba);
+  const deflate = async (raw) => new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+  const bytes = await pngBytes(w, h, rgba, deflate);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return 'data:image/png;base64,' + btoa(bin);
 }
 function download(name, data, type = 'application/json') {
   const blob = data instanceof Blob ? data : new Blob([data], { type });
@@ -339,7 +349,7 @@ function selectPath(path) {
 let bundleCache = null;
 const refreshWebview = debounce(async () => {
   if (!state.compiled) return;
-  bundleCache = await buildBundle(state.compiled, { resolutions: [16, 32, 64], overrides: { ...globalOverrides(), flip: undefined }, encode: encodePNG });
+  bundleCache = await buildBundle(state.compiled, { resolutions: [16, 32, 64], overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet });
   const names = Object.keys(bundleCache.animations);
   for (const id of ['#wv-hover', '#wv-click']) {
     const sel = $(id), prev = sel.value;
@@ -366,7 +376,7 @@ function mountWebview() {
 // ---------- export ----------
 async function exportBundle() {
   const resolutions = $('#export-res').value.split(',').map(Number).filter((n) => n > 0);
-  const b = await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodePNG });
+  const b = await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet });
   return b;
 }
 function openExport() {

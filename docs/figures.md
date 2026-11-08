@@ -170,8 +170,14 @@ view dresses its own figure (a front-view one) with the same materials:
 - The figure's attachment points follow the view: `beak` in `idle@front` is the front jaw's tip.
 - Variants patch a view like the main spec: `"views": {"front": {"parts": [{"id": "head", "addShapes": [...]}]}}`, or
   `"back": null` to drop one. A variant's `materialMap` applies to every view. Clothes a variant adds to the side view
-  are not drawn in the other views until the variant adds them there too.
-- `examples/goose-base.json` has front and back views; the whole flock inherits them. `studio/goose.html` shows them.
+  are not drawn in the other views until the variant adds them there too (the flock does: root's shades, hood and
+  strings, sudo's headphones and bandana, phreak's mask, kiddie's cap). Parts on the front head ride along into the
+  three-quarter look.
+- Top-level parts hidden by default (`"show": 0`, a prop like root's server rack) stay hidden through the turns.
+- `examples/goose-base.json` has front and back views; the whole flock inherits them. `studio/goose.html` shows them,
+  and its features have front and back versions.
+- Views make bundles bigger: each adds about a full set of animations. Ship only the ones a page uses:
+  `pixel bundle goose.json --views front` (or `--views none`), `buildBundle(c, {views: ['front']})`.
 
 ### Speed
 

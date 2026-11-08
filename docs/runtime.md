@@ -267,7 +267,8 @@ machine is a plain class, exported as `StateMachine` (with `parseCondition`), an
 ## Skins
 
 A spec's `skins` are named patches (parts, materials, material remapping, style) such as a party hat or a team colour.
-The bundle bakes every skin as extra variants tagged with `skin`. The `skin` attribute picks one and can change at any
+The bundle bakes every skin as extra variants tagged with `skin`, usually as a colour swap and an overlay of the
+default sheet (a few KB) rather than a sheet of its own. The `skin` attribute picks one and can change at any
 time; the sheet is swapped without restarting the animation.
 
 ```html
@@ -548,7 +549,9 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 | `frameW` | integer | Frame width in pixels: `round(res × canvasWidth / canvasHeight)` of the spec's `size`. |
 | `frameH` | integer | Frame height in pixels (equals `res`). |
 | `skin` | string, optional | The skin this variant shows; absent for the default look. |
-| `image` | string | The sprite sheet as a PNG. The tools write a `data:image/png;base64,...` URL. A relative or absolute URL also works: the runtime resolves it against the bundle's `src` URL (or the document base for inline bundles). |
+| `image` | string | The sprite sheet as a PNG. The tools write a `data:image/png;base64,...` URL (or, with `pixel bundle --external`, a file name next to the bundle, so a page downloads only the sheet it shows). A relative or absolute URL also works: the runtime resolves it against the bundle's `src` URL (or the document base for inline bundles). Optional on a skin variant that has `recolor` or `overlay`. |
+| `recolor` | array, optional | Skin variants only: `[["rrggbbaa", "rrggbbaa"], ...]`. The sheet is the default variant of the same `res` with each first colour replaced by the second. |
+| `overlay` | string, optional | Skin variants only: a PNG (URL like `image`) whose opaque pixels replace those of the (recoloured) default sheet. The runtime builds the skin's sheet once, when it is first shown. |
 
 ### Sprite sheet layout
 

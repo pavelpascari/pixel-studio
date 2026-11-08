@@ -109,7 +109,13 @@ export function checkBundle(b, where = 'bundle') {
   }
   if (!Array.isArray(b.variants) || !b.variants.length) fail('has no variants');
   for (const v of b.variants) {
-    if (!(v?.frameW > 0 && v.frameH > 0 && typeof v.image === 'string')) fail(`variant ${v?.res} needs frameW, frameH and image`);
+    if (!(v?.frameW > 0 && v.frameH > 0)) fail(`variant ${v?.res} needs frameW and frameH`);
+    if (typeof v.image === 'string') continue;
+    // A skin stored as a change to the default sheet of the same resolution.
+    if (!v.skin || !b.variants.some((d) => !d.skin && d.res === v.res && typeof d.image === 'string')) fail(`variant ${v.res} needs an image`);
+    if (v.overlay != null && typeof v.overlay !== 'string') fail(`variant ${v.res} (${v.skin}): overlay must be an image URL`);
+    if (v.recolor != null && !(Array.isArray(v.recolor) && v.recolor.every((p) => Array.isArray(p) && p.length === 2 && p.every((h) => /^[0-9a-f]{8}$/i.test(h)))))
+      fail(`variant ${v.res} (${v.skin}): recolor must be [["rrggbbaa", "rrggbbaa"], ...]`);
   }
   return b;
 }
@@ -127,16 +133,47 @@ function fetchBundle(url) {
   return p;
 }
 
-const images = new WeakMap();   // variant object → Promise<ImageBitmap | HTMLImageElement>
-function variantImage(v, base) {
+const images = new WeakMap();   // variant object → Promise<ImageBitmap | HTMLImageElement | canvas>
+function variantImage(v, base, bundle) {
   let p = images.get(v);
   if (!p) {
-    const url = v.image.startsWith('data:') ? v.image : new URL(v.image, base).href;
-    p = decodeImage(url, v);
+    const abs = (u) => (u.startsWith('data:') ? u : new URL(u, base).href);
+    if (typeof v.image === 'string') p = decodeImage(abs(v.image), v);
+    else {
+      const def = bundle.variants.find((d) => !d.skin && d.res === v.res && typeof d.image === 'string');
+      p = Promise.all([variantImage(def, base, bundle), v.overlay ? decodeImage(abs(v.overlay), v) : null]).then(([img, over]) => applySkin(img, v, over));
+    }
     images.set(v, p);
     p.catch(() => { if (images.get(v) === p) images.delete(v); });
   }
   return p;
+}
+/** The default sheet with a skin's colours swapped and its overlay pixels written over it. */
+async function applySkin(img, v, over) {
+  const w = img.width, h = img.height;
+  const cv = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, w, h), px = data.data;
+  if (v.recolor?.length) {
+    const map = new Map(v.recolor.map(([f, t]) => [parseInt(f, 16) >>> 0, parseInt(t, 16) >>> 0]));
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] === 0) continue;
+      const to = map.get(((px[i] << 24) | (px[i + 1] << 16) | (px[i + 2] << 8) | px[i + 3]) >>> 0);
+      if (to !== undefined) { px[i] = to >>> 24; px[i + 1] = (to >>> 16) & 255; px[i + 2] = (to >>> 8) & 255; px[i + 3] = to & 255; }
+    }
+  }
+  if (over) {
+    // Copied, not blended: an overlay pixel replaces what is under it.
+    const oc = typeof OffscreenCanvas === 'function' ? new OffscreenCanvas(w, h) : Object.assign(document.createElement('canvas'), { width: w, height: h });
+    const ox = oc.getContext('2d', { willReadFrequently: true });
+    ox.drawImage(over, 0, 0);
+    const op = ox.getImageData(0, 0, w, h).data;
+    for (let i = 0; i < px.length; i += 4) if (op[i + 3]) { px[i] = op[i]; px[i + 1] = op[i + 1]; px[i + 2] = op[i + 2]; px[i + 3] = op[i + 3]; }
+  }
+  ctx.putImageData(data, 0, 0);
+  if (typeof createImageBitmap === 'function') { try { return await createImageBitmap(cv); } catch { /* use the canvas */ } }
+  return cv;
 }
 async function decodeImage(url, v) {
   const img = new Image();
@@ -564,7 +601,7 @@ export class PixelSprite extends Base {
       const base = src ? new URL(src, document.baseURI).href : document.baseURI;
       const bundle = src ? await fetchBundle(base) : checkBundle(JSON.parse(inline.textContent), 'inline bundle');
       const variant = this._chooseVariant(bundle);
-      const img = await variantImage(variant, base);
+      const img = await variantImage(variant, base, bundle);
       if (token !== this._token) return;   // a newer load started meanwhile
       // Commit everything at once: no frame ever sees a new bundle with an old animation.
       this._stopTimer();
@@ -634,7 +671,7 @@ export class PixelSprite extends Base {
   async _swapVariant(v) {
     const token = this._token, vt = ++this._vtoken;
     try {
-      const img = await variantImage(v, this._base);
+      const img = await variantImage(v, this._base, this._bundle);
       if (token !== this._token || vt !== this._vtoken) return;
       this._variant = v; this._img = img;
       this._layout();

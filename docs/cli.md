@@ -282,14 +282,16 @@ An excerpt of `fox.32.json`:
 ## bundle
 
 ```
-node bin/pixel.mjs bundle <spec.json> [--res 16,32,64] [--out file.bundle.json] [style flags]
+node bin/pixel.mjs bundle <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json] [style flags]
 ```
 
-Builds a self-contained `pixel-sprite/1` bundle: every animation at every resolution, with each sprite sheet embedded as a PNG data URL. Besides the animation table and the variants, the bundle carries the canvas `size` and the foot line `ground` (both in spec units), the attachment `points` baked per animation and frame, the names of the `skins` and the `states` machine when the spec has them, and, for each skin, one extra variant per resolution tagged with `skin`. The format is described in [runtime.md](runtime.md#bundle-format-pixel-sprite1).
+Builds a self-contained `pixel-sprite/1` bundle: every animation at every resolution, with each sprite sheet embedded as a PNG data URL. Besides the animation table and the variants, the bundle carries the canvas `size` and the foot line `ground` (both in spec units), the attachment `points` baked per animation and frame, the names of the `skins` and the `states` machine when the spec has them, and, for each skin, one extra variant per resolution tagged with `skin` (stored as a colour swap and overlay of the default sheet when that is smaller). Sheets are indexed PNGs when they have at most 256 colours. The format is described in [runtime.md](runtime.md#bundle-format-pixel-sprite1).
 
 | Flag | Default | Description |
 |---|---|---|
 | `--res` | `16,32,64` | Comma-separated resolutions, one variant each. Sorted ascending in the output. |
+| `--views` | every view | Which extra views to ship (`front`, `front,back`); `none` keeps only the main (side) view. Each view adds about a full set of animations. |
+| `--external` | off | Write each sheet (and skin overlay) as a PNG file next to the bundle (`<name>.32.png`, `<name>.32.party.overlay.png`) instead of embedding it, so a page downloads only the size it shows. |
 | `--out` | `<spec name>.bundle.json` in the current directory | Output file. Parent directories are created. |
 | style flags | | Applied to every variant. `--lod` forces the same tier for all of them. See [Style override flags](#style-override-flags). |
 
@@ -297,10 +299,15 @@ Prints the output path, the size of the JSON in KB, and the resolution of every 
 
 ```
 $ node bin/pixel.mjs bundle examples/fox.json --out $OUT/fox.bundle.json
-wrote $OUT/fox.bundle.json (64.5 KB, variants: 16, 32, 64)
+wrote $OUT/fox.bundle.json (46.7 KB, variants: 16, 32, 64)
 
 $ node bin/pixel.mjs bundle examples/goose-root.json --res 48,24 --out $OUT/root.bundle.json
-wrote $OUT/root.bundle.json (131.5 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
+wrote $OUT/root.bundle.json (97.6 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
+
+$ node bin/pixel.mjs bundle examples/goose-root.json --views none --res 32 --external --out $OUT/web/root.bundle.json
+wrote $OUT/web/root.bundle.json (9.7 KB, variants: 32, 32 (party), 32 (redteam))
+$ ls $OUT/web
+root.32.party.overlay.png  root.32.png  root.32.redteam.overlay.png  root.bundle.json
 ```
 
 `--res` must be positive whole numbers; anything else is an error:
@@ -472,8 +479,9 @@ Pixel Studio CLI — the agent's hands and eyes.
                                                    sprite sheet PNG + JSON metadata
   pixel export   <spec.json> [--res 32] [--out dir] [--format aseprite]
                                                    sheet PNG + Aseprite JSON (Phaser, PixiJS)
-  pixel bundle   <spec.json> [--res 16,32,64] [--out file.bundle.json]
-                                                   self-contained web bundle for <pixel-sprite> (all skins)
+  pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json]
+                                                   self-contained web bundle for <pixel-sprite> (all skins);
+                                                   --external writes the sheets as PNG files beside it
   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]
                                                    world positions of part pivots (or of a point on a part)

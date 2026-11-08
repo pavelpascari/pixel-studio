@@ -33,13 +33,14 @@
           animations: Object.fromEntries(Object.entries(b.animations).slice(0, 5)),
           points: { beak: { idle: b.points.beak.idle.slice(0, 2) } },
           states: '{ … see State machines … }',
-          variants: b.variants.map((v) => ({ ...v, image: v.image.slice(0, 32) + '…' })),
+          variants: b.variants.map((v) => Object.fromEntries(Object.entries(v).map(([k, x]) =>
+            [k, typeof x === 'string' && x.startsWith('data:') ? x.slice(0, 32) + '…' : Array.isArray(x) && x.length > 3 ? [...x.slice(0, 2), '…'] : x]))),
         };
         document.getElementById('bx').textContent = JSON.stringify(short, null, 1);
       </script>
     </template>
   </div>
-  <p>Sheets are PNG data URLs, one per size (and per skin). Events, attachment points, the foot line, speeds and the state
+  <p>Sheets are PNG data URLs, one per size. A skin is stored as a change to the plain sheet when that is smaller (<code>recolor</code>: colours swapped, <code>overlay</code>: pixels drawn on top), otherwise as its own sheet. Events, attachment points, the foot line, speeds and the state
     machine are stored in units, so one table serves every size. The full format is in <a href="../docs/runtime.md">docs/runtime.md</a>.</p>
 
   <h2 id="pixi">PixiJS</h2>

@@ -97,14 +97,15 @@ into a whole compiled character of its own, so the renderer still sees only plai
 | `textures.js` | Procedural textures sampled in part-local pixel space. | `TEXTURES`, `sampleTexture`, `hash2` |
 | `image.js` | RGBA image helpers and the contact sheet used by `preview`. | `contactSheet`, `createImage`, `blit`, `checker` (not re-exported from `index.js`) |
 | `ascii.js` | A frame as text (one letter per material, `#` outline, `.` empty). | `frameToAscii` |
-| `bundle.js` | Render one sheet per resolution (and per skin) and package them for the runtime with `size`, `ground`, baked points and `states`. | `buildBundle`, `bakePoints`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
+| `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
 | `export.js` | One sheet plus Aseprite "hash" JSON for game engines (Phaser, PixiJS): frames, tags, slices for points, Pixel Studio extras. | `exportSheet` |
 
 ### Everything else
 
 | File | Responsibility | Main exports / entry |
 |---|---|---|
-| `src/node/png.js` | Minimal PNG encoder (RGBA8, filter 0, `node:zlib` deflate level 9). Node-only. | `encodePNG(w, h, rgba) → Buffer` |
+| `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. | `pngBytes`, `paletteOf` |
+| `src/node/png.js` | `pngBytes` with `node:zlib` deflate level 9. Node-only. | `encodePNG(w, h, rgba) → Buffer` |
 | `src/runtime/pixel-sprite.js` | `<pixel-sprite>` web component: loads a bundle, picks a variant (and skin), plays frames from the sheet, fires baked events, runs the bundle's state machine, and exports the shared frame clock. Does not import the engine. | `PixelSprite`, `clock`, `pickVariant`, `deviceScale`, `checkBundle`, `StateMachine`, `parseCondition`, `BUNDLE_FORMAT` |
 | `src/runtime/pixel-stage.js` | `<pixel-stage>` and `<pixel-actor>`: characters that roam a page, standing on, jumping between, climbing and hiding behind opted-in elements. Imports only `clock` from `pixel-sprite.js`. | `PixelStage`, `PixelActor`, `World`, `jumpArc`, `cells` |
 | `bin/pixel.mjs` | CLI: `validate`, `preview`, `ascii`, `render`, `export`, `bundle`, `resolve`, `where`, `figures`, `brief`. Loads files, calls `resolveSpec`, then the core. | `pixel` bin (see `package.json`) |
@@ -581,11 +582,15 @@ Both passes run after shading.
 - **`animationMeta(anim)`** (`render.js`) is the playback description shared by sheets, bundles and
   the CLI's `render` JSON: `frames`, `fps`, `loop`, plus `speed`, `speedY`, `wall` and `events` when
   set, and `durations` (ms per frame, `1000/fps × hold`) only when the animation has `holds`.
-- **`buildBundle(compiled, {resolutions = [16, 32, 64], overrides, encode})`** (`bundle.js`) sorts the
-  resolutions ascending and renders a sheet per resolution. It encodes each sheet with the
-  host-supplied `encode(w, h, rgba)`: `encodePNG` → data URL in Node, `canvas.toDataURL` in the
-  studio. Each skin in `compiled.skins` gets the same resolutions again, appended as variants tagged
-  `skin`. It returns
+- **`buildBundle(compiled, {resolutions = [16, 32, 64], overrides, encode, views, deltas = true})`**
+  (`bundle.js`) first drops the views not listed in `views` (**`keepViews`**: animations named
+  `x@view`), then sorts the resolutions ascending and renders a sheet per resolution. It encodes each
+  sheet with the host-supplied `encode(w, h, rgba)`: `encodePNG` → data URL in Node, `pngBytes` with
+  `CompressionStream` in the studio. Each skin in `compiled.skins` gets the same resolutions again,
+  appended as variants tagged `skin`. **`skinDelta(base, skin)`** tries to express a skin sheet as
+  `recolor` (each default colour → the skin colour it most often becomes) plus an `overlay` of the
+  pixels still different; it gives up (null) if the skin makes an opaque pixel transparent. The delta
+  is used when its encoded size is below the full sheet's. It returns
   `{format: 'pixel-sprite/1', name, size, ground, animations, skins?, states?, points?, variants: [{res, lod, frameW, frameH, image, skin?}]}`.
   `ground` is `compiled.ground`, or `groundFromPixels`: the bottom of the lowest opaque row of the
   first frame of the largest sheet, in units. `points` comes from **`bakePoints(compiled)`**, which

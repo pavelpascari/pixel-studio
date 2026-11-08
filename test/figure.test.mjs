@@ -379,3 +379,40 @@ test('views: variants patch a view, remap its materials, and points follow the v
   await assert.rejects(resolveSpec({ ...base, views: { front: { figure: 'goose-front' } } }, { loadFigure: fig }), /needs parts/);
   await assert.rejects(resolveSpec({ ...base, views: { side: { figure: 'goose-front', parts: [] } } }, { loadFigure: fig }), /view name/);
 });
+
+test('views: a prop hidden by default stays hidden while turning', async () => {
+  const read = (f) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), 'utf8'));
+  const r = await resolveSpec(read('goose-root.json'), { loadRef: read, loadFigure: fig });
+  const c = compile(r);
+  for (const name of ['turn@front', 'unturn@front', 'turn@back']) {
+    const { show } = c.animations[name].tracks.server ?? { show: 0 };
+    assert.ok([show].flat().every((v) => v === 0), `${name}: server hidden`);
+  }
+  assert.ok([c.animations['turn@front'].tracks.body.show].flat().includes(1), 'the body itself turns');
+  assert.ok(r.parts.some((p) => p.id === 'front.glasses') && r.parts.some((p) => p.id === 'front-look.glasses'), 'root wears its glasses from the front and in the ¾ look');
+});
+
+test('bundle: skins as colour swaps and overlays, views left out on request', async () => {
+  const { skinDelta } = await import('../src/core/bundle.js');
+  const px = (...cs) => ({ width: cs.length, height: 1, rgba: Uint8Array.from(cs.flat()) });
+  const red = [255, 0, 0, 255], blue = [0, 0, 255, 255], green = [0, 255, 0, 255], none = [0, 0, 0, 0];
+  assert.deepEqual(skinDelta(px(red, red, none), px(blue, blue, none)), { recolor: [['ff0000ff', '0000ffff']], overlay: null });
+  const d = skinDelta(px(red, red, red, none), px(blue, blue, green, green));   // most reds → blue; the rest drawn over
+  assert.deepEqual(d.recolor, [['ff0000ff', '0000ffff']]);
+  assert.deepEqual([...d.overlay], [...none, ...none, ...green, ...green]);
+  assert.equal(skinDelta(px(red, red), px(red, none)), null, 'a skin that erases pixels needs its own sheet');
+  assert.equal(skinDelta(px(red), px(red, red)), null);
+
+  const read = (f) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), 'utf8'));
+  const c = compile(await resolveSpec(read('goose-root.json'), { loadRef: read, loadFigure: fig }));
+  const encode = (w, h, rgba) => 'data:' + 'x'.repeat(rgba.reduce((n, v) => n + (v ? 1 : 0), 0) >> 4);   // size grows with what is drawn
+  const b = await buildBundle(c, { resolutions: [16], encode, views: [] });
+  assert.ok(Object.keys(b.animations).every((n) => !n.includes('@')), 'side view only');
+  assert.ok(Object.keys(b.points.beak).every((n) => !n.includes('@')));
+  const party = b.variants.find((v) => v.skin === 'party'), red2 = b.variants.find((v) => v.skin === 'redteam');
+  assert.ok(!party.image && party.overlay && !party.recolor, 'party: the hat drawn over the plain sheet');
+  assert.ok(!red2.image && red2.recolor.length, 'redteam: colours swapped');
+  const front = await buildBundle(c, { resolutions: [16], encode, views: ['front'], deltas: false });
+  assert.ok(front.animations['idle@front'] && front.animations['turn@front'] && !front.animations['idle@back']);
+  assert.ok(front.variants.every((v) => v.image), 'deltas off: every skin has its own sheet');
+});

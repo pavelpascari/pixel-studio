@@ -19,7 +19,23 @@ Until 1.0, minor versions may change the spec format.
   now and then it looks at the reader. The demo's goose turns to you when it has delivered the mail.
 - Workbench: side / ¾ look / front / back, with each view's parts switchable and exported as `views` patches. Hiding a
   part that is not a bone exports as `remove`.
-- Goose bundles are about twice as large (root: 288 → 595 KB) with the extra views.
+- The flock is dressed in every view: root's shades, hood and drawstrings; sudo's headphones, bandana and cheek
+  strap; phreak's ski mask, eye slit and pompom; kiddie's proportions and cap. The workbench's 17 features have front
+  and back versions where they show.
+- Fixed: a prop hidden by default (root's server rack) appeared during turns.
+
+### Smaller bundles
+- Sheets are written as indexed PNGs (palette, 1–8 bits per pixel) when they have at most 256 colours, which pixel
+  art nearly always does: 35–45% smaller. New `pngBytes(w, h, rgba, deflate)` in the core works in any host; the
+  studio uses it with `CompressionStream`, Node's `encodePNG` with zlib.
+- Skins are stored as a change to the default sheet (`recolor`: colours swapped; `overlay`: the pixels still
+  different) when that is smaller: root's two skins went from 290 KB to 10 KB. `<pixel-sprite>` rebuilds the sheet
+  on load (checked pixel-exact in Chromium, Firefox and WebKit). `buildBundle(..., {deltas: false})` turns it off.
+- `buildBundle(..., {views})` / `pixel bundle --views front|none` ship only some views.
+- `pixel bundle --external` writes the sheets as PNG files next to the bundle, so a page downloads only the size it
+  shows.
+- Root's bundle: 609 KB → 156 KB with every view, 80 KB side-only; 22 KB of JSON + one 18–71 KB sheet with
+  `--external`. All demo bundles together: 1.6 MB → 0.85 MB.
 
 ### Goose workbench
 - `studio/goose.html`: the goose large (32–192 px, whole-pixel zoom, skeleton and pixel-grid overlays, actual-size

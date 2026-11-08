@@ -10,8 +10,9 @@
 //                                                    sprite sheet PNG + JSON metadata
 //   pixel export   <spec.json> [--res 32] [--out dir] [--format aseprite]
 //                                                    sheet PNG + Aseprite JSON (Phaser, PixiJS)
-//   pixel bundle   <spec.json> [--res 16,32,64] [--out file.bundle.json]
-//                                                    self-contained web bundle for <pixel-sprite> (all skins)
+//   pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json]
+//                                                    self-contained web bundle for <pixel-sprite> (all skins);
+//                                                    --external writes the sheets as PNG files beside it
 //   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
 //   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]
 //                                                    world positions of part pivots (or of a point on a part)
@@ -33,7 +34,7 @@ import { encodePNG } from '../src/node/png.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const BOOLEAN_FLAGS = new Set(['flip']); // never take the next argument as their value
+const BOOLEAN_FLAGS = new Set(['flip', 'external']); // never take the next argument as their value
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -218,9 +219,21 @@ switch (cmd) {
   }
   case 'bundle': {
     const c = compileOrExit(await loadSpec(args._[0]));
-    const bundle = await buildBundle(c, { resolutions: resList(args.res, '16,32,64'), overrides: overridesFrom(args), encode: pngDataURL });
+    // --views front | front,back | none: which extra views (front, back, …) to ship; default all.
+    const views = args.views == null ? undefined : String(args.views) === 'none' ? [] : String(args.views).split(',').map((s) => s.trim()).filter(Boolean);
+    const bundle = await buildBundle(c, { resolutions: resList(args.res, '16,32,64'), overrides: overridesFrom(args), encode: pngDataURL, views });
     const out = args.out || `${stem(args._[0])}.bundle.json`;
     mkdirSync(dirname(resolve(out)), { recursive: true });
+    // --external: sheets as PNG files next to the bundle, so a page downloads only the one it shows.
+    if (args.external) {
+      const name = basename(out).replace(/\.bundle\.json$|\.json$/, '');
+      for (const v of bundle.variants) for (const key of ['image', 'overlay']) {
+        if (typeof v[key] !== 'string' || !v[key].startsWith('data:image/png;base64,')) continue;
+        const file = `${name}.${v.res}${v.skin ? `.${v.skin}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
+        writeFileSync(join(dirname(resolve(out)), file), Buffer.from(v[key].slice(22), 'base64'));
+        v[key] = file;
+      }
+    }
     const json = JSON.stringify(bundle);
     writeFileSync(out, json);
     console.log(`wrote ${out} (${(json.length / 1024).toFixed(1)} KB, variants: ${bundle.variants.map((v) => v.skin ? `${v.res} (${v.skin})` : v.res).join(', ')})`);

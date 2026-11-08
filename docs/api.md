@@ -55,7 +55,7 @@ Units and conventions used throughout:
 - [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`
 - [Game-engine export](#game-engine-export): `exportSheet`
 - [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `TEXTURES`, `SHAPE_TYPES`
-- [Node: PNG encoding](#node-png-encoding): `encodePNG`
+- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes`
 - [Internal helpers](#internal-helpers)
 
 ## Typical pipeline
@@ -326,6 +326,12 @@ Returned by [`buildBundle`](#buildbundle); consumed by `<pixel-sprite>` ([runtim
   variants: [ { res, lod, frameW, frameH, image: string, skin?: string } ],
 }
 ```
+
+A skin variant may have no `image` and instead describe a change to the default variant of the same
+`res`: `recolor: [["rrggbbaa", "rrggbbaa"], ...]` (each default colour swapped for the skin's) and/or
+`overlay` (an image whose opaque pixels replace those under them). `buildBundle` writes this form when it
+is smaller, which for a recolour or a hat is most of the time (root's two skins: 290 KB → 10 KB);
+`<pixel-sprite>` rebuilds the sheet once, on load.
 
 `variants` lists the default look in ascending `res`, then, for each skin, the same resolutions again
 with `skin` set. Every variant uses the same sheet layout, so `animations` serves them all. `ground`
@@ -1467,7 +1473,7 @@ The value of `format` in every bundle `buildBundle` produces.
 ### `buildBundle`
 
 ```ts
-buildBundle(compiled: CompiledSpec, options: { resolutions?, overrides?, encode }): Promise<Bundle>
+buildBundle(compiled: CompiledSpec, options: { resolutions?, overrides?, encode, views?, deltas? }): Promise<Bundle>
 ```
 
 Renders one sprite sheet per resolution (and per resolution again for each skin in
@@ -1481,7 +1487,9 @@ described in [runtime.md](runtime.md).
 | `options` | object | `{}` | |
 | `options.resolutions` | number[] | `[16, 32, 64]` | Sheet heights in pixels. Rendered and listed in ascending order. Duplicates are not removed. |
 | `options.overrides` | object | `{}` | Passed to `resolveStyle` for every resolution. |
-| `options.encode` | `(w, h, rgba) => string \| Promise<string>` | required | Turns a sheet into the `image` string: a PNG data URL, or a URL if you store sheets as separate files. Awaited. |
+| `options.encode` | `(w, h, rgba) => string \| Promise<string>` | required | Turns a sheet into the `image` string: a PNG data URL, or a URL if you store sheets as separate files. Awaited. [`pngBytes`](#pngbytes) makes small (indexed) PNGs in any host. |
+| `options.views` | string[] \| false | all | Which extra views to ship (`["front"]`); `[]` or `false` leaves only the main (side) view. Their animations (`idle@back`, `turn@back`, …) are dropped before rendering. Each view adds about a full set of animations to the sheets. |
+| `options.deltas` | boolean | `true` | Store a skin as a change to the default sheet (`recolor`, `overlay`) when that is smaller than its own sheet. See [Bundle](#bundle). |
 
 **Returns** a promise of a bundle. `animations` comes from the smallest resolution's sheet meta. `skins`, `states` and `points` are present only when the compiled spec has them.
 
@@ -1678,8 +1686,9 @@ import { encodePNG } from './src/node/png.js';
 encodePNG(w: number, h: number, rgba: Uint8ClampedArray | Uint8Array | Buffer): Buffer
 ```
 
-A minimal PNG encoder on top of `node:zlib` (8-bit RGBA, no row filtering, deflate level 9). Node
-only; it is not exported from `src/core/index.js`.
+[`pngBytes`](#pngbytes) with `node:zlib` (deflate level 9): an indexed PNG when the image has at most
+256 colours (pixel art nearly always), otherwise 8-bit RGBA with per-row filters. Node only; it is not
+exported from `src/core/index.js`.
 
 | Parameter | Type | Default | Meaning |
 |---|---|---|---|
@@ -1688,8 +1697,7 @@ only; it is not exported from `src/core/index.js`.
 
 **Returns** a `Buffer` with the PNG file bytes.
 
-**Errors**: no validation of its own. A typed array that is too short throws a `RangeError`
-(`"length" is outside of buffer bounds`); a plain array throws a `TypeError`.
+**Errors**: no validation of its own. A plain array (not a typed array or `Buffer`) throws a `TypeError`.
 
 ```js
 import { writeFileSync } from 'node:fs';
@@ -1699,8 +1707,29 @@ import { encodePNG } from './src/node/png.js';
 const img = createImage(4, 4, [255, 0, 0, 255]);
 const png = encodePNG(img.w, img.h, img.rgba);
 writeFileSync('red.png', png);
-console.log(png.subarray(1, 4).toString('ascii'), png.length);  // PNG 75
+console.log(png.subarray(1, 4).toString('ascii'), png.length);  // PNG 83 (one colour: indexed)
 ```
+
+
+### `pngBytes`
+
+```ts
+import { pngBytes } from './src/core/index.js';
+pngBytes(w: number, h: number, rgba: Uint8Array, deflate: (raw: Uint8Array) => Uint8Array | Promise<Uint8Array>): Uint8Array | Promise<Uint8Array>
+```
+
+The encoder behind `encodePNG`, for any host: you supply zlib. Writes an indexed PNG (palette, tRNS,
+1/2/4/8 bits per pixel) when the image has at most 256 RGBA colours, else RGBA8 with the smallest
+filter per row. Returns synchronously when `deflate` does, a promise when it returns one. In a browser:
+
+```js
+const deflate = async (raw) => new Uint8Array(await new Response(
+  new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+const png = await pngBytes(sheet.width, sheet.height, sheet.rgba, deflate);
+```
+
+Sheets come out 35–45% smaller than with `canvas.toDataURL()` (which writes RGBA). The studio uses
+this for its bundles.
 
 ## Internal helpers
 
