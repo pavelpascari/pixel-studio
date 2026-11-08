@@ -286,3 +286,23 @@ test('runScene: loops a number of times, and stop() ends it mid-step', async () 
   await new Promise((r) => setTimeout(r, 50));
   assert.equal(b.log.length, n);   // nothing runs after stop
 });
+
+test('checkScene: triggers and the carry / exit / enter steps', () => {
+  const ok = { cast: { goose: '#goose' }, trigger: { event: 'submit', on: '#signup', once: true, preventDefault: true }, steps: [
+    { actor: 'goose', pickUp: '$trigger .letter' }, { actor: 'goose', exit: 'right' }, { wait: 1000 },
+    { actor: 'goose', enter: 'left' }, { actor: 'goose', enter: '#footer' }, { actor: 'goose', drop: 'back' }, { actor: 'goose', drop: true },
+  ] };
+  assert.deepEqual(checkScene(ok), []);
+  const paths = (s) => checkScene(s).map((e) => e.path);
+  assert.deepEqual(paths({ trigger: { event: 'submit' }, steps: [{ wait: 1 }] }), ['$.trigger.on']);
+  assert.deepEqual(paths({ trigger: { event: 'x', on: '#a', when: 1, once: 'yes' }, steps: [{ wait: 1 }] }), ['$.trigger.when', '$.trigger.once']);
+  assert.deepEqual(paths({ trigger: 'submit', steps: [{ wait: 1 }] }), ['$.trigger']);
+  assert.deepEqual(paths({ steps: [{ actor: 'g', exit: 'up' }, { actor: 'g', drop: 'away' }, { actor: 'g', pickUp: 3 }] }),
+    ['$.steps[0].exit', '$.steps[1].drop', '$.steps[2].pickUp']);
+});
+
+test('runScene: carry, exit and enter become actor orders', async () => {
+  const { env, log } = fakeEnv();
+  await runScene({ steps: [{ actor: 'goose', pickUp: '#letter' }, { actor: 'goose', exit: 'right' }, { actor: 'goose', enter: 'left' }, { actor: 'goose', drop: true }] }, env);
+  assert.deepEqual(log.filter((l) => l.endsWith(':start')), ['goose.pickUp:start', 'goose.exit:start', 'goose.enter:start', 'goose.drop:start']);
+});

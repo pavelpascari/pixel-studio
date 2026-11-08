@@ -42,7 +42,8 @@ import { clock, BurstDetector } from './pixel-sprite.js';
 
 const FLAGS = ['surface', 'climbable', 'perch', 'hide', 'occluder', 'avoid'];
 const SELECTOR = FLAGS.map((f) => `[data-pixel-${f}]`).join(',');
-const ORDERS = ['goTo', 'hideBehind', 'perform', 'shoo'];
+const ORDERS = ['goTo', 'hideBehind', 'perform', 'shoo', 'pickUp', 'drop', 'exit', 'enter'];
+const CARRY_POINTS = ['carry', 'beak', 'handR', 'hand', 'nose', 'head', 'top'];
 const ROLES = {
   idle: ['idle'], walk: ['walk', 'waddle', 'trot', 'travel'], run: ['run', 'trot', 'travel', 'walk', 'waddle'],
   jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
@@ -195,22 +196,16 @@ export class PixelStage extends Base {
    * Play a scene: an object, JSON text, or a selector for a <script type="application/json"> holding one.
    * Returns {name, finished: Promise<boolean>, stop()}; a new scene stops the one playing. Throws an Error
    * listing every problem (err.errors = [{path, message}]) if the scene is not valid.
+   * `trigger` is the element that set it off: steps can name it "$trigger" (or "$trigger .letter" inside it).
    */
-  playScene(scene) {
-    if (typeof scene === 'string') {
-      const t = scene.trim();
-      const text = t.startsWith('{') ? t : document.querySelector(t)?.textContent;
-      if (text == null) throw new Error(`playScene: nothing found for "${t}"`);
-      scene = JSON.parse(text);
-    }
-    const names = scene?.cast && typeof scene.cast === 'object' ? Object.keys(scene.cast) : this.actors.map((a) => a.id).filter(Boolean);
-    const errors = checkScene(scene, names);
-    if (errors.length) {
-      const e = new Error(`playScene: invalid scene\n${errors.map((x) => `  ${x.path}: ${x.message}`).join('\n')}`);
-      e.errors = errors;
-      throw e;
-    }
-    const find = (sel) => { try { return document.querySelector(sel); } catch { return null; } };
+  playScene(scene, { trigger = null } = {}) {
+    scene = this._loadScene(scene, 'playScene');
+    const names = this._castNames(scene);
+    const find = (sel) => {
+      if (sel === '$trigger') return trigger;
+      if (sel.startsWith('$trigger ')) return trigger?.querySelector(sel.slice(9)) ?? null;
+      try { return document.querySelector(sel); } catch { return null; }
+    };
     const castEl = (name) => { const el = find(scene.cast?.[name] ?? `#${name}`); return el instanceof PixelActor ? el : null; };
     const cast = names.map(castEl).filter(Boolean);
     this._scene?.stop();
@@ -239,7 +234,7 @@ export class PixelStage extends Base {
     };
     // Characters must be loaded and standing somewhere before they take orders.
     const placed = (a) => new Promise((r) => { const t0 = performance.now(); const poll = () => (a._placed || performance.now() - t0 > 10000 ? r() : setTimeout(poll, 50)); poll(); });
-    const handle = { name: scene.name ?? null, stop: () => stop(), finished: null };
+    const handle = { name: scene.name ?? null, source: scene, trigger, stop: () => stop(), finished: null };
     handle.finished = Promise.race([Promise.all(cast.map(placed)).then(() => runScene(scene, env)), stopped.then(() => false)])
       .then((completed) => {
         cast.forEach((a, i) => (a.directed = was[i]));
@@ -251,6 +246,65 @@ export class PixelStage extends Base {
     this._scene = handle;
     return handle;
   }
+
+  _castNames(scene) { return scene?.cast && typeof scene.cast === 'object' ? Object.keys(scene.cast) : this.actors.map((a) => a.id).filter(Boolean); }
+
+  /** An object, JSON text or a selector → a checked scene object (throws listing the problems). */
+  _loadScene(scene, who) {
+    if (typeof scene === 'string') {
+      const t = scene.trim();
+      const text = t.startsWith('{') ? t : document.querySelector(t)?.textContent;
+      if (text == null) throw new Error(`${who}: nothing found for "${t}"`);
+      scene = JSON.parse(text);
+    }
+    const errors = checkScene(scene, this._castNames(scene));
+    if (errors.length) {
+      const e = new Error(`${who}: invalid scene\n${errors.map((x) => `  ${x.path}: ${x.message}`).join('\n')}`);
+      e.errors = errors;
+      throw e;
+    }
+    return scene;
+  }
+
+  /**
+   * Arm a scene with a "trigger": {"event", "on", "once"?, "preventDefault"?}. When the event happens it plays
+   * (stopping any other scene; ignored while this one is already playing). "on" is a selector (matched on
+   * elements added later too), a cast name or "stage"; the "visible" event fires when a matching element is
+   * half in view. Returns {disarm()}. <script type="application/json" data-pixel-scene> scenes are armed for you.
+   */
+  arm(scene) {
+    scene = this._loadScene(scene, 'arm');
+    const t = scene.trigger;
+    if (!t) throw new Error('arm: the scene has no "trigger"');
+    let fired = false, off = () => {};
+    const fire = (el, e) => {
+      if ((t.once && fired) || this._scene?.source === scene) return;
+      fired = true;
+      if (t.preventDefault) e?.preventDefault();
+      // Next task: let the page's own handlers for this event run first (showing the letter, say).
+      setTimeout(() => { try { this.playScene(scene, { trigger: el }); } catch (err) { console.error(err); } });
+      if (t.once) off();
+    };
+    const castEl = this._castNames(scene).includes(t.on) ? document.querySelector(scene.cast?.[t.on] ?? `#${t.on}`) : null;
+    if (t.on === 'stage' || castEl) {
+      const el = castEl ?? this, h = (e) => fire(el, e);
+      el.addEventListener(t.event, h);
+      off = () => el.removeEventListener(t.event, h);
+    } else if (t.event === 'visible') {
+      const io = new IntersectionObserver((es) => { for (const en of es) if (en.isIntersecting) { io.unobserve(en.target); fire(en.target); } }, { threshold: 0.5 });
+      for (const el of document.querySelectorAll(t.on)) io.observe(el);
+      off = () => io.disconnect();
+    } else {
+      // Delegated on the document (capture), so it works for elements added later and pages that stop propagation.
+      const h = (e) => { const el = e.target?.closest?.(t.on); if (el) fire(el, e); };
+      document.addEventListener(t.event, h, true);
+      off = () => document.removeEventListener(t.event, h, true);
+    }
+    const armed = { scene, disarm: () => { off(); this._armed?.delete(armed); } };
+    (this._armed ??= new Set()).add(armed);
+    return armed;
+  }
+
   get paused() { return this._paused; }
 
   connectedCallback() {
@@ -263,16 +317,23 @@ export class PixelStage extends Base {
     this._input();
     this._scrolling();
     this._sync();
-    // <pixel-stage scene="#intro">: play that scene once the page is parsed.
-    if (this.hasAttribute('scene')) {
-      const auto = () => { try { this.playScene(this.getAttribute('scene')); } catch (e) { console.error(e); } };
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else setTimeout(auto);
-    }
+    // Once the page is parsed: arm the triggered scenes, and play <pixel-stage scene="#intro">.
+    const auto = () => {
+      if (!this.isConnected) return;
+      const mine = (el) => { const st = el.closest('pixel-stage'); return st ? st === this : document.querySelector('pixel-stage') === this; };
+      for (const el of document.querySelectorAll('script[type="application/json"][data-pixel-scene]')) {
+        if (!mine(el) || [...(this._armed ?? [])].some((a) => a.el === el)) continue;
+        try { const sc = JSON.parse(el.textContent); if (sc?.trigger) this.arm(sc).el = el; } catch (e) { console.error(`pixel-stage: scene in ${el.id ? `#${el.id}` : 'a script'}:`, e); }
+      }
+      if (this.hasAttribute('scene')) { try { this.playScene(this.getAttribute('scene')); } catch (e) { console.error(e); } }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto, { once: true }); else setTimeout(auto);
   }
 
   disconnectedCallback() {
     clock.remove(this._tick);
     this._scene?.stop();
+    for (const a of [...(this._armed ?? [])]) a.disarm();
     this.world.disconnect();
     this._rm?.removeEventListener?.('change', this._onRm);
     this._unscroll?.();
@@ -400,12 +461,16 @@ export class PixelActor extends Base {
     root.innerHTML = `<style>
       :host{position:absolute;left:0;top:0;display:block;visibility:hidden;will-change:transform}
       :host([data-ready]){visibility:visible}
+      :host([offstage]){visibility:hidden}
+      .body{position:relative}
       pixel-sprite{display:block}
       .say{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font:600 12px/1.2 system-ui,sans-serif;
         background:#fff;color:#222;border:2px solid #222;border-radius:8px;padding:3px 7px;opacity:0;transition:opacity .15s}
       .say.on{opacity:1}
-    </style><pixel-sprite part="sprite"></pixel-sprite><div class="say" part="bubble"></div>`;
+      .say:not(.on){display:none}
+    </style><div class="body"><pixel-sprite part="sprite"></pixel-sprite><slot name="carry"></slot></div><div class="say" part="bubble"></div>`;
     this.sprite = root.querySelector('pixel-sprite');
+    this._body = root.querySelector('.body');
     this._bubble = root.querySelector('.say');
     this.x = 0; this.y = 0; this.facing = 1; this.state = 'idle';
     this.plan = []; this.behind = new Set(); this._orders = [];
@@ -507,6 +572,7 @@ export class PixelActor extends Base {
   say(text, ms = 1800) {
     this._bubble.textContent = text;
     this._bubble.classList.add('on');
+    this._bubbleW = null;
     this._sayUntil = performance.now() + ms;
     return new Promise((ok) => setTimeout(() => ok(true), ms));
   }
@@ -519,6 +585,168 @@ export class PixelActor extends Base {
     if (x == null || x === this.x) return false;
     this.facing = x > this.x ? 1 : -1;
     return true;
+  }
+
+  /** What it is carrying (the page element it picked up), or null. */
+  get carrying() { return this._carry?.el ?? null; }
+
+  /**
+   * Walk over to an element (any element: a letter beside a form, an icon) and pick it up. A copy rides at
+   * the beak or hand (the `carry` point if the figure has one); the original is hidden, keeping its space.
+   */
+  pickUp(el) {
+    const w = this.stage?.world;
+    if (!w || !this._ready || this.offstage || this._carry || !(el instanceof Element)) return false;
+    if (this._busy()) { this._pending = () => this.pickUp(el); return true; }
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return false;
+    const cx = r.left + scrollX - w.origin.x + r.width / 2, by = r.bottom + scrollY - w.origin.y;
+    // Stand on the surface nearest the element's bottom edge (above or below it) that spans it.
+    const near = w.platforms.filter((p) => cx >= p.x1 - this.W && cx <= p.x2 + this.W)
+      .sort((a, b) => Math.abs(a.y - by) + (a.y < by ? this.H * 0.5 : 0) - Math.abs(b.y - by) - (b.y < by ? this.H * 0.5 : 0));
+    for (const p of near.slice(0, 4)) {
+      const path = this._route(p, cx, w);
+      if (path) {
+        this.plan = [...path, { type: 'pickup', el }, { type: 'idle', ms: rand(600, 1200) }];
+        this._step = null;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Put down what it carries: 'here' (at its feet, where it stays) or 'back' (where it came from). */
+  drop(how = 'here') {
+    if (!this._carry || !this._ready) return false;
+    if (this._busy()) { this._pending = () => this.drop(how); return true; }
+    this.plan = [{ type: 'drop', how }, { type: 'idle', ms: rand(600, 1200) }];
+    this._step = null;
+    return true;
+  }
+
+  /**
+   * Leave the screen by its left or right edge ('auto': the nearer one): along a surface that reaches the
+   * edge, hopping down when one ends. Off screen it is `offstage` (hidden); anything carried is delivered
+   * (a 'deliver' event). Undirected characters come back on their own a few seconds later.
+   */
+  exit(side = 'auto') {
+    const w = this.stage?.world;
+    if (!w || !this._ready || this.offstage) return false;
+    if (this._busy()) { this._pending = () => this.exit(side); return true; }
+    const vp = w.viewport();
+    if (side !== 'left' && side !== 'right') side = this.x < (vp.l + vp.r) / 2 ? 'left' : 'right';
+    const dir = side === 'left' ? -1 : 1;
+    const reaches = (p) => (dir < 0 ? p.x1 <= vp.l + this.W / 2 : p.x2 >= vp.r - this.W / 2);
+    let path = [];
+    if (!this.platform || !reaches(this.platform)) {
+      const ps = w.platforms.filter((p) => reaches(p) && p.y > vp.t + this.H && p.y <= vp.b + 2)
+        .sort((a, b) => Math.abs(a.y - this.y) - Math.abs(b.y - this.y));
+      for (const p of ps.slice(0, 4)) { const r = this._route(p, dir < 0 ? p.x1 : p.x2, w, true); if (r) { path = r; break; } }
+    }
+    this.plan = [...path, { type: 'leave', dir }];
+    this._step = null;
+    return true;
+  }
+
+  /**
+   * Come back on screen: walk in from the 'left' or 'right' edge along a visible surface that reaches it,
+   * or drop in from the top ('top', or onto a given element's surface). 'auto' tries the sides first.
+   */
+  enter(from = 'auto') {
+    const w = this.stage?.world;
+    if (!w || !this._ready || !this.offstage) return false;
+    const vp = w.viewport();
+    const seen = (p) => p.y > vp.t + this.H && p.y <= vp.b + 2 && Math.min(p.x2, vp.r) - Math.max(p.x1, vp.l) > this.W;
+    const sides = from === 'left' || from === 'right' ? [from] : from === 'auto' ? (Math.random() < 0.5 ? ['left', 'right'] : ['right', 'left']) : [];
+    this._returnAt = 0;
+    for (const side of sides) {
+      const dir = side === 'left' ? 1 : -1;   // the way it walks in
+      const ps = w.platforms.filter((p) => seen(p) && (side === 'left' ? p.x1 <= vp.l + 2 : p.x2 >= vp.r - 2)).sort((a, b) => b.y - a.y);
+      if (!ps.length) continue;
+      const p = ps[0];
+      this._onstage();
+      this.platform = p; this.y = p.y; this.facing = dir;
+      this.x = side === 'left' ? vp.l - this.W / 2 - 2 : vp.r + this.W / 2 + 2;
+      this.plan = [{ type: 'walk', x: clampTo(p, side === 'left' ? vp.l + this.W * 1.5 : vp.r - this.W * 1.5, this.W * 0.5), p, free: true }];
+      this._step = null;
+      return true;
+    }
+    // From the top: onto the element's surface, or a visible one.
+    const want = from instanceof Element ? w.platformOf(from) : null;
+    const visible = w.platforms.filter(seen);
+    const p = want ?? (visible.length ? pick(visible) : null);
+    if (!p) return false;
+    this._onstage();
+    this.x = clampTo(p, (Math.max(p.x1, vp.l) + Math.min(p.x2, vp.r)) / 2 + rand(-1, 1) * this.W, this.W * 0.5);
+    this.y = Math.min(p.y - this.H, vp.t - 4);
+    this.plan = [];
+    this._fall(0);
+    this._vy = this.H * 4;
+    return true;
+  }
+
+  _onstage() {
+    this.offstage = false;
+    this.removeAttribute('offstage');
+    this.dispatchEvent(new CustomEvent('enter'));
+  }
+
+  _offstage() {
+    this.offstage = true;
+    this.setAttribute('offstage', '');
+    this.platform = null; this.behind.clear();
+    this._setState('offstage');
+    this._returnAt = performance.now() + rand(5000, 9000);
+    const c = this._carry;
+    if (c) { this._carry = null; c.clone.remove(); this.dispatchEvent(new CustomEvent('deliver', { detail: { prop: c.el } })); }
+    this.dispatchEvent(new CustomEvent('exit'));
+  }
+
+  /** Start carrying el: a copy (styled like it) flies from its place to the carry point. */
+  _take(el) {
+    const w = this.stage.world, r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    const clone = el.cloneNode(true);
+    clone.removeAttribute('id');
+    for (const n of clone.querySelectorAll('[id]')) n.removeAttribute('id');
+    for (const k of cs) clone.style.setProperty(k, cs.getPropertyValue(k));   // keep its look outside its old ancestors
+    Object.assign(clone.style, {
+      position: 'absolute', left: '0', top: '0', margin: '0', width: `${r.width}px`, height: `${r.height}px`, boxSizing: 'border-box',
+      pointerEvents: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', visibility: 'visible', transition: 'none', animation: 'none', zIndex: '1',
+    });
+    clone.slot = 'carry';
+    clone.setAttribute('aria-hidden', 'true');
+    this.append(clone);
+    this._carry = { el, clone, w: r.width, h: r.height, from: { x: r.left + scrollX - w.origin.x, y: r.top + scrollY - w.origin.y }, t0: performance.now(), vis: el.style.visibility };
+    el.style.visibility = 'hidden';
+    this.dispatchEvent(new CustomEvent('pickup', { detail: { prop: el } }));
+  }
+
+  /** Let go of what it carries: it stays on the stage at its feet, or flies back and the original reappears. */
+  _release(how) {
+    const c = this._carry, stage = this.stage;
+    if (!c || !stage) return;
+    this._carry = null;
+    const L = this.x - this.W / 2, T = this.y - (this.sprite.groundOffset ?? this.H);
+    const at = this._carryAt(c);
+    c.clone.removeAttribute('slot');
+    c.clone.style.transform = `translate(${L + at.x}px, ${T + at.y}px)`;
+    c.clone.style.zIndex = String(Math.round(this.y) + 1);
+    stage.append(c.clone);
+    const to = how === 'back' ? c.from : { x: this.x + this.facing * this.W * 0.3 - c.w / 2, y: this.y - c.h };
+    requestAnimationFrame(() => {
+      c.clone.style.transition = 'transform .3s ease-in';
+      c.clone.style.transform = `translate(${to.x}px, ${to.y}px)`;
+    });
+    if (how === 'back') setTimeout(() => { c.clone.remove(); c.el.style.visibility = c.vis; }, 320);
+    this.dispatchEvent(new CustomEvent('drop', { detail: { prop: c.el, how } }));
+  }
+
+  /** Where the carried thing sits, relative to the actor's box: centred on the carry point, hanging a little. */
+  _carryAt(c) {
+    let p = null;
+    for (const n of CARRY_POINTS) if ((p = this.sprite.point(n, { relative: true }))) break;
+    p ??= { x: this.W / 2, y: this.H * 0.35 };
+    return { x: p.x - c.w / 2, y: p.y - c.h * 0.3 };
   }
 
   /** Directed characters do nothing on their own between orders: they idle where they are (scenes set this). */
@@ -615,7 +843,7 @@ export class PixelActor extends Base {
    * Checked a few times a second and whenever scrolling settles; never in the middle of a fast scroll.
    */
   _checkInView(w, settled = false) {
-    if (!this.hasAttribute('keep-in-view') || !this._ready || !this._placed || this._still || this._busy() || (this._catching ?? 0) > performance.now()) return;
+    if (!this.hasAttribute('keep-in-view') || this.offstage || this.state === 'leaving' || this._step?.free || !this._ready || !this._placed || this._still || this._busy() || (this._catching ?? 0) > performance.now()) return;
     const now = performance.now();
     if (!settled && now - (this._lastViewCheck ?? 0) < 300) return;
     this._lastViewCheck = now;
@@ -683,7 +911,7 @@ export class PixelActor extends Base {
   _worldChanged(w) {
     if (!this._ready) return;
     if (!this._placed) return this._place(w);
-    if (['climbing', 'jumping', 'falling', 'dragged'].includes(this.state)) return this._remap(w);
+    if (['climbing', 'jumping', 'falling', 'dragged', 'leaving'].includes(this.state) || this._step?.free || this.offstage) return this._remap(w);
     // Stay on the same element; if it went away or moved from under us, fall.
     const p = this.platform && (this.platform.floor ? w.platformOf(null) : w.platformOf(this.platform.el));
     if (p && this.x >= p.x1 - 2 && this.x <= p.x2 + 2) { this.platform = p; this.y = p.y; }
@@ -741,6 +969,7 @@ export class PixelActor extends Base {
   }
 
   _hit(cx, cy, w) {
+    if (this.offstage) return false;
     const vx = cx + scrollX - w.origin.x, vy = cy + scrollY - w.origin.y;
     const L = this.x - this.W / 2, T = this.y - this.sprite.groundOffset;
     if (vx < L || vx > L + this.W || vy < T || vy > T + this.H) return false;
@@ -778,6 +1007,11 @@ export class PixelActor extends Base {
     }
     if (this._pending && !this._busy()) { const run = this._pending; this._pending = null; run(); }
     this._sweepOrders();
+    if (this.offstage) {
+      while (this.plan[0]?.type === 'done') this._do_done(this.plan.shift());
+      if (!this.directed && this._returnAt && performance.now() > this._returnAt) this.enter('auto');
+      return;
+    }
     if (!this._step) {
       if (!this.plan.length) { if (this.directed) this.plan = [{ type: 'idle', ms: 400 }]; else this._choose(w); }
       this._step = this.plan.shift() || { type: 'idle', ms: 1000 };
@@ -822,7 +1056,56 @@ export class PixelActor extends Base {
     this.x += this.facing * step;
     // Walked off the end of the platform: fall.
     // Walked off the end: drop, with only a little sideways speed so it lands where the route expects.
-    if (this.platform && (this.x < this.platform.x1 - 1 || this.x > this.platform.x2 + 1)) { this._fall(this.facing * Math.min(this._speed(role) * 0.6, this.W)); return true; }
+    if (this.platform && !st.free && (this.x < this.platform.x1 - 1 || this.x > this.platform.x2 + 1)) { this._fall(this.facing * Math.min(this._speed(role) * 0.6, this.W)); return true; }
+    return false;
+  }
+
+  _do_pickup(st) {
+    if (!st.started) {
+      st.started = true;
+      this._setState('picking up');
+      this.face(st.el);
+      this._play(this.anims.duck ? 'duck' : 'idle');
+      if (st.el.isConnected) this._take(st.el);
+    }
+    if (st.t > 350) this._play('idle');
+    return st.t >= 500;
+  }
+
+  _do_drop(st) {
+    if (!st.started) { st.started = true; this._play(this.anims.duck ? 'duck' : 'idle'); this._release(st.how); }
+    if (st.t > 300) this._play('idle');
+    return st.t >= 450;
+  }
+
+  /** Off the edge of the screen: walk (or run) on, hop down where a surface ends, until out of view. */
+  _do_leave(st, dt, w) {
+    const vp = w.viewport(), dir = st.dir;
+    if (!st.started) { st.started = true; this.facing = dir; this.behind.clear(); }
+    this._setState('leaving');
+    if (!st.air) {
+      const role = this.anims.run ? 'run' : 'walk';
+      this._play(role);
+      this.x += dir * this._speed(role) * dt;
+      const p = this.platform, atEdge = p && (dir < 0 ? p.x1 <= vp.l + this.W / 2 : p.x2 >= vp.r - this.W / 2);
+      if (!p || (!atEdge && (this.x < p.x1 - 1 || this.x > p.x2 + 1))) {
+        // Leap for the edge: fast enough to clear it before coming back down to this height (a big jump if it is far).
+        const gap = Math.max(0, dir > 0 ? vp.r - this.x : this.x - vp.l) + this.W;
+        st.air = true; st.vy = -this.H * 6; this.platform = null;
+        st.vx = dir * Math.min(this.H * 20, Math.max(this._speed(role), gap / 0.45));
+      }
+    } else {
+      this._play('fall');
+      const y0 = this.y;
+      st.vy = Math.min(this.H * 30, st.vy + this.H * 28 * dt);
+      this.x += st.vx * dt; this.y += st.vy * dt;
+      if (st.vy > 0) {
+        let land = null;
+        for (const p of w.platforms) if (this.x >= p.x1 && this.x <= p.x2 && p.y >= y0 - 0.5 && p.y <= this.y && (!land || p.y < land.y)) land = p;
+        if (land) { this.y = land.y; this.platform = land; st.air = false; }
+      }
+    }
+    if (this.x - this.W / 2 > vp.r || this.x + this.W / 2 < vp.l || this.y - this.H > vp.b) { this._offstage(); return true; }
     return false;
   }
 
@@ -1107,7 +1390,25 @@ export class PixelActor extends Base {
 
   _write(w) {
     const gy = this.sprite.groundOffset ?? this.H;
-    const L = snap(this.x - this.W / 2), T = snap(this.y - gy);
+    let L = snap(this.x - this.W / 2), T = snap(this.y - gy);
+    // Walking off (or in from) the page's right or bottom edge: keep the box inside the page and slide the
+    // body out of it instead, clipped, so the page never grows a scrollbar.
+    let sx = 0, sy = 0;
+    if (this.offstage || this.state === 'leaving' || this._step?.free) {
+      if (L + this.W > w.width) { sx = L + this.W - w.width; L -= sx; }
+      if (T + this.H > w.height) { sy = T + this.H - w.height; T -= sy; }
+    }
+    const shift = sx || sy ? `${sx}px ${sy}px` : '';
+    if (shift !== (this._shift ?? '')) { this._body.style.translate = shift; this.style.overflow = shift ? 'clip' : ''; this._shift = shift; }
+    if (this._carry) {
+      const c = this._carry, at = this._carryAt(c), k = Math.min(1, (performance.now() - c.t0) / 280);
+      let x = at.x, y = at.y;
+      if (k < 1) {
+        const e = 1 - (1 - k) ** 2, x0 = c.from.x - L, y0 = c.from.y - T;
+        x = x0 + (x - x0) * e; y = y0 + (y - y0) * e - Math.sin(Math.PI * k) * this.H * 0.3;
+      }
+      c.clone.style.transform = `translate(${snap(x)}px, ${snap(y)}px)`;
+    }
     const tf = `translate(${L}px, ${T}px)`;
     if (tf !== this._tf) { this.style.transform = tf; this._tf = tf; }
     const z = String(Math.round(this.y));
@@ -1121,7 +1422,10 @@ export class PixelActor extends Base {
     if (clip !== this._clip) { this.style.clipPath = clip; this._clip = clip; }
     if (this._sayUntil) {
       const p = this.sprite.point('beak', { relative: true }) || this.sprite.point('head', { relative: true }) || { x: this.W / 2, y: this.H * 0.1 };
-      this._bubble.style.left = `${p.x}px`; this._bubble.style.top = `${p.y - 6}px`;
+      // Kept inside the page: a bubble poking past its right edge would add a scrollbar.
+      const half = (this._bubbleW ??= this._bubble.offsetWidth) / 2;
+      const bx = Math.max(half - L, Math.min(w.width - L - half, p.x));
+      this._bubble.style.left = `${bx}px`; this._bubble.style.top = `${p.y - 6}px`;
     }
   }
 }
@@ -1141,7 +1445,7 @@ function clampTo(p, x, margin) {
 //     {"together": [{"actor": "goose", "say": "honk?"}, {"actor": "clawd", "perform": "think", "ms": 2000}]},
 //     {"wait": 500}, {"waitFor": "tap", "on": "clawd"}, {"emit": "chapter-2"} ] }
 
-const SCENE_ACTIONS = ['goTo', 'hideBehind', 'perform', 'say', 'shoo', 'face'];
+const SCENE_ACTIONS = ['goTo', 'hideBehind', 'perform', 'say', 'shoo', 'face', 'pickUp', 'drop', 'exit', 'enter'];
 const SCENE_FLOW = ['wait', 'together', 'waitFor', 'emit'];
 const SCENE_EXTRA = { goTo: ['then', 'at'], perform: ['ms'], say: ['ms'], waitFor: ['on', 'timeout'], emit: ['detail'] };
 const SCENE_COMMON = ['actor', 'async', 'note'];
@@ -1150,7 +1454,17 @@ const SCENE_COMMON = ['actor', 'async', 'note'];
 export function checkScene(scene, castNames = null) {
   const errors = [], err = (path, message) => errors.push({ path, message });
   if (!scene || typeof scene !== 'object' || Array.isArray(scene)) { err('$', 'a scene is an object with "steps"'); return errors; }
-  for (const k of Object.keys(scene)) if (!['name', 'cast', 'steps', 'loop', 'directed', 'note'].includes(k)) err(`$.${k}`, `unknown key (name, cast, steps, loop, directed)`);
+  for (const k of Object.keys(scene)) if (!['name', 'cast', 'steps', 'loop', 'directed', 'trigger', 'note'].includes(k)) err(`$.${k}`, `unknown key (name, cast, steps, loop, directed, trigger)`);
+  const t = scene.trigger;
+  if (t != null) {
+    if (!t || typeof t !== 'object' || Array.isArray(t)) err('$.trigger', 'a trigger is {"event": "submit", "on": "#signup"}');
+    else {
+      for (const k of Object.keys(t)) if (!['event', 'on', 'once', 'preventDefault'].includes(k)) err(`$.trigger.${k}`, 'unknown key (event, on, once, preventDefault)');
+      if (typeof t.event !== 'string' || !t.event) err('$.trigger.event', 'an event name, like "submit", "click", "tap" or "visible"');
+      if (typeof t.on !== 'string' || !t.on) err('$.trigger.on', 'what to watch: a selector, a cast name, or "stage"');
+      for (const k of ['once', 'preventDefault']) if (k in t && typeof t[k] !== 'boolean') err(`$.trigger.${k}`, `${k} is true or false`);
+    }
+  }
   if (scene.cast != null && (typeof scene.cast !== 'object' || Array.isArray(scene.cast))) err('$.cast', 'cast maps names to selectors: {"goose": "#goose"}');
   if (scene.loop != null && typeof scene.loop !== 'boolean' && !(Number.isInteger(scene.loop) && scene.loop > 0)) err('$.loop', 'loop is true, false or a number of times');
   const names = castNames ?? (scene.cast ? Object.keys(scene.cast) : null);
@@ -1179,6 +1493,10 @@ export function checkScene(scene, castNames = null) {
     if (kind === 'say' && typeof v !== 'string') err(`${p}.say`, 'the text to show');
     if (kind === 'shoo' && v !== true && typeof v !== 'string') err(`${p}.shoo`, 'true, or what to run from (a selector or cast name)');
     if (kind === 'face' && typeof v !== 'string') err(`${p}.face`, '"left", "right", a cast name or a selector');
+    if (kind === 'pickUp' && typeof v !== 'string') err(`${p}.pickUp`, 'a selector for the element to pick up');
+    if (kind === 'drop' && v !== true && v !== 'here' && v !== 'back') err(`${p}.drop`, 'true or "here" (at its feet), or "back" (where it came from)');
+    if (kind === 'exit' && !['left', 'right', 'auto'].includes(v)) err(`${p}.exit`, '"left", "right" or "auto" (the nearer edge)');
+    if (kind === 'enter' && typeof v !== 'string') err(`${p}.enter`, '"left", "right", "top", "auto", or a selector to drop onto');
     if (kind === 'wait') num(v, `${p}.wait`, 'wait');
     if (kind === 'together') steps(v, `${p}.together`);
     if (kind === 'waitFor') {
@@ -1222,6 +1540,10 @@ export async function runScene(scene, env) {
     if ('hideBehind' in st) { const el = env.element(st.hideBehind); return el ? a.run('hideBehind', el) : false; }
     if ('perform' in st) return a.run('perform', st.perform, st.ms != null ? { ms: st.ms } : undefined);
     if ('shoo' in st) return a.run('shoo', ...(st.shoo === true ? [] : [target(st.shoo)].filter(Boolean)));
+    if ('pickUp' in st) { const el = env.element(st.pickUp); return el ? a.run('pickUp', el) : false; }
+    if ('drop' in st) return a.run('drop', st.drop === true ? 'here' : st.drop);
+    if ('exit' in st) return a.run('exit', st.exit);
+    if ('enter' in st) return a.run('enter', ['left', 'right', 'top', 'auto'].includes(st.enter) ? st.enter : env.element(st.enter) ?? 'top');
     return false;
   };
   const run = async (st, path) => {

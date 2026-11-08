@@ -123,6 +123,24 @@
     <code>together</code>, <code>waitFor</code>, <code>emit</code>. <code>&lt;pixel-stage scene="#intro"&gt;</code> plays one
     when the page loads. The full table is in <a href="../docs/stage.md#scenes">docs/stage.md</a>.</p>
 
+  <h3 id="triggers">Triggers, carrying and leaving</h3>
+  <p>Give a scene a <code>trigger</code> and mark its script <code>data-pixel-scene</code>: it plays by itself when that
+    happens: a form submitted, a button clicked, a section scrolled into view (<code>"visible"</code>), a character tapped.
+    Characters can <code>pickUp</code> any element (a copy rides at the beak or hand), <code>drop</code> it, <code>exit</code>
+    by the side of the screen (delivering what they carry) and <code>enter</code> again. The
+    <a href="../demo/stage.html#newsletter">demo page's newsletter form</a> hands the goose a letter to post.</p>
+  <pre class="snippet" data-lang="json">
+    {"cast": {"goose": "#goose"},
+     "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
+     "steps": [
+       {"actor": "goose", "pickUp": "$trigger .letter"},
+       {"actor": "goose", "exit": "right"},
+       {"wait": 1800}, {"emit": "delivered"},
+       {"actor": "goose", "enter": "right"},
+       {"actor": "goose", "say": "delivered. HONK"}
+     ]}
+  </pre>
+
   <h2 id="markup">Marking up your page</h2>
   <table>
     <tr><th>attribute</th><th>meaning</th></tr>

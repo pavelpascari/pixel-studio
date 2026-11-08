@@ -13,6 +13,7 @@ Demo: `npm run studio` and open `http://localhost:5173/demo/stage.html`. The des
 - [Elements and attributes](#elements-and-attributes)
 - [JavaScript API](#javascript-api)
 - [Scenes](#scenes)
+  - [Triggers](#triggers)
 - [What the characters do](#what-the-characters-do)
 - [What a character needs from its bundle](#what-a-character-needs-from-its-bundle)
 - [How it works](#how-it-works)
@@ -103,17 +104,22 @@ stage.world.invalidate();                                          // after movi
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
 | `actor.catchUp()` | Come back into view now, the way `keep-in-view` does. Returns `'run'`, `'drop'` or `null` (nothing visible to stand on). |
 | `actor.shoo(from?)` | React (`honk`, `wave`, …) and run to the farthest reachable place on screen. Tapping a character does this. |
-| `actor.run(action, ...args)` | The orders above as promises, for scripts: `await actor.run('goTo', el, {then: 'sit'})`, `run('hideBehind', el)`, `run('perform', name, {ms})`, `run('shoo', from?)`. Resolves `true` once carried out (arrived, sitting, hidden, played), `false` if impossible or interrupted (a tap, a drag, another order to the same character). |
+| `actor.run(action, ...args)` | The orders above as promises, for scripts: `await actor.run('goTo', el, {then: 'sit'})`, `run('hideBehind', el)`, `run('perform', name, {ms})`, `run('shoo', from?)`, `run('pickUp', el)`, `run('drop', how)`, `run('exit', side)`, `run('enter', from)`. Resolves `true` once carried out (arrived, sitting, hidden, played), `false` if impossible or interrupted (a tap, a drag, another order to the same character). |
 | `actor.say(text, ms)` → Promise | Resolves when the bubble goes away. |
 | `actor.face('left' \| 'right' \| actor \| element)` | Turn to face a side or something on the page. |
+| `actor.pickUp(el)` | Walk to any element (a letter by a form, an icon) and pick it up: a copy, styled like it, rides at the `carry` point (else `beak`, `handR`, `head`, …); the original is hidden but keeps its space. `actor.carrying` is that element. |
+| `actor.drop('here' \| 'back')` | Put it down at its feet (the copy stays on the stage) or send it back to where it came from (the original reappears). |
+| `actor.exit('left' \| 'right' \| 'auto')` | Leave the screen by that edge: along a surface that reaches it, or with a leap from the end of one. Off screen it is hidden (`offstage` attribute); anything carried is delivered (`deliver` event; the original stays hidden). Undirected characters come back on their own after 5–9 s. |
+| `actor.enter('left' \| 'right' \| 'top' \| 'auto' \| element)` | Come back: walk in from a side along a visible surface that reaches it, or drop in from the top (onto the element's surface if given). |
 | `actor.directed` | `directed` attribute: the character does nothing on its own between orders and stays seated or hidden until told otherwise. Scenes set it on their cast while they play. |
 | `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`. |
 | `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
-| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`, `tap` (tapped or clicked). |
+| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`, `tap` (tapped or clicked), `pickup` / `drop` / `deliver` `{prop}`, `exit`, `enter`. |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
 | `stage.scrollSpeed` | How fast the page is scrolling, px/s (+ down), smoothed. |
-| `stage.playScene(scene)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`. Returns `{name, finished, stop()}`; `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
+| `stage.playScene(scene, {trigger}?)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`; `trigger` is the element steps can call `"$trigger"`. Returns `{name, finished, stop()}`; `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
 | `stage.scene` | The scene playing now, or null. |
+| `stage.arm(scene)` | Arm a scene that has a `trigger`: it plays when that happens. Returns `{disarm()}`. Scenes in `<script type="application/json" data-pixel-scene>` are armed for you. See [Triggers](#triggers). |
 | `scene` attribute | `<pixel-stage scene="#intro">` plays that scene once the page is parsed. |
 | stage events | `scenestep` `{scene, step, path}`, `sceneevent` `{scene, name, detail}` (from `emit` steps), `sceneend` `{scene, completed}`. |
 | stage events | `fastscroll` `{speed}` when scrolling goes faster than 1.5 screen heights a second; `scrollsettle` when it stops. |
@@ -160,13 +166,18 @@ Steps run one after another. Each step does one thing:
 | `{"actor": a, "say": text}` | speech bubble | `ms` (default 1800) |
 | `{"actor": a, "face": dir}` | turn: `left`, `right`, a cast name or a selector | |
 | `{"actor": a, "shoo": true}` | startle and run off (or `"shoo": what` to run from) | |
+| `{"actor": a, "pickUp": selector}` | walk to the element and carry it | |
+| `{"actor": a, "drop": true}` | put it down (`true` or `"here"`), or `"back"` where it came from | |
+| `{"actor": a, "exit": side}` | leave the screen: `left`, `right` or `auto`; carried things are delivered | |
+| `{"actor": a, "enter": from}` | come back: `left`, `right`, `top`, `auto`, or a selector to drop onto | |
 | `{"wait": ms}` | pause | |
 | `{"together": [steps]}` | run steps at the same time; continue when all are done | |
 | `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … | `timeout` (ms) |
 | `{"emit": name}` | fire `sceneevent` on the stage for page code | `detail` |
 
 Any step can add `"async": true` (start it and move straight on) and `"note"` (a comment). Top level: `cast` maps names
-to selectors (default: the stage's actors by `id`), `loop` (`true` or a number of times), `directed` (default `true`).
+to selectors (default: the stage's actors by `id`), `loop` (`true` or a number of times), `directed` (default `true`),
+`trigger` (see below).
 
 - **The cast is directed** while a scene plays: characters wait for their next step instead of wandering off, and stay
   seated or hidden until the scene moves them. Their own setting comes back when it ends.
@@ -180,6 +191,51 @@ to selectors (default: the stage's actors by `id`), `loop` (`true` or a number o
 
 The [stage demo](../demo/stage.html) plays one ("Play a scene"). From code, the same orders are awaitable on each
 actor: `await goose.run('goTo', el)`, `await goose.say('hi')`.
+
+### Triggers
+
+A scene with a `trigger` plays when something happens on the page: a form submitted, a button clicked, a section
+scrolled into view, a character tapped. Mark its script `data-pixel-scene` and the stage arms it when the page loads.
+Here a newsletter form hands the goose a letter, and the goose takes it off the screen to post it:
+
+```html
+<form id="signup">
+  <input type="email" required> <button>Subscribe</button>
+  <span class="letter" hidden></span>   <!-- the page shows it on submit -->
+</form>
+
+<script type="application/json" data-pixel-scene>
+{
+  "name": "the mail",
+  "cast": {"goose": "#goose"},
+  "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
+  "steps": [
+    {"actor": "goose", "pickUp": "$trigger .letter"},
+    {"actor": "goose", "say": "I'll take it from here", "ms": 1400},
+    {"actor": "goose", "exit": "right"},
+    {"wait": 1800},
+    {"emit": "delivered"},
+    {"actor": "goose", "enter": "right"},
+    {"actor": "goose", "say": "delivered. HONK"}
+  ]
+}
+</script>
+```
+
+| trigger key | meaning |
+|---|---|
+| `event` | the event: `submit`, `click`, `input`, … any DOM event; `tap`, `burst`, `arrive` on a character; `visible` (half of a matching element scrolled into view) |
+| `on` | a selector (matched with `closest`, so elements added later count too), a cast name, or `"stage"` (`fastscroll`, `sceneevent`, …) |
+| `once` | only the first time (default: every time) |
+| `preventDefault` | cancel the event's default action, e.g. a form's page load |
+
+- In steps, `"$trigger"` is the element that set the scene off (the form), and `"$trigger .letter"` an element inside it.
+- The scene starts just after the page's own handlers for that event, so they can show the letter first.
+- A triggered scene stops any other scene that is playing; while it is already playing, its trigger is ignored.
+- Without `preventDefault`, a form that really submits loads a new page and the scene never plays. Send it with
+  `fetch` in your own `submit` handler (and `preventDefault` there), and use `sceneevent` (`emit`) to update the page.
+- From code: `const t = stage.arm(scene)`, later `t.disarm()`. Or play it yourself from any handler:
+  `form.addEventListener('submit', () => stage.playScene('#the-mail', { trigger: form }))`.
 
 ## What the characters do
 

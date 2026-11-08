@@ -44,6 +44,17 @@
   .controls h2 { margin: 0 0 8px; font-size: 18px; }
   .controls button { margin: 4px 6px 4px 0; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--ink); background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
   #log { margin-top: 10px; font: 12px/1.5 ui-monospace, monospace; min-height: 6em; }
+  .signup { margin-top: 56px; max-width: 520px; padding: 18px; background: var(--card); border: 2px solid var(--ink); border-radius: 12px; }
+  .signup h2 { margin: 0 0 4px; font-size: 18px; }
+  .signup p { margin: 0 0 12px; font-size: 14px; }
+  .signup form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .signup input { flex: 1 1 200px; min-width: 0; padding: 9px 10px; border: 2px solid var(--ink); border-radius: 8px; font: inherit; }
+  .signup button { padding: 9px 14px; border: 2px solid var(--ink); border-radius: 8px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+  .letter { display: inline-block; width: 34px; height: 24px; border: 2px solid var(--ink); border-radius: 3px; background:
+    linear-gradient(to top right, transparent calc(50% - 1px), var(--ink) 50%, transparent calc(50% + 1px)) right / 50% 100% no-repeat,
+    linear-gradient(to top left, transparent calc(50% - 1px), var(--ink) 50%, transparent calc(50% + 1px)) left / 50% 100% no-repeat, #fff; }
+  .letter[hidden] { display: none; }
+  #signup-done { font-weight: 600; }
   footer { padding: 24px 20px 40px; text-align: center; font-size: 14px; }
   @media (max-width: 560px) {
     .hero { padding-top: 40px; }
@@ -108,6 +119,17 @@
     </div>
   </div>
 
+  <section class="signup" id="newsletter" data-pixel-surface>
+    <h2>Trail news, monthly</h2>
+    <p>Subscribe and the goose posts your letter. (Nothing is sent anywhere; this is a demo.)</p>
+    <form id="signup">
+      <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required>
+      <button>Subscribe</button>
+      <span class="letter" hidden role="img" aria-label="your letter"></span>
+    </form>
+    <p id="signup-done" aria-live="polite"></p>
+  </section>
+
   <section class="controls" id="controls">
     <h2>Script them</h2>
     <label class="size-ctl">Character size <input id="size" type="range" min="50" max="200" step="10" value="100"> <output id="size-out">100%</output></label>
@@ -161,6 +183,25 @@
 }
 </script>
 
+<!-- Plays by itself when the form is submitted: data-pixel-scene + "trigger". -->
+<script type="application/json" id="the-mail" data-pixel-scene>
+{
+  "name": "the mail",
+  "cast": {"goose": "#goose"},
+  "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
+  "steps": [
+    {"actor": "goose", "say": "mail?!", "ms": 900, "async": true},
+    {"actor": "goose", "pickUp": "$trigger .letter"},
+    {"actor": "goose", "say": "I'll take it from here", "ms": 1400},
+    {"actor": "goose", "exit": "right"},
+    {"wait": 1800},
+    {"emit": "delivered"},
+    {"actor": "goose", "enter": "right"},
+    {"actor": "goose", "say": "delivered. HONK", "ms": 1600}
+  ]
+}
+</script>
+
 <script type="module">
   await customElements.whenDefined('pixel-stage');
   const $ = (s) => document.querySelector(s);
@@ -204,6 +245,20 @@
   };
   stageEl.addEventListener('scenestep', (e) => { const s = e.detail.step; if (s.actor && !s.face) log(s.actor, Object.entries(s).filter(([k]) => k !== 'actor').map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')); });
   stageEl.addEventListener('sceneend', (e) => { log('scene', e.detail.completed ? 'the end' : 'stopped'); $('#scene').textContent = 'Play a scene: “The plan”'; });
+  // The page's own submit handling: show the letter (the scene's goose picks it up), then thank the reader.
+  $('#signup').addEventListener('submit', (e) => { e.preventDefault(); $('#signup .letter').hidden = false; $('#signup-done').textContent = 'Sealed. The goose is on it…'; });
+  stageEl.addEventListener('sceneevent', (e) => {
+    if (e.detail.name !== 'delivered') return;
+    const letter = $('#signup .letter');
+    letter.hidden = true; letter.style.visibility = '';
+    $('#signup').reset();
+    $('#signup-done').textContent = 'Delivered. Welcome aboard!';
+  });
+  stageEl.addEventListener('sceneend', (e) => {
+    if (e.detail.scene !== 'the mail' || e.detail.completed) return;
+    if (goose.carrying) goose.drop('back');   // interrupted: put the letter back for another try
+  });
+  for (const ev of ['pickup', 'deliver', 'exit', 'enter']) goose.addEventListener(ev, () => log('goose', ev));
   $('#think').onclick = () => { const c = $('#clawd'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>

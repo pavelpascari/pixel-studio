@@ -6,6 +6,17 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Triggers, carrying, leaving the screen
+- Scenes can have a `trigger` (`{"event", "on", "once", "preventDefault"}`): a form submit, a click, an element scrolled
+  into view (`visible`), a tap on a character. `<script type="application/json" data-pixel-scene>` scenes are armed when
+  the page loads; `stage.arm(scene)` from code. Steps can name the triggering element `"$trigger"` (or `"$trigger .x"`).
+- Actors: `pickUp(el)` (a styled copy rides at the beak or hand; `carrying`), `drop('here' | 'back')`,
+  `exit('left' | 'right' | 'auto')` (off the screen's edge, delivering what it carries; `offstage`), and
+  `enter(...)` (walk in from a side or drop in from the top); the same as scene steps and `run()` orders. Events
+  `pickup`, `drop`, `deliver`, `exit`, `enter`.
+- Leaving or entering by the page's right edge never widens the page; a speech bubble stays inside it.
+- The stage demo's newsletter form: subscribe and the goose posts your letter.
+
 ### Scenes
 - `stage.playScene(scene)`: scripted moments as JSON (in a `<script type="application/json">`, as text or an object).
   Steps `goTo` (selector, cast name or point; `then`, `at`), `hideBehind`, `perform`, `say`, `face`, `shoo`, `wait`,
