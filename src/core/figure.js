@@ -55,7 +55,121 @@ export async function resolveFigure(spec, loadFigure, { warn = () => {} } = {}) 
     try { fig = await loadFigure(name); } catch (e) { throw figureError([{ path: '$.figure', message: `cannot load figure "${name}": ${e.message}` }]); }
   }
   if (!isObj(fig) || !Array.isArray(fig.bones)) throw figureError([{ path: '$.figure', message: 'figure must be a name like "goose", {"use": "goose", ...} or an object with "bones"' }]);
-  return expandFigure(spec, fig, fit, warn);
+  const out = expandFigure(spec, fig, fit, warn);
+  if (spec.views != null) await addViews(out, spec.views, loadFigure, warn);
+  return out;
+}
+
+// --- views: the same character seen from other angles ------------------------------------------------
+//
+//   "views": {
+//     "front": {"figure": "goose-front", "parts": [...], "animations": {...}, "look": {"part": "head", "replaces": "head"}},
+//     "back":  {"figure": "goose-front", "parts": [...]}
+//   }
+//
+// Each view dresses its own figure (same size and materials). Its parts join the spec with the view's
+// name in front ("front.body"), hidden except in that view's animations, which are named
+// "<animation>@<view>" ("idle@front"). Generated for every view: "turn@<view>" (from the side to that
+// view, a one-shot) and "unturn@<view>" (back to the side). "look" puts the view's part (a head turned
+// toward the viewer, with its children) in place of a side part: "look@<view>" is the side idle with
+// the head turned, a three-quarter view, and the turns pass through it.
+
+const VIEW_NAME = /^[a-z][a-zA-Z0-9_-]*$/;
+const TURN_FPS = 12;
+
+async function addViews(out, views, loadFigure, warn) {
+  const errors = [];
+  const err = (path, message) => errors.push({ path, message });
+  if (!isObj(views)) throw figureError([{ path: '$.views', message: 'views must be an object like {"front": {"figure": "goose-front", "parts": [...]}}' }]);
+  const sideRoots = out.parts.filter((p) => isObj(p) && !p.parent).map((p) => p.id);
+  const byId = Object.fromEntries(out.parts.filter(isObj).map((p) => [p.id, p]));
+  const built = [];
+  for (const [view, v] of Object.entries(views)) {
+    const path = `$.views.${view}`;
+    if (!VIEW_NAME.test(view) || view === 'side' || UNSAFE_KEYS.has(view)) { err(path, 'a view name is a word like "front" or "back" ("side" is the main view)'); continue; }
+    if (!isObj(v) || v.figure == null) { err(path, 'a view needs a "figure", e.g. {"figure": "goose-front", "parts": [...]}'); continue; }
+    let fig = v.figure, fit = {};
+    if (typeof fig === 'string' || (isObj(fig) && typeof fig.use === 'string')) {
+      const name = typeof fig === 'string' ? fig : fig.use;
+      fit = typeof fig === 'string' ? {} : fig;
+      try { fig = await loadFigure(name); } catch (e) { err(`${path}.figure`, `cannot load figure "${name}": ${e.message}`); continue; }
+    }
+    if (!isObj(fig) || !Array.isArray(fig.bones)) { err(`${path}.figure`, 'figure must be a name like "goose-front" or an object with "bones"'); continue; }
+    // A view with no parts of its own is drawn as its skeleton; that is a mistake in a dressed character.
+    if (!Array.isArray(v.parts) || !v.parts.length) { err(`${path}.parts`, 'a view needs parts that dress its figure (like the main spec\'s "parts")'); continue; }
+    let sub;
+    try {
+      sub = expandFigure({ size: out.size, parts: v.parts, ...(v.animations ? { animations: v.animations } : {}) }, fig, fit,
+        (p, m) => warn(p.replace(/^\$/, path), m));
+    } catch (e) {
+      for (const x of e.errors ?? [{ path: '$', message: e.message }]) err(x.path.replace(/^\$/, path), x.message);
+      continue;
+    }
+    const pre = (id) => `${view}.${id}`;
+    const parts = sub.parts.map((p) => ({ ...p, id: pre(p.id), ...(p.parent ? { parent: pre(p.parent) } : {}) }));
+    const roots = parts.filter((p) => !p.parent).map((p) => p.id);
+    for (const p of parts) if (!p.parent) p.show = 0;
+    out.parts.push(...parts);
+    for (const [n, pt] of Object.entries(sub.points ?? {})) (out.points ??= {})[`${n}@${view}`] = { part: pre(pt.part), at: pt.at };
+    const look = v.look == null ? null : lookPart(v.look, `${path}.look`, view, parts, byId, err);
+    if (look) out.parts.push(...look.parts);
+    built.push({ view, roots, prefix: pre, sub, look });
+  }
+  if (errors.length) throw figureError(errors);
+
+  const allRoots = [...sideRoots, ...built.flatMap((b) => b.roots), ...built.filter((b) => b.look).map((b) => b.look.root)];
+  const showOnly = (visible) => Object.fromEntries(allRoots.map((id) => [id, { show: visible.includes(id) ? 1 : 0 }]));
+  const idleName = out.animations.idle ? 'idle' : Object.keys(out.animations)[0];
+  for (const b of built) {
+    for (const [name, a] of Object.entries(b.sub.animations)) {
+      if (!isObj(a)) continue;
+      const tracks = {};
+      for (const [id, t] of Object.entries(a.tracks ?? {})) tracks[b.prefix(id)] = t;
+      out.animations[`${name}@${b.view}`] = { ...a, tracks: { ...tracks, ...showOnly(b.roots) } };
+    }
+    // The turn: side (or the three-quarter look) → squeezed → the view squeezed → the view.
+    const from = b.look ? [...sideRoots, b.look.root] : sideRoots;
+    const turn = { frames: 4, fps: TURN_FPS, loop: false, tracks: {} };
+    for (const id of allRoots) turn.tracks[id] = { show: [0, 0, 0, 0] };
+    for (const id of from) turn.tracks[id] = { show: [1, 1, 0, 0], sx: [1, 0.86, 1, 1] };
+    for (const id of b.roots) turn.tracks[id] = { show: [0, 0, 1, 1], sx: [1, 1, 0.86, 1] };
+    if (b.look) turn.tracks[b.look.replaces] = { show: 0 };
+    const rev = (t) => Object.fromEntries(Object.entries(t).map(([id, props]) => [id, Object.fromEntries(Object.entries(props).map(([k, v]) => [k, Array.isArray(v) ? [...v].reverse() : v]))]));
+    out.animations[`turn@${b.view}`] = turn;
+    out.animations[`unturn@${b.view}`] = { ...turn, tracks: rev(turn.tracks) };
+    if (b.look && idleName && isObj(out.animations[idleName])) {
+      const idle = clone(out.animations[idleName]);
+      const head = idle.tracks?.[b.look.replaces];
+      idle.tracks = { ...(idle.tracks ?? {}), [b.look.replaces]: { show: 0 }, [b.look.root]: { ...(head ? clone(head) : {}), show: 1 } };
+      out.animations[`look@${b.view}`] = idle;
+    }
+  }
+}
+
+/** The view's part (with its children) copied onto the side figure in place of a side part. */
+function lookPart(look, path, view, parts, sideById, err) {
+  if (!isObj(look) || typeof look.part !== 'string' || typeof look.replaces !== 'string') {
+    err(path, 'look must be {"part": "head", "replaces": "head"}: a part of this view shown in place of a side part'); return null;
+  }
+  const src = parts.find((p) => p.id === `${view}.${look.part}`);
+  if (!src) { err(`${path}.part`, `this view has no part "${look.part}"`); return null; }
+  const side = sideById[look.replaces];
+  if (!side) { err(`${path}.replaces`, `the main view has no part "${look.replaces}"`); return null; }
+  const ids = new Set([src.id]);
+  for (let grew = true; grew;) { grew = false; for (const p of parts) if (p.parent && ids.has(p.parent) && !ids.has(p.id)) { ids.add(p.id); grew = true; } }
+  const pre = (id) => `${view}-look.${id.slice(view.length + 1)}`;
+  const sp = side.pivot ?? [0, 0], vp = src.pivot ?? [0, 0];
+  const copied = parts.filter((p) => ids.has(p.id)).map((p) => {
+    const c = clone(p);
+    c.id = pre(p.id);
+    if (p.id === src.id) {
+      c.parent = side.parent; c.x = (c.x ?? 0) + sp[0] - vp[0]; c.y = (c.y ?? 0) + sp[1] - vp[1]; c.show = 0;
+      c.z = side.z ?? c.z;
+      if (!side.parent) delete c.parent;
+    } else c.parent = pre(p.parent);
+    return c;
+  });
+  return { parts: copied, root: pre(src.id), replaces: look.replaces };
 }
 
 export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
@@ -162,7 +276,7 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
   }
 
   if (errors.length) throw figureError(errors);
-  const { figure: _f, ...restSpec } = spec;
+  const { figure: _f, views: _v, ...restSpec } = spec;
   const out = { ...clone(restSpec), size, parts, animations };
   // The foot line (where the sprite stands on a page) and attachment points come from the figure;
   // the spec's own values win.

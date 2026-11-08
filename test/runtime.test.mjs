@@ -216,6 +216,12 @@ test('state machine: node rates follow inputs; burst and calm interactions pass 
 // ---------- scenes ----------
 import { checkScene, runScene } from '../src/runtime/pixel-stage.js';
 
+test('checkScene: face accepts the views', () => {
+  const scene = (face) => ({ cast: { g: '#g' }, steps: [{ actor: 'g', face }] });
+  for (const f of ['viewer', 'away', 'side', 'left']) assert.deepEqual(checkScene(scene(f)), [], f);
+  assert.equal(checkScene(scene(3)).length, 1);
+});
+
 test('checkScene: accepts a valid scene and reports problems with JSON paths', () => {
   const ok = { cast: { goose: '#goose', clawd: '#clawd' }, loop: 2, steps: [
     { actor: 'goose', goTo: '#bench', then: 'sit' },

@@ -49,7 +49,12 @@ const ROLES = {
   rush: ['rush'], jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
   react: ['honk', 'wave', 'hop'],
 };
-const DEFAULT_BEHAVIOURS = 'wander sit hide climb jump';
+// Views: a character whose bundle has "<anim>@front" / "@back" animations (a spec with "views") can face
+// the viewer or turn its back. Moving along the page is always seen from the side: these steps turn back first.
+const VIEWS = { viewer: 'front', front: 'front', away: 'back', back: 'back', side: 'side' };
+const SIDE_STEPS = new Set(['walk', 'leave', 'jump', 'climb']);
+const SIDE_ROLES = new Set(['walk', 'run', 'rush', 'climb', 'jump', 'fall']);
+const DEFAULT_BEHAVIOURS = 'wander sit hide climb jump gaze';
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (xs) => xs[(Math.random() * xs.length) | 0];
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -472,11 +477,14 @@ export class PixelActor extends Base {
     this.sprite = root.querySelector('pixel-sprite');
     this._body = root.querySelector('.body');
     this._bubble = root.querySelector('.say');
-    this.x = 0; this.y = 0; this.facing = 1; this.state = 'idle';
+    this.x = 0; this.y = 0; this.facing = 1; this.state = 'idle'; this.view = 'side';
     this.plan = []; this.behind = new Set(); this._orders = [];
     this.sprite.addEventListener('ready', () => this._onReady());
     this.sprite.addEventListener('spriteevent', (e) => this._onEvent(e.detail));
-    this.sprite.addEventListener('spriteend', (e) => { if (this._step?.waitEnd === e.detail.anim) this._step.done = true; });
+    this.sprite.addEventListener('spriteend', (e) => {
+      if (this._step?.waitEnd === e.detail.anim) this._step.done = true;
+      if (this._turning?.anim === e.detail.anim) this._endTurn();
+    });
   }
 
   connectedCallback() {
@@ -502,6 +510,7 @@ export class PixelActor extends Base {
       what === 'jump' ? !!this._jumpTimes() : what === 'climb' ? !!(this.anims.climb && b.animations[this.anims.climb].speedY) :
         what === 'sit' ? !!this.anims.sit : what === 'hide' ? !!(this.anims.duck || this.anims.idle) : true);
     this.W = this.sprite.displaySize.width; this.H = this.sprite.displaySize.height;
+    this._endTurn(); this.view = 'side';
     this._ready = true;
     this._placed = false;
     const stage = this.stage;
@@ -577,14 +586,49 @@ export class PixelActor extends Base {
     return new Promise((ok) => setTimeout(() => ok(true), ms));
   }
 
-  /** Turn to face 'left', 'right', another actor, or an element. */
+  /**
+   * Turn to face 'left', 'right', another actor, or an element; or turn toward the reader ('viewer'), away
+   * from them ('away') and back ('side') if the character has those views. Turning returns a promise.
+   */
   face(what) {
-    if (what === 'left' || what === 'right') { this.facing = what === 'left' ? -1 : 1; return true; }
+    if (typeof what === 'string' && what in VIEWS) return this._turnTo(VIEWS[what]);
+    if (what === 'left' || what === 'right') { this.facing = what === 'left' ? -1 : 1; this._turnTo('side'); return true; }
     const box = (el) => { const r = el.getBoundingClientRect(), o = this.stage.getBoundingClientRect(); return r.left + r.width / 2 - o.left; };
     const x = what instanceof PixelActor ? what.x : what instanceof Element && this.stage ? box(what) : what?.x;
     if (x == null || x === this.x) return false;
     this.facing = x > this.x ? 1 : -1;
     return true;
+  }
+
+  /** The views this character has besides the side: ['front', 'back'] from its bundle's "@front"/"@back" animations. */
+  get views() {
+    const names = Object.keys(this.sprite.bundle?.animations ?? {});
+    return [...new Set(names.filter((n) => n.startsWith('turn@')).map((n) => n.slice(5)))];
+  }
+
+  /** Start turning to a view ('side', 'front', 'back'); resolves true when the turn is done, false if it has no such view. */
+  _turnTo(view) {
+    if (!this._ready) return Promise.resolve(false);
+    if (view !== 'side' && !this.views.includes(view)) return Promise.resolve(false);
+    if (view === this.view && !this._turning) return Promise.resolve(true);
+    const from = this.view, a = this.sprite.bundle.animations;
+    const anim = view === 'side' ? `unturn@${from}` : `turn@${view}`;
+    this._endTurn();
+    this.view = view;
+    if (!a[anim] || reducedMotion() || this._still) return Promise.resolve(true);
+    this.sprite.play(anim, { once: true });
+    const ms = (a[anim].frames / a[anim].fps) * 1000 / (this.sprite.effectiveRate || 1);
+    return new Promise((done) => {
+      this._turning = { anim, done, timer: setTimeout(() => this._endTurn(), ms + 400) };
+    });
+  }
+
+  _endTurn() {
+    const t = this._turning;
+    if (!t) return;
+    this._turning = null;
+    clearTimeout(t.timer);
+    t.done(true);
   }
 
   /**
@@ -975,7 +1019,13 @@ export class PixelActor extends Base {
   }
 
   _play(role, opts) {
-    const name = this.anims[role] || this.anims.idle;
+    let name = this.anims[role] || this.anims.idle;
+    if (this.view !== 'side') {
+      const viewed = `${name}@${this.view}`;
+      if (SIDE_ROLES.has(role) || !this.sprite.bundle.animations[viewed]) { this._endTurn(); this.view = 'side'; }   // seen from the side
+      else if (this._turning) return viewed;   // the turn plays first
+      else name = viewed;
+    } else if (this._turning && !SIDE_ROLES.has(role) && !opts?.once) return name;
     if (opts?.once) return this.sprite.play(name, opts) && name;
     if (this.sprite.currentAnim !== name) this.sprite.play(name);
     return name;
@@ -1035,12 +1085,29 @@ export class PixelActor extends Base {
       this._step.t = 0;
     }
     const st = this._step;
+    // Facing the reader (or away) and about to move along the page: turn to the side first.
+    if (SIDE_STEPS.has(st.type) && (this.view !== 'side' || this._turning)) {
+      if (this.view !== 'side') this._turnTo('side');
+      return;
+    }
     st.t += dt * 1000;
     const done = this[`_do_${st.type}`](st, dt, w);
     if (done) this._step = null;
   }
 
   _do_idle(st) { this._setState('idle'); this._play('idle'); return st.t >= st.ms; }
+
+  /** Look at the reader: turn the head (the three-quarter "look@front"), or turn right round to face them. */
+  _do_gaze(st) {
+    this._setState('idle');
+    const look = this.sprite.bundle.animations['look@front'];
+    if (!st.started) { st.started = true; if (st.full || !look) this._turnTo('front'); }
+    if (this.view === 'front') this._play('idle');
+    else if (!this._turning && look && this.sprite.currentAnim !== 'look@front') this.sprite.play('look@front');
+    if (st.t < st.ms) return false;
+    if (this.view !== 'side') this._turnTo('side');
+    return true;
+  }
   _do_arrive() { this.dispatchEvent(new CustomEvent('arrive')); return true; }
 
   _do_react(st) {
@@ -1271,6 +1338,7 @@ export class PixelActor extends Base {
       const s = pick(spots);
       return this._routeOrNull(s.p, s.x, w, [{ type: 'hide', item: s.item, ms: rand(4000, 8000) }]);
     });
+    if (this.can('gaze') && this.views.includes('front')) add(1.2, () => [{ type: 'gaze', ms: rand(1800, 3500), full: Math.random() < 0.5 }]);
     if (this.can('climb')) add(2, () => {
       const walls = this._walls(w).filter((c) => near(c.top));
       if (!walls.length) return null;
@@ -1513,7 +1581,7 @@ export function checkScene(scene, castNames = null) {
     if (kind === 'perform' && typeof v !== 'string') err(`${p}.perform`, 'the name of one of the actor\'s animations');
     if (kind === 'say' && typeof v !== 'string') err(`${p}.say`, 'the text to show');
     if (kind === 'shoo' && v !== true && typeof v !== 'string') err(`${p}.shoo`, 'true, or what to run from (a selector or cast name)');
-    if (kind === 'face' && typeof v !== 'string') err(`${p}.face`, '"left", "right", a cast name or a selector');
+    if (kind === 'face' && typeof v !== 'string') err(`${p}.face`, '"left", "right", "viewer", "away", "side", a cast name or a selector');
     if (kind === 'pickUp' && typeof v !== 'string') err(`${p}.pickUp`, 'a selector for the element to pick up');
     if (kind === 'drop' && v !== true && v !== 'here' && v !== 'back') err(`${p}.drop`, 'true or "here" (at its feet), or "back" (where it came from)');
     if (kind === 'exit' && !['left', 'right', 'auto'].includes(v)) err(`${p}.exit`, '"left", "right" or "auto" (the nearer edge)');
@@ -1556,7 +1624,7 @@ export async function runScene(scene, env) {
   };
   const act = async (st, a) => {
     if ('say' in st) return a.say(st.say, st.ms ?? 1800);
-    if ('face' in st) return a.face(['left', 'right'].includes(st.face) ? st.face : target(st.face));
+    if ('face' in st) return a.face(['left', 'right', 'viewer', 'away', 'side'].includes(st.face) ? st.face : target(st.face));
     if ('goTo' in st) {
       const t = env.actor(st.goTo) ?? target(st.goTo);
       if (!t) return false;

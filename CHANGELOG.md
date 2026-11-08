@@ -6,6 +6,21 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Views: front, back and a three-quarter look
+- Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":
+  [...]}`). View parts join as `front.*`, shown only in that view's animations (`idle@front`, `waddle@back`); turns are
+  generated (`turn@front`, `unturn@front`), and `look` puts the view's head on the side body for a three-quarter
+  `look@front` that the turn passes through. Attachment points follow the view. Variants patch views like the main
+  spec, and their `materialMap` reaches every view.
+- New figure `goose-front` (head-on, or from behind); front-view wings flap outward on both sides.
+- `examples/goose-base.json` (and so the whole flock) has front and back views.
+- Stage: `actor.face('viewer' | 'away' | 'side')` turns the character (a promise; scenes wait for it). It idles, talks
+  and performs in that view and turns back to the side by itself before walking. New `gaze` behaviour (on by default):
+  now and then it looks at the reader. The demo's goose turns to you when it has delivered the mail.
+- Workbench: side / ¾ look / front / back, with each view's parts switchable and exported as `views` patches. Hiding a
+  part that is not a bone exports as `remove`.
+- Goose bundles are about twice as large (root: 288 → 595 KB) with the extra views.
+
 ### Goose workbench
 - `studio/goose.html`: the goose large (32–192 px, whole-pixel zoom, skeleton and pixel-grid overlays, actual-size
   previews at 16/32/64), any of the flock, every animation, frame stepping. Every part and every shape can be

@@ -51,15 +51,17 @@ export async function buildBundle(compiled, { resolutions = [16, 32, 64], overri
  * { name: { anim: [[x, y, rotDeg], ...] } }. null when the spec has no points.
  */
 export function bakePoints(compiled) {
-  const names = Object.keys(compiled.points ?? {});
+  // "beak@front" is where the point "beak" is in the front view's animations ("idle@front").
+  const names = Object.keys(compiled.points ?? {}).filter((n) => !n.includes('@'));
   if (!names.length) return null;
   const out = Object.fromEntries(names.map((n) => [n, {}]));
   for (const [animName, anim] of Object.entries(compiled.animations)) {
+    const view = animName.includes('@') && !/^((un)?turn|look)@/.test(animName) ? animName.slice(animName.indexOf('@')) : '';
     for (const n of names) out[n][animName] = [];
     for (let f = 0; f < anim.frames; f++) {
       const { world } = worldMatrices(compiled.parts, samplePose(compiled, anim, f));
       for (const n of names) {
-        const { part, at } = compiled.points[n];
+        const { part, at } = (view && compiled.points[n + view]) || compiled.points[n];
         const m = world.get(part), [x, y] = apply(m, at);
         out[n][animName].push([r2(x), r2(y), r2(angleOf(m))]);
       }

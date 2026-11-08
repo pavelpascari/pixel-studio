@@ -77,6 +77,7 @@
   <section id="view" class="bg-check">
     <div class="toolbar">
       <select id="base" aria-label="Which goose"></select>
+      <div class="seg" id="views" role="group" aria-label="Seen from"></div>
       <select id="anim" aria-label="Animation"></select>
       <button class="btn" id="playBtn" aria-label="Play or pause">⏸</button>
       <button class="btn" id="prevBtn" aria-label="Previous frame">◀</button>
@@ -113,7 +114,7 @@
       <div id="features"></div>
     </div>
     <div>
-      <h2>Body parts <span><button id="partsAll">show all</button></span></h2>
+      <h2>Body parts <small id="partsView"></small> <span><button id="partsAll">show all</button></span></h2>
       <div id="parts"></div>
     </div>
     <div>
@@ -181,7 +182,8 @@ function variantSpec({ forExport = false } = {}) {
     const touched = new Map();
     for (const p of resolved.parts ?? []) {
       if (!p?.id) continue;
-      if (S.hiddenParts.has(p.id)) touched.set(p.id, { id: p.id, shapes: [] });
+      // A hidden bone keeps its place (its children still move); any other part is left out.
+      if (S.hiddenParts.has(p.id)) touched.set(p.id, p.tip ? { id: p.id, shapes: [] } : { id: p.id, remove: true });
       else if ((p.shapes ?? []).some((_, i) => S.hiddenShapes.has(`${p.id}#${i}`))) touched.set(p.id, { id: p.id, shapes: p.shapes.filter((_, i) => !S.hiddenShapes.has(`${p.id}#${i}`)) });
     }
     const parts = [], adds = new Map();
@@ -190,10 +192,16 @@ function variantSpec({ forExport = false } = {}) {
         if (touched.has(p.id)) continue;   // already in the full list written for that part
         if (adds.has(p.id)) adds.get(p.id).addShapes.push(...p.addShapes);
         else { const q = { id: p.id, addShapes: [...p.addShapes] }; adds.set(p.id, q); parts.push(q); }
-      } else if (touched.has(p.id)) { parts.push({ ...p, shapes: touched.get(p.id).shapes }); touched.delete(p.id); }
+      } else if (touched.has(p.id)) { if (!touched.get(p.id).remove) parts.push({ ...p, shapes: touched.get(p.id).shapes }); touched.delete(p.id); }
       else parts.push(p);
     }
-    spec.parts = [...parts, ...touched.values()];
+    spec.parts = [...parts];
+    // Parts of another view ("front.body") are patched inside that view.
+    for (const t of touched.values()) {
+      const m = /^([a-z][\w-]*)\.(.+)$/.exec(t.id);
+      if (m && viewNames().includes(m[1])) (((spec.views ??= {})[m[1]] ??= { parts: [] }).parts).push({ ...t, id: m[2] });
+      else spec.parts.push(t);
+    }
   }
   if (forExport && Object.keys(S.style).length) spec.style = { ...S.style };
   if (!Object.keys(spec.materials).length) delete spec.materials;
@@ -217,9 +225,39 @@ async function rebuild() {
     return;
   }
   if (!compiled.animations[S.anim]) S.anim = compiled.animations.idle ? 'idle' : Object.keys(compiled.animations)[0];
-  $('#anim').replaceChildren(...Object.keys(compiled.animations).filter((n) => !n.includes('>')).map((n) => el('option', { value: n, textContent: n, selected: n === S.anim })));
+  renderViews();
   renderParts();
   applyHides();
+}
+
+// ----- views: the goose from the side, with its head turned (¾), from the front, from behind -----
+const viewNames = () => Object.keys(compiled?.animations ?? {}).filter((n) => n.startsWith('turn@')).map((n) => n.slice(5));
+/** Which view an animation shows: "look@front" is the side body with the head turned (¾). */
+const viewOf = (n) => (n.startsWith('look@') ? 'look' : n.includes('@') ? n.slice(n.indexOf('@') + 1) : 'side');
+const VIEW_LABELS = { side: 'side', look: '¾ look', front: 'front', back: 'back' };
+function animsFor(v) {
+  return Object.keys(compiled.animations).filter((n) => !n.includes('>') && (v === 'look' ? /^(look|turn|unturn)@front$/.test(n) : viewOf(n) === v));
+}
+function renderViews() {
+  const vs = ['side', ...(compiled.animations['look@front'] ? ['look'] : []), ...viewNames()];
+  const cur = viewOf(S.anim);
+  $('#views').replaceChildren(...vs.map((v) => el('button', { textContent: VIEW_LABELS[v] ?? v, className: v === cur ? 'on' : '', onclick: () => {
+    const plain = S.anim.replace(/@.*$/, '').replace(/^(un)?turn$|^look$/, 'idle');
+    const list = animsFor(v);
+    S.anim = v === 'side' ? (compiled.animations[plain] ? plain : 'idle') : v === 'look' ? 'look@front' : list.includes(`${plain}@${v}`) ? `${plain}@${v}` : list.includes(`idle@${v}`) ? `idle@${v}` : list[0];
+    S.frame = 0; renderViews(); renderParts(); applyHides();
+  } })));
+  const label = (n) => n === 'look@front' ? 'look at the viewer' : n === 'turn@front' && cur === 'look' ? 'turn to face the viewer' : n.startsWith('turn@') ? 'turn (from the side)' : n.startsWith('unturn@') ? 'turn back (to the side)' : n.replace(/@.*$/, '');
+  $('#anim').replaceChildren(...animsFor(cur).map((n) => el('option', { value: n, textContent: label(n), selected: n === S.anim })));
+}
+/** The parts drawn in the current view: "front.body" in the front view (shown as "body"), the plain ones in the side and ¾ views. */
+function partsInView() {
+  const v = viewOf(S.anim), names = viewNames();
+  return compiled.parts.filter((p) => {
+    if (!p.shapes?.length || p.id.includes('-look.')) return false;
+    const m = /^([a-z][\w-]*)\./.exec(p.id), pv = m && names.includes(m[1]) ? m[1] : 'side';
+    return v === 'look' ? pv === 'side' : pv === v;
+  });
 }
 
 /** The compiled goose with hidden parts and shapes taken out (bones stay, so everything still moves). */
@@ -244,7 +282,9 @@ function pretty(spec) {
   const sections = [`  "extends": ${one(spec.extends)}`];
   if (spec.style) sections.push(`  "style": ${one(spec.style)}`);
   if (spec.materials) sections.push(`  "materials": {\n${Object.entries(spec.materials).map(([k, v]) => `    ${one(k)}: ${one(v)}`).join(',\n')}\n  }`);
+  if (spec.views) sections.push(`  "views": {\n${Object.entries(spec.views).map(([k, v]) => `    ${one(k)}: {"parts": [\n${v.parts.map((q) => `      ${one(q)}`).join(',\n')}\n    ]}`).join(',\n')}\n  }`);
   if (spec.parts) sections.push(`  "parts": [\n${spec.parts.map((p) => {
+    if (p.remove) return `    ${one(p)}`;
     const { shapes, addShapes, ...head } = p, key = shapes ? 'shapes' : 'addShapes', list = shapes ?? addShapes;
     const open = one(head).slice(0, -1);
     return list.length ? `    ${open}, ${one(key)}: [\n${list.map((sh) => `      ${one(sh)}`).join(',\n')}\n    ]}` : `    ${open}, ${one(key)}: []}`;
@@ -349,7 +389,8 @@ function renderFeatures() {
 
 function renderParts() {
   const mat = (name) => resolved.materials?.[name]?.color ?? '#888';
-  const drawn = compiled.parts.filter((p) => p.shapes?.length);
+  const drawn = partsInView(), v = viewOf(S.anim);
+  $('#partsView').textContent = v === 'side' ? '' : v === 'look' ? '(side body; the turned head comes from the front view)' : `(${v} view)`;
   $('#parts').replaceChildren(...drawn.map((p) => {
     const hidden = S.hiddenParts.has(p.id);
     const cb = el('input', { type: 'checkbox', checked: !hidden });
@@ -364,14 +405,14 @@ function renderParts() {
       }));
     shapes.open = p.shapes.some((_, i) => S.hiddenShapes.has(`${p.id}#${i}`));
     return el('div', { className: `part${hidden ? ' hidden' : ''}` },
-      el('label', { className: 'row' }, cb, el('span', {}, el('b', { textContent: p.id }), tag)), shapes);
+      el('label', { className: 'row' }, cb, el('span', {}, el('b', { textContent: p.id.replace(/^[a-z][\w-]*\./, (m) => (viewNames().includes(m.slice(0, -1)) ? '' : m)) }), tag)), shapes);
   }));
 }
 
 // ----- controls -----
 $('#base').append(...Object.entries(BASES).map(([v, t]) => el('option', { value: v, textContent: t, selected: v === S.base })));
 $('#base').onchange = () => { S.base = $('#base').value; S.hiddenParts.clear(); S.hiddenShapes.clear(); rebuild(); };
-$('#anim').onchange = () => { S.anim = $('#anim').value; S.frame = 0; applyHides(); };
+$('#anim').onchange = () => { S.anim = $('#anim').value; S.frame = 0; renderViews(); applyHides(); };
 $('#res').append(...RES.map((r) => el('button', { textContent: r, className: r === S.res ? 'on' : '', onclick: () => {
   S.res = r; for (const b of $('#res').children) b.classList.toggle('on', Number(b.textContent) === r); persist(); showStyle(); draw(true);
 } })));

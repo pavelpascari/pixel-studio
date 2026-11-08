@@ -41,6 +41,39 @@
       {"type": "polygon", "points": [[56, 58], [44, 56], [26, 60], [20, 66], [36, 72], [54, 70]], "r": 3, "material": "plumage", "shade": -0.1}
     ]}
   ],
+  "views": {
+    "front": {"figure": "goose-front", "look": {"part": "head", "replaces": "head"},
+      "parts": [
+        {"id": "body", "shapes": [{"type": "ellipse", "cx": 50, "cy": 67, "rx": 16, "ry": 13, "material": "plumage"}]},
+        {"id": "wingL", "shapes": [{"type": "polygon", "points": [[38, 56.5], [33, 61], [32.5, 70], [35.5, 77], [39, 72], [40, 60]], "r": 2, "material": "plumage", "shade": -0.15}], "z": 2},
+        {"id": "wingR", "shapes": [{"type": "polygon", "points": [[62, 56.5], [67, 61], [67.5, 70], [64.5, 77], [61, 72], [60, 60]], "r": 2, "material": "plumage", "shade": -0.15}], "z": 2},
+        {"id": "shinL", "shapes": [{"type": "capsule", "x1": 45, "y1": 79, "x2": 45, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footL", "shapes": [{"type": "polygon", "points": [[43.8, 88], [46.2, 88], [49.5, 91.6], [40.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "shinR", "shapes": [{"type": "capsule", "x1": 55, "y1": 79, "x2": 55, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footR", "shapes": [{"type": "polygon", "points": [[56.2, 88], [53.8, 88], [50.5, 91.6], [59.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "neck", "shapes": [{"type": "capsule", "x1": 50, "y1": 59, "x2": 50, "y2": 43.5, "r": 6, "r2": 5.4, "material": "feather"}]},
+        {"id": "neckUp", "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "feather"}]},
+        {"id": "head", "shapes": [{"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "feather"}, {"type": "polygon", "points": [[46.8, 25.2], [53.2, 25.2], [52.3, 30.8], [50, 31.8], [47.7, 30.8]], "r": 1, "material": "beak"}]},
+        {"id": "jaw", "shapes": [{"type": "polygon", "points": [[47.8, 31], [52.2, 31], [51.2, 33.2], [48.8, 33.2]], "r": 0.8, "material": "beak", "shade": -0.2}]},
+        {"id": "eye", "bone": "head", "pivot": [50, 23], "z": 7, "shapes": [{"type": "rect", "x": 44.2, "y": 21.8, "w": 2, "h": 2.2, "material": "eye"}, {"type": "rect", "x": 53.8, "y": 21.8, "w": 2, "h": 2.2, "material": "eye"}]}
+      ],
+      "animations": {"idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}}}, "waddle": {"motion": "walk"}, "run": {"motion": "run"}, "honk": {"motion": "honk"}, "jump": {"motion": "jump"}, "fall": {"motion": "fall"}, "sit": {"motion": "sit", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}}, "duck": {"motion": "duck"}, "peek": {"motion": "peek"}, "flap": {"motion": "flap"}}},
+    "back": {"figure": "goose-front",
+      "parts": [
+        {"id": "body", "shapes": [{"type": "ellipse", "cx": 50, "cy": 67, "rx": 16, "ry": 13, "material": "plumage"}]},
+        {"id": "tail", "z": 7, "shapes": [{"type": "polygon", "points": [[46, 66], [54, 66], [53, 60], [50, 58.5], [47, 60]], "r": 2, "material": "feather"}]},
+        {"id": "wingL", "shapes": [{"type": "polygon", "points": [[37, 56], [33.5, 64], [34.5, 75], [41, 79.5], [48.5, 71], [49.5, 58]], "r": 2.5, "material": "plumage", "shade": -0.1}]},
+        {"id": "wingR", "shapes": [{"type": "polygon", "points": [[63, 56], [66.5, 64], [65.5, 75], [59, 79.5], [51.5, 71], [50.5, 58]], "r": 2.5, "material": "plumage", "shade": -0.1}]},
+        {"id": "shinL", "shapes": [{"type": "capsule", "x1": 45, "y1": 79, "x2": 45, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footL", "shapes": [{"type": "polygon", "points": [[43.8, 88], [46.2, 88], [48.5, 91.6], [41.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "shinR", "shapes": [{"type": "capsule", "x1": 55, "y1": 79, "x2": 55, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footR", "shapes": [{"type": "polygon", "points": [[56.2, 88], [53.8, 88], [51.5, 91.6], [58.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "neck", "shapes": [{"type": "capsule", "x1": 50, "y1": 59, "x2": 50, "y2": 43.5, "r": 6, "r2": 5.4, "material": "feather"}], "z": 2},
+        {"id": "neckUp", "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "feather"}], "z": 2},
+        {"id": "head", "z": 2.5, "shapes": [{"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "feather"}]}
+      ],
+      "animations": {"idle": {"motion": "idle"}, "waddle": {"motion": "walk"}, "run": {"motion": "run"}, "honk": {"motion": "honk"}, "jump": {"motion": "jump"}, "fall": {"motion": "fall"}, "sit": {"motion": "sit"}, "duck": {"motion": "duck"}, "peek": {"motion": "peek"}, "flap": {"motion": "flap"}}}
+  },
   "mixes": {"waddle>idle": {"frames": 3}, "run>idle": {"frames": 3}, "idle>waddle": {"frames": 2}},
   "animations": {
     "idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}}},

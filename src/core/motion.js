@@ -335,7 +335,9 @@ export function generateMotion(parts, rig, m) {
       const w = model === 'fall' ? (m.wingsUp ?? 20) + flap * (0.5 + 0.5 * Math.sin(TAU * 2 * u))
         : jmp ? flap * jmp.airK
           : model === 'climb' ? flap * 0.6 * (0.5 + 0.5 * Math.sin(TAU * 2 * u)) : 0;
-      if (w && byId[id]) pose.get(id).rot = byId[id].base.rot + w;
+      // Seen from the front, wings on either side of the body open outward: mirrored rotations.
+      const ws = front && byId[id] ? -(Math.sign(restPt(id, byId[id].pivot)[0] - rootRest[0]) || 1) : 1;
+      if (w && byId[id]) pose.get(id).rot = byId[id].base.rot + w * ws;
     }
     if (rig.shadow && byId[rig.shadow]) {
       // A contact shadow stays on the ground, follows the body sideways and shrinks with height.

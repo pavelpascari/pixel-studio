@@ -74,7 +74,7 @@ Layout tips, learned building the demo:
 | `src`, `size`, `alt`, `skin` | `size` 64 | Passed to the inner `<pixel-sprite>`. Changing `size` on a live character works: its speed, jumps and hit area follow the new box. |
 | `start` | a platform on screen | CSS selector of the element to stand on first. |
 | `keep-in-view` | off | Stay in sight: when the reader scrolls the character off-screen, it comes back once scrolling settles. Close by, it runs there at 2.5× speed (feet still planted); further away, it drops in from the top of the screen onto a visible surface. |
-| `behaviours` | `wander sit hide climb jump` | What it may choose to do on its own. Behaviours the bundle cannot do (no `climb` animation, …) are skipped. |
+| `behaviours` | `wander sit hide climb jump gaze` | What it may choose to do on its own. Behaviours the bundle cannot do (no `climb` animation, …) are skipped. `gaze`: now and then look at the reader (turn its head, or turn round), for characters with a front view. |
 | `anims` | automatic | Map roles to animation names when the defaults don't find them: `anims="walk=waddle run=gallop"`. |
 
 Animation roles and the names looked up for each, in order: idle `idle`; walk `walk waddle trot travel`; run `run trot travel walk`;
@@ -107,6 +107,7 @@ stage.world.invalidate();                                          // after movi
 | `actor.run(action, ...args)` | The orders above as promises, for scripts: `await actor.run('goTo', el, {then: 'sit'})`, `run('hideBehind', el)`, `run('perform', name, {ms})`, `run('shoo', from?)`, `run('pickUp', el)`, `run('drop', how)`, `run('exit', side)`, `run('enter', from)`. Resolves `true` once carried out (arrived, sitting, hidden, played), `false` if impossible or interrupted (a tap, a drag, another order to the same character). |
 | `actor.say(text, ms)` → Promise | Resolves when the bubble goes away. |
 | `actor.face('left' \| 'right' \| actor \| element)` | Turn to face a side or something on the page. |
+| `actor.face('viewer' \| 'away' \| 'side')` | For characters with views (a spec with `views`, see [figures.md](figures.md#views-the-same-character-from-other-angles)): turn toward the reader, turn its back, or back to the side. Plays the turn and resolves when it is done (`false` without that view). While facing the reader it idles, talks, sits and performs in that view (`idle@front`, …); before walking anywhere it turns back to the side by itself. `actor.view` is the current view, `actor.views` the ones it has. |
 | `actor.hurry(rate)` | Hurry: animate and move `rate` times faster (feet planted), run instead of walk, with the `rush` gait if the figure has one. `hurry(1)` to stop. Scene steps' `speed` uses it. |
 | `actor.pickUp(el)` | Walk to any element (a letter by a form, an icon) and pick it up: a copy, styled like it, rides at the `carry` point (else `beak`, `handR`, `head`, …); the original is hidden but keeps its space. `actor.carrying` is that element. |
 | `actor.drop('here' \| 'back')` | Put it down at its feet (the copy stays on the stage) or send it back to where it came from (the original reappears). |
@@ -165,7 +166,7 @@ Steps run one after another. Each step does one thing:
 | `{"actor": a, "hideBehind": selector}` | go behind a `data-pixel-hide` element | |
 | `{"actor": a, "perform": name}` | play one of its animations in place | `ms` for a looping one (default 2400) |
 | `{"actor": a, "say": text}` | speech bubble | `ms` (default 1800) |
-| `{"actor": a, "face": dir}` | turn: `left`, `right`, a cast name or a selector | |
+| `{"actor": a, "face": dir}` | turn: `left`, `right`, a cast name or a selector; `viewer`, `away` or `side` for characters with views (waits for the turn) | |
 | `{"actor": a, "shoo": true}` | startle and run off (or `"shoo": what` to run from) | |
 | `{"actor": a, "pickUp": selector}` | walk to the element and carry it | |
 | `{"actor": a, "drop": true}` | put it down (`true` or `"here"`), or `"back"` where it came from | |

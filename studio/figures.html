@@ -78,7 +78,7 @@
 <script type="module">
 import { resolveSpec, compile, samplePoseAt, followOffsets, worldMatrices } from '../src/core/index.js';
 
-const FIGURES = ['goose', 'human', 'dog', 'chibi', 'blob'];
+const FIGURES = ['goose', 'goose-front', 'human', 'dog', 'chibi', 'blob'];
 const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d');
 // The canvas's pixels follow its displayed size (CSS px × device pixels), so it is sharp on a phone and drawing

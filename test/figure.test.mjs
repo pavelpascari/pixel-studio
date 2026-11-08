@@ -325,3 +325,57 @@ test('library motions carry their own tracks, events and holds; spec tracks over
   assert.notEqual(wing(lib), wing(own));   // the spec's wing replaces the library's flapping
   assert.equal(JSON.stringify(lib.animations.rush.tracks.jaw), JSON.stringify(own.animations.rush.tracks.jaw));   // the rest is kept
 });
+
+test('views: other angles join the spec, hidden except in their own animations; turns and a ¾ look are generated', async () => {
+  const read = (f) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), 'utf8'));
+  const c = compile(await resolveSpec(read('goose-base.json'), { loadRef: read, loadFigure: fig }));
+  const shown = (anim, f = 0) => {
+    const { visible } = worldMatrices(c.parts, samplePose(c, c.animations[anim], f));
+    return (id) => visible.get(id);
+  };
+  for (const n of ['idle@front', 'waddle@front', 'idle@back', 'turn@front', 'unturn@front', 'turn@back', 'unturn@back', 'look@front']) assert.ok(c.animations[n], n);
+  assert.ok(!c.animations['climb@front'], 'only what the view figure can do');
+  let s = shown('idle');
+  assert.deepEqual([s('body'), s('head'), s('front.body'), s('back.body'), s('front-look.head')], [true, true, false, false, false]);
+  s = shown('idle@front');
+  assert.deepEqual([s('body'), s('front.body'), s('front.eye'), s('back.body')], [false, true, true, false]);
+  s = shown('look@front');
+  assert.deepEqual([s('body'), s('head'), s('front-look.head'), s('front-look.eye'), s('front.body')], [true, false, true, true, false]);
+  // The turn passes through the ¾ look into the front view; unturn is the same backwards.
+  const seq = (anim) => [0, 1, 2, 3].map((f) => { const v = shown(anim, f); return v('front.body') ? 'front' : v('front-look.head') ? 'look' : v('back.body') ? 'back' : 'side'; });
+  assert.deepEqual(seq('turn@front'), ['look', 'look', 'front', 'front']);
+  assert.deepEqual(seq('unturn@front'), ['front', 'front', 'look', 'look']);
+  assert.deepEqual(seq('turn@back'), ['side', 'side', 'back', 'back']);
+  assert.equal(c.animations['turn@front'].loop, false);
+  // The turned head sits where the side head was.
+  const { world } = worldMatrices(c.parts, samplePose(c, c.animations['look@front'], 0));
+  const look = c.parts.find((p) => p.id === 'front-look.head'), head = c.parts.find((p) => p.id === 'head');
+  const d = Math.hypot(...at(world.get(look.id), look.pivot).map((v, i) => v - at(world.get('head'), head.pivot)[i]));
+  assert.ok(d < 0.5, `look head at the neck tip (${d})`);
+});
+
+test('views: variants patch a view, remap its materials, and points follow the view', async () => {
+  const read = (f) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), 'utf8'));
+  const base = read('goose-base.json');
+  const variant = {
+    extends: 'goose-base.json', materials: { coat: { color: '#334455' } }, materialMap: { plumage: 'coat' },
+    views: { front: { parts: [{ id: 'eye', remove: true }, { id: 'head', addShapes: [{ type: 'circle', cx: 50, cy: 16, r: 2, material: 'beak' }] }] }, back: null },
+  };
+  const loadRef = (f) => (f === 'v.json' ? variant : f === 'goose-base.json' ? base : read(f));
+  const r = await resolveSpec(variant, { loadRef, loadFigure: fig });
+  assert.deepEqual(validate(r).errors, []);
+  const ids = new Set(r.parts.map((p) => p.id));
+  assert.ok(!ids.has('front.eye') && !ids.has('front-look.eye'), 'removed in the view and its ¾ copy');
+  assert.ok(!ids.has('back.body') && !r.animations['idle@back'], 'view removed');
+  assert.equal(r.parts.find((p) => p.id === 'front.head').shapes.length, 3);
+  assert.equal(r.parts.find((p) => p.id === 'front.body').shapes[0].material, 'coat');
+  assert.ok(!r.materials.plumage, 'remapped material dropped');
+  // The front view's beak point is its own jaw, not the side head's tip.
+  const { bakePoints } = await import('../src/core/bundle.js');
+  const pts = bakePoints(compile(r));
+  assert.ok(!('beak@front' in pts));
+  assert.ok(Math.abs(pts.beak['idle@front'][0][0] - 50) < 2, `front beak near the middle (${pts.beak['idle@front'][0][0]})`);
+  assert.ok(pts.beak.idle[0][0] > 75, 'side beak at the tip');
+  await assert.rejects(resolveSpec({ ...base, views: { front: { figure: 'goose-front' } } }, { loadFigure: fig }), /needs parts/);
+  await assert.rejects(resolveSpec({ ...base, views: { side: { figure: 'goose-front', parts: [] } } }, { loadFigure: fig }), /view name/);
+});

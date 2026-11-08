@@ -23,7 +23,7 @@ const dropNulls = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => 
 export function mergeVariant(base, variant) {
   const out = clone(base);
   for (const [k, v] of Object.entries(variant)) {
-    if (['extends', 'materials', 'parts', 'animations', 'style', 'materialMap', 'points', 'skins'].includes(k)) continue;
+    if (['extends', 'materials', 'parts', 'animations', 'style', 'materialMap', 'points', 'skins', 'views'].includes(k)) continue;
     if (v === null) delete out[k]; else out[k] = clone(v);
   }
 
@@ -65,13 +65,32 @@ export function mergeVariant(base, variant) {
   }
   parts = parts.filter((p) => !removed.has(p.id));
 
-  // Material remapping (applied to every shape, including the variant's own).
+  // Views (other angles): merged view by view like a small variant (null removes one).
+  if (variant.views !== undefined) {
+    if (variant.views === null) delete out.views;
+    else {
+      out.views = { ...(out.views || {}) };
+      for (const [name, v] of Object.entries(variant.views)) {
+        if (v === null) { delete out.views[name]; continue; }
+        const prev = out.views[name];
+        if (!isObj(prev) || !isObj(v)) { out.views[name] = clone(v); continue; }
+        const merged = mergeVariant(prev, v);
+        delete merged.materials;
+        if (prev.animations === undefined && v.animations === undefined) delete merged.animations;   // all of the figure's motions
+        out.views[name] = merged;
+      }
+    }
+  }
+  const viewParts = Object.values(out.views || {}).flatMap((v) => (isObj(v) && Array.isArray(v.parts) ? v.parts : []));
+
+  // Material remapping (applied to every shape, including the variant's own, and every view's).
   const map = variant.materialMap || {};
-  for (const p of parts) for (const s of p.shapes || []) if (s.material in map) s.material = map[s.material];
+  for (const p of [...parts, ...viewParts]) for (const s of p.shapes || []) if (s.material in map) s.material = map[s.material];
   // Materials the base used that this variant made unused (removed parts, remapped, replaced shapes)
   // are dropped, so variants do not inherit "material is never used" noise.
   const usedIn = (list) => new Set(list.flatMap((p) => (p.shapes || []).map((s) => s.material)));
-  const usedBefore = usedIn(base.parts || []), usedNow = usedIn(parts);
+  const baseViewParts = Object.values(base.views || {}).flatMap((v) => (isObj(v) && Array.isArray(v.parts) ? v.parts : []));
+  const usedBefore = usedIn([...(base.parts || []), ...baseViewParts]), usedNow = usedIn([...parts, ...viewParts]);
   for (const name of Object.keys(out.materials))
     if (usedBefore.has(name) && !usedNow.has(name) && !(variant.materials && name in variant.materials)) delete out.materials[name];
   out.parts = parts;

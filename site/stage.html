@@ -127,7 +127,8 @@
   <p>Give a scene a <code>trigger</code> and mark its script <code>data-pixel-scene</code>: it plays by itself when that
     happens: a form submitted, a button clicked, a section scrolled into view (<code>"visible"</code>), a character tapped.
     Characters can <code>pickUp</code> any element (a copy rides at the beak or hand), <code>drop</code> it, <code>exit</code>
-    by the side of the screen (delivering what they carry) and <code>enter</code> again. The
+    by the side of the screen (delivering what they carry) and <code>enter</code> again. A character with front and back
+    views can turn to the reader: <code>{"face": "viewer"}</code>, <code>"away"</code>, <code>"side"</code>. The
     <a href="../demo/stage.html#newsletter">demo page's newsletter form</a> hands the goose a letter to post.</p>
   <pre class="snippet" data-lang="json">
     {"cast": {"goose": "#goose"},

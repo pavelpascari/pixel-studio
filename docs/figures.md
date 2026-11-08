@@ -24,6 +24,7 @@ figure. For the rest of the spec format see [SPEC.md](SPEC.md); for how expansio
 | `goose` | side, facing right | body tail legNear/shinNear/footNear legFar/shinFar/footFar neck neckUp head jaw wing | idle walk run rush sneak · jump fall sit duck peek climb · flap honk |
 | `human` | side, facing right | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ `Far` copies) | idle walk run · jump fall sit duck peek climb |
 | `dog` | side, facing right | body tail tail2 neck head jaw ear, thigh/shin/hock/paw `HindNear`·`HindFar`, arm/forearm/pastern/paw `ForeNear`·`ForeFar` | idle walk trot · jump fall duck peek |
+| `goose-front` | front (dress it the other way round for the back) | body tail shinL/footL shinR/footR neck neckUp head jaw wingL wingR | idle walk run · jump fall sit duck peek · flap honk |
 | `chibi` | front | body legL footL legR footR armL armR head | idle walk run · jump fall sit duck peek |
 | `blob` | any (no limbs) | shadow body top | idle hop travel · fall peek |
 
@@ -142,6 +143,35 @@ feet stay planted:
   "head": {"rot": [0, -20, -30, -30, -20, 0]}
 }}
 ```
+
+### Views: the same character from other angles
+
+A side-view character can also be drawn from the front, from behind, or anything else a figure exists for. Each
+view dresses its own figure (a front-view one) with the same materials:
+
+```json
+"views": {
+  "front": {"figure": "goose-front", "look": {"part": "head", "replaces": "head"},
+            "parts": [{"id": "body", "shapes": [...]}, {"id": "head", "shapes": [...]}, ...],
+            "animations": {"idle": {"motion": "idle"}, "waddle": {"motion": "walk"}}},
+  "back":  {"figure": "goose-front", "parts": [...]}
+}
+```
+
+- The view's parts join the spec as `front.body`, `front.head`, … hidden except in the view's own animations,
+  which are named `<animation>@<view>`: `idle@front`, `waddle@back`. Name them like the side animations (`waddle`,
+  not `walk`, if the side one is `waddle`): the stage plays `idle@front` where it would play `idle`. Leave
+  `animations` out to get every motion of the view's figure.
+- Generated for every view: `turn@<view>` (a one-shot from the side to that view: squeeze, swap, unsqueeze) and
+  `unturn@<view>` (back to the side).
+- `look` copies one of the view's parts (with its children) onto the side figure in place of a side part: a head
+  turned toward the viewer on a side body, the three-quarter view. It adds `look@<view>` (the side idle with the head
+  turned), and the turns pass through it.
+- The figure's attachment points follow the view: `beak` in `idle@front` is the front jaw's tip.
+- Variants patch a view like the main spec: `"views": {"front": {"parts": [{"id": "head", "addShapes": [...]}]}}`, or
+  `"back": null` to drop one. A variant's `materialMap` applies to every view. Clothes a variant adds to the side view
+  are not drawn in the other views until the variant adds them there too.
+- `examples/goose-base.json` has front and back views; the whole flock inherits them. `studio/goose.html` shows them.
 
 ### Speed
 
