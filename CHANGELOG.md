@@ -13,6 +13,9 @@ Until 1.0, minor versions may change the spec format.
   glint, Chinese knob, neck furrows, pale throat and belly, white stern, flank barring, far wing, wing coverts, dark
   flight feathers, layered tail, webbed toes, scaly shins) can be tried on. The look is kept in the URL and exported
   as a variant spec (checked to build). Works on phones.
+- Workbench "Rendering" panel: tones, outline, texture, roundness, fill light, dithering and inner lines over the
+  goose's own style; a "clean" preset (no texture or dithering, 3 tones, no inner lines, softer light) for a calmer,
+  more natural look at large sizes. Exported as the spec's `style`.
 
 ### Figure library page on phones; more goose moves in the library
 - `studio/figures.html` works on phones: the animation first (square, sharp at any pixel density), figures and

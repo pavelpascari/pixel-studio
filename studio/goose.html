@@ -51,6 +51,10 @@
   details.shapes .row { padding: 2px 4px; font-size: 12px; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid #0006; vertical-align: -1px; margin-right: 4px; }
   textarea { width: 100%; min-height: 160px; background: #120f19; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: 11.5px/1.4 ui-monospace, monospace; padding: 8px; }
+  .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .styles label { display: flex; flex-direction: column; gap: 3px; color: var(--dim); font-size: 12px; }
+  .styles label.check { flex-direction: row; align-items: center; gap: 6px; }
+  .styles select, .styles input[type=range] { width: 100%; }
   label.opt { display: flex; gap: 6px; align-items: center; color: var(--dim); }
 
   @media (max-width: 860px) {
@@ -93,6 +97,18 @@
   </section>
   <aside>
     <div>
+      <h2>Rendering <span><button id="styleClean" title="no texture or dithering, 3 tones, no inner lines, softer light">clean</button><button id="styleReset">as designed</button></span></h2>
+      <div class="styles">
+        <label>tones <select id="st-tones"><option value="">auto</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
+        <label>outline <select id="st-outline"><option value="">auto</option><option>none</option><option>dark</option><option>selective</option></select></label>
+        <label>texture <input type="range" id="st-texture" min="0" max="1" step="0.1"></label>
+        <label>roundness <input type="range" id="st-curvature" min="0" max="1" step="0.05"></label>
+        <label>fill light <input type="range" id="st-ambient" min="0" max="0.6" step="0.05"></label>
+        <label class="check"><input type="checkbox" id="st-dither"> dithering</label>
+        <label class="check"><input type="checkbox" id="st-innerLines"> inner lines</label>
+      </div>
+    </div>
+    <div>
       <h2>Add features <span><button id="featAll">all</button><button id="featNone">none</button></span></h2>
       <div id="features"></div>
     </div>
@@ -129,10 +145,11 @@ const S = {
   features: new Set(saved.features ?? []),
   hiddenParts: new Set(saved.hiddenParts ?? []),
   hiddenShapes: new Set(saved.hiddenShapes ?? []),
+  style: saved.style && typeof saved.style === 'object' ? saved.style : {},
   playing: true, frame: 0, acc: 0,
 };
 const persist = () => history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify({
-  base: S.base, anim: S.anim, res: S.res, features: [...S.features], hiddenParts: [...S.hiddenParts], hiddenShapes: [...S.hiddenShapes],
+  base: S.base, anim: S.anim, res: S.res, style: S.style, features: [...S.features], hiddenParts: [...S.hiddenParts], hiddenShapes: [...S.hiddenShapes],
 })));
 
 const cache = new Map();
@@ -178,6 +195,7 @@ function variantSpec({ forExport = false } = {}) {
     }
     spec.parts = [...parts, ...touched.values()];
   }
+  if (forExport && Object.keys(S.style).length) spec.style = { ...S.style };
   if (!Object.keys(spec.materials).length) delete spec.materials;
   if (!spec.parts.length) delete spec.parts;
   return spec;
@@ -223,19 +241,15 @@ function applyHides() {
 /** JSON with each shape, point list and material on one line: readable, and short enough to edit by hand. */
 function pretty(spec) {
   const one = (v) => JSON.stringify(v);
-  const lines = ['{', `  "extends": ${one(spec.extends)}`];
-  if (spec.materials) lines[1] += ',', lines.push('  "materials": {', Object.entries(spec.materials).map(([k, v]) => `    ${one(k)}: ${one(v)}`).join(',\n'), '  }');
-  if (spec.parts) {
-    lines[lines.length - 1] += ',';
-    lines.push('  "parts": [', spec.parts.map((p) => {
-      const { shapes, addShapes, ...head } = p, key = shapes ? 'shapes' : 'addShapes', list = shapes ?? addShapes;
-      const open = one(head).slice(0, -1);
-      if (!list.length) return `    ${open}, ${one(key)}: []}`;
-      return `    ${open}, ${one(key)}: [\n${list.map((sh) => `      ${one(sh)}`).join(',\n')}\n    ]}`;
-    }).join(',\n'), '  ]');
-  }
-  lines.push('}');
-  return lines.join('\n');
+  const sections = [`  "extends": ${one(spec.extends)}`];
+  if (spec.style) sections.push(`  "style": ${one(spec.style)}`);
+  if (spec.materials) sections.push(`  "materials": {\n${Object.entries(spec.materials).map(([k, v]) => `    ${one(k)}: ${one(v)}`).join(',\n')}\n  }`);
+  if (spec.parts) sections.push(`  "parts": [\n${spec.parts.map((p) => {
+    const { shapes, addShapes, ...head } = p, key = shapes ? 'shapes' : 'addShapes', list = shapes ?? addShapes;
+    const open = one(head).slice(0, -1);
+    return list.length ? `    ${open}, ${one(key)}: [\n${list.map((sh) => `      ${one(sh)}`).join(',\n')}\n    ]}` : `    ${open}, ${one(key)}: []}`;
+  }).join(',\n')}\n  ]`);
+  return `{\n${sections.join(',\n')}\n}`;
 }
 
 /** The export must build on its own (it is what gets saved as an example): say so if it does not. */
@@ -250,7 +264,7 @@ async function checkExport(spec) {
 
 function frameImage(res, f) {
   const key = `${res}:${S.anim}:${f}`;
-  if (!frames.has(key)) frames.set(key, renderFrame(view, { res, anim: S.anim, frame: f, style: resolveStyle(view, res) }));
+  if (!frames.has(key)) frames.set(key, renderFrame(view, { res, anim: S.anim, frame: f, style: resolveStyle(view, res, S.style) }));
   return frames.get(key);
 }
 const toCanvas = (img, cv) => { cv.width = img.w; cv.height = img.h; cv.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(img.rgba), img.w, img.h), 0, 0); return cv; };
@@ -359,7 +373,7 @@ $('#base').append(...Object.entries(BASES).map(([v, t]) => el('option', { value:
 $('#base').onchange = () => { S.base = $('#base').value; S.hiddenParts.clear(); S.hiddenShapes.clear(); rebuild(); };
 $('#anim').onchange = () => { S.anim = $('#anim').value; S.frame = 0; applyHides(); };
 $('#res').append(...RES.map((r) => el('button', { textContent: r, className: r === S.res ? 'on' : '', onclick: () => {
-  S.res = r; for (const b of $('#res').children) b.classList.toggle('on', Number(b.textContent) === r); persist(); draw(true);
+  S.res = r; for (const b of $('#res').children) b.classList.toggle('on', Number(b.textContent) === r); persist(); showStyle(); draw(true);
 } })));
 for (const b of $('#bg').children) b.onclick = () => {
   for (const x of $('#bg').children) x.classList.toggle('on', x === b);
@@ -383,6 +397,32 @@ $('#partsAll').onclick = () => { S.hiddenParts.clear(); S.hiddenShapes.clear(); 
 $('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#out').value); $('#copy').textContent = 'copied'; } catch { $('#out').select(); } setTimeout(() => ($('#copy').textContent = 'copy'), 1200); };
 new ResizeObserver(() => draw(true)).observe($('#stageWrap'));
 
+// Rendering: overrides on top of the goose's own style (and the detail preset for the size). Blank = as designed.
+const CLEAN = { texture: 0, dither: false, tones: 3, innerLines: false, curvature: 0.5, ambient: 0.3 };
+const STYLE_KEYS = ['tones', 'outline', 'texture', 'curvature', 'ambient', 'dither', 'innerLines'];
+function showStyle() {
+  const base = view ? resolveStyle(view, S.res) : {};
+  for (const k of STYLE_KEYS) {
+    const input = $(`#st-${k}`), v = S.style[k];
+    if (input.type === 'checkbox') input.checked = v ?? !!base[k];
+    else if (input.type === 'range') input.value = v ?? base[k] ?? 0;
+    else input.value = v ?? '';
+    input.closest('label').style.color = k in S.style ? 'var(--accent)' : '';
+  }
+}
+function setStyle(next) { S.style = next; showStyle(); applyHides(); }
+for (const k of STYLE_KEYS) {
+  const input = $(`#st-${k}`);
+  input.oninput = input.onchange = () => {
+    const next = { ...S.style };
+    const v = input.type === 'checkbox' ? input.checked : input.type === 'range' ? Number(input.value) : input.value;
+    if (v === '') delete next[k]; else next[k] = k === 'tones' ? Number(v) : v;
+    setStyle(next);
+  };
+}
+$('#styleClean').onclick = () => setStyle({ ...S.style, ...CLEAN });
+$('#styleReset').onclick = () => setStyle({});
+
 // ----- play -----
 let last = 0;
 function tick(now) {
@@ -399,6 +439,7 @@ function tick(now) {
 
 renderFeatures();
 await rebuild();
+showStyle();
 requestAnimationFrame(tick);
 </script>
 </body>
