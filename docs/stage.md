@@ -69,7 +69,7 @@ Layout tips, learned building the demo:
 
 | attribute | default | |
 |---|---|---|
-| `src`, `size`, `alt`, `skin` | `size` 64 | Passed to the inner `<pixel-sprite>`. |
+| `src`, `size`, `alt`, `skin` | `size` 64 | Passed to the inner `<pixel-sprite>`. Changing `size` on a live character works: its speed, jumps and hit area follow the new box. |
 | `start` | a platform on screen | CSS selector of the element to stand on first. |
 | `keep-in-view` | off | Stay in sight: when the reader scrolls the character off-screen, it comes back once scrolling settles. Close by, it runs there at 2.5× speed (feet still planted); further away, it drops in from the top of the screen onto a visible surface. |
 | `behaviours` | `wander sit hide climb jump` | What it may choose to do on its own. Behaviours the bundle cannot do (no `climb` animation, …) are skipped. |

@@ -32,6 +32,8 @@
   .card h3 { margin: 0 0 4px; font-size: 16px; }
   .card p { margin: 0; font-size: 14px; }
   .tall { min-height: 210px; } .mid { min-height: 150px; } .low { min-height: 96px; }
+  .size-ctl { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-weight: 600; }
+  .size-ctl input { flex: 1; max-width: 260px; }
   .crate { flex: 0 0 88px; height: 42px; border: 3px solid #5b3a24; border-radius: 4px;
     background: repeating-linear-gradient(90deg, #c08552 0 14px, #a8703f 14px 16px); position: relative; }
   .crate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 46%, #5b3a24 46% 54%, transparent 54%); }
@@ -108,6 +110,7 @@
 
   <section class="controls" id="controls">
     <h2>Script them</h2>
+    <label class="size-ctl">Character size <input id="size" type="range" min="50" max="200" step="10" value="100"> <output id="size-out">100%</output></label>
     <button id="hide">Goose: hide behind the crate</button>
     <button id="sit">Goose: sit on “Summit”</button>
     <button id="climb">Goose: climb “Ridge loop”</button>
@@ -152,6 +155,16 @@
   $('#climb').onclick = () => log('goose', goose.goTo($('#card-a')) ? 'going to Ridge loop' : 'cannot get there');
   $("#pipgo").onclick = () => log('pip', pip.goTo($('#card-b')) ? 'going to Lakeside' : 'cannot get there');
   $('#shoo').onclick = () => document.querySelectorAll('pixel-actor').forEach((a) => a.shoo());
+  // Size slider: scales every character from its own size in the markup; remembered for next time.
+  const actors = [...document.querySelectorAll('pixel-actor')];
+  for (const a of actors) a.dataset.baseSize = a.getAttribute('size');
+  const sizeIn = $('#size'), sizeOut = $('#size-out');
+  const resize = (pct) => {
+    sizeIn.value = pct; sizeOut.textContent = `${pct}%`;
+    for (const a of actors) a.setAttribute('size', String(Math.round((a.dataset.baseSize * pct) / 100)));
+  };
+  sizeIn.oninput = () => { resize(Number(sizeIn.value)); try { localStorage.setItem('stage-size', sizeIn.value); } catch {} };
+  try { const saved = Number(localStorage.getItem('stage-size')); if (saved >= 50 && saved <= 200) resize(saved); } catch {}
   $('#think').onclick = () => { const c = $('#clawd'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>

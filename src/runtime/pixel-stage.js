@@ -347,7 +347,10 @@ export class PixelActor extends Base {
     if (!this.hasAttribute('size')) this.sprite.setAttribute('size', '64');
     this.sprite.setAttribute('states', 'off');   // the stage chooses animations itself
   }
-  attributeChangedCallback(name, _o, v) { if (this.sprite) { if (v == null) this.sprite.removeAttribute(name); else this.sprite.setAttribute(name, v); } }
+  attributeChangedCallback(name, _o, v) {
+    if (!this.sprite) return;
+    if (v == null) this.sprite.removeAttribute(name); else this.sprite.setAttribute(name, v);
+  }
 
   get stage() { return this.closest('pixel-stage'); }
 
@@ -632,6 +635,9 @@ export class PixelActor extends Base {
   // ----- the brain: run the plan, or choose what to do next -----
 
   _update(dt, w, placeOnly) {
+    // Resized (the size attribute, a new variant loading): speed, jumps and hit areas follow the new box.
+    const box = this.sprite.displaySize;
+    if (box && (box.width !== this.W || box.height !== this.H)) { this.W = box.width; this.H = box.height; }
     if (!this._placed) return;
     if (this._sayUntil && performance.now() > this._sayUntil) { this._bubble.classList.remove('on'); this._sayUntil = 0; }
     if (placeOnly || this._still) return;
