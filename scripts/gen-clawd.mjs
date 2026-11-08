@@ -5,8 +5,8 @@ const LEGX = [4, 6, 9, 11];                     // leg columns (cells); body is 
 const legBones = LEGX.flatMap((x, i) => {
   const cx = g(x + 0.5);
   return [
-    { id: `leg${i + 1}`, parent: 'body', from: [cx, g(12)], to: [r(cx + 1), g(13)], z: 1 },
-    { id: `foot${i + 1}`, parent: `leg${i + 1}`, from: [r(cx + 1), g(13)], to: [cx, g(14)], z: 1 },
+    { id: `leg${i + 1}`, parent: 'body', from: [cx, g(12)], to: [r(cx + 2), g(13)], z: 1 },
+    { id: `foot${i + 1}`, parent: `leg${i + 1}`, from: [r(cx + 2), g(13)], to: [cx, g(14)], z: 1 },
   ];
 });
 const legParts = LEGX.flatMap((x, i) => [
@@ -70,12 +70,12 @@ const spec = {
     run: { frames: 6, fps: 20, speed: r(h * 2 / 3 * 20), events: [{ frame: 0, name: 'footstep', data: { leg: 'a' } }, { frame: 3, name: 'footstep', data: { leg: 'b' } }],
       tracks: { ...legs(runX, runY), sideL: { show: rep(1, 6) }, eyes: { x: rep(C, 6) },
         armL: { y: [0, -h, 0, 0, -h, 0].map(r) }, armR: { y: [0, -h, 0, 0, -h, 0].map(r) } } },
-    hop: { motion: 'jump', frames: 10, fps: 12, loop: false, dip: 3, tuck: 3, height: 18, lean: 0, tracks: { eyes: { sy: [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 1] } } },
+    hop: { motion: 'jump', frames: 10, fps: 12, loop: false, dip: 0, tuck: 3, height: 18, lean: 0, tracks: { eyes: { sy: [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 1] } } },
     wave: { frames: 8, fps: 10, loop: false, tracks: {
       armR: { y: [0, -C, -2 * C, -C, -2 * C, -C, -2 * C, 0].map(r) },
       eyes: { sy: [1, 1, 0.5, 0.5, 0.5, 0.5, 1, 1] },
     } },
-    jump: { motion: 'jump', frames: 10, fps: 10, loop: false, dip: 3, tuck: 3, lean: 0 },
+    jump: { motion: 'jump', frames: 10, fps: 10, loop: false, dip: 0, tuck: 3, lean: 0, tracks: { eyes: { sy: [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 1] } } },
     fall: { frames: 6, fps: 10, tracks: {
       ...Object.fromEntries([1, 2, 3, 4].map((i) => [`leg${i}`, { y: (i % 2 ? [0, -h, 0, -h, 0, -h] : [-h, 0, -h, 0, -h, 0]).map(r) }])),
       armL: { y: [-C, -2 * C, -C, -2 * C, -C, -2 * C].map(r) }, armR: { y: [-2 * C, -C, -2 * C, -C, -2 * C, -C].map(r) },
