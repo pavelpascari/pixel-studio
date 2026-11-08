@@ -46,7 +46,9 @@ Until 1.0, minor versions may change the spec format.
 - Added: bundle validation (`checkBundle`), decoded sheets shared between sprites (`ImageBitmap`), one shared
   `IntersectionObserver`, `fps` observed.
 - Changed: on touch screens `hover-anim` no longer flashes during a tap; a tap plays it once when there is no `click-anim`.
-- Added: `test/browser/runtime.html`, 21 in-browser checks to run on real devices (pass in Chromium and iOS Safari).
+- Added: `test/browser/runtime.html`, 22 in-browser checks to run on real devices (pass in Chromium, Firefox, WebKit and iOS Safari),
+  and `scripts/browser-check.mjs`, which runs them and every docs-site page in Firefox and WebKit with Playwright
+  (installed outside the project; no dependency).
 - Fixed: a one-shot started while off-screen never fired `spriteend`; it now ends on time, as under reduced motion.
 
 ### Bundles and specs

@@ -6,7 +6,7 @@ Thanks for helping. Pixel Studio is small on purpose: plain ES modules, no depen
 
 ```bash
 node --version          # 20 or newer
-npm test                # engine, rig, figure and runtime tests (node:test)
+npm test                # engine, rig, figure, plug-in and runtime tests (node:test)
 npm run studio          # http://localhost:5173/studio/ , /studio/figures.html , /demo/
 ```
 
@@ -57,3 +57,15 @@ recreations of existing characters or games.
 ## License
 
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE).
+
+## Browser checks
+
+`test/browser/runtime.html` checks the runtime in a real browser (open it on any device while `npm run studio` runs).
+To run it, and every page of the docs site, in Firefox and WebKit, install Playwright anywhere outside the project and
+run the script from there:
+
+```bash
+mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
+node /path/to/pixel-studio/scripts/browser-check.mjs        # --browsers firefox,webkit,chromium  --base http://localhost:5173
+```
+
