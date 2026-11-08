@@ -229,8 +229,12 @@ switch (cmd) {
       const name = basename(out).replace(/\.bundle\.json$|\.json$/, '');
       for (const v of bundle.variants) for (const key of ['image', 'overlay']) {
         if (typeof v[key] !== 'string' || !v[key].startsWith('data:image/png;base64,')) continue;
-        const file = `${name}.${v.res}${v.skin ? `.${v.skin}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
-        writeFileSync(join(dirname(resolve(out)), file), Buffer.from(v[key].slice(22), 'base64'));
+        // Skin names come from the spec: keep them to a safe slug so the file stays beside the bundle.
+        const slug = (x) => String(x).replace(/[^A-Za-z0-9_-]+/g, '_');
+        const file = `${slug(name)}.${Number(v.res)}${v.skin ? `.${slug(v.skin)}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
+        const dir = dirname(resolve(out)), target = resolve(dir, file);
+        if (basename(file) !== file || dirname(target) !== dir) fail(`--external: refusing to write ${file} outside ${dir}`);
+        writeFileSync(target, Buffer.from(v[key].slice(22), 'base64'));
         v[key] = file;
       }
     }
