@@ -27,6 +27,15 @@ const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 /** Keys that must never be used to index a plain object built from spec data. */
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
+function mergeTracks(base, over) {
+  const out = clone(base);
+  for (const [id, props] of Object.entries(over ?? {})) {
+    if (UNSAFE_KEYS.has(id) || !isObj(props)) continue;
+    out[id] = { ...(isObj(out[id]) ? out[id] : {}), ...clone(props) };
+  }
+  return out;
+}
+
 function figureError(errors) {
   const e = new Error(errors.map((x) => `${x.path}: ${x.message}`).join('; '));
   e.errors = errors;
@@ -114,8 +123,13 @@ export function expandFigure(spec, figure, fit = {}, warn = () => {}) {
       err(`${path}.motion`, `unknown motion "${a.motion}" (this figure has: ${Object.keys(motions).join(', ') || 'none'}; models: ${MOTION_MODELS.join(', ')})`);
       continue;
     }
-    const { motion, tracks: userTracks, reach, events: userEvents, holds, ...over } = a;
-    const params = { ...(preset ?? { model: motion }), ...over };
+    const { motion, tracks: specTracks, reach, events: specEvents, holds: specHolds, ...over } = a;
+    // A library motion may carry its own tracks (a pose layered on the model: wings beating on a run);
+    // the spec's tracks override them part by part, property by property.
+    const { tracks: presetTracks, events: presetEvents, holds: presetHolds, ...presetParams } = preset ?? {};
+    const userEvents = specEvents ?? presetEvents, holds = specHolds ?? presetHolds;
+    const userTracks = presetTracks ? mergeTracks(presetTracks, specTracks) : specTracks;
+    const params = { ...(preset ? presetParams : { model: motion }), ...over };
     if (!MOTION_MODELS.includes(params.model ?? 'gait')) { err(`${path}`, `unknown motion model "${params.model}"`); continue; }
     const missing = ['root', ...(LEGGED_MODELS.includes(params.model ?? 'gait') ? ['legs'] : [])].filter((k) => !fig.rig?.[k]);
     if (missing.length) { err(path, `figure "${fig.name}" has no rig.${missing.join('/rig.')}, which motion "${a.motion}" needs`); continue; }

@@ -8,7 +8,8 @@
   :root { --bg: #17151f; --panel: #211e2c; --line: #3a3550; --text: #e9e6f2; --dim: #8d87a3; --accent: #ffcf4a; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
-  header { display: flex; align-items: baseline; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  header .tag { color: var(--dim); }
   header h1 { font-size: 16px; margin: 0; }
   header a { color: var(--dim); }
   main { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 50px); }
@@ -20,16 +21,37 @@
   .list button small { color: var(--dim); display: block; font-size: 11px; }
   label { display: flex; gap: 8px; align-items: center; color: var(--dim); }
   #stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 12px; }
-  canvas { background: #1d1a27; border-radius: 10px; max-width: 100%; }
+  canvas { background: #1d1a27; border-radius: 10px; width: 720px; max-width: 100%; aspect-ratio: 9 / 7; height: auto; display: block; }
   #info { color: var(--dim); max-width: 760px; text-align: center; }
   #info b { color: var(--text); font-weight: 600; }
-  code { background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+  code { background: var(--panel); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  .views { display: flex; flex-direction: column; gap: 6px; }
+
+  /* Phones: the animation first, then the pickers as rows of chips to swipe through, then the view options. */
+  @media (max-width: 760px) {
+    header { padding: 12px 14px; }
+    header .tag { order: 3; flex-basis: 100%; font-size: 13px; }
+    main { display: flex; flex-direction: column; min-height: 0; }
+    #stage { order: -1; padding: 12px 12px 4px; gap: 10px; }
+    canvas { width: 100%; aspect-ratio: 1; max-height: 62vh; max-width: 62vh; }
+    #info { font-size: 13px; text-align: left; }
+    aside { border-right: 0; border-top: 1px solid var(--line); padding: 12px 0 calc(16px + env(safe-area-inset-bottom)); gap: 12px; }
+    aside h2 { padding: 0 14px; }
+    .list { flex-direction: row; overflow-x: auto; gap: 6px; padding: 2px 14px 6px; scroll-snap-type: x proximity; scrollbar-width: none; }
+    .list::-webkit-scrollbar { display: none; }
+    .list button { flex: 0 0 auto; min-height: 44px; padding: 8px 12px; scroll-snap-align: start; }
+    .views { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; padding: 0 14px; }
+    .views label { min-height: 40px; }
+    .views label:last-child { grid-column: 1 / -1; }
+    .views input[type=range] { flex: 1; }
+    input[type=checkbox] { width: 20px; height: 20px; }
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>Figure library</h1>
-  <span style="color:var(--dim)">skeletons with realistic motion models: pick one, dress its bones in a spec</span>
+  <span class="tag">skeletons with realistic motion models: pick one, dress its bones in a spec</span>
   <a href="./">← studio</a>
 </header>
 <main>
@@ -38,12 +60,14 @@
     <div><h2>Motion</h2><div class="list" id="motions"></div></div>
     <div>
       <h2>View</h2>
+      <div class="views">
       <label><input type="checkbox" id="smooth" checked> smooth (between frames)</label>
       <label><input type="checkbox" id="ground" checked> moving ground</label>
       <label><input type="checkbox" id="trails" checked> foot trails</label>
       <label><input type="checkbox" id="labels"> bone names</label>
       <label><input type="checkbox" id="onion"> onion skin (all frames)</label>
       <label>speed <input type="range" id="rate" min="0.1" max="1" step="0.05" value="1"> <span id="rateLabel">1×</span></label>
+      </div>
     </div>
   </aside>
   <section id="stage">
@@ -57,6 +81,15 @@ import { resolveSpec, compile, samplePoseAt, followOffsets, worldMatrices } from
 const FIGURES = ['goose', 'human', 'dog', 'chibi', 'blob'];
 const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d');
+// The canvas's pixels follow its displayed size (CSS px × device pixels), so it is sharp on a phone and drawing
+// sizes (lines, dots, text) stay the same on screen whatever the canvas size.
+let dpr = 1;
+new ResizeObserver(() => {
+  dpr = devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect();
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  state.trails = [];
+}).observe(cv);
 const state = { figure: null, compiled: null, anim: null, t0: performance.now(), scroll: 0, last: 0, trails: [] };
 const figs = {};
 
@@ -91,11 +124,18 @@ function play(name) {
   state.anim = name;
   state.trails = [];
   document.querySelectorAll('#motions button').forEach((b) => b.classList.toggle('on', b.dataset.name === name));
+  reveal($('#motions'));
   const a = state.compiled.animations[name], f = state.figure;
   $('#info').innerHTML = `<b>${f.name}</b> — ${f.description}<br>` +
     `<code>{"figure": "${f.name.toLowerCase()}", "animations": {"${name}": {"motion": "${name}"}}}</code>` +
     (a.speed ? `<br>move the sprite at <b>${a.speed} units/s</b> (${(a.speed / 100).toFixed(2)} × its height per second) and the feet do not slide` : '') +
     (state.notes.length ? `<br><span style="color:#ff8d6c">${state.notes.join('<br>')}</span>` : '');
+}
+
+/** On a phone the lists are rows that scroll sideways: keep the chosen one in view. */
+function reveal(list) {
+  const on = list.querySelector('.on');
+  if (on && list.scrollWidth > list.clientWidth) list.scrollTo({ left: on.offsetLeft - list.offsetLeft - 14, behavior: 'smooth' });
 }
 
 function poseAt(c, a, t) {
@@ -123,7 +163,8 @@ function draw(now) {
   if (!$('#smooth').checked) t = Math.floor(t * a.frames) / a.frames;
   state.scroll += (a.speed || 0) * dt;
 
-  const W = cv.width, H = cv.height, u = Math.min(W, H) / 100 * 0.95;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = cv.width / dpr, H = cv.height / dpr, u = Math.min(W, H) / 100 * 0.95;
   const ox = (W - 100 * u) / 2, oy = (H - 100 * u) / 2;
   ctx.clearRect(0, 0, W, H);
   const pose = poseAt(c, a, t);

@@ -313,3 +313,15 @@ test('mixes: baked transition clips blend the end of one animation into the star
   assert.match(bad({ walk: {} }), /named "from>to"/);
   assert.match(bad({ 'walk>idle': { frames: 20 } }), /frames must be a whole number 1\.\.8/);
 });
+
+test('library motions carry their own tracks, events and holds; spec tracks override them', async () => {
+  const { readFileSync } = await import('node:fs');
+  const loadFigure = (n) => JSON.parse(readFileSync(new URL(`../figures/${n}.json`, import.meta.url), 'utf8'));
+  const lib = await resolveSpec({ figure: 'goose', animations: { honk: { motion: 'honk' }, rush: { motion: 'rush' } } }, { loadFigure });
+  assert.deepEqual(lib.animations.honk.events, [{ frame: 3, name: 'honk' }]);
+  assert.deepEqual(lib.animations.honk.holds, { 3: 2 });
+  const own = await resolveSpec({ figure: 'goose', animations: { rush: { motion: 'rush', tracks: { wing: { rot: 0 } } } } }, { loadFigure });
+  const wing = (s) => JSON.stringify(s.animations.rush.tracks.wing);
+  assert.notEqual(wing(lib), wing(own));   // the spec's wing replaces the library's flapping
+  assert.equal(JSON.stringify(lib.animations.rush.tracks.jaw), JSON.stringify(own.animations.rush.tracks.jaw));   // the rest is kept
+});

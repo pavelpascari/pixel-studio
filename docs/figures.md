@@ -21,7 +21,7 @@ figure. For the rest of the spec format see [SPEC.md](SPEC.md); for how expansio
 
 | figure | view | bones | motions |
 |---|---|---|---|
-| `goose` | side, facing right | body tail legNear/shinNear/footNear legFar/shinFar/footFar neck neckUp head jaw wing | idle walk run sneak · jump fall sit duck peek climb |
+| `goose` | side, facing right | body tail legNear/shinNear/footNear legFar/shinFar/footFar neck neckUp head jaw wing | idle walk run rush sneak · jump fall sit duck peek climb · flap honk |
 | `human` | side, facing right | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ `Far` copies) | idle walk run · jump fall sit duck peek climb |
 | `dog` | side, facing right | body tail tail2 neck head jaw ear, thigh/shin/hock/paw `HindNear`·`HindFar`, arm/forearm/pastern/paw `ForeNear`·`ForeFar` | idle walk trot · jump fall duck peek |
 | `chibi` | front | body legL footL legR footR armL armR head | idle walk run · jump fall sit duck peek |
@@ -128,6 +128,10 @@ smooth input and keep interpolation between frames faithful.
 | any other `x`, `y`, `rot` | added to the generated value |
 | `sx`, `sy` | multiplied |
 | `show` | replaces |
+
+A figure's library motion can carry `tracks` (and `events`, `holds`) of its own, for a move that is a model plus a
+pose: the goose's `rush` is its run with the wings beating and the neck out, and `flap` and `honk` are `pose`
+motions. A spec's `tracks` override the library's part by part and property by property.
 
 The `pose` model generates nothing of its own, so it is the way to hand-key a gesture on a figure while the
 feet stay planted:

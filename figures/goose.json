@@ -48,6 +48,18 @@
     "duck": {"model": "idle", "frames": 8, "fps": 6, "crouch": 6, "breathe": 0.5, "tail": 2, "head": {"steady": 0.9, "offset": [2, 12], "tilt": 10, "look": 1}},
     "peek": {"model": "idle", "frames": 12, "fps": 6, "crouch": -1, "breathe": 0.4, "head": {"steady": 0.9, "offset": [2, -5], "look": 3, "nod": 2}},
     "climb": {"model": "climb", "frames": 8, "fps": 12, "stride": 9, "rise": 6, "duty": 0.55, "lift": 3, "wall": 3, "lean": -28, "footAim": -55, "flap": 45, "tail": 4,
-              "head": {"steady": 0.6}}
+              "head": {"steady": 0.6}},
+    "rush": {"model": "gait", "frames": 6, "fps": 14, "stride": 18, "duty": 0.42, "lift": 6, "bob": 2, "bounce": "spring", "lean": 12, "toeCurl": 45, "tail": 5,
+             "head": {"steady": 0.4, "offset": [5, 6], "tilt": 8},
+             "tracks": {"neck": {"rot": 10}, "neckUp": {"rot": 8}, "head": {"rot": -8}, "jaw": {"rot": [6, 14, 6, 14, 6, 14]}, "wing": {"rot": [8, 62, 14, 66, 10, 58]}}},
+    "flap": {"model": "pose", "frames": 8, "fps": 12, "tracks": {
+             "body": {"y": [0, -3, -7, -9, -9, -7, -3, 0]}, "wing": {"rot": [0, 55, 10, 60, 10, 55, 10, 0]},
+             "legNear": {"rot": [0, 12, 20, 20, 20, 12, 6, 0]}, "legFar": {"rot": [0, 8, 16, 16, 16, 8, 4, 0]},
+             "neckUp": {"rot": [0, -6, -10, -10, -10, -6, -3, 0]}, "jaw": {"rot": [0, 10, 18, 18, 18, 10, 0, 0]}}},
+    "honk": {"model": "pose", "frames": 10, "fps": 10, "loop": false, "events": [{"frame": 3, "name": "honk"}], "holds": {"3": 2}, "tracks": {
+             "body": {"y": [0, 1, 0, -1, -1, -1, -1, 0, 0, 0], "rot": [0, -2, 4, 6, 6, 6, 6, 4, 1, 0]},
+             "neck": {"rot": [0, -8, 8, 12, 14, 12, 14, 10, 4, 0]}, "neckUp": {"rot": [0, -4, 8, 12, 12, 12, 12, 8, 3, 0]},
+             "head": {"rot": [0, 6, -15, -34, -30, -34, -30, -20, -6, 0]}, "jaw": {"rot": [0, 0, 12, 30, 22, 30, 22, 10, 0, 0]},
+             "wing": {"rot": [0, 8, 30, 38, 32, 38, 32, 22, 8, 0]}}}
   }
 }

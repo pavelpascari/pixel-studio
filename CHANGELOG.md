@@ -6,6 +6,12 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Figure library page on phones; more goose moves in the library
+- `studio/figures.html` works on phones: the animation first (square, sharp at any pixel density), figures and
+  motions as rows of chips to swipe, view options in a grid. Desktop layout unchanged.
+- Figure library motions can carry their own `tracks`, `events` and `holds` (a spec's tracks override them). The goose
+  figure's library gains `rush`, `flap` and `honk`, so every goose spec can use them; the flock's bundles are unchanged.
+
 ### Triggers, carrying, leaving the screen
 - Scenes can have a `trigger` (`{"event", "on", "once", "preventDefault"}`): a form submit, a click, an element scrolled
   into view (`visible`), a tap on a character. `<script type="application/json" data-pixel-scene>` scenes are armed when
