@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Putting a sprite on a page — Pixel Studio</title>
+<link rel="stylesheet" href="site.css">
+<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<main>
+  <h1>Putting a sprite on a page</h1>
+  <p class="lede"><code>&lt;pixel-sprite&gt;</code> is one dependency-free module. Point it at a bundle, give it a size,
+    and it picks the right resolution, keeps pixels crisp on every screen, and plays.</p>
+
+  <h2 id="basics">The basics</h2>
+  <div class="demo" data-title="One tag">
+    <template>
+      <script type="module" src="../src/runtime/pixel-sprite.js"></script>
+      <pixel-sprite src="../demo/assets/pip.bundle.json" anim="idle" size="128" alt="Pip"></pixel-sprite>
+    </template>
+  </div>
+  <p><code>anim</code> picks the animation (the first one by default), <code>size</code> is the height in CSS pixels, and
+    <code>alt</code> is read by screen readers (<code>alt=""</code> makes it decorative). The box is reserved before the
+    bundle loads, so the page does not jump.</p>
+
+  <h2 id="sizes">One bundle, every size</h2>
+  <p>Each bundle holds 16, 32 and 64 px renders drawn at different levels of detail. The element picks the one that fits,
+    like <code>srcset</code>, and scales it by whole device pixels, so a sprite pixel is always an exact block of screen pixels.</p>
+  <div class="demo" data-title="Sizes pick detail levels">
+    <template>
+      <figure><pixel-sprite src="../demo/assets/fox.bundle.json" anim="walk" size="24"></pixel-sprite><figcaption>size 24 → 16 px icon</figcaption></figure>
+      <figure><pixel-sprite src="../demo/assets/fox.bundle.json" anim="walk" size="64"></pixel-sprite><figcaption>size 64 → 32 px sprite</figcaption></figure>
+      <figure><pixel-sprite src="../demo/assets/fox.bundle.json" anim="walk" size="128"></pixel-sprite><figcaption>size 128 → 64 px portrait</figcaption></figure>
+      <figure><pixel-sprite src="../demo/assets/fox.bundle.json" anim="walk" size="128" res="16"></pixel-sprite><figcaption>res 16 forced: chunky</figcaption></figure>
+    </template>
+  </div>
+
+  <h2 id="interaction">Hover and click</h2>
+  <div class="demo" data-title="hover-anim and click-anim">
+    <template>
+      <pixel-sprite src="../demo/assets/pip.bundle.json" anim="idle" size="128"
+                    hover-anim="walk" click-anim="wave" alt="Pip: hover to walk, click to wave"></pixel-sprite>
+    </template>
+  </div>
+  <p>Hover animations are for mouse and pen. On a phone, a tap plays the click animation, or the hover animation once.
+    If the bundle carries a <a href="states.html">state machine</a>, its own interactions take over.</p>
+
+  <h2 id="api">Playing from script</h2>
+  <div class="demo" data-title="play(), pause(), flip">
+    <template>
+      <pixel-sprite id="api-pip" src="../demo/assets/pip.bundle.json" anim="idle" size="128"></pixel-sprite>
+      <div class="controls">
+        <button id="api-walk">play('walk')</button>
+        <button id="api-wave">play('wave', { once: true })</button>
+        <button id="api-flip">toggle flip</button>
+        <button id="api-pause">pause / resume</button>
+        <span class="readout" id="api-out"></span>
+      </div>
+      <script type="module">
+        const pip = document.getElementById('api-pip');
+        const out = document.getElementById('api-out');
+        document.getElementById('api-walk').onclick = () => pip.play('walk');
+        document.getElementById('api-wave').onclick = () => pip.play('wave', { once: true });
+        document.getElementById('api-flip').onclick = () => pip.toggleAttribute('flip');
+        document.getElementById('api-pause').onclick = () => (pip.hasAttribute('paused') ? pip.resume() : pip.pause());
+        pip.addEventListener('spriteend', (e) => (out.textContent = `finished ${e.detail.anim}, back to ${pip.currentAnim}`));
+      </script>
+    </template>
+  </div>
+
+  <h2 id="inline">Inline in text</h2>
+  <div class="demo" data-title="Like an emoji">
+    <template>
+      <p style="margin:0;font-size:18px">Sprites sit in a line of text
+        <pixel-sprite src="../demo/assets/slime.bundle.json" anim="idle" size="24" alt="" style="vertical-align:-6px"></pixel-sprite>
+        using the 16 px icon render.</p>
+    </template>
+  </div>
+
+  <h2 id="fallback">Loading, errors and fallbacks</h2>
+  <p>Children of the element show until the sprite is ready, and again if it fails: a poster image works even without JavaScript.
+    The <code>state</code> attribute (<code>loading</code>, <code>ready</code>, <code>error</code>) is there for CSS.</p>
+  <div class="demo" data-title="A broken link falls back to its poster">
+    <template>
+      <pixel-sprite id="fb" src="missing.bundle.json" size="96">
+        <img src="../demo/assets/pip.poster.png" alt="Pip (poster)">
+      </pixel-sprite>
+      <span class="readout" id="fb-out">loading…</span>
+      <script type="module">
+        const el = document.getElementById('fb'), out = document.getElementById('fb-out');
+        const report = () => (out.textContent = `state="${el.state}": the poster shows instead`);
+        el.addEventListener('error', report);
+        if (el.state === 'error') report();   // it may have failed before this script ran
+      </script>
+    </template>
+  </div>
+
+  <h2 id="styling">Styling</h2>
+  <div class="demo" data-title="::part(canvas) and the state attribute">
+    <template>
+      <style>
+        .halo::part(canvas) { filter: drop-shadow(0 6px 0 #0002); }
+        pixel-sprite[state=loading] { opacity: 0.4; }
+      </style>
+      <pixel-sprite class="halo" src="../demo/assets/robot.bundle.json" anim="walk" size="128" alt="Bolt"></pixel-sprite>
+    </template>
+  </div>
+  <p>Size sprites with <code>size</code>, not CSS width and height: the element sizes itself so pixels stay even.</p>
+</main>
+</body>
+</html>

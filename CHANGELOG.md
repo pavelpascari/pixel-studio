@@ -6,6 +6,13 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Docs site
+- `site/`: nine pages where every feature is a live example next to its code (copyable, highlighted), and spec
+  playgrounds that render a character with the real engine as you edit it. Overview, sprites, events and points,
+  state machines and skins, moving sprites, the stage, writing a character, figures and motions, bundles and game
+  engines (with a live PixiJS example). Works on phones.
+- `npm run build:demo` also writes a poster PNG per character and an exported goose sheet for the PixiJS example.
+
 ### Runtime (`<pixel-sprite>`)
 - Fixed: one sprite that threw stopped every sprite on the page. The shared frame loop now requests
   the next frame first and isolates each sprite; a failing sprite goes to `state="error"`.

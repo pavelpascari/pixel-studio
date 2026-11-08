@@ -13,7 +13,7 @@ Zero dependencies. Plain ES modules. Node ≥ 20 for the CLI. MIT licensed. Earl
 ## Try it
 
 ```bash
-npm run studio            # → http://localhost:5173/studio/  (and /demo/ for the example website)
+npm run studio            # → http://localhost:5173/studio/  (/site/ for the docs with live examples, /demo/ for the example website)
 npm test                  # engine + runtime tests (browser checks: /test/browser/runtime.html)
 npm run build:demo        # rebuild demo/assets/*.bundle.json from examples/
 ```
@@ -49,6 +49,9 @@ and hide behind things ([docs/stage.md](docs/stage.md), demo at `/demo/stage.htm
 ```
 
 ## Documentation
+
+The **docs site** (`site/`, open `http://localhost:5173/site/` after `npm run studio`) shows every feature as a live
+example next to its code, with spec playgrounds that render as you type. The reference docs:
 
 | doc | covers |
 |---|---|

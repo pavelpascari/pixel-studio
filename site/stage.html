@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Characters on the page — Pixel Studio</title>
+<link rel="stylesheet" href="site.css">
+<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="site.js"></script>
+<style>
+  .row { display: flex; align-items: flex-end; gap: 12px; width: 100%; padding: 0 8px; }
+  .shelf { width: 100%; height: 12px; border-radius: 4px; background: #8a5a3b; }
+  .tcard { flex: 1; min-width: 0; padding: 10px 12px; background: #fff; border: 2px solid #23212c; border-radius: 10px; font-size: 14px; }
+  .crate { flex: 0 0 64px; height: 32px; border: 3px solid #5b3a24; border-radius: 4px; background: repeating-linear-gradient(90deg, #c08552 0 12px, #a8703f 12px 14px); }
+  .stage-demo { width: 100%; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Characters on the page</h1>
+  <p class="lede"><code>&lt;pixel-stage&gt;</code> turns your layout into a little world. Mark elements as surfaces, walls and
+    hiding spots; characters walk along them, drop and jump between them, climb up, sit on edges and duck out of sight.
+    They never block a click, and a tap shoos them.</p>
+
+  <h2 id="try">Try it</h2>
+  <div class="demo" data-title="Cards, a crate and two characters" data-height="300">
+    <template>
+      <script type="module" src="../src/runtime/pixel-stage.js"></script>
+      <div class="stage-demo">
+        <div class="row">
+          <article id="st-tall" class="tcard" style="min-height:170px" data-pixel-surface data-pixel-climbable><b>Ridge loop</b></article>
+          <div id="st-crate" class="crate" data-pixel-hide></div>
+          <article id="st-low" class="tcard" style="min-height:70px" data-pixel-surface data-pixel-perch><b>Lakeside</b></article>
+          <article id="st-mid" class="tcard" style="min-height:110px" data-pixel-surface data-pixel-climbable><b>Old forest</b></article>
+        </div>
+        <div class="shelf" data-pixel-surface></div>
+      </div>
+      <div class="controls">
+        <button id="st-hide">goose.hideBehind(crate)</button>
+        <button id="st-sit">goose.goTo(Lakeside, {then: 'sit'})</button>
+        <button id="st-climb">goose.goTo(Ridge loop)</button>
+        <button id="st-say">goose.say('honk?')</button>
+        <span class="readout" id="st-out"></span>
+      </div>
+      <pixel-stage controls="none" floor="none">
+        <pixel-actor id="st-goose" src="../demo/assets/goose-root.bundle.json" size="56" start="#st-low" alt="a goose"></pixel-actor>
+        <pixel-actor id="st-pip" src="../demo/assets/pip.bundle.json" size="48" start="#st-mid" alt="Pip"></pixel-actor>
+      </pixel-stage>
+      <script type="module">
+        await customElements.whenDefined('pixel-actor');
+        const goose = document.getElementById('st-goose'), out = document.getElementById('st-out');
+        const say = (ok, what) => (out.textContent = ok ? what : 'no way there right now');
+        goose.addEventListener('actorstate', (e) => (out.textContent = `goose: ${e.detail.to}`));
+        document.getElementById('st-hide').onclick = () => say(goose.hideBehind(document.getElementById('st-crate')), 'heading for the crate');
+        document.getElementById('st-sit').onclick = () => say(goose.goTo(document.getElementById('st-low'), { then: 'sit' }), 'going to sit');
+        document.getElementById('st-climb').onclick = () => say(goose.goTo(document.getElementById('st-tall')), 'off to Ridge loop');
+        document.getElementById('st-say').onclick = () => goose.say('honk?');
+      </script>
+    </template>
+  </div>
+  <p>Tap or click a character to shoo it. This page hides the stage's own pause button (<code>controls="none"</code>) and its
+    floor; the <a href="../demo/stage.html">full demo page</a> has both.</p>
+
+  <h2 id="markup">Marking up your page</h2>
+  <table>
+    <tr><th>attribute</th><th>meaning</th></tr>
+    <tr><td><code>data-pixel-surface</code></td><td>its top edge is a platform</td></tr>
+    <tr><td><code>data-pixel-climbable</code></td><td>its sides are walls (its foot must rest on a platform)</td></tr>
+    <tr><td><code>data-pixel-perch</code></td><td>a favourite place to sit</td></tr>
+    <tr><td><code>data-pixel-hide</code></td><td>a hiding spot (standing on a platform)</td></tr>
+    <tr><td><code>data-pixel-occluder</code></td><td>characters always pass behind it</td></tr>
+    <tr><td><code>data-pixel-avoid</code></td><td>never stand on or hide behind it</td></tr>
+  </table>
+
+  <h2 id="api">Scripting</h2>
+  <pre class="snippet" data-lang="js">
+    const goose = document.querySelector('pixel-actor');
+    goose.goTo(document.querySelector('#summit'), { then: 'sit' });   // route: walk, drop, jump, climb
+    goose.hideBehind(document.querySelector('.crate'));               // duck and peek
+    goose.say('honk?');                                                // bubble at the beak
+    goose.shoo();                                                      // startle and run
+    goose.addEventListener('actorstate', (e) => console.log(e.detail.to));
+
+    const stage = document.querySelector('pixel-stage');
+    stage.pause();                // what the built-in button does; remembered
+    stage.world.invalidate();     // after you move elements with CSS transforms
+  </pre>
+  <p>Characters need a few animations to do all this: a walk with a <code>speed</code>, <code>jump</code>, <code>fall</code>,
+    <code>climb</code>, <code>sit</code>, <code>duck</code> and <code>peek</code>. Every figure has presets for them; see
+    <a href="motions.html">Figures and motions</a>. The full reference is <a href="../docs/stage.md">docs/stage.md</a>.</p>
+</main>
+</body>
+</html>

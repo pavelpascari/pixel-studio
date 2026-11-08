@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figures and motions — Pixel Studio</title>
+<link rel="stylesheet" href="site.css">
+<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<main>
+  <h1>Figures and motions</h1>
+  <p class="lede">Figures are skeletons with motion models: feet planted with inverse kinematics, hips that rise and fall,
+    heads that hold their gaze, tails that follow through. Characters dressed on a figure get every motion.</p>
+
+  <h2 id="figures">The figures</h2>
+  <table>
+    <tr><th>figure</th><th>view</th><th>motions</th><th>dressed as</th></tr>
+    <tr><td><code>goose</code></td><td>side</td><td>idle walk run sneak · jump fall sit duck peek climb</td><td>the four geese</td></tr>
+    <tr><td><code>human</code></td><td>side</td><td>idle walk run · jump fall sit duck peek climb</td><td></td></tr>
+    <tr><td><code>dog</code></td><td>side</td><td>idle walk trot · jump fall duck peek</td><td>Ember the fox</td></tr>
+    <tr><td><code>chibi</code></td><td>front</td><td>idle walk run · jump fall sit duck peek</td><td>Pip, Bolt</td></tr>
+    <tr><td><code>blob</code></td><td>any</td><td>idle hop travel · fall peek</td><td>the slime</td></tr>
+  </table>
+
+  <h2 id="gallery">Every animation of every example</h2>
+  <div class="demo" data-title="Gallery (built from the bundles)">
+    <template>
+      <div id="gal" style="width:100%"></div>
+      <script type="module">
+        const chars = ['goose-root', 'pip', 'fox', 'slime', 'robot'];
+        const root = document.getElementById('gal');
+        for (const name of chars) {
+          const bundle = await (await fetch(`../demo/assets/${name}.bundle.json`)).json();
+          const h = Object.assign(document.createElement('h3'), { textContent: bundle.name });
+          const grid = Object.assign(document.createElement('div'), { className: 'gallery' });
+          for (const [anim, a] of Object.entries(bundle.animations)) {
+            const fig = document.createElement('figure');
+            const s = document.createElement('pixel-sprite');
+            s.setAttribute('src', `../demo/assets/${name}.bundle.json`);
+            s.setAttribute('anim', anim);
+            s.setAttribute('size', '72');
+            s.setAttribute('states', 'off');
+            const tags = [a.loop ? '' : 'one-shot', a.speed ? `${a.speed} u/s` : '', a.speedY ? `climbs ${a.speedY} u/s` : '',
+              (a.events ?? []).map((e) => e.name).filter((n, i, xs) => xs.indexOf(n) === i).join(' ')].filter(Boolean).join(' · ');
+            fig.append(s, Object.assign(document.createElement('div'), { textContent: anim }),
+              Object.assign(document.createElement('small'), { textContent: tags }));
+            grid.append(fig);
+          }
+          root.append(h, grid);
+        }
+      </script>
+    </template>
+  </div>
+  <p>One-shots (jump, honk, wave) play once and hold; hover a card's sprite or reload to see them again.</p>
+
+  <h2 id="tune">Tune a motion</h2>
+  <p>A bare figure (no <code>parts</code>) is drawn as its skeleton. Change a motion's parameters and watch the feet: in a
+    walk, a planted foot must not slide. Try <code>"stride": 20</code> (too long: validation reports the foot that misses), or
+    <code>"lift": 8</code>.</p>
+  <div class="playground" data-title="Goose skeleton" data-anim="walk" data-res="64">
+    <script type="application/json">
+{
+  "figure": "goose",
+  "animations": {
+    "walk":  {"motion": "walk", "stride": 13, "lift": 4, "bob": 1.2},
+    "jump":  {"motion": "jump", "dip": 5, "tuck": 4, "height": 14},
+    "climb": {"motion": "climb"},
+    "sit":   {"motion": "sit"}
+  }
+}
+    </script>
+  </div>
+  <div class="playground" data-title="Dog skeleton: walk and trot" data-anim="trot" data-res="64">
+    <script type="application/json">
+{
+  "figure": "dog",
+  "animations": {
+    "walk": {"motion": "walk"},
+    "trot": {"motion": "trot", "stride": 17, "duty": 0.45}
+  }
+}
+    </script>
+  </div>
+  <div class="playground" data-title="Blob: squash and stretch" data-anim="hop" data-res="48">
+    <script type="application/json">
+{
+  "figure": "blob",
+  "animations": {
+    "hop": {"motion": "hop", "height": 18, "squash": 0.24, "stretch": 0.16},
+    "idle": {"motion": "idle"}
+  }
+}
+    </script>
+  </div>
+  <p>Every parameter is listed in <a href="../docs/figures.md">docs/figures.md</a>.</p>
+</main>
+</body>
+</html>

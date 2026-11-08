@@ -29,5 +29,6 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, HOST, () => {
   console.log(`Pixel Studio  → http://localhost:${PORT}/studio/`);
+  console.log(`Docs site     → http://localhost:${PORT}/site/`);
   console.log(`Demo website  → http://localhost:${PORT}/demo/`);
 });

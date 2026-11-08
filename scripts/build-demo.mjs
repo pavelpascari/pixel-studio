@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compile, buildBundle, renderAnimation, contactSheet, resolveSpec } from '../src/core/index.js';
+import { compile, buildBundle, renderAnimation, renderFrame, resolveStyle, exportSheet, contactSheet, resolveSpec } from '../src/core/index.js';
 import { encodePNG } from '../src/node/png.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -24,6 +24,16 @@ for (const f of readdirSync(join(ROOT, 'examples')).filter((f) => f.endsWith('.j
   const json = JSON.stringify(bundle);
   writeFileSync(join(ROOT, 'demo/assets', `${name}.bundle.json`), json);
   console.log(`demo/assets/${name}.bundle.json  ${(json.length / 1024).toFixed(1)} KB  [${Object.keys(bundle.animations).join(', ')}]`);
+  // A poster (first frame at 64 px) for <pixel-sprite> fallbacks.
+  const first = Object.values(c.animations)[0];
+  const fr = renderFrame(c, { res: 64, anim: first, frame: 0, style: resolveStyle(c, 64) });
+  writeFileSync(join(ROOT, 'demo/assets', `${name}.poster.png`), encodePNG(fr.w, fr.h, fr.rgba));
+  // The goose also ships as a game-engine sheet (docs site: PixiJS / Phaser example).
+  if (name === 'goose-root') {
+    const ex = exportSheet(c, 32, { image: `${name}.32.png` });
+    writeFileSync(join(ROOT, 'demo/assets', `${name}.32.png`), encodePNG(ex.width, ex.height, ex.rgba));
+    writeFileSync(join(ROOT, 'demo/assets', `${name}.32.json`), JSON.stringify(ex.json, null, 1));
+  }
   if (previews) {
     mkdirSync(join(ROOT, 'previews'), { recursive: true });
     const blocks = [16, 32, 64].map((res) => ({ res, rows: Object.keys(c.animations).map((n) => ({ name: n, frames: renderAnimation(c, n, res).frames })) }));
