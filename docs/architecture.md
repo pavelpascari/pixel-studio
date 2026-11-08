@@ -113,6 +113,7 @@ into a whole compiled character of its own, so the renderer still sees only plai
 | `scripts/serve.mjs` | Zero-dependency static server for the repo root (studio and demo), port `PORT` or 5173. | `npm run studio` |
 | `studio/app.js` | Studio UI: editor → `resolveSpec` → `validate` → `compile` → `checkBounds` → render (current view, LOD strip at 16/24/32/48/64 px, sheet), rig overlay, export with a canvas PNG encoder. | browser module |
 | `studio/agent.js` | Agent tab: calls the Anthropic SDK from the browser (loaded lazily from esm.sh), validation-repair loop, contact-sheet critique. | `initAgent`, `extractSpec` |
+| `studio/goose.html` | Goose workbench: resolves `{extends: <goose>, …features}` in the page, renders frames on demand with `renderFrame`, hides parts/shapes on a copy of the compiled spec (bones stay), exports a variant spec and checks it builds. Features live in `studio/goose-features.json`. | page |
 | `studio/figures.html` | Figure viewer: inline module that draws each figure's skeleton with `samplePoseAt` + `followOffsets` (smooth time, trails, onion skin). | page |
 | `studio/index.html`, `studio/studio.css` | Studio markup and styles. | — |
 

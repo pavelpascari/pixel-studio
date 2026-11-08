@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goose workbench — Pixel Studio</title>
+<style>
+  :root { --bg: #17151f; --panel: #211e2c; --line: #3a3550; --text: #e9e6f2; --dim: #8d87a3; --accent: #ffcf4a; --add: #7bd88f; --off: #ff8d6c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; }
+  header .tag { color: var(--dim); }
+  header a { color: var(--dim); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: calc(100vh - 50px); }
+  #view { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px; min-width: 0; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { background: var(--panel); color: var(--dim); border: 0; border-right: 1px solid var(--line); padding: 6px 10px; font: inherit; cursor: pointer; min-height: 34px; }
+  .seg button:last-child { border-right: 0; }
+  .seg button.on { color: #1a1722; background: var(--accent); }
+  select, .btn { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; min-height: 34px; }
+  .btn { cursor: pointer; }
+  #stageWrap { width: 100%; display: flex; justify-content: center; }
+  #big { image-rendering: pixelated; border-radius: 10px; display: block; max-width: 100%; }
+  .bg-check #big { background: repeating-conic-gradient(#2a2638 0 25%, #221f2e 0 50%) 0 0 / 24px 24px; }
+  .bg-light #big { background: #f4efe4; }
+  .bg-dark #big { background: #1d1a27; }
+  #readout { color: var(--dim); font: 12px ui-monospace, monospace; }
+  #problems { color: var(--off); font: 12px ui-monospace, monospace; white-space: pre-wrap; margin: 0; max-width: 720px; }
+  #problems:empty { display: none; }
+  .sizes { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .sizes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--dim); font-size: 11px; }
+  .sizes canvas { image-rendering: pixelated; }
+  aside { border-left: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; max-height: calc(100vh - 50px); position: sticky; top: 0; }
+  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+  aside h2 span { display: inline-flex; gap: 6px; text-transform: none; letter-spacing: 0; }
+  #exportOk { color: var(--add); font-size: 11px; }
+  aside h2 button { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; font-size: 11px; padding: 2px 7px; cursor: pointer; }
+  .group { margin: 0 0 10px; }
+  .group h3 { font-size: 12px; margin: 0 0 4px; color: var(--text); font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: flex-start; padding: 5px 6px; border-radius: 6px; cursor: pointer; }
+  .row:hover { background: var(--panel); }
+  .row input { margin-top: 3px; width: 16px; height: 16px; flex: none; }
+  .row small { display: block; color: var(--dim); font-size: 11.5px; }
+  .row .badge { font-size: 10px; border: 1px solid var(--line); color: var(--dim); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+  .row .badge.feature { color: var(--add); border-color: #3c5c44; }
+  .part.hidden > .row b { color: var(--off); text-decoration: line-through; }
+  details.shapes { margin: 0 0 4px 30px; }
+  details.shapes summary { color: var(--dim); font-size: 11.5px; cursor: pointer; }
+  details.shapes .row { padding: 2px 4px; font-size: 12px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1px solid #0006; vertical-align: -1px; margin-right: 4px; }
+  textarea { width: 100%; min-height: 160px; background: #120f19; color: var(--text); border: 1px solid var(--line); border-radius: 8px; font: 11.5px/1.4 ui-monospace, monospace; padding: 8px; }
+  label.opt { display: flex; gap: 6px; align-items: center; color: var(--dim); }
+
+  @media (max-width: 860px) {
+    main { display: flex; flex-direction: column; }
+    #view { padding: 12px; }
+    aside { border-left: 0; border-top: 1px solid var(--line); max-height: none; position: static; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+    .row { padding: 8px 6px; }
+    .row input { width: 20px; height: 20px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Goose workbench</h1>
+  <span class="tag">the goose large, every part switchable, realistic features to try on</span>
+  <a href="figures.html#goose">skeleton</a>
+  <a href="./">← studio</a>
+</header>
+<main>
+  <section id="view" class="bg-check">
+    <div class="toolbar">
+      <select id="base" aria-label="Which goose"></select>
+      <select id="anim" aria-label="Animation"></select>
+      <button class="btn" id="playBtn" aria-label="Play or pause">⏸</button>
+      <button class="btn" id="prevBtn" aria-label="Previous frame">◀</button>
+      <button class="btn" id="nextBtn" aria-label="Next frame">▶</button>
+    </div>
+    <div class="toolbar">
+      <div class="seg" id="res" role="group" aria-label="Pixel resolution"></div>
+      <div class="seg" id="bg" role="group" aria-label="Background">
+        <button data-bg="check" class="on">▦</button><button data-bg="light">light</button><button data-bg="dark">dark</button>
+      </div>
+      <label class="opt"><input type="checkbox" id="bones"> skeleton</label>
+      <label class="opt"><input type="checkbox" id="grid"> pixel grid</label>
+    </div>
+    <div id="stageWrap"><canvas id="big" width="10" height="10"></canvas></div>
+    <div id="readout"></div>
+    <pre id="problems" role="status"></pre>
+    <div class="sizes" id="sizes"></div>
+  </section>
+  <aside>
+    <div>
+      <h2>Add features <span><button id="featAll">all</button><button id="featNone">none</button></span></h2>
+      <div id="features"></div>
+    </div>
+    <div>
+      <h2>Body parts <span><button id="partsAll">show all</button></span></h2>
+      <div id="parts"></div>
+    </div>
+    <div>
+      <h2>As a spec <span><small id="exportOk"></small><button id="copy">copy</button></span></h2>
+      <textarea id="out" readonly aria-label="The current goose as a spec"></textarea>
+    </div>
+  </aside>
+</main>
+<script type="module">
+import { resolveSpec, compile, renderFrame, resolveStyle, samplePose, worldMatrices } from '../src/core/index.js';
+
+const BASES = { 'goose-base': 'plain goose', 'goose-root': 'root (hoodie)', 'goose-sudo': 'sudo', 'goose-phreak': 'phreak', 'goose-kiddie': 'kiddie' };
+const RES = [32, 48, 64, 96, 128, 192];
+const $ = (s) => document.querySelector(s);
+const el = (tag, { dataset, style, ...props } = {}, ...kids) => {
+  const e = Object.assign(document.createElement(tag), props);
+  if (dataset) Object.assign(e.dataset, dataset);
+  if (style) e.style.cssText = style;
+  e.append(...kids);
+  return e;
+};
+
+// ----- state (kept in the URL hash so a look can be shared and reloaded) -----
+const saved = (() => { try { return JSON.parse(decodeURIComponent(location.hash.slice(1)) || '{}'); } catch { return {}; } })();
+const S = {
+  base: BASES[saved.base] ? saved.base : 'goose-base',
+  anim: saved.anim ?? 'idle',
+  res: RES.includes(saved.res) ? saved.res : 128,
+  features: new Set(saved.features ?? []),
+  hiddenParts: new Set(saved.hiddenParts ?? []),
+  hiddenShapes: new Set(saved.hiddenShapes ?? []),
+  playing: true, frame: 0, acc: 0,
+};
+const persist = () => history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify({
+  base: S.base, anim: S.anim, res: S.res, features: [...S.features], hiddenParts: [...S.hiddenParts], hiddenShapes: [...S.hiddenShapes],
+})));
+
+const cache = new Map();
+const loadJSON = async (url) => { if (!cache.has(url)) cache.set(url, fetch(url, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); })); return cache.get(url); };
+const FEATURES = (await loadJSON('goose-features.json')).features;
+const featureParts = new Set(FEATURES.flatMap((f) => f.parts.filter((p) => !p.addShapes).map((p) => p.id)));
+
+let resolved, compiled, view, frames = new Map(), baseMap = {};
+
+/** The material renames along the chosen goose's "extends" chain. */
+async function loadBaseMap() {
+  baseMap = {};
+  for (let ref = `${S.base}.json`; ref;) {
+    const sp = await loadJSON(`../examples/${ref}`);
+    baseMap = { ...(sp.materialMap ?? {}), ...baseMap };
+    ref = sp.extends;
+  }
+}
+
+/** The look as a variant spec: the chosen goose, the features on, the hidden parts and shapes. */
+function variantSpec({ forExport = false } = {}) {
+  const on = FEATURES.filter((f) => S.features.has(f.id));
+  // Features are written for the plain goose; a variant that renames a material (root: plumage → hoodie) gets its own.
+  const map = (parts) => JSON.parse(JSON.stringify(parts), (k, v) => (k === 'material' && baseMap[v] ? baseMap[v] : v));
+  const spec = { extends: `${S.base}.json`, materials: Object.assign({}, ...on.map((f) => f.materials ?? {})), parts: map(on.flatMap((f) => f.parts)) };
+  if (forExport && resolved) {
+    // One patch per part: added shapes merged; a part with hidden shapes is written out whole, without them;
+    // a hidden part keeps its bone (its children still move) but has no shapes.
+    const touched = new Map();
+    for (const p of resolved.parts ?? []) {
+      if (!p?.id) continue;
+      if (S.hiddenParts.has(p.id)) touched.set(p.id, { id: p.id, shapes: [] });
+      else if ((p.shapes ?? []).some((_, i) => S.hiddenShapes.has(`${p.id}#${i}`))) touched.set(p.id, { id: p.id, shapes: p.shapes.filter((_, i) => !S.hiddenShapes.has(`${p.id}#${i}`)) });
+    }
+    const parts = [], adds = new Map();
+    for (const p of spec.parts) {
+      if (p.addShapes) {
+        if (touched.has(p.id)) continue;   // already in the full list written for that part
+        if (adds.has(p.id)) adds.get(p.id).addShapes.push(...p.addShapes);
+        else { const q = { id: p.id, addShapes: [...p.addShapes] }; adds.set(p.id, q); parts.push(q); }
+      } else if (touched.has(p.id)) { parts.push({ ...p, shapes: touched.get(p.id).shapes }); touched.delete(p.id); }
+      else parts.push(p);
+    }
+    spec.parts = [...parts, ...touched.values()];
+  }
+  if (!Object.keys(spec.materials).length) delete spec.materials;
+  if (!spec.parts.length) delete spec.parts;
+  return spec;
+}
+
+async function rebuild() {
+  const warns = [];
+  try {
+    await loadBaseMap();
+    resolved = await resolveSpec(variantSpec(), {
+      loadRef: (ref) => loadJSON(`../examples/${ref}`),
+      loadFigure: (n) => loadJSON(`../figures/${n}.json`),
+      warn: (p, m) => warns.push(`${p}: ${m}`),
+    });
+    compiled = compile(resolved);
+    $('#problems').textContent = warns.join('\n');
+  } catch (e) {
+    $('#problems').textContent = `This combination does not build:\n${e.message}`;
+    return;
+  }
+  if (!compiled.animations[S.anim]) S.anim = compiled.animations.idle ? 'idle' : Object.keys(compiled.animations)[0];
+  $('#anim').replaceChildren(...Object.keys(compiled.animations).filter((n) => !n.includes('>')).map((n) => el('option', { value: n, textContent: n, selected: n === S.anim })));
+  renderParts();
+  applyHides();
+}
+
+/** The compiled goose with hidden parts and shapes taken out (bones stay, so everything still moves). */
+function applyHides() {
+  view = { ...compiled, parts: compiled.parts.map((p) => {
+    if (S.hiddenParts.has(p.id)) return { ...p, shapes: [] };
+    if (!p.shapes?.length) return p;
+    return { ...p, shapes: p.shapes.filter((_, i) => !S.hiddenShapes.has(`${p.id}#${i}`)) };
+  }) };
+  frames = new Map();
+  S.frame %= view.animations[S.anim].frames;
+  const exported = variantSpec({ forExport: true });
+  $('#out').value = pretty(exported);
+  checkExport(exported);
+  persist();
+  draw(true);
+}
+
+/** JSON with each shape, point list and material on one line: readable, and short enough to edit by hand. */
+function pretty(spec) {
+  const one = (v) => JSON.stringify(v);
+  const lines = ['{', `  "extends": ${one(spec.extends)}`];
+  if (spec.materials) lines[1] += ',', lines.push('  "materials": {', Object.entries(spec.materials).map(([k, v]) => `    ${one(k)}: ${one(v)}`).join(',\n'), '  }');
+  if (spec.parts) {
+    lines[lines.length - 1] += ',';
+    lines.push('  "parts": [', spec.parts.map((p) => {
+      const { shapes, addShapes, ...head } = p, key = shapes ? 'shapes' : 'addShapes', list = shapes ?? addShapes;
+      const open = one(head).slice(0, -1);
+      if (!list.length) return `    ${open}, ${one(key)}: []}`;
+      return `    ${open}, ${one(key)}: [\n${list.map((sh) => `      ${one(sh)}`).join(',\n')}\n    ]}`;
+    }).join(',\n'), '  ]');
+  }
+  lines.push('}');
+  return lines.join('\n');
+}
+
+/** The export must build on its own (it is what gets saved as an example): say so if it does not. */
+let exportCheck = 0;
+async function checkExport(spec) {
+  const n = ++exportCheck;
+  try {
+    compile(await resolveSpec(JSON.parse(pretty(spec)), { loadRef: (ref) => loadJSON(`../examples/${ref}`), loadFigure: (f) => loadJSON(`../figures/${f}.json`) }));
+    if (n === exportCheck) $('#exportOk').textContent = '✓ builds';
+  } catch (e) { if (n === exportCheck) $('#exportOk').textContent = `✗ ${e.message}`; }
+}
+
+function frameImage(res, f) {
+  const key = `${res}:${S.anim}:${f}`;
+  if (!frames.has(key)) frames.set(key, renderFrame(view, { res, anim: S.anim, frame: f, style: resolveStyle(view, res) }));
+  return frames.get(key);
+}
+const toCanvas = (img, cv) => { cv.width = img.w; cv.height = img.h; cv.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(img.rgba), img.w, img.h), 0, 0); return cv; };
+
+// ----- drawing -----
+const big = $('#big'), bctx = big.getContext('2d');
+const scratch = document.createElement('canvas');
+let lastKey = '';
+
+function draw(force = false) {
+  if (!view) return;
+  const a = view.animations[S.anim];
+  const key = `${S.res}:${S.anim}:${S.frame}:${$('#bones').checked}:${$('#grid').checked}:${$('#stageWrap').clientWidth}`;
+  if (!force && key === lastKey) return;
+  lastKey = key;
+  const img = frameImage(S.res, S.frame);
+  toCanvas(img, scratch);
+  // Whole-number zoom that fits the space (at most ~720 px tall), drawn at device resolution.
+  const avail = Math.min($('#stageWrap').clientWidth, 760), dpr = devicePixelRatio || 1;
+  // Whole pixels when there is room for 2× or more; on a small screen, fit (slightly uneven pixels beat a tiny goose).
+  const fit = Math.min(avail / img.w, Math.min(720, innerHeight * 0.68) / img.h);
+  const zoom = fit >= 2 ? Math.floor(fit) : fit;
+  const cssW = img.w * zoom, cssH = img.h * zoom;
+  big.style.width = `${cssW}px`; big.style.height = `${cssH}px`;
+  big.width = Math.round(cssW * dpr); big.height = Math.round(cssH * dpr);
+  bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  bctx.imageSmoothingEnabled = false;
+  bctx.clearRect(0, 0, cssW, cssH);
+  bctx.drawImage(scratch, 0, 0, cssW, cssH);
+  if ($('#grid').checked && zoom >= 4) {
+    bctx.strokeStyle = 'rgba(128,128,160,.25)'; bctx.lineWidth = 1 / dpr;
+    bctx.beginPath();
+    for (let x = 0; x <= img.w; x++) { bctx.moveTo(x * zoom, 0); bctx.lineTo(x * zoom, cssH); }
+    for (let y = 0; y <= img.h; y++) { bctx.moveTo(0, y * zoom); bctx.lineTo(cssW, y * zoom); }
+    bctx.stroke();
+  }
+  if ($('#bones').checked) drawBones(a, zoom * (img.h / view.size[1]));
+  $('#readout').textContent = `${S.anim} · frame ${S.frame + 1}/${a.frames} · ${img.w}×${img.h} px at ${Math.round(zoom * 100) / 100}×`;
+  drawSizes();
+}
+
+function drawBones(a, u) {
+  const pose = samplePose(view, a, S.frame);
+  const { world } = worldMatrices(view.parts, pose);
+  const P = (m, [x, y]) => [(m[0] * x + m[2] * y + m[4]) * u, (m[1] * x + m[3] * y + m[5]) * u];
+  for (const p of view.parts.filter((q) => q.tip).sort((q, r) => q.z - r.z)) {
+    const m = world.get(p.id), far = p.shade < 0;
+    const [x1, y1] = P(m, p.pivot), [x2, y2] = P(m, p.tip);
+    bctx.strokeStyle = far ? 'rgba(160,150,200,.8)' : 'rgba(255,255,255,.9)'; bctx.lineWidth = 2.5; bctx.lineCap = 'round';
+    bctx.beginPath(); bctx.moveTo(x1, y1); bctx.lineTo(x2, y2); bctx.stroke();
+    bctx.fillStyle = far ? '#b8953a' : '#ffcf4a';
+    bctx.beginPath(); bctx.arc(x1, y1, 4, 0, Math.PI * 2); bctx.fill();
+  }
+}
+
+// Actual-size previews: how the design reads where it is used.
+let sizesKey = '';
+function drawSizes() {
+  const key = `${S.anim}:${S.frame}:${frames.size}`;
+  if (key === sizesKey) return;
+  sizesKey = key;
+  const box = $('#sizes');
+  if (!box.children.length) for (const r of [16, 32, 64]) box.append(el('figure', {}, el('canvas', { dataset: { res: r } }), el('figcaption', { textContent: `${r} px` })), el('figure', {}, el('canvas', { dataset: { res: r, x2: 1 } }), el('figcaption', { textContent: `${r} px ×2` })));
+  for (const cv of box.querySelectorAll('canvas')) {
+    const r = Number(cv.dataset.res), img = frameImage(r, S.frame % view.animations[S.anim].frames);
+    toCanvas(img, cv);
+    const k = cv.dataset.x2 ? 2 : 1;
+    cv.style.width = `${img.w * k}px`; cv.style.height = `${img.h * k}px`;
+  }
+}
+
+// ----- panels -----
+function renderFeatures() {
+  const groups = [...new Set(FEATURES.map((f) => f.group))];
+  $('#features').replaceChildren(...groups.map((g) => el('div', { className: 'group' }, el('h3', { textContent: g }),
+    ...FEATURES.filter((f) => f.group === g).map((f) => {
+      const cb = el('input', { type: 'checkbox', checked: S.features.has(f.id) });
+      cb.onchange = () => { cb.checked ? S.features.add(f.id) : S.features.delete(f.id); rebuild(); };
+      return el('label', { className: 'row' }, cb, el('span', {}, el('b', { textContent: f.label }), el('small', { textContent: f.note })));
+    }))));
+}
+
+function renderParts() {
+  const mat = (name) => resolved.materials?.[name]?.color ?? '#888';
+  const drawn = compiled.parts.filter((p) => p.shapes?.length);
+  $('#parts').replaceChildren(...drawn.map((p) => {
+    const hidden = S.hiddenParts.has(p.id);
+    const cb = el('input', { type: 'checkbox', checked: !hidden });
+    cb.onchange = () => { cb.checked ? S.hiddenParts.delete(p.id) : S.hiddenParts.add(p.id); renderParts(); applyHides(); };
+    const tag = featureParts.has(p.id) ? el('span', { className: 'badge feature', textContent: 'feature' }) : p.bone ? el('span', { className: 'badge', textContent: `on ${p.bone}` }) : '';
+    const shapes = el('details', { className: 'shapes' }, el('summary', { textContent: `${p.shapes.length} shape${p.shapes.length > 1 ? 's' : ''}` }),
+      ...p.shapes.map((s, i) => {
+        const k = `${p.id}#${i}`;
+        const scb = el('input', { type: 'checkbox', checked: !S.hiddenShapes.has(k), disabled: hidden });
+        scb.onchange = () => { scb.checked ? S.hiddenShapes.delete(k) : S.hiddenShapes.add(k); applyHides(); };
+        return el('label', { className: 'row' }, scb, el('span', {}, el('span', { className: 'swatch', style: `background:${mat(s.material)}` }), `${s.type} · ${s.material}`));
+      }));
+    shapes.open = p.shapes.some((_, i) => S.hiddenShapes.has(`${p.id}#${i}`));
+    return el('div', { className: `part${hidden ? ' hidden' : ''}` },
+      el('label', { className: 'row' }, cb, el('span', {}, el('b', { textContent: p.id }), tag)), shapes);
+  }));
+}
+
+// ----- controls -----
+$('#base').append(...Object.entries(BASES).map(([v, t]) => el('option', { value: v, textContent: t, selected: v === S.base })));
+$('#base').onchange = () => { S.base = $('#base').value; S.hiddenParts.clear(); S.hiddenShapes.clear(); rebuild(); };
+$('#anim').onchange = () => { S.anim = $('#anim').value; S.frame = 0; applyHides(); };
+$('#res').append(...RES.map((r) => el('button', { textContent: r, className: r === S.res ? 'on' : '', onclick: () => {
+  S.res = r; for (const b of $('#res').children) b.classList.toggle('on', Number(b.textContent) === r); persist(); draw(true);
+} })));
+for (const b of $('#bg').children) b.onclick = () => {
+  for (const x of $('#bg').children) x.classList.toggle('on', x === b);
+  $('#view').className = `bg-${b.dataset.bg}`;
+};
+const setPlaying = (p) => { S.playing = p; $('#playBtn').textContent = p ? '⏸' : '▶︎'; };
+$('#playBtn').onclick = () => setPlaying(!S.playing);
+const step = (d) => { setPlaying(false); const n = view.animations[S.anim].frames; S.frame = (S.frame + d + n) % n; draw(); };
+$('#prevBtn').onclick = () => step(-1);
+$('#nextBtn').onclick = () => step(1);
+addEventListener('keydown', (e) => {
+  if (e.target.closest('input, select, textarea')) return;
+  if (e.key === ' ') { e.preventDefault(); setPlaying(!S.playing); }
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+$('#bones').onchange = $('#grid').onchange = () => draw(true);
+$('#featAll').onclick = () => { FEATURES.forEach((f) => f.id !== 'knob' && S.features.add(f.id)); renderFeatures(); rebuild(); };
+$('#featNone').onclick = () => { S.features.clear(); renderFeatures(); rebuild(); };
+$('#partsAll').onclick = () => { S.hiddenParts.clear(); S.hiddenShapes.clear(); renderParts(); applyHides(); };
+$('#copy').onclick = async () => { try { await navigator.clipboard.writeText($('#out').value); $('#copy').textContent = 'copied'; } catch { $('#out').select(); } setTimeout(() => ($('#copy').textContent = 'copy'), 1200); };
+new ResizeObserver(() => draw(true)).observe($('#stageWrap'));
+
+// ----- play -----
+let last = 0;
+function tick(now) {
+  requestAnimationFrame(tick);
+  const dt = last ? Math.min(100, now - last) : 0;
+  last = now;
+  if (!view || !S.playing) return;
+  const a = view.animations[S.anim];
+  const ms = (1000 / a.fps) * (a.holds?.[S.frame] ?? 1);
+  S.acc += dt;
+  if (S.acc >= ms) { S.acc -= ms; S.frame = (S.frame + 1) % a.frames; }
+  draw();
+}
+
+renderFeatures();
+await rebuild();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

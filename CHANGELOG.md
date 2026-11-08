@@ -6,6 +6,14 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Goose workbench
+- `studio/goose.html`: the goose large (32–192 px, whole-pixel zoom, skeleton and pixel-grid overlays, actual-size
+  previews at 16/32/64), any of the flock, every animation, frame stepping. Every part and every shape can be
+  switched off; 17 realistic features (`studio/goose-features.json`: beak nail, nostril, bill line, eye ring and
+  glint, Chinese knob, neck furrows, pale throat and belly, white stern, flank barring, far wing, wing coverts, dark
+  flight feathers, layered tail, webbed toes, scaly shins) can be tried on. The look is kept in the URL and exported
+  as a variant spec (checked to build). Works on phones.
+
 ### Figure library page on phones; more goose moves in the library
 - `studio/figures.html` works on phones: the animation first (square, sharp at any pixel density), figures and
   motions as rows of chips to swipe, view options in a grid. Desktop layout unchanged.
