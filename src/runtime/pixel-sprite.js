@@ -401,7 +401,8 @@ export class PixelSprite extends Base {
    * Mirrored with `flip`. null if the bundle has no such point.
    */
   point(name, { relative = false } = {}) {
-    const tbl = this._bundle?.points?.[name]?.[this._anim];
+    const pts = this._bundle?.skinPoints?.[this.getAttribute('skin')] ?? this._bundle?.points;
+    const tbl = pts?.[name]?.[this._anim];
     if (!tbl?.length || !this._css) return null;
     const [ux, uy, rot] = tbl[Math.min(this._frame, tbl.length - 1)];
     const [w, h] = this._bundle.size ?? [100, 100];

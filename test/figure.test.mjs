@@ -288,3 +288,13 @@ test('export: Aseprite sheet JSON (Phaser) with a PixiJS animations map, slices 
   assert.equal(ex.json.meta.pixelStudio.animations.walk.events[0].name, 'footstep');
   assert.equal(ex.json.meta.pixelStudio.ground, 90.5);
 });
+
+test('skins that move parts get their own attachment points', async () => {
+  const base = expandFigure({ animations: { idle: { motion: 'idle' } }, skins: {
+    same: { materials: {} },
+    tall: { parts: [{ id: 'head', y: -6 }] },
+  } }, fig('goose'));
+  const b = await buildBundle(compile(base), { resolutions: [16], encode: () => 'data:,' });
+  assert.deepEqual(Object.keys(b.skinPoints), ['tall']);
+  assert.ok(Math.abs(b.skinPoints.tall.beak.idle[0][1] - (b.points.beak.idle[0][1] - 6)) < 0.5, 'beak 6 units higher');
+});

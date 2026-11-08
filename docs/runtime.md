@@ -251,7 +251,7 @@ time; the sheet is swapped without restarting the animation.
 <pixel-sprite src="goose-root.bundle.json" skin="party"></pixel-sprite>
 ```
 
-Skins share the default look's attachment points and foot line, so a skin should not move the parts that points ride on.
+A skin that moves the parts attachment points ride on gets its own table (`skinPoints`); the foot line is shared.
 Each skin adds a full set of sheets, so it adds about as much as the default look to the bundle (`goose-root`: 73 KB
 with no skins, 212 KB with two).
 
@@ -497,6 +497,7 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 | `animations` | object | Animation name → playback metadata. Key order is the spec's animation order; the first key is the default animation. Shared by all variants. |
 | `points` | object, optional | Attachment points: `{name: {anim: [[x, y, rotDeg], …one per frame]}}` in units. |
 | `skins` | array, optional | Names of the skins baked as extra variants. |
+| `skinPoints` | object, optional | `{skin: points}` for skins whose points differ from the default look's. |
 | `states` | object, optional | The state machine (see [State machines](#state-machines)). |
 | `variants` | array | One entry per resolution (and per skin), sorted by `res` ascending within each look. |
 

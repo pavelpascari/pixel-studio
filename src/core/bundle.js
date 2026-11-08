@@ -1,6 +1,6 @@
 // Web bundle = everything a page needs to play a character, in one JSON file:
 // { format, name, size, ground, animations: {name:{row,frames,fps,loop,speed?,speedY?,events?,durations?}},
-//   points?: {name: {anim: [[x, y, rot], ...per frame]}}, skins?: [name], states?: {...state machine},
+//   points?: {name: {anim: [[x, y, rot], ...per frame]}}, skinPoints?: {skin: points}, skins?: [name], states?: {...state machine},
 //   variants: [{res,lod,frameW,frameH,image,skin?}] }
 // `size` is the spec canvas in units ([w, h]) and `ground` the y of the foot line in units; points
 // are in units too, so one table serves every resolution. `image` is a PNG data URL (or a URL).
@@ -37,6 +37,11 @@ export async function buildBundle(compiled, { resolutions = [16, 32, 64], overri
   if (compiled.states) bundle.states = compiled.states;
   const points = bakePoints(compiled);
   if (points) bundle.points = points;
+  // A skin that moves the parts points ride on gets its own table (only when it differs).
+  for (const [skin, sc] of Object.entries(compiled.skins ?? {})) {
+    const sp = bakePoints(sc);
+    if (sp && JSON.stringify(sp) !== JSON.stringify(points)) (bundle.skinPoints ??= {})[skin] = sp;
+  }
   bundle.variants = variants;
   return bundle;
 }
