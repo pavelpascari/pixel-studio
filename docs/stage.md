@@ -98,6 +98,7 @@ stage.world.invalidate();                                          // after movi
 |---|---|
 | `actor.goTo(element \| {x, y}, {then})` | Plan a route and go. `then`: `'idle'` (default) or `'sit'`. Returns false if there is no route. Orders given mid-jump, mid-climb or mid-fall wait until the character lands. |
 | `actor.hideBehind(element)` | Go behind a `data-pixel-hide` element. |
+| `actor.perform(name, {ms})` | Play one of the bundle's own animations in place (a one-shot until it ends, a loop for `ms`, default 2400), then carry on. Waits if the character is in the air. Returns false for an unknown animation. |
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
 | `actor.catchUp()` | Come back into view now, the way `keep-in-view` does. Returns `'run'`, `'drop'` or `null` (nothing visible to stand on). |
 | `actor.shoo(from?)` | React (`honk`, `wave`, …) and run to the farthest reachable place on screen. Tapping a character does this. |

@@ -114,6 +114,7 @@
     <button id="pipgo">Pip: go to “Lakeside”</button>
     <button id="shoo">Shoo everyone</button>
     <button id="say">Goose: say something</button>
+    <button id="think">Clawd: think</button>
     <div id="log" aria-live="polite"></div>
   </section>
 </main>
@@ -123,6 +124,7 @@
   <pixel-actor id="goose" src="assets/goose-root.bundle.json" size="64" alt="root, a goose in a hoodie" start="#card-b" keep-in-view></pixel-actor>
   <pixel-actor id="pip" src="assets/pip.bundle.json" size="56" alt="Pip" start="#card-c"></pixel-actor>
   <pixel-actor id="slime" src="assets/slime.bundle.json" size="44" alt="a slime" behaviours="wander hide" start="#card-d"></pixel-actor>
+  <pixel-actor id="clawd" src="assets/clawd.bundle.json" size="48" alt="Clawd, a blocky orange critter" start="#card-a"></pixel-actor>
 </pixel-stage>
 
 <script type="module">
@@ -150,6 +152,7 @@
   $('#climb').onclick = () => log('goose', goose.goTo($('#card-a')) ? 'going to Ridge loop' : 'cannot get there');
   $("#pipgo").onclick = () => log('pip', pip.goTo($('#card-b')) ? 'going to Lakeside' : 'cannot get there');
   $('#shoo').onclick = () => document.querySelectorAll('pixel-actor').forEach((a) => a.shoo());
+  $('#think').onclick = () => { const c = $('#clawd'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>
 </body>

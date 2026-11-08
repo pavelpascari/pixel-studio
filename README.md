@@ -78,7 +78,7 @@ example next to its code, with spec playgrounds that render as you type. The ref
 | `bin/pixel.mjs` | CLI for agents. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
 | `studio/figures.html` | Figure viewer: each skeleton as dots and lines, with moving ground, foot trails and onion skin. |
 | `studio/` | Studio: live JSON editor, animated stage (grid, onion skin, scrubbing), a strip showing all detail levels at once, shader knobs, sprite sheet, a live `<pixel-sprite>` preview, export, and the **Agent** tab. |
-| `examples/` | `goose-base` + four variants (`goose-root`, `-sudo`, `-phreak`, `-kiddie`); `pip` (written by me); `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` + the CLI). |
+| `examples/` | `goose-base` + four variants (`goose-root`, `-sudo`, `-phreak`, `-kiddie`); `pip` (written by me); `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` + the CLI); `clawd` (a pixel critter after the Claude Code mascot, generated on a 16-cell grid by `scripts/gen-clawd.mjs`). |
 | `demo/` | `index.html`: a fake landing page using the bundles, with a goose driven by its state machine and skins. `flock.html`: the unruly hacker geese roaming a lawn. `stage.html`: characters climbing, jumping, sitting on and hiding behind the page's cards. |
 
 ## Levels of detail and texture

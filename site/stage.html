@@ -92,6 +92,7 @@
     goose.hideBehind(document.querySelector('.crate'));               // duck and peek
     goose.say('honk?');                                                // bubble at the beak
     goose.shoo();                                                      // startle and run
+    clawd.perform('think');                                            // any animation of its own, in place
     goose.addEventListener('actorstate', (e) => console.log(e.detail.to));
 
     const stage = document.querySelector('pixel-stage');

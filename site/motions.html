@@ -29,7 +29,7 @@
     <template>
       <div id="gal" style="width:100%"></div>
       <script type="module">
-        const chars = ['goose-root', 'pip', 'fox', 'slime', 'robot'];
+        const chars = ['goose-root', 'pip', 'fox', 'slime', 'robot', 'clawd'];
         const root = document.getElementById('gal');
         for (const name of chars) {
           const bundle = await (await fetch(`../demo/assets/${name}.bundle.json`)).json();

@@ -419,6 +419,15 @@ export class PixelActor extends Base {
     return true;
   }
 
+  /** Play one of the bundle's own animations where it stands: a one-shot until it ends, a loop for `ms`. Then carry on. */
+  perform(name, { ms = 2400 } = {}) {
+    if (!this._ready || !this.sprite.bundle?.animations?.[name]) return false;
+    if (this._busy()) { this._pending = () => this.perform(name, { ms }); return true; }
+    this.plan = [{ type: 'perform', name, ms }];
+    this._step = null;
+    return true;
+  }
+
   /** Show a speech bubble above the head (or beak) for ms milliseconds. */
   say(text, ms = 1800) {
     this._bubble.textContent = text;
@@ -653,6 +662,17 @@ export class PixelActor extends Base {
   _do_react(st) {
     if (!st.started) { st.started = true; const n = this._play('react', { once: true }); st.waitEnd = n; this._setState('startled'); if (this.anims.react === 'honk') this.say('HONK!', 900); }
     return st.done || st.t > 2500;
+  }
+
+  _do_perform(st) {
+    if (!st.started) {
+      st.started = true;
+      this._setState('performing');
+      const once = this.sprite.bundle.animations[st.name].loop === false;
+      this.sprite.play(st.name, once ? { once: true } : undefined);
+      if (once) st.waitEnd = st.name;
+    }
+    return st.done || st.t >= (st.waitEnd ? 4000 : st.ms);
   }
 
   _do_walk(st, dt, w) {
