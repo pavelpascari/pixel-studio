@@ -174,3 +174,41 @@ test('checkBundle bounds fps and durations (a hostile bundle cannot spin the fra
   assert.throws(() => checkBundle({ ...ok, animations: { a: { row: 0, frames: 2, fps: 1e9 } } }), /at most 60/);
   assert.throws(() => checkBundle({ ...ok, animations: { a: { row: 0, frames: 2, fps: 8, durations: [1e-9, 100] } } }), /durations/);
 });
+
+// ---------- bursts and rates ----------
+import { BurstDetector } from '../src/runtime/pixel-sprite.js';
+
+test('BurstDetector: quick hits become a burst with a rising rate; a pause calms it', () => {
+  const b = new BurstDetector({ min: 3, gap: 400 });
+  const r = [0, 200, 350, 500, 700].map((t) => b.hit(t));
+  assert.deepEqual(r.map((x) => x.burst), [false, false, true, true, true]);
+  assert.deepEqual(r.map((x) => x.rate), [1, 1, 1.35, 1.7, 2.05]);
+  assert.equal(b.calm(900), false, 'still within the gap');
+  assert.equal(b.calm(1200), true, 'calm after the gap');
+  assert.equal(b.hit(1300).count, 1, 'a new run starts from one');
+  assert.equal(new BurstDetector().hit(0).count, 1);
+  const slow = new BurstDetector({ gap: 400 });
+  assert.ok([0, 500, 1000, 1500].map((t) => slow.hit(t)).every((x) => !x.burst), 'slow clicks never burst');
+});
+
+test('state machine: node rates follow inputs; burst and calm interactions pass $rate', () => {
+  const rates = [];
+  const def = {
+    initial: 'idle', inputs: { fury: 1 },
+    nodes: { idle: { anim: 'idle' }, panic: { anim: 'run', rate: 'fury' } },
+    transitions: [{ from: 'idle', to: 'panic', when: 'fury >= 2' }, { from: 'panic', to: 'idle', when: 'fury < 2' }],
+    interactions: [{ on: 'burst', set: { fury: '$rate' } }, { on: 'calm', set: { fury: 1 } }],
+  };
+  const sm = new StateMachine(def, { idle: { frames: 4, loop: true }, run: { frames: 6, loop: true } }, { play: () => {}, phase: () => 0, rate: (r) => rates.push(r) });
+  sm.start();
+  sm.interact('burst', { count: 4, rate: 1.7 });
+  assert.equal(sm.node, 'idle');
+  sm.interact('burst', { count: 6, rate: 2.4 });
+  assert.equal(sm.node, 'panic');
+  assert.equal(rates.at(-1), 2.4, 'panic plays at the fury rate');
+  sm.interact('burst', { count: 9, rate: 9 });
+  assert.equal(rates.at(-1), 4, 'clamped to 4');
+  sm.interact('calm');
+  assert.equal(sm.node, 'idle');
+  assert.equal(rates.at(-1), 1);
+});

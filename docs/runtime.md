@@ -80,6 +80,8 @@ If both are present, `src` wins. The inline JSON is read once, when the element 
 | `click-anim` | none | read on event | Animation to play once on `click` (or tap). When it finishes, the element fires `spriteend` and returns to `hover-anim` (if a mouse is still over it) or to the base animation. |
 | `paused` | absent | yes | Boolean. While present, playback stops on the current frame. `pause()` and `resume()` set and remove it. |
 | `flip` | absent | CSS | Boolean. Mirrors the sprite horizontally with CSS (`transform: scaleX(-1)` on the canvas). Characters drawn facing right face left. |
+| `rate` | `1` | yes | Playback speed multiplier, 0.25..4: `rate="2"` plays every animation twice as fast. Code moving the sprite should scale its speed by `el.effectiveRate` so the feet stay planted. |
+| `burst` | on | read on click | `burst="off"` turns off rapid-click detection (see [Bursts](#bursts-rage-clicks)). |
 | `skin` | none | yes | A skin baked into the bundle (see [Skins](#skins)). Unknown names show the default look. |
 | `states` | on | at load | `states="off"` ignores the bundle's state machine (pages and `<pixel-stage>` that choose animations themselves set this). |
 | `alt` | none | yes | Text alternative, copied into `aria-label`. `alt=""` marks the sprite as decorative (see [Accessibility](#accessibility)). |
@@ -103,6 +105,7 @@ Attribute changes made before the element is first connected (including the attr
 | `el.groundOffset` | CSS px from the top of the box down to the foot line (bundle `ground`): place the box at `feetY − groundOffset` to stand on something. |
 | `el.point(name, { relative = false })` | Where an attachment point (bundle `points`, e.g. `beak`) is in the frame showing now: `{ x, y, rot }` in client px, or relative to the box. Mirrored with `flip`. `null` if the bundle has no such point. |
 | `el.hitTest(clientX, clientY)` | `true` if the frame showing now has an opaque pixel there (for clicks on the character, not its box). |
+| `el.rate` / `el.effectiveRate` | The `rate` attribute, and the speed frames actually play at: `rate` × the state machine node's `rate` × a burst speed-up. |
 | `el.set(input, value)` / `el.fire(trigger)` | Drive the bundle's state machine (no-ops without one). |
 | `el.stateNode` | The state machine's current node, or `null`. |
 | `el.pause()` / `el.resume()` | Set / remove the `paused` attribute. |
@@ -117,6 +120,8 @@ Attribute changes made before the element is first connected (including the attr
 | `spriteend` | yes | `{ anim }` | A one-shot animation (`play(name, { once: true })`, `click-anim`, or a tap) reached its end, or a non-looping animation (`loop: false`) played as a normal animation reached its last frame. Also fired under reduced motion and while off-screen, after the animation's duration, so code waiting for it never hangs. |
 | `spriteevent` | yes | `{ anim, frame, name, data }` | A frame with a baked event is shown: `footstep`, `land`, `launch`, an author's `honk` (see [Events](#events-attachment-points-and-the-foot-line)). |
 | `statechange` | yes | `{ from, to }` | The state machine moved to another node. |
+| `spriteburst` | yes | `{ count, rate }` | The third and every further click (or tap) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
+| `spritecalm` | yes | `{ count }` | The clicking stopped (450 ms after the last burst click). Any burst speed-up ends. |
 
 Because `spriteend` bubbles, one listener can watch every sprite on a page (from `demo/index.html`):
 
@@ -190,6 +195,23 @@ particles, or a cursor the goose pecks at.
 **The foot line.** `ground` is where the character's feet are (y in units). `el.groundOffset` gives it in CSS px for the
 displayed size, so a sprite can stand exactly on an element's top edge: `top = element.top − groundOffset`.
 
+## Bursts (rage clicks)
+
+Several quick clicks on a sprite are a **burst**. From the third click that comes within 450 ms of the previous one, the
+element fires `spriteburst` with the click count and a suggested speed-up, and `spritecalm` once the clicking stops.
+
+- Without a state machine, a burst on a playing `click-anim` speeds it up (by the suggested rate) instead of
+  restarting it on every click; calm brings it back to normal speed.
+- With a state machine, interactions `{"on": "burst", "set": {"fury": "$rate"}}` and `{"on": "calm", ...}` turn bursts into
+  inputs (`"$count"` and `"$rate"` are replaced by the burst's values), and a node's `rate` can follow an input. The goose
+  honks faster with each quick click and panics from the fifth (see the example under [State machines](#state-machines)).
+- Pages can hook their own reactions: `el.addEventListener('spriteburst', (e) => …)`.
+- `burst="off"` turns detection off. `BurstDetector` is exported for pages that want the same logic elsewhere.
+
+```js
+goose.addEventListener('spriteburst', (e) => { if (e.detail.count === 10) unlockSecret(); });
+```
+
 ## State machines
 
 A bundle can carry a state machine (`states` in the spec, copied into the bundle). The page sets intent; the character
@@ -232,11 +254,12 @@ goose.addEventListener('statechange', (e) => console.log(e.detail.from, '→', e
 | `inputs` | Starting values: numbers, booleans, words, or `"trigger"` (true only while it is being fired). |
 | `nodes.<name>.anim` | The animation the node plays (looping, or once if the animation does not loop). |
 | `nodes.<name>.then` | Play once, then go to this node, or `"previous"`. |
+| `nodes.<name>.rate` | Playback speed for the node: a number (0..4) or the name of an input whose value is used (clamped to 0.25..4). |
 | `nodes.<name>.random` | Idle fidgets: `[{"anim", "every": [min, max] seconds, "weight"}]`, each played once, then back. |
 | `transitions[].from` / `to` | A node, a list of nodes, or `"*"`. The first matching transition wins. |
 | `transitions[].when` | `name`, `!name`, or `name op value` (`== != > < >= <=`), joined with `&&`. |
 | `transitions[].at` | When to switch: `now` (default), `end` (when the animation finishes or loops), `sync` (keep the cycle's phase: walk → run without a hitch), or an event name such as `footstep`. A waiting switch is dropped if its condition stops being true. |
-| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen); then `fire` a trigger and/or `set` inputs. They replace `hover-anim` and `click-anim`. |
+| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
 
 `play()` still works and overrides the machine until its next transition. `states="off"` turns the machine off. The
 machine is a plain class, exported as `StateMachine` (with `parseCondition`), and runs without a DOM.

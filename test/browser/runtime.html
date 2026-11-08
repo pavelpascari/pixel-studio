@@ -287,6 +287,35 @@ await check('transition clips: waddle → idle at a loop end plays "waddle>idle"
   return { ok: seen[0] === 'waddle>idle' && seen[1] === 'idle', note: seen.join(' → ') };
 });
 
+await check('rage clicks: a burst speeds the honk up, then panics; calm brings it back', async () => {
+  const el = sprite({ src: GOOSE, size: 64, states: 'on' });
+  await playing(el);
+  const bursts = [], nodes = [];
+  el.addEventListener('spriteburst', (e) => bursts.push(e.detail.count));
+  el.addEventListener('statechange', (e) => nodes.push(e.detail.to));
+  const calm = once(el, 'spritecalm');
+  let fastest = 1;
+  for (let i = 0; i < 7; i++) {
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fastest = Math.max(fastest, el.effectiveRate);
+    await sleep(120);
+  }
+  const panicked = el.stateNode === 'panic';
+  await calm;
+  for (let i = 0; i < 40 && el.stateNode !== 'idle'; i++) await sleep(50);
+  return { ok: bursts.join() === '3,4,5,6,7' && panicked && fastest > 2 && el.stateNode === 'idle' && el.effectiveRate === 1,
+    note: `bursts ${bursts.join(',')}, fastest ×${fastest.toFixed(2)}, ${nodes.join(' → ')}` };
+});
+
+await check('rage clicks without a state machine speed up the click animation', async () => {
+  const el = sprite({ src: '../../demo/assets/pip.bundle.json', size: 64, anim: 'idle', 'click-anim': 'wave' });
+  await playing(el);
+  const rates = [];
+  for (let i = 0; i < 5; i++) { el.dispatchEvent(new MouseEvent('click', { bubbles: true })); rates.push(el.effectiveRate); await sleep(100); }
+  await once(el, 'spritecalm');
+  return { ok: rates[0] === 1 && rates[4] > 1.5 && el.effectiveRate === 1, note: rates.map((r) => r.toFixed(2)).join(' ') };
+});
+
 const failed = results.filter((r) => !r.ok).length;
 scrollTo(0, 0);
 document.getElementById('summary').textContent = (failed ? results.filter((r) => !r.ok).map((r) => `FAIL ${r.name}: ${r.note}`).join(' • ') + ' • ' : '') +

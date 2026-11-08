@@ -177,9 +177,10 @@ waddle's first frame (where a loop ends) or after a one-shot finished. `frames` 
 
 `"states"` lets the page set intent (`speed`, a `honk` trigger) while the character chooses its animations. See
 [runtime.md](runtime.md#state-machines) for the full format. In short: `inputs` with starting values (or `"trigger"`),
-`nodes` naming an `anim` (with `then` for one-shots and `random` fidgets), `transitions` with
+`nodes` naming an `anim` (with `then` for one-shots, `random` fidgets, and a `rate` that may follow an input), `transitions` with
 `when` conditions (`speed > 60 && !tired`) and `at` (`now`, `end`, `sync` to keep the stride, or an event name like
-`footstep` to stop with the feet together), and `interactions` (`click`, `enter`, `leave` → `fire` or `set`).
+`footstep` to stop with the feet together), and `interactions` (`click`, `enter`, `leave`, `burst` for rage clicks, `calm` → `fire` or `set`; `"$rate"` passes a burst's
+speed-up into an input).
 Validation checks every node, animation, input and condition.
 
 ### Reach: put a point exactly where it needs to be

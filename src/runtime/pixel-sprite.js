@@ -19,6 +19,10 @@
 //             non-looping animation ends — also under reduced motion, after the animation's duration;
 //             'spriteevent' (bubbles; detail: {anim, frame, name, data}) when a frame with a baked event
 //             (footstep, land, launch, an author's "honk") is shown.
+// Rate:       rate="2" plays everything twice as fast (0.25..4); el.effectiveRate includes state machine
+//             node rates and burst speed-ups. Bursts: three or more quick clicks fire 'spriteburst'
+//             {count, rate} and, when they stop, 'spritecalm'; a burst speeds up a playing click-anim
+//             instead of restarting it. burst="off" turns detection off.
 // States:     if the bundle has a state machine ("states"), the element runs it: el.set(input, value),
 //             el.fire(trigger), el.stateNode, and a 'statechange' event (detail: {from, to}). Its
 //             interactions replace hover-anim / click-anim. states="off" disables it (pixel-stage does).
@@ -202,6 +206,30 @@ function observe(el, on) {
   if (on) io.observe(el); else io.unobserve(el);
 }
 
+// ---------- bursts: many clicks in a short time ----------
+
+/**
+ * Counts hits that come in quick succession (each within `gap` ms of the previous one). From the
+ * `min`-th hit on it reports a burst: {count, rate}, where rate is a suggested speed-up
+ * (1.35 for the first burst hit, +0.35 per extra hit, up to 3). Pure: pass the time in.
+ */
+export class BurstDetector {
+  constructor({ min = 3, gap = 450 } = {}) { this.min = min; this.gap = gap; this.count = 0; this.last = -Infinity; }
+  /** Register a hit at time t (ms). Returns {count, rate, burst}. */
+  hit(t) {
+    this.count = t - this.last <= this.gap ? this.count + 1 : 1;
+    this.last = t;
+    const extra = this.count - this.min + 1;
+    return { count: this.count, rate: extra > 0 ? Math.min(3, 1 + 0.35 * extra) : 1, burst: extra > 0 };
+  }
+  /** True once the burst is over (no hit for `gap` ms after a burst). Resets the count. */
+  calm(t) {
+    if (this.count >= this.min && t - this.last > this.gap) { this.count = 0; return true; }
+    if (t - this.last > this.gap) this.count = 0;
+    return false;
+  }
+}
+
 // ---------- state machine (bundle "states") ----------
 
 /**
@@ -243,7 +271,24 @@ export class StateMachine {
 
   start(node = this.def.initial ?? Object.keys(this.def.nodes)[0]) { this._go(node, {}); }
 
-  set(name, value) { this.inputs[name] = value; this.evaluate(); }
+  set(name, value) { this.inputs[name] = value; this._applyRate(); this.evaluate(); }
+
+  /** Playback speed for the current node: a number, or the value of an input (clamped 0.25..4). */
+  rate() {
+    const r = this._nodeDef()?.rate;
+    const v = typeof r === 'string' ? Number(this.inputs[r]) : r;
+    return Number.isFinite(v) && v > 0 ? Math.min(4, Math.max(0.25, v)) : 1;
+  }
+  _applyRate() { this.host.rate?.(this.rate()); }
+
+  /** Apply the interactions for `on` ("click", "enter", "leave", "burst", "calm"); "$count"/"$rate" take values from `ctx`. */
+  interact(on, ctx = {}) {
+    for (const it of this.def.interactions ?? []) {
+      if (it.on !== on) continue;
+      if (it.set) for (const [k, v] of Object.entries(it.set)) this.set(k, typeof v === 'string' && v.startsWith('$') ? ctx[v.slice(1)] ?? 0 : v);
+      if (it.fire) this.fire(it.fire);
+    }
+  }
   fire(name) { this.triggers.add(name); this.evaluate(); this.triggers.delete(name); }
 
   /** Check transitions from the current node; the first that matches wins. */
@@ -304,6 +349,7 @@ export class StateMachine {
     this.node = to; this.pending = null; this.fidget = null; this.wait = 0;
     const a = this.anims[n.anim];
     this.host.play(n.anim, { once: !!(n.then || (a && a.loop === false)), phase });
+    this._applyRate();
     if (from !== to && from != null) this.host.onChange?.(from, to);
     // An input may already ask to move on (bounded, so A ⇄ B with both conditions true cannot loop).
     if ((this._depth = (this._depth ?? 0) + 1) < 8) this.evaluate();
@@ -321,11 +367,13 @@ canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
 :host([state=ready]) slot{display:none}
 ::slotted(img){display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}`;
 
+const clampRate = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.min(4, Math.max(0.25, n)) : 1; };
+
 // (Base class guard lets Node import the helpers for tests.)
 const Base = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
 
 export class PixelSprite extends Base {
-  static observedAttributes = ['src', 'anim', 'size', 'res', 'paused', 'fps', 'alt', 'skin'];
+  static observedAttributes = ['src', 'anim', 'size', 'res', 'paused', 'fps', 'alt', 'skin', 'rate'];
   static clock = clock;
 
   constructor() {
@@ -348,6 +396,9 @@ export class PixelSprite extends Base {
     if (this._inited) { this._layout(); this._sync(); return; }   // moved in the DOM: resume, don't restart
     this._inited = true;
     this._fps = Math.min(60, Number(this.getAttribute('fps')) || 0);
+    this._userRate = clampRate(this.getAttribute('rate'));
+    this._nodeRate = 1; this._burstRate = 1;
+    this._bursts = new BurstDetector();
     this._userLabel = this.hasAttribute('aria-label');
     for (const t of ['pointerenter', 'pointerleave', 'pointerdown', 'click']) this.addEventListener(t, this);
     this._a11y();
@@ -369,6 +420,7 @@ export class PixelSprite extends Base {
     else if (name === 'size' || name === 'res' || name === 'skin') this._layout();
     else if (name === 'paused') this._sync();
     else if (name === 'fps') this._fps = Math.min(60, Number(newV) || 0);
+    else if (name === 'rate') this._userRate = clampRate(newV);
     else if (name === 'alt') this._a11y();
   }
 
@@ -473,6 +525,12 @@ export class PixelSprite extends Base {
     this._sync();
     if (this._running) this._emit(0);
   }
+  /** Playback speed multiplier (0.25..4), the `rate` attribute. Movement should scale with `effectiveRate`. */
+  get rate() { return this._userRate ?? 1; }
+  set rate(v) { this.setAttribute('rate', String(v)); }
+  /** The speed frames actually play at: `rate` × the state machine node's rate × a burst speed-up. */
+  get effectiveRate() { return (this._userRate ?? 1) * (this._nodeRate ?? 1) * (this._burstRate ?? 1); }
+
   /** State machine: set an input (number / boolean). */
   set(name, value) { this._sm?.set(name, value); }
   /** State machine: fire a trigger input. */
@@ -532,6 +590,7 @@ export class PixelSprite extends Base {
       },
       phase: () => { const a = bundle.animations[this._anim]; return a ? (this._frame + Math.min(1, this._acc / this._frameMs(a, this._frame))) / a.frames : 0; },
       onChange: (from, to) => this.dispatchEvent(new CustomEvent('statechange', { bubbles: true, detail: { from, to } })),
+      rate: (r) => { this._nodeRate = r; },
     });
   }
 
@@ -604,12 +663,15 @@ export class PixelSprite extends Base {
   // ----- input: hover for mouse and pen, taps on touch screens -----
 
   handleEvent(e) {
-    if (this._sm) return this._interact(e);
+    const burst = e.type === 'click' && this.getAttribute('burst') !== 'off' ? this._clickBurst() : null;
+    if (this._sm) return this._interact(e, burst);
     const hover = this.getAttribute('hover-anim');
     if (e.type === 'pointerdown') { this._pointer = e.pointerType; return; }
     if (e.type === 'click') {
       const a = this.getAttribute('click-anim') || (this._pointer === 'touch' ? hover : null);
-      if (a) this.play(a, { once: true });
+      // A burst of clicks speeds the one-shot up instead of restarting it on every click.
+      if (a && burst && this._once && this._anim === a) this._burstRate = burst.rate;
+      else if (a) this.play(a, { once: true });
       this._pointer = null;
       return;
     }
@@ -618,15 +680,34 @@ export class PixelSprite extends Base {
     if (hover && !this._once) this.play(this._hover ? hover : this._baseAnim());
   }
 
-  /** Pointer input → state machine interactions: on "click" (also taps), "enter" / "leave" (mouse, pen). */
-  _interact(e) {
+  /**
+   * Count a click toward a burst. From the third quick click on, fires 'spriteburst' {count, rate};
+   * after the clicking stops, 'spritecalm' {count}, and any burst speed-up ends.
+   */
+  _clickBurst() {
+    const now = performance.now();
+    const b = this._bursts.hit(now);
+    if (!b.burst) return null;
+    this.dispatchEvent(new CustomEvent('spriteburst', { bubbles: true, detail: { count: b.count, rate: b.rate } }));
+    clearTimeout(this._calmTimer);
+    this._calmTimer = setTimeout(() => {
+      if (!this._bursts.calm(performance.now())) return;
+      this._burstRate = 1;
+      this.dispatchEvent(new CustomEvent('spritecalm', { bubbles: true, detail: { count: b.count } }));
+      this._sm?.interact('calm', { count: b.count, rate: 1 });
+    }, this._bursts.gap + 20);
+    return b;
+  }
+
+  /**
+   * Pointer input → state machine interactions: "click" (also taps), "enter" / "leave" (mouse, pen),
+   * "burst" (a quick run of clicks: "$count" and "$rate" in `set`) and "calm" (the burst is over).
+   */
+  _interact(e, burst) {
     if (e.type === 'pointerdown') return;
     const on = e.type === 'click' ? 'click' : e.pointerType === 'touch' ? null : e.type === 'pointerenter' ? 'enter' : 'leave';
-    for (const it of this._bundle.states.interactions ?? []) {
-      if (it.on !== on) continue;
-      if (it.set) for (const [k, v] of Object.entries(it.set)) this._sm.set(k, v);
-      if (it.fire) this._sm.fire(it.fire);
-    }
+    if (on) this._sm.interact(on);
+    if (burst) this._sm.interact('burst', burst);
   }
 
   // ----- playback -----
@@ -636,7 +717,7 @@ export class PixelSprite extends Base {
     return a && this._bundle.animations[a] ? a : Object.keys(this._bundle.animations)[0];
   }
 
-  _rate(a) { return this._fps || a.fps; }
+  _rate(a) { return (this._fps || a.fps) * this.effectiveRate; }
 
   _setVisible(v) { this._visible = v; this._sync(); }
 

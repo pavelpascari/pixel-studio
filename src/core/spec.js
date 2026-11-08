@@ -297,6 +297,8 @@ function validateStates(st, anims, err, warn) {
     const np = `${P}.nodes.${n}`;
     if (!node || typeof node !== 'object') { err(np, 'a node is {"anim": "walk"}'); continue; }
     if (!animNames.includes(node.anim)) err(`${np}.anim`, `unknown animation "${node.anim}"${didYouMean(String(node.anim), animNames)}`);
+    if (node.rate != null && !((isNum(node.rate) && node.rate > 0 && node.rate <= 4) || (typeof node.rate === 'string' && node.rate in inputs)))
+      err(`${np}.rate`, `rate is a playback speed 0..4 or the name of an input${typeof node.rate === 'string' ? didYouMean(node.rate, Object.keys(inputs)) : ''}`);
     if (node.then != null && node.then !== 'previous' && !names.includes(node.then)) err(`${np}.then`, `then must be a node or "previous"${didYouMean(String(node.then), names)}`);
     if (node.random != null) {
       if (!Array.isArray(node.random)) err(`${np}.random`, 'random must be [{"anim": "preen", "every": [4, 9]}]');
@@ -321,7 +323,7 @@ function validateStates(st, anims, err, warn) {
   });
   (Array.isArray(st.interactions) ? st.interactions : []).forEach((it, i) => {
     const ip = `${P}.interactions[${i}]`;
-    if (!['click', 'enter', 'leave'].includes(it?.on)) err(`${ip}.on`, 'on must be "click", "enter" or "leave"');
+    if (!['click', 'enter', 'leave', 'burst', 'calm'].includes(it?.on)) err(`${ip}.on`, 'on must be "click", "enter", "leave", "burst" (a quick run of clicks) or "calm" (the run is over)');
     if (it?.fire != null && !(it.fire in inputs)) err(`${ip}.fire`, `"${it.fire}" is not an input`);
     for (const k of Object.keys(it?.set ?? {})) if (!(k in inputs)) err(`${ip}.set.${k}`, `"${k}" is not an input`);
   });
