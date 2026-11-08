@@ -16,6 +16,11 @@ Until 1.0, minor versions may change the spec format.
   `pickup`, `drop`, `deliver`, `exit`, `enter`.
 - Leaving or entering by the page's right edge never widens the page; a speech bubble stays inside it.
 - The stage demo's newsletter form: subscribe and the goose posts your letter.
+- Movement steps take a `speed` (`actor.hurry(rate)`): faster, running, feet planted. The geese have `flap` (from the
+  kiddie goose) and a `rush` gait (running with wings beating and neck out, after footage of running geese), used
+  when hurrying. In the newsletter scene the goose flaps the moment you subscribe and rushes the letter off.
+- Carried things hang from the beak tip (or hand) by their near corner, tipped a little and behind the character,
+  so the beak stays in view.
 
 ### Scenes
 - `stage.playScene(scene)`: scripted moments as JSON (in a `<script type="application/json">`, as text or an object).

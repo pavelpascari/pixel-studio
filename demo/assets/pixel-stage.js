@@ -46,7 +46,7 @@ const ORDERS = ['goTo', 'hideBehind', 'perform', 'shoo', 'pickUp', 'drop', 'exit
 const CARRY_POINTS = ['carry', 'beak', 'handR', 'hand', 'nose', 'head', 'top'];
 const ROLES = {
   idle: ['idle'], walk: ['walk', 'waddle', 'trot', 'travel'], run: ['run', 'trot', 'travel', 'walk', 'waddle'],
-  jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
+  rush: ['rush'], jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
   react: ['honk', 'wave', 'hop'],
 };
 const DEFAULT_BEHAVIOURS = 'wander sit hide climb jump';
@@ -237,7 +237,7 @@ export class PixelStage extends Base {
     const handle = { name: scene.name ?? null, source: scene, trigger, stop: () => stop(), finished: null };
     handle.finished = Promise.race([Promise.all(cast.map(placed)).then(() => runScene(scene, env)), stopped.then(() => false)])
       .then((completed) => {
-        cast.forEach((a, i) => (a.directed = was[i]));
+        cast.forEach((a, i) => { a.directed = was[i]; a.hurry(1); });
         if (this._scene === handle) this._scene = null;
         stop();
         this.dispatchEvent(new CustomEvent('sceneend', { detail: { scene: scene.name, completed } }));
@@ -587,6 +587,16 @@ export class PixelActor extends Base {
     return true;
   }
 
+  /**
+   * In a hurry: everything plays `rate` times faster and it moves that much faster (feet still planted), and walks
+   * become runs. hurry(1) to calm down. Scenes use it for a step's "speed".
+   */
+  hurry(rate = 1.6) {
+    this._hurry = rate > 1 ? rate : 0;
+    this._boost(Math.max(1, Math.min(4, rate)), 'hurry');
+    return true;
+  }
+
   /** What it is carrying (the page element it picked up), or null. */
   get carrying() { return this._carry?.el ?? null; }
 
@@ -711,7 +721,7 @@ export class PixelActor extends Base {
     for (const k of cs) clone.style.setProperty(k, cs.getPropertyValue(k));   // keep its look outside its old ancestors
     Object.assign(clone.style, {
       position: 'absolute', left: '0', top: '0', margin: '0', width: `${r.width}px`, height: `${r.height}px`, boxSizing: 'border-box',
-      pointerEvents: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', visibility: 'visible', transition: 'none', animation: 'none', zIndex: '1',
+      pointerEvents: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', visibility: 'visible', transition: 'none', animation: 'none', zIndex: '-1',   // behind the character: the beak overlaps the corner it holds
     });
     clone.slot = 'carry';
     clone.setAttribute('aria-hidden', 'true');
@@ -729,24 +739,31 @@ export class PixelActor extends Base {
     const L = this.x - this.W / 2, T = this.y - (this.sprite.groundOffset ?? this.H);
     const at = this._carryAt(c);
     c.clone.removeAttribute('slot');
-    c.clone.style.transform = `translate(${L + at.x}px, ${T + at.y}px)`;
+    c.clone.style.transform = `translate(${L + at.x}px, ${T + at.y}px) rotate(${at.rot}deg)`;
     c.clone.style.zIndex = String(Math.round(this.y) + 1);
     stage.append(c.clone);
     const to = how === 'back' ? c.from : { x: this.x + this.facing * this.W * 0.3 - c.w / 2, y: this.y - c.h };
     requestAnimationFrame(() => {
       c.clone.style.transition = 'transform .3s ease-in';
-      c.clone.style.transform = `translate(${to.x}px, ${to.y}px)`;
+      c.clone.style.transform = `translate(${to.x}px, ${to.y}px) rotate(0deg)`;
     });
     if (how === 'back') setTimeout(() => { c.clone.remove(); c.el.style.visibility = c.vis; }, 320);
     this.dispatchEvent(new CustomEvent('drop', { detail: { prop: c.el, how } }));
   }
 
-  /** Where the carried thing sits, relative to the actor's box: centred on the carry point, hanging a little. */
+  /**
+   * How the carried thing hangs, relative to the actor's box: held by its near top corner just behind the carry
+   * point (a beak tip, a hand), so it hangs forward and down, tipped a little, leaving the beak or hand in view.
+   * {x, y} is its top-left; {gx, gy} the held corner inside it (the rotation's pivot).
+   */
   _carryAt(c) {
     let p = null;
     for (const n of CARRY_POINTS) if ((p = this.sprite.point(n, { relative: true }))) break;
     p ??= { x: this.W / 2, y: this.H * 0.35 };
-    return { x: p.x - c.w / 2, y: p.y - c.h * 0.3 };
+    const d = this.facing < 0 ? -1 : 1;
+    const gx = d > 0 ? Math.min(c.w * 0.15, 6) : c.w - Math.min(c.w * 0.15, 6), gy = Math.min(c.h * 0.15, 4);
+    const hold = { x: p.x - d * this.W * 0.03, y: p.y + this.H * 0.01 };   // in the beak, not on its tip
+    return { x: hold.x - gx, y: hold.y - gy, gx, gy, rot: d * 14 };
   }
 
   /** Directed characters do nothing on their own between orders: they idle where they are (scenes set this). */
@@ -1045,8 +1062,8 @@ export class PixelActor extends Base {
   _do_walk(st, dt, w) {
     if (st.p?.animated && st.p === this.platform) st.x += st.p.dx ?? 0;   // the spot moves with its surface
     // Long way to go: run (at the run's own no-slide speed).
-    if (!st.run && st.t === dt * 1000 && Math.abs(st.x - this.x) > this.W * 4 && this.anims.run) st.run = true;
-    const role = st.run ? 'run' : 'walk';
+    if (!st.run && st.t === dt * 1000 && (this._hurry || Math.abs(st.x - this.x) > this.W * 4) && this.anims.run) st.run = true;
+    const role = st.run ? this._runRole() : 'walk';
     this._setState(st.run ? 'running' : 'walking');
     const dx = st.x - this.x;
     if (Math.abs(dx) < 1) { this.x = st.x; return true; }
@@ -1059,6 +1076,9 @@ export class PixelActor extends Base {
     if (this.platform && !st.free && (this.x < this.platform.x1 - 1 || this.x > this.platform.x2 + 1)) { this._fall(this.facing * Math.min(this._speed(role) * 0.6, this.W)); return true; }
     return false;
   }
+
+  /** In a hurry, a figure with a "rush" gait (wings going, neck out) uses it to run. */
+  _runRole() { return this._hurry && this.anims.rush ? 'rush' : 'run'; }
 
   _do_pickup(st) {
     if (!st.started) {
@@ -1084,7 +1104,7 @@ export class PixelActor extends Base {
     if (!st.started) { st.started = true; this.facing = dir; this.behind.clear(); }
     this._setState('leaving');
     if (!st.air) {
-      const role = this.anims.run ? 'run' : 'walk';
+      const role = this.anims.run ? this._runRole() : 'walk';
       this._play(role);
       this.x += dir * this._speed(role) * dt;
       const p = this.platform, atEdge = p && (dir < 0 ? p.x1 <= vp.l + this.W / 2 : p.x2 >= vp.r - this.W / 2);
@@ -1407,7 +1427,8 @@ export class PixelActor extends Base {
         const e = 1 - (1 - k) ** 2, x0 = c.from.x - L, y0 = c.from.y - T;
         x = x0 + (x - x0) * e; y = y0 + (y - y0) * e - Math.sin(Math.PI * k) * this.H * 0.3;
       }
-      c.clone.style.transform = `translate(${snap(x)}px, ${snap(y)}px)`;
+      c.clone.style.transformOrigin = `${at.gx}px ${at.gy}px`;
+      c.clone.style.transform = `translate(${snap(x)}px, ${snap(y)}px) rotate(${at.rot * k}deg)`;
     }
     const tf = `translate(${L}px, ${T}px)`;
     if (tf !== this._tf) { this.style.transform = tf; this._tf = tf; }
@@ -1447,7 +1468,7 @@ function clampTo(p, x, margin) {
 
 const SCENE_ACTIONS = ['goTo', 'hideBehind', 'perform', 'say', 'shoo', 'face', 'pickUp', 'drop', 'exit', 'enter'];
 const SCENE_FLOW = ['wait', 'together', 'waitFor', 'emit'];
-const SCENE_EXTRA = { goTo: ['then', 'at'], perform: ['ms'], say: ['ms'], waitFor: ['on', 'timeout'], emit: ['detail'] };
+const SCENE_EXTRA = { goTo: ['then', 'at', 'speed'], hideBehind: ['speed'], pickUp: ['speed'], exit: ['speed'], enter: ['speed'], perform: ['ms'], say: ['ms'], waitFor: ['on', 'timeout'], emit: ['detail'] };
 const SCENE_COMMON = ['actor', 'async', 'note'];
 
 /** Check a scene. Returns [{path, message}]; empty when it can be played. `castNames` lists the actors it may use. */
@@ -1506,6 +1527,7 @@ export function checkScene(scene, castNames = null) {
     }
     if (kind === 'emit' && typeof v !== 'string') err(`${p}.emit`, 'an event name');
     if (('ms' in st)) num(st.ms, `${p}.ms`, 'ms');
+    if ('speed' in st && !(typeof st.speed === 'number' && st.speed >= 0.25 && st.speed <= 4)) err(`${p}.speed`, 'speed is how much faster: 0.25 … 4 (1.5 is a hurry)');
   };
   steps(scene.steps, '$.steps');
   return errors;
@@ -1528,6 +1550,11 @@ export async function runScene(scene, env) {
     if ('emit' in st) { env.emit(st.emit, st.detail); return true; }
     const a = env.actor(st.actor);
     if (!a) return false;
+    if (!st.speed) return act(st, a);
+    a.hurry?.(st.speed);
+    try { return await act(st, a); } finally { a.hurry?.(1); }
+  };
+  const act = async (st, a) => {
     if ('say' in st) return a.say(st.say, st.ms ?? 1800);
     if ('face' in st) return a.face(['left', 'right'].includes(st.face) ? st.face : target(st.face));
     if ('goTo' in st) {

@@ -243,6 +243,7 @@ function fakeEnv({ fail = [], log = [] } = {}) {
     run: (action, ...args) => new Promise((r) => { log.push(`${name}.${action}:start`); setTimeout(() => { log.push(`${name}.${action}:end`); r(!fail.includes(action)); }, 20); }),
     say: (text) => { log.push(`${name}.say ${text}`); return Promise.resolve(true); },
     face: (dir) => { log.push(`${name}.face ${typeof dir === 'string' ? dir : dir.name}`); return true; },
+    hurry: (rate) => log.push(`${name}.hurry ${rate}`),
   });
   const cast = { goose: actor('goose'), clawd: actor('clawd') };
   return { log, stop, env: {
@@ -299,10 +300,13 @@ test('checkScene: triggers and the carry / exit / enter steps', () => {
   assert.deepEqual(paths({ trigger: 'submit', steps: [{ wait: 1 }] }), ['$.trigger']);
   assert.deepEqual(paths({ steps: [{ actor: 'g', exit: 'up' }, { actor: 'g', drop: 'away' }, { actor: 'g', pickUp: 3 }] }),
     ['$.steps[0].exit', '$.steps[1].drop', '$.steps[2].pickUp']);
+  assert.deepEqual(checkScene({ steps: [{ actor: 'g', exit: 'right', speed: 1.9 }, { actor: 'g', pickUp: '#l', speed: 1.5 }] }), []);
+  assert.deepEqual(paths({ steps: [{ actor: 'g', exit: 'right', speed: 9 }, { actor: 'g', say: 'hi', speed: 2 }] }), ['$.steps[0].speed', '$.steps[1].speed']);
 });
 
 test('runScene: carry, exit and enter become actor orders', async () => {
   const { env, log } = fakeEnv();
-  await runScene({ steps: [{ actor: 'goose', pickUp: '#letter' }, { actor: 'goose', exit: 'right' }, { actor: 'goose', enter: 'left' }, { actor: 'goose', drop: true }] }, env);
+  await runScene({ steps: [{ actor: 'goose', pickUp: '#letter', speed: 1.8 }, { actor: 'goose', exit: 'right' }, { actor: 'goose', enter: 'left' }, { actor: 'goose', drop: true }] }, env);
+  assert.deepEqual(log.slice(0, 4), ['goose.hurry 1.8', 'goose.pickUp:start', 'goose.pickUp:end', 'goose.hurry 1']);   // hurried for that step only
   assert.deepEqual(log.filter((l) => l.endsWith(':start')), ['goose.pickUp:start', 'goose.exit:start', 'goose.enter:start', 'goose.drop:start']);
 });

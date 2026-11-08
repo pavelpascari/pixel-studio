@@ -46,6 +46,11 @@
     "idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}}},
     "waddle": {"motion": "walk"},
     "run": {"motion": "run"},
+    "rush": {"motion": "run", "fps": 14, "stride": 18, "lean": 12, "tracks": {
+      "neck": {"rot": 10}, "neckUp": {"rot": 8}, "head": {"rot": -8},
+      "jaw": {"rot": [6, 14, 6, 14, 6, 14]},
+      "wing": {"rot": [8, 62, 14, 66, 10, 58]}
+    }},
     "honk": {"motion": "pose", "frames": 10, "fps": 10, "loop": false, "events": [{"frame": 3, "name": "honk"}], "holds": {"3": 2}, "tracks": {
       "body": {"y": [0, 1, 0, -1, -1, -1, -1, 0, 0, 0], "rot": [0, -2, 4, 6, 6, 6, 6, 4, 1, 0]},
       "neck": {"rot": [0, -8, 8, 12, 14, 12, 14, 10, 4, 0]},
@@ -59,7 +64,15 @@
     "sit": {"motion": "sit", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}},
     "duck": {"motion": "duck"},
     "peek": {"motion": "peek", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]}}},
-    "climb": {"motion": "climb"}
+    "climb": {"motion": "climb"},
+    "flap": {"frames": 8, "fps": 12, "tracks": {
+      "body": {"y": [0, -3, -7, -9, -9, -7, -3, 0]},
+      "wing": {"rot": [0, 55, 10, 60, 10, 55, 10, 0]},
+      "legNear": {"rot": [0, 12, 20, 20, 20, 12, 6, 0]},
+      "legFar": {"rot": [0, 8, 16, 16, 16, 8, 4, 0]},
+      "neckUp": {"rot": [0, -6, -10, -10, -10, -6, -3, 0]},
+      "jaw": {"rot": [0, 10, 18, 18, 18, 10, 0, 0]}
+    }}
   },
   "style": {"outline": "selective", "light": -45}
 }

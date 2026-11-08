@@ -190,10 +190,13 @@
   "cast": {"goose": "#goose"},
   "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
   "steps": [
-    {"actor": "goose", "say": "mail?!", "ms": 900, "async": true},
-    {"actor": "goose", "pickUp": "$trigger .letter"},
-    {"actor": "goose", "say": "I'll take it from here", "ms": 1400},
-    {"actor": "goose", "exit": "right"},
+    {"together": [
+      {"actor": "goose", "perform": "flap", "ms": 1000},
+      {"actor": "goose", "say": "MAIL?!", "ms": 1000}
+    ]},
+    {"actor": "goose", "pickUp": "$trigger .letter", "speed": 1.7},
+    {"actor": "goose", "say": "on it!", "ms": 700},
+    {"actor": "goose", "exit": "right", "speed": 1.9},
     {"wait": 1800},
     {"emit": "delivered"},
     {"actor": "goose", "enter": "right"},

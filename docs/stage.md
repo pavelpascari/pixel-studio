@@ -107,6 +107,7 @@ stage.world.invalidate();                                          // after movi
 | `actor.run(action, ...args)` | The orders above as promises, for scripts: `await actor.run('goTo', el, {then: 'sit'})`, `run('hideBehind', el)`, `run('perform', name, {ms})`, `run('shoo', from?)`, `run('pickUp', el)`, `run('drop', how)`, `run('exit', side)`, `run('enter', from)`. Resolves `true` once carried out (arrived, sitting, hidden, played), `false` if impossible or interrupted (a tap, a drag, another order to the same character). |
 | `actor.say(text, ms)` → Promise | Resolves when the bubble goes away. |
 | `actor.face('left' \| 'right' \| actor \| element)` | Turn to face a side or something on the page. |
+| `actor.hurry(rate)` | Hurry: animate and move `rate` times faster (feet planted), run instead of walk, with the `rush` gait if the figure has one. `hurry(1)` to stop. Scene steps' `speed` uses it. |
 | `actor.pickUp(el)` | Walk to any element (a letter by a form, an icon) and pick it up: a copy, styled like it, rides at the `carry` point (else `beak`, `handR`, `head`, …); the original is hidden but keeps its space. `actor.carrying` is that element. |
 | `actor.drop('here' \| 'back')` | Put it down at its feet (the copy stays on the stage) or send it back to where it came from (the original reappears). |
 | `actor.exit('left' \| 'right' \| 'auto')` | Leave the screen by that edge: along a surface that reaches it, or with a leap from the end of one. Off screen it is hidden (`offstage` attribute); anything carried is delivered (`deliver` event; the original stays hidden). Undirected characters come back on their own after 5–9 s. |
@@ -170,6 +171,8 @@ Steps run one after another. Each step does one thing:
 | `{"actor": a, "drop": true}` | put it down (`true` or `"here"`), or `"back"` where it came from | |
 | `{"actor": a, "exit": side}` | leave the screen: `left`, `right` or `auto`; carried things are delivered | |
 | `{"actor": a, "enter": from}` | come back: `left`, `right`, `top`, `auto`, or a selector to drop onto | |
+
+Movement steps (`goTo`, `hideBehind`, `pickUp`, `exit`, `enter`) take `"speed"` (0.25–4): in a hurry the character runs, animating and moving that much faster with its feet still planted, using its `rush` gait if it has one (the geese flap and stretch their necks out).
 | `{"wait": ms}` | pause | |
 | `{"together": [steps]}` | run steps at the same time; continue when all are done | |
 | `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … | `timeout` (ms) |
@@ -210,9 +213,9 @@ Here a newsletter form hands the goose a letter, and the goose takes it off the 
   "cast": {"goose": "#goose"},
   "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
   "steps": [
-    {"actor": "goose", "pickUp": "$trigger .letter"},
-    {"actor": "goose", "say": "I'll take it from here", "ms": 1400},
-    {"actor": "goose", "exit": "right"},
+    {"actor": "goose", "perform": "flap", "ms": 1000},
+    {"actor": "goose", "pickUp": "$trigger .letter", "speed": 1.7},
+    {"actor": "goose", "exit": "right", "speed": 1.9},
     {"wait": 1800},
     {"emit": "delivered"},
     {"actor": "goose", "enter": "right"},
