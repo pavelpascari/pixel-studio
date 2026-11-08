@@ -1,0 +1,170 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { pickVariant } from '../src/runtime/pixel-sprite.js';
+
+const vs = [16, 32, 64].map((res) => ({ res, frameH: res }));
+const pick = (size) => pickVariant(vs, size).res;
+
+test('variant choice: integer scale >= 2, most detail when close enough', () => {
+  assert.equal(pick(24), 16);   // 16 × 2 = 32
+  assert.equal(pick(36), 16);   // 16 × 2 = 32
+  assert.equal(pick(64), 32);   // 32 × 2
+  assert.equal(pick(72), 32);   // 32 × 2 = 64 (11% off)
+  assert.equal(pick(128), 64);  // 64 × 2
+  assert.equal(pick(150), 64);  // 64 × 2 = 128 (15% off)
+  assert.equal(pick(400), 64);  // 64 × 6
+  assert.equal(pick(12), 16);   // too small for anything: closest
+});
+
+// ---------- shared clock ----------
+import { clock, checkBundle, deviceScale } from '../src/runtime/pixel-sprite.js';
+
+function fakeFrames() {
+  const queue = [];
+  globalThis.requestAnimationFrame = (fn) => { queue.push(fn); return queue.length; };
+  return { step(t) { const fns = queue.splice(0); fns.forEach((fn) => fn(t)); return fns.length; } };
+}
+
+test('clock: a throwing subscriber cannot stop the loop or the other subscribers', () => {
+  const frames = fakeFrames();
+  const seen = [];
+  const errors = [];
+  const origErr = console.error; console.error = (e) => errors.push(e);
+  const realReport = globalThis.reportError; globalThis.reportError = (e) => errors.push(e);
+  const bad = () => { throw new Error('boom'); };
+  const good = (dt) => seen.push(dt);
+  clock.add(bad); const off = clock.add(good);
+  frames.step(1000); frames.step(1016); frames.step(1032);
+  assert.deepEqual(seen, [0, 16, 16]);
+  assert.equal(errors.length, 3);
+  clock.remove(bad); off();
+  frames.step(1048);                                // empty: the loop stops itself
+  assert.equal(frames.step(1064), 0);
+  console.error = origErr; globalThis.reportError = realReport;
+});
+
+test('clock: dt is clamped and reset() starts from zero', () => {
+  const frames = fakeFrames();
+  const seen = [];
+  const off = clock.add((dt) => seen.push(dt));
+  frames.step(0); frames.step(5000); clock.reset(); frames.step(9000); frames.step(9010);
+  off(); frames.step(9020);
+  assert.deepEqual(seen, [0, clock.maxDt, 0, 10]);
+});
+
+test('checkBundle: clear errors for wrong or broken bundles', () => {
+  const ok = { format: 'pixel-sprite/1', animations: { idle: { row: 0, frames: 4, fps: 8, loop: true } }, variants: [{ res: 16, frameW: 16, frameH: 16, image: 'data:,' }] };
+  assert.equal(checkBundle(ok), ok);
+  assert.throws(() => checkBundle({ ...ok, format: 'lottie' }), /format is "lottie"/);
+  assert.throws(() => checkBundle({ ...ok, animations: {} }), /no animations/);
+  assert.throws(() => checkBundle({ ...ok, animations: { idle: { row: 0, frames: 0, fps: 8 } } }), /animation "idle"/);
+  assert.throws(() => checkBundle({ ...ok, variants: [] }), /no variants/);
+  assert.throws(() => checkBundle(null, 'x.json'), /x\.json: not a JSON object/);
+});
+
+test('deviceScale: whole device pixels per sprite pixel at any DPR', () => {
+  assert.equal(deviceScale(64, 64, 128, 1), 2);
+  assert.equal(deviceScale(64, 64, 128, 2), 4);
+  assert.equal(deviceScale(64, 64, 128, 2.625), 5);    // 5.25 → 5 device px, displayed at 121.9 CSS px
+  assert.equal(deviceScale(64, 64, 128, 1.5), 3);
+  assert.equal(deviceScale(64, 64, 6400, 3), 64);      // capped: 64 × 64 = 4096 px canvas
+});
+
+// ---------- <pixel-stage> helpers ----------
+import { jumpArc, cells } from '../src/runtime/pixel-stage.js';
+
+test('jumpArc: lands exactly on the target after the animation\'s flight time and peaks at the apex', () => {
+  for (const [x0, y0, x1, y1] of [[0, 300, 120, 200], [0, 200, 80, 320], [50, 100, 50, 100]]) {
+    const lift = 30, T = 0.4;
+    const a = jumpArc(x0, y0, x1, y1, lift, T);
+    const at = (t) => [x0 + a.vx * t, y0 + a.vy * t + (a.g * t * t) / 2];
+    const [ex, ey] = at(T);
+    assert.ok(Math.abs(ex - x1) < 1e-9 && Math.abs(ey - y1) < 1e-9, `lands on (${x1}, ${y1})`);
+    const tPeak = -a.vy / a.g;
+    assert.ok(Math.abs(at(tPeak)[1] - (Math.min(y0, y1) - lift)) < 1e-9, 'peaks lift px above the higher end');
+  }
+});
+
+test('cells: overlapping cut-outs become disjoint cells covering exactly their union', () => {
+  const rs = [[0, 0, 10, 10], [5, 5, 20, 20], [30, 0, 40, 5]];
+  const out = cells(rs, 64, 64);
+  const area = (r) => (r[2] - r[0]) * (r[3] - r[1]);
+  assert.equal(out.reduce((s, r) => s + area(r), 0), 100 + 225 - 25 + 50);
+  for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) {
+    const [a, b] = [out[i], out[j]];
+    assert.ok(a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1], 'cells do not overlap');
+  }
+  assert.deepEqual(cells([[-5, -5, 100, 3]], 64, 64), [[0, 0, 64, 3]], 'clipped to the sprite box');
+});
+
+// ---------- state machine ----------
+import { StateMachine, parseCondition } from '../src/runtime/pixel-sprite.js';
+
+const ANIMS = { idle: { frames: 8, loop: true }, walk: { frames: 8, loop: true }, run: { frames: 6, loop: true }, honk: { frames: 10, loop: false }, preen: { frames: 6, loop: true } };
+const DEF = {
+  initial: 'idle',
+  inputs: { speed: 0, honk: 'trigger', hovered: false },
+  nodes: { idle: { anim: 'idle', random: [{ anim: 'preen', every: [1, 1] }] }, walk: { anim: 'walk' }, run: { anim: 'run' }, honk: { anim: 'honk', then: 'previous' } },
+  transitions: [
+    { from: '*', to: 'honk', when: 'honk' },
+    { from: 'idle', to: 'walk', when: 'speed > 0 && speed <= 60' },
+    { from: ['idle', 'walk'], to: 'run', when: 'speed > 60', at: 'sync' },
+    { from: 'run', to: 'walk', when: 'speed > 0 && speed <= 60', at: 'sync' },
+    { from: ['walk', 'run'], to: 'idle', when: 'speed == 0', at: 'footstep' },
+  ],
+};
+const machine = () => {
+  const played = [], changes = [];
+  const sm = new StateMachine(DEF, ANIMS, { play: (anim, o) => played.push([anim, o]), phase: () => 0.5, onChange: (f, t) => changes.push(`${f}>${t}`) });
+  sm.start();
+  return { sm, played, changes };
+};
+
+test('conditions: comparisons, booleans, negation, triggers, "&&"', () => {
+  const c = parseCondition('speed > 3 && !sleepy && mood == happy');
+  assert.equal(c({ speed: 4, sleepy: false, mood: 'happy' }, new Set()), true);
+  assert.equal(c({ speed: 4, sleepy: true, mood: 'happy' }, new Set()), false);
+  assert.equal(parseCondition('honk')({ honk: false }, new Set(['honk'])), true);
+  assert.equal(parseCondition("name == 'Bo'")({ name: 'Bo' }, new Set()), true);
+  assert.throws(() => parseCondition('speed >'), /cannot read condition/);
+});
+
+test('state machine: inputs move between nodes; "sync" keeps the phase; "footstep" waits for the feet', () => {
+  const { sm, played, changes } = machine();
+  assert.equal(sm.node, 'idle');
+  sm.set('speed', 30);
+  assert.equal(sm.node, 'walk');
+  sm.set('speed', 90);
+  assert.equal(sm.node, 'run');
+  assert.deepEqual(played.at(-1), ['run', { once: false, phase: 0.5 }]);
+  sm.set('speed', 0);
+  assert.equal(sm.node, 'run', 'waits for the next footstep');
+  sm.loopEnd();
+  assert.equal(sm.node, 'run');
+  sm.event('footstep');
+  assert.equal(sm.node, 'idle');
+  sm.set('speed', 30); sm.set('speed', 0); sm.set('speed', 40);
+  assert.equal(sm.node, 'walk', 'the waiting stop is dropped when the speed comes back');
+  sm.event('footstep');
+  assert.equal(sm.node, 'walk');
+  assert.deepEqual(changes, ['idle>walk', 'walk>run', 'run>idle', 'idle>walk']);
+});
+
+test('state machine: triggers fire one-shots that return to the previous node; random fidgets', () => {
+  const { sm, played } = machine();
+  sm.set('speed', 30);
+  sm.fire('honk');
+  assert.equal(sm.node, 'honk');
+  assert.deepEqual(played.at(-1), ['honk', { once: true, phase: undefined }]);
+  sm.fire('honk');
+  assert.equal(sm.node, 'honk', 'no re-entry while honking');
+  sm.ended();
+  assert.equal(sm.node, 'walk', 'then: previous');
+  sm.set('speed', 0); sm.event('footstep');
+  assert.equal(sm.node, 'idle');
+  sm.update(16); sm.update(1200);
+  assert.deepEqual(played.at(-1), ['preen', { once: true }], 'fidget after "every" seconds');
+  sm.ended();
+  assert.equal(sm.node, 'idle');
+  assert.deepEqual(played.at(-1)[0], 'idle');
+});

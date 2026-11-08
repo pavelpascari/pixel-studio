@@ -1,0 +1,43 @@
+{
+  "name": "chibi",
+  "description": "Front-facing chibi biped (big head, short legs), walking toward the viewer. The hips shift over the standing foot, the lifted leg foreshortens as its knee comes toward you, arms swing as pendulums, the head stays level.",
+  "size": [100, 100],
+  "bones": [
+    {"id": "body", "from": [50, 73], "to": [50, 52], "z": 2},
+    {"id": "legL", "parent": "body", "from": [44, 73], "to": [44, 86], "z": 1},
+    {"id": "footL", "parent": "legL", "from": [44, 86], "to": [44, 92], "z": 1},
+    {"id": "legR", "parent": "body", "from": [56, 73], "to": [56, 86], "z": 0},
+    {"id": "footR", "parent": "legR", "from": [56, 86], "to": [56, 92], "z": 0},
+    {"id": "armL", "parent": "body", "from": [37, 56], "to": [33, 70], "z": 6},
+    {"id": "armR", "parent": "body", "from": [63, 56], "to": [67, 70], "z": 5},
+    {"id": "head", "parent": "body", "from": [50, 51], "to": [50, 16], "z": 4}
+  ],
+  "rig": {
+    "view": "front",
+    "root": "body",
+    "legs": [
+      {"chain": ["legL", "footL"], "phase": 0},
+      {"chain": ["legR", "footR"], "phase": 0.5}
+    ],
+    "arms": [
+      {"chain": ["armL"], "phase": 0.5},
+      {"chain": ["armR"], "phase": 0}
+    ],
+    "head": "head"
+  },
+  "points": {
+    "head": {"part": "head", "at": "tip"},
+    "handL": {"part": "armL", "at": "tip"},
+    "handR": {"part": "armR", "at": "tip"}
+  },
+  "motions": {
+    "idle": {"model": "idle", "frames": 12, "fps": 8, "breathe": 0.6, "sway": 0.5, "head": {"steady": 0.6, "nod": 1.5}},
+    "walk": {"model": "gait", "frames": 8, "fps": 8, "duty": 0.6, "lift": 4, "bob": 1.2, "shift": 1.4, "rock": 2.5, "armSwing": 25, "head": {"steady": 0.7}},
+    "run": {"model": "gait", "frames": 8, "fps": 12, "duty": 0.4, "lift": 7, "bob": 2, "bounce": "spring", "crouch": 1, "shift": 0.8, "rock": 3, "armSwing": 45, "head": {"steady": 0.6}},
+    "jump": {"model": "jump", "frames": 10, "fps": 10, "loop": false, "dip": 4, "tuck": 4, "lean": 0, "head": {"steady": 0.6}},
+    "fall": {"model": "fall", "frames": 6, "fps": 10, "kick": 1.5, "wobble": 4, "armsUp": 120, "head": {"steady": 0.6}},
+    "sit": {"model": "sit", "frames": 12, "fps": 6, "lower": 9, "legsForward": 0, "legsUp": 4, "kick": 1.2, "breathe": 0.5, "head": {"steady": 0.6, "nod": 1.5}},
+    "duck": {"model": "idle", "frames": 8, "fps": 6, "crouch": 5, "breathe": 0.4, "head": {"steady": 0.8, "nod": 1}},
+    "peek": {"model": "idle", "frames": 12, "fps": 6, "breathe": 0.4, "sway": 1.2, "head": {"steady": 0.6, "nod": 2}}
+  }
+}

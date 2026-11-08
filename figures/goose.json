@@ -1,0 +1,53 @@
+{
+  "name": "goose",
+  "description": "Waterfowl, side view facing right. Short legs that bend backward at the ankle, webbed feet, a long two-part neck, a gaze that stays level while the body rocks.",
+  "size": [100, 100],
+  "bones": [
+    {"id": "body", "from": [44, 68], "to": [60, 60], "z": 3},
+    {"id": "tail", "parent": "body", "from": [27, 64], "to": [13, 55], "z": 2, "follow": {"freq": 2.4, "damping": 0.3, "amount": 0.8}},
+    {"id": "legFar", "parent": "body", "side": "far", "from": [46, 72], "to": [44, 81], "z": 1, "limits": [-60, 60]},
+    {"id": "shinFar", "parent": "legFar", "side": "far", "from": [44, 81], "to": [47, 89], "z": 1, "limits": [-70, 26]},
+    {"id": "footFar", "parent": "shinFar", "side": "far", "from": [47, 89], "to": [55, 90.5], "z": 1, "limits": [-60, 80]},
+    {"id": "legNear", "parent": "body", "from": [38, 72], "to": [36, 81], "z": 4, "limits": [-60, 60]},
+    {"id": "shinNear", "parent": "legNear", "from": [36, 81], "to": [39, 89], "z": 4, "limits": [-70, 26]},
+    {"id": "footNear", "parent": "shinNear", "from": [39, 89], "to": [47, 90.5], "z": 4, "limits": [-60, 80]},
+    {"id": "neck", "parent": "body", "from": [58, 58], "to": [60, 44], "z": 5, "limits": [-40, 40]},
+    {"id": "neckUp", "parent": "neck", "from": [60, 44], "to": [62, 30], "z": 5, "limits": [-40, 40]},
+    {"id": "head", "parent": "neckUp", "from": [62, 30], "to": [84, 26], "z": 6},
+    {"id": "jaw", "parent": "head", "from": [70, 29], "to": [82, 28], "z": 5},
+    {"id": "wing", "parent": "body", "from": [54, 60], "to": [22, 66], "z": 6, "follow": {"freq": 3.2, "damping": 0.35, "amount": 0.35, "max": 12}}
+  ],
+  "rig": {
+    "root": "body",
+    "legs": [
+      {"chain": ["legNear", "shinNear", "footNear"], "phase": 0},
+      {"chain": ["legFar", "shinFar", "footFar"], "phase": 0.5}
+    ],
+    "neck": ["neck", "neckUp"],
+    "head": "head",
+    "tail": ["tail"],
+    "wings": ["wing"]
+  },
+  "points": {
+    "beak": {"part": "head", "at": "tip"},
+    "head": {"part": "head", "at": "pivot"},
+    "tail": {"part": "tail", "at": "tip"}
+  },
+  "motions": {
+    "idle": {"model": "idle", "frames": 8, "fps": 6, "breathe": 0.7, "sway": 0.8, "tail": 3, "head": {"steady": 0.8, "look": 1.5, "nod": 3}},
+    "walk": {"model": "gait", "frames": 8, "fps": 10, "stride": 13, "duty": 0.62, "lift": 4, "bob": 1.2, "rock": 3, "toeCurl": 35, "tail": 3,
+             "head": {"steady": 0.6, "nod": 2}},
+    "run": {"model": "gait", "frames": 6, "fps": 12, "stride": 16, "duty": 0.42, "lift": 6, "bob": 2, "bounce": "spring", "lean": 8, "toeCurl": 45, "tail": 5,
+            "head": {"steady": 0.4, "offset": [5, 6], "tilt": 8}},
+    "sneak": {"model": "gait", "frames": 8, "fps": 7, "stride": 9, "duty": 0.7, "lift": 5, "crouch": 3, "lean": 4, "toeCurl": 40,
+              "head": {"steady": 0.9, "offset": [8, 14], "tilt": 15}},
+    "jump": {"model": "jump", "frames": 10, "fps": 10, "loop": false, "dip": 5, "tuck": 4, "lean": 10, "flap": 50, "tail": 4},
+    "fall": {"model": "fall", "frames": 6, "fps": 10, "kick": 2, "wobble": 5, "flap": 45, "tail": 6, "head": {"steady": 0.7, "offset": [0, -2]}},
+    "sit": {"model": "sit", "frames": 12, "fps": 6, "lower": 9, "legsForward": 5, "legsUp": 5, "kick": 1.5, "breathe": 0.6, "tail": 3,
+            "phases": {"legNear": 0, "legFar": 0.5}, "head": {"steady": 0.8, "look": 1.5, "nod": 2}},
+    "duck": {"model": "idle", "frames": 8, "fps": 6, "crouch": 6, "breathe": 0.5, "tail": 2, "head": {"steady": 0.9, "offset": [2, 12], "tilt": 10, "look": 1}},
+    "peek": {"model": "idle", "frames": 12, "fps": 6, "crouch": -1, "breathe": 0.4, "head": {"steady": 0.9, "offset": [2, -5], "look": 3, "nod": 2}},
+    "climb": {"model": "climb", "frames": 8, "fps": 12, "stride": 9, "rise": 6, "duty": 0.55, "lift": 3, "wall": 3, "lean": -28, "footAim": -55, "flap": 45, "tail": 4,
+              "head": {"steady": 0.6}}
+  }
+}

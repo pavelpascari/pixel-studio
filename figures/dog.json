@@ -1,0 +1,57 @@
+{
+  "name": "dog",
+  "description": "Medium four-legged digitigrade (dog, fox, cat-ish), side view facing right. Hind legs: knee forward, hock back. Forelegs: elbow back. Walk is a lateral sequence, trot moves diagonal pairs; the back pitches with the legs.",
+  "size": [100, 100],
+  "bones": [
+    {"id": "body", "from": [34, 58], "to": [64, 55], "z": 3},
+    {"id": "tail", "parent": "body", "from": [30, 55], "to": [20, 47], "z": 2, "follow": {"freq": 2, "damping": 0.25, "amount": 1, "max": 30}},
+    {"id": "tail2", "parent": "tail", "from": [20, 47], "to": [11, 44], "z": 2, "follow": {"freq": 2.6, "damping": 0.3, "amount": 1, "max": 35}},
+    {"id": "thighHindFar", "parent": "body", "side": "far", "from": [35, 60], "to": [41, 71], "z": 1, "limits": [-60, 45]},
+    {"id": "shinHindFar", "parent": "thighHindFar", "side": "far", "from": [41, 71], "to": [35, 81], "z": 1, "limits": [-40, 35]},
+    {"id": "hockHindFar", "parent": "shinHindFar", "side": "far", "from": [35, 81], "to": [37, 89], "z": 1, "limits": [-35, 40]},
+    {"id": "pawHindFar", "parent": "hockHindFar", "side": "far", "from": [37, 89], "to": [41, 90.5], "z": 1, "limits": [-60, 90]},
+    {"id": "armForeFar", "parent": "body", "side": "far", "from": [64, 58], "to": [60, 69], "z": 1, "limits": [-55, 50]},
+    {"id": "forearmForeFar", "parent": "armForeFar", "side": "far", "from": [60, 69], "to": [61, 83], "z": 1, "limits": [-35, 20]},
+    {"id": "pasternForeFar", "parent": "forearmForeFar", "side": "far", "from": [61, 83], "to": [62, 89], "z": 1, "limits": [-70, 4]},
+    {"id": "pawForeFar", "parent": "pasternForeFar", "side": "far", "from": [62, 89], "to": [66, 90.5], "z": 1, "limits": [-60, 90]},
+    {"id": "thighHindNear", "parent": "body", "from": [33, 60], "to": [39, 71], "z": 4, "limits": [-60, 45]},
+    {"id": "shinHindNear", "parent": "thighHindNear", "from": [39, 71], "to": [33, 81], "z": 4, "limits": [-40, 35]},
+    {"id": "hockHindNear", "parent": "shinHindNear", "from": [33, 81], "to": [35, 89], "z": 4, "limits": [-35, 40]},
+    {"id": "pawHindNear", "parent": "hockHindNear", "from": [35, 89], "to": [39, 90.5], "z": 4, "limits": [-60, 90]},
+    {"id": "armForeNear", "parent": "body", "from": [62, 58], "to": [58, 69], "z": 4, "limits": [-55, 50]},
+    {"id": "forearmForeNear", "parent": "armForeNear", "from": [58, 69], "to": [59, 83], "z": 4, "limits": [-35, 20]},
+    {"id": "pasternForeNear", "parent": "forearmForeNear", "from": [59, 83], "to": [60, 89], "z": 4, "limits": [-70, 4]},
+    {"id": "pawForeNear", "parent": "pasternForeNear", "from": [60, 89], "to": [64, 90.5], "z": 4, "limits": [-60, 90]},
+    {"id": "neck", "parent": "body", "from": [63, 54], "to": [70, 41], "z": 5, "limits": [-35, 35]},
+    {"id": "head", "parent": "neck", "from": [70, 41], "to": [84, 45], "z": 6},
+    {"id": "jaw", "parent": "head", "from": [74, 46], "to": [83, 47], "z": 5},
+    {"id": "ear", "parent": "head", "from": [71, 37], "to": [69, 30], "z": 7, "follow": {"freq": 4, "damping": 0.3, "amount": 0.8, "max": 25}}
+  ],
+  "rig": {
+    "root": "body",
+    "legs": [
+      {"chain": ["thighHindNear", "shinHindNear", "hockHindNear", "pawHindNear"], "phase": 0, "group": "hind"},
+      {"chain": ["armForeNear", "forearmForeNear", "pasternForeNear", "pawForeNear"], "phase": 0.25, "group": "fore"},
+      {"chain": ["thighHindFar", "shinHindFar", "hockHindFar", "pawHindFar"], "phase": 0.5, "group": "hind"},
+      {"chain": ["armForeFar", "forearmForeFar", "pasternForeFar", "pawForeFar"], "phase": 0.75, "group": "fore"}
+    ],
+    "neck": ["neck"],
+    "head": "head",
+    "tail": ["tail", "tail2"]
+  },
+  "points": {
+    "nose": {"part": "head", "at": "tip"},
+    "head": {"part": "head", "at": "pivot"},
+    "tail": {"part": "tail2", "at": "tip"}
+  },
+  "motions": {
+    "idle": {"model": "idle", "frames": 12, "fps": 8, "breathe": 0.6, "sway": 0.5, "tail": 6, "head": {"steady": 0.7, "look": 1.5, "nod": 3}},
+    "walk": {"model": "gait", "frames": 8, "fps": 8, "stride": 15, "duty": 0.65, "lift": 4, "bob": 1, "toeCurl": 30, "tail": 5, "head": {"steady": 0.5, "nod": 2}},
+    "trot": {"model": "gait", "frames": 8, "fps": 12, "stride": 17, "duty": 0.45, "lift": 6, "bob": 1.5, "bounce": "spring", "toeCurl": 45, "tail": 4,
+             "phases": {"thighHindNear": 0, "armForeFar": 0, "thighHindFar": 0.5, "armForeNear": 0.5}, "head": {"steady": 0.6}},
+    "jump": {"model": "jump", "frames": 10, "fps": 10, "loop": false, "dip": 5, "tuck": 5, "lean": -6, "tail": 6, "head": {"steady": 0.6}},
+    "fall": {"model": "fall", "frames": 6, "fps": 10, "kick": 2, "wobble": 4, "tail": 8, "head": {"steady": 0.6}},
+    "duck": {"model": "idle", "frames": 8, "fps": 6, "crouch": 5, "breathe": 0.4, "tail": 3, "head": {"steady": 0.9, "offset": [2, 8], "look": 1}},
+    "peek": {"model": "idle", "frames": 12, "fps": 6, "breathe": 0.4, "tail": 6, "head": {"steady": 0.9, "offset": [1, -4], "look": 2.5, "nod": 2}}
+  }
+}

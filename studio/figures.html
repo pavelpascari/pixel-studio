@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figures — Pixel Studio</title>
+<style>
+  :root { --bg: #17151f; --panel: #211e2c; --line: #3a3550; --text: #e9e6f2; --dim: #8d87a3; --accent: #ffcf4a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; }
+  header a { color: var(--dim); }
+  main { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 50px); }
+  aside { border-right: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+  aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 6px; }
+  .list { display: flex; flex-direction: column; gap: 4px; }
+  .list button { text-align: left; background: var(--panel); color: var(--text); border: 1px solid transparent; border-radius: 6px; padding: 7px 10px; cursor: pointer; font: inherit; }
+  .list button.on { border-color: var(--accent); }
+  .list button small { color: var(--dim); display: block; font-size: 11px; }
+  label { display: flex; gap: 8px; align-items: center; color: var(--dim); }
+  #stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 12px; }
+  canvas { background: #1d1a27; border-radius: 10px; max-width: 100%; }
+  #info { color: var(--dim); max-width: 760px; text-align: center; }
+  #info b { color: var(--text); font-weight: 600; }
+  code { background: var(--panel); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Figure library</h1>
+  <span style="color:var(--dim)">skeletons with realistic motion models: pick one, dress its bones in a spec</span>
+  <a href="./">← studio</a>
+</header>
+<main>
+  <aside>
+    <div><h2>Figure</h2><div class="list" id="figures"></div></div>
+    <div><h2>Motion</h2><div class="list" id="motions"></div></div>
+    <div>
+      <h2>View</h2>
+      <label><input type="checkbox" id="smooth" checked> smooth (between frames)</label>
+      <label><input type="checkbox" id="ground" checked> moving ground</label>
+      <label><input type="checkbox" id="trails" checked> foot trails</label>
+      <label><input type="checkbox" id="labels"> bone names</label>
+      <label><input type="checkbox" id="onion"> onion skin (all frames)</label>
+      <label>speed <input type="range" id="rate" min="0.1" max="1" step="0.05" value="1"> <span id="rateLabel">1×</span></label>
+    </div>
+  </aside>
+  <section id="stage">
+    <canvas id="cv" width="720" height="560"></canvas>
+    <div id="info"></div>
+  </section>
+</main>
+<script type="module">
+import { resolveSpec, compile, samplePoseAt, followOffsets, worldMatrices } from '../src/core/index.js';
+
+const FIGURES = ['goose', 'human', 'dog', 'chibi', 'blob'];
+const $ = (s) => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const state = { figure: null, compiled: null, anim: null, t0: performance.now(), scroll: 0, last: 0, trails: [] };
+const figs = {};
+
+async function loadFigure(name) {
+  figs[name] ??= await (await fetch(`../figures/${name}.json`, { cache: 'no-store' })).json();
+  return figs[name];
+}
+
+async function pick(name) {
+  const fig = await loadFigure(name);
+  const notes = [];
+  const spec = await resolveSpec({ figure: name }, { loadFigure, warn: (p, m) => notes.push(`${p}: ${m}`) });
+  state.figure = fig;
+  state.compiled = compile(spec);
+  state.notes = notes;
+  document.querySelectorAll('#figures button').forEach((b) => b.classList.toggle('on', b.dataset.name === name));
+  const names = Object.keys(state.compiled.animations);
+  $('#motions').replaceChildren(...names.map((n) => {
+    const m = fig.motions[n];
+    const b = document.createElement('button');
+    b.dataset.name = n;
+    const a = state.compiled.animations[n];
+    b.innerHTML = `${n}<small>${m.model} · ${a.frames}f @ ${a.fps}fps${a.speed ? ` · ${a.speed} u/s` : ''}</small>`;
+    b.onclick = () => play(n);
+    return b;
+  }));
+  play(names.includes(state.anim) ? state.anim : names.find((n) => n === 'walk') ?? names[0]);
+  history.replaceState(null, '', `#${name}`);
+}
+
+function play(name) {
+  state.anim = name;
+  state.trails = [];
+  document.querySelectorAll('#motions button').forEach((b) => b.classList.toggle('on', b.dataset.name === name));
+  const a = state.compiled.animations[name], f = state.figure;
+  $('#info').innerHTML = `<b>${f.name}</b> — ${f.description}<br>` +
+    `<code>{"figure": "${f.name.toLowerCase()}", "animations": {"${name}": {"motion": "${name}"}}}</code>` +
+    (a.speed ? `<br>move the sprite at <b>${a.speed} units/s</b> (${(a.speed / 100).toFixed(2)} × its height per second) and the feet do not slide` : '') +
+    (state.notes.length ? `<br><span style="color:#ff8d6c">${state.notes.join('<br>')}</span>` : '');
+}
+
+function poseAt(c, a, t) {
+  // t in [0,1): smooth playback interpolates follow-through between frames.
+  const pose = samplePoseAt(c, a, t);
+  const fo = followOffsets(c, a);
+  if (fo) {
+    const x = t * a.frames, i = Math.floor(x) % a.frames, j = (i + 1) % a.frames, k = x - Math.floor(x);
+    for (const [id, offs] of fo) pose.get(id).rot += offs[i] + (offs[j] - offs[i]) * k;
+  }
+  return pose;
+}
+
+function draw(now) {
+  requestAnimationFrame(draw);
+  const c = state.compiled;
+  if (!c) return;
+  const a = c.animations[state.anim];
+  const rate = Number($('#rate').value);
+  const dt = state.last ? Math.min(0.1, (now - state.last) / 1000) * rate : 0;
+  state.last = now;
+  state.clock = (state.clock ?? 0) + dt;
+  const dur = a.frames / a.fps;
+  let t = (state.clock / dur) % 1;
+  if (!$('#smooth').checked) t = Math.floor(t * a.frames) / a.frames;
+  state.scroll += (a.speed || 0) * dt;
+
+  const W = cv.width, H = cv.height, u = Math.min(W, H) / 100 * 0.95;
+  const ox = (W - 100 * u) / 2, oy = (H - 100 * u) / 2;
+  ctx.clearRect(0, 0, W, H);
+  const pose = poseAt(c, a, t);
+  const { world } = worldMatrices(c.parts, pose);
+  const P = (m, [x, y]) => [ox + (m[0] * x + m[2] * y + m[4]) * u, oy + (m[1] * x + m[3] * y + m[5]) * u];
+
+  // Ground: the line the rest-pose toes stand on, with ticks that scroll at the motion's speed.
+  const feet = c.parts.filter((p) => p.tip && !c.parts.some((q) => q.parent === p.id) && /foot|paw/i.test(p.id));
+  const groundY = feet.length ? Math.max(...feet.map((p) => p.tip[1])) : 92;
+  const gy = oy + groundY * u + 2;
+  ctx.strokeStyle = '#3a3550'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+  if ($('#ground').checked) {
+    const step = 10 * u, off = ((state.scroll * u) % step + step) % step;
+    ctx.strokeStyle = '#4a4466';
+    for (let x = -off; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x - 6, gy + 10); ctx.stroke(); }
+  }
+
+  // Foot trails in ground space: a planted foot leaves a dot that scrolls away with the ground.
+  if ($('#trails').checked) {
+    for (const p of feet) {
+      const [x, y] = P(world.get(p.id), p.tip);
+      state.trails.push({ x: x + state.scroll * u, y, far: c.parts.find((q) => q.id === p.id).shade < 0 });
+    }
+    if (state.trails.length > 600) state.trails.splice(0, state.trails.length - 600);
+    for (const d of state.trails) {
+      ctx.fillStyle = d.far ? 'rgba(120,200,255,.35)' : 'rgba(255,207,74,.45)';
+      ctx.fillRect(d.x - state.scroll * u - 1, d.y - 1, 2, 2);
+    }
+  }
+
+  if ($('#onion').checked) {
+    for (let f = 0; f < a.frames; f++) {
+      const w = worldMatrices(c.parts, poseAt(c, a, f / a.frames)).world;
+      ctx.globalAlpha = 0.18; drawBones(c, w, P, false); ctx.globalAlpha = 1;
+    }
+  }
+  drawBones(c, world, P, $('#labels').checked);
+  ctx.fillStyle = '#8d87a3'; ctx.font = '12px ui-monospace, monospace';
+  ctx.fillText(`${state.anim}  frame ${Math.floor(t * a.frames) + 1}/${a.frames}`, 12, 20);
+}
+
+// Bones: far side first, dimmed; dots at joints, lines along bones.
+function drawBones(c, world, P, labels) {
+  const bones = c.parts.filter((p) => p.tip).sort((p, q) => p.z - q.z);
+  for (const p of bones) {
+    const m = world.get(p.id), far = p.shade < 0;
+    const [x1, y1] = P(m, p.pivot), [x2, y2] = P(m, p.tip);
+    ctx.strokeStyle = far ? '#6d6788' : '#e9e6f2';
+    ctx.lineWidth = far ? 4 : 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.fillStyle = far ? '#9a7f2c' : '#ffcf4a';
+    ctx.beginPath(); ctx.arc(x1, y1, far ? 5 : 6, 0, Math.PI * 2); ctx.fill();
+    if (!c.parts.some((q) => q.parent === p.id)) { ctx.beginPath(); ctx.arc(x2, y2, 3.5, 0, Math.PI * 2); ctx.fill(); }
+    if (p.follow) { ctx.strokeStyle = 'rgba(120,200,255,.6)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x1, y1, 9, 0, Math.PI * 2); ctx.stroke(); }
+    if (labels) { ctx.fillStyle = 'rgba(233,230,242,.7)'; ctx.font = '11px ui-monospace, monospace'; ctx.fillText(p.id, (x1 + x2) / 2 + 6, (y1 + y2) / 2 - 4); }
+  }
+}
+
+$('#figures').replaceChildren(...FIGURES.map((n) => {
+  const b = document.createElement('button');
+  b.dataset.name = n; b.textContent = n; b.onclick = () => pick(n);
+  return b;
+}));
+$('#rate').oninput = () => { $('#rateLabel').textContent = `${$('#rate').value}×`; };
+pick(FIGURES.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'goose');
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>

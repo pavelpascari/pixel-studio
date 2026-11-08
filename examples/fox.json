@@ -1,0 +1,83 @@
+{
+  "name": "Ember the fox",
+  "figure": {
+    "use": "dog",
+    "bones": {
+      "tail":  {"from": [30, 59], "to": [25, 49], "follow": {"freq": 2.2, "damping": 0.35, "amount": 0.6, "max": 18}},
+      "tail2": {"from": [25, 49], "to": [18, 30], "follow": {"freq": 2.8, "damping": 0.35, "amount": 0.6, "max": 20}},
+      "neck":  {"from": [60, 57], "to": [64, 49]},
+      "head":  {"from": [64, 49], "to": [86, 52]},
+      "ear":   {"from": [73, 34], "to": [72, 15]}
+    }
+  },
+  "size": [100, 100],
+  "materials": {
+    "fur": {"color": "#e0702a", "texture": "fur", "textureStrength": 0.5},
+    "cream": {"color": "#f6e6cf", "texture": "fur", "textureStrength": 0.3},
+    "sock": {"color": "#3b2a2e"},
+    "eye": {"color": "#1c1630", "flat": true, "outline": false},
+    "nose": {"color": "#1c1630", "flat": true},
+    "glint": {"color": "#ffffff", "flat": true, "outline": false}
+  },
+  "parts": [
+    {"id": "body", "shapes": [
+      {"type": "ellipse", "cx": 46, "cy": 63, "rx": 21, "ry": 11, "material": "fur"},
+      {"type": "ellipse", "cx": 63, "cy": 64, "rx": 5, "ry": 8, "material": "cream"}
+    ]},
+    {"id": "tail", "shapes": [
+      {"type": "capsule", "x1": 30, "y1": 60, "x2": 25, "y2": 49, "r": 6, "r2": 8, "material": "fur"}
+    ]},
+    {"id": "tail2", "shapes": [
+      {"type": "ellipse", "cx": 23, "cy": 42, "rx": 10, "ry": 16, "rot": -25, "material": "fur"},
+      {"type": "ellipse", "cx": 18, "cy": 29, "rx": 6.5, "ry": 7.5, "rot": -30, "material": "cream"}
+    ]},
+
+    {"id": "thighHindFar", "shapes": [{"type": "capsule", "x1": 35, "y1": 60, "x2": 41, "y2": 71, "r": 5, "material": "fur"}]},
+    {"id": "shinHindFar", "shapes": [{"type": "capsule", "x1": 41, "y1": 71, "x2": 35, "y2": 81, "r": 3.6, "material": "fur"}]},
+    {"id": "hockHindFar", "shapes": [{"type": "capsule", "x1": 35, "y1": 81, "x2": 37, "y2": 89, "r": 3.1, "material": "sock"}]},
+    {"id": "pawHindFar", "shapes": [{"type": "capsule", "x1": 37, "y1": 89.3, "x2": 41, "y2": 90.3, "r": 2.6, "material": "sock"}]},
+    {"id": "armForeFar", "shapes": [{"type": "capsule", "x1": 64, "y1": 58, "x2": 60, "y2": 69, "r": 4, "material": "fur"}]},
+    {"id": "forearmForeFar", "shapes": [{"type": "capsule", "x1": 60, "y1": 69, "x2": 61, "y2": 83, "r": 3.3, "material": "fur"}]},
+    {"id": "pasternForeFar", "shapes": [{"type": "capsule", "x1": 61, "y1": 83, "x2": 62, "y2": 89, "r": 3, "material": "sock"}]},
+    {"id": "pawForeFar", "shapes": [{"type": "capsule", "x1": 62, "y1": 89.3, "x2": 66, "y2": 90.3, "r": 2.6, "material": "sock"}]},
+
+    {"id": "thighHindNear", "shapes": [
+      {"type": "ellipse", "cx": 34, "cy": 65, "rx": 7, "ry": 8, "rot": -25, "material": "fur"},
+      {"type": "capsule", "x1": 33, "y1": 60, "x2": 39, "y2": 71, "r": 5, "material": "fur"}
+    ]},
+    {"id": "shinHindNear", "shapes": [{"type": "capsule", "x1": 39, "y1": 71, "x2": 33, "y2": 81, "r": 3.8, "material": "fur"}]},
+    {"id": "hockHindNear", "shapes": [{"type": "capsule", "x1": 33, "y1": 81, "x2": 35, "y2": 89, "r": 3.2, "material": "sock"}]},
+    {"id": "pawHindNear", "shapes": [{"type": "capsule", "x1": 35, "y1": 89.3, "x2": 39, "y2": 90.3, "r": 2.7, "material": "sock"}]},
+    {"id": "armForeNear", "shapes": [{"type": "capsule", "x1": 62, "y1": 58, "x2": 58, "y2": 69, "r": 4.2, "material": "fur"}]},
+    {"id": "forearmForeNear", "shapes": [{"type": "capsule", "x1": 58, "y1": 69, "x2": 59, "y2": 83, "r": 3.4, "material": "fur"}]},
+    {"id": "pasternForeNear", "shapes": [{"type": "capsule", "x1": 59, "y1": 83, "x2": 60, "y2": 89, "r": 3.1, "material": "sock"}]},
+    {"id": "pawForeNear", "shapes": [{"type": "capsule", "x1": 60, "y1": 89.3, "x2": 64, "y2": 90.3, "r": 2.7, "material": "sock"}]},
+
+    {"id": "neck", "shapes": [{"type": "capsule", "x1": 60, "y1": 57, "x2": 64, "y2": 49, "r": 7, "material": "fur"}]},
+    {"id": "head", "shapes": [
+      {"type": "polygon", "points": [[56, 38], [57, 16], [68, 32]], "r": 1.5, "material": "fur", "shade": -0.3},
+      {"type": "circle", "cx": 66, "cy": 44, "r": 14, "material": "fur"},
+      {"type": "polygon", "points": [[72, 42], [86, 50], [85, 54], [72, 55]], "r": 2, "material": "fur"},
+      {"type": "polygon", "points": [[56, 52], [68, 50], [86, 54], [78, 59], [60, 60]], "r": 2, "material": "cream"},
+      {"type": "circle", "cx": 86, "cy": 51, "r": 2.2, "material": "nose"}
+    ]},
+    {"id": "ear", "shapes": [
+      {"type": "polygon", "points": [[63, 34], [72, 14], [79, 35]], "r": 1.5, "material": "fur"},
+      {"type": "polygon", "points": [[69, 31], [72, 21], [75, 31]], "material": "cream", "minDetail": 3}
+    ]},
+    {"id": "eye", "bone": "head", "pivot": [72, 42], "shapes": [
+      {"type": "ellipse", "cx": 72, "cy": 42, "rx": 2.6, "ry": 3.6, "material": "eye"},
+      {"type": "circle", "cx": 72.8, "cy": 40.6, "r": 1, "material": "glint", "minDetail": 3}
+    ]}
+  ],
+  "animations": {
+    "idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}},
+    "walk": {"motion": "walk"},
+    "trot": {"motion": "trot"},
+    "jump": {"motion": "jump"},
+    "fall": {"motion": "fall"},
+    "duck": {"motion": "duck"},
+    "peek": {"motion": "peek"}
+  },
+  "style": {"outline": "selective", "light": -45, "contactShadow": false}
+}

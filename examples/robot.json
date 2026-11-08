@@ -1,0 +1,81 @@
+{
+  "name": "Bolt the robot",
+  "figure": {
+    "use": "chibi",
+    "bones": {
+      "body":  {"from": [50, 78], "to": [50, 54]},
+      "legL":  {"from": [43, 78], "to": [43, 86]},
+      "footL": {"from": [43, 86], "to": [43, 92]},
+      "legR":  {"from": [57, 78], "to": [57, 86]},
+      "footR": {"from": [57, 86], "to": [57, 92]},
+      "armL":  {"from": [35, 58], "to": [28, 72]},
+      "armR":  {"from": [65, 58], "to": [72, 72]},
+      "head":  {"from": [50, 52], "to": [50, 14]}
+    }
+  },
+  "size": [100, 100],
+  "materials": {
+    "metal": {"color": "#c3d0de", "texture": "metal", "shine": 0.9},
+    "dark": {"color": "#4f6a8a", "texture": "metal", "shine": 0.6},
+    "accent": {"color": "#ff7a59"},
+    "screen": {"color": "#1b2433", "flat": true},
+    "face": {"color": "#6ff3ff", "flat": true, "outline": false},
+    "glow": {"color": "#ffe066", "flat": true, "outline": false},
+    "halo": {"color": "#fff6c2", "flat": true, "outline": false}
+  },
+  "parts": [
+    {"id": "body", "shapes": [
+      {"type": "rect", "x": 34, "y": 54, "w": 32, "h": 25, "r": 6, "material": "metal"},
+      {"type": "rect", "x": 44, "y": 51, "w": 12, "h": 5, "r": 1, "material": "dark", "profile": "flat"},
+      {"type": "rect", "x": 44, "y": 60, "w": 12, "h": 10, "r": 2, "material": "accent", "profile": "none"},
+      {"type": "rect", "x": 39, "y": 72, "w": 22, "h": 3, "r": 1, "material": "dark", "profile": "flat", "minDetail": 2}
+    ]},
+    {"id": "legL", "shapes": [{"type": "rect", "x": 39, "y": 77, "w": 8, "h": 9, "r": 2, "material": "dark"}]},
+    {"id": "footL", "shapes": [{"type": "rect", "x": 36, "y": 85, "w": 13, "h": 7, "r": 3, "material": "metal"}]},
+    {"id": "legR", "z": 1, "shapes": [{"type": "rect", "x": 53, "y": 77, "w": 8, "h": 9, "r": 2, "material": "dark"}]},
+    {"id": "footR", "z": 1, "shapes": [{"type": "rect", "x": 51, "y": 85, "w": 13, "h": 7, "r": 3, "material": "metal"}]},
+    {"id": "armL", "z": 3, "shapes": [
+      {"type": "capsule", "x1": 35, "y1": 58, "x2": 28, "y2": 71, "r": 3.5, "material": "dark"},
+      {"type": "circle", "cx": 27, "cy": 73, "r": 4.5, "material": "accent"}
+    ]},
+    {"id": "armR", "z": 5, "shapes": [
+      {"type": "capsule", "x1": 65, "y1": 58, "x2": 72, "y2": 71, "r": 3.5, "material": "dark"},
+      {"type": "circle", "cx": 73, "cy": 73, "r": 4.5, "material": "accent"}
+    ]},
+    {"id": "head", "shapes": [
+      {"type": "rect", "x": 27, "y": 33, "w": 6, "h": 10, "r": 2, "material": "dark"},
+      {"type": "rect", "x": 67, "y": 33, "w": 6, "h": 10, "r": 2, "material": "dark"},
+      {"type": "rect", "x": 30, "y": 20, "w": 40, "h": 32, "r": 9, "material": "metal"},
+      {"type": "rect", "x": 35, "y": 26, "w": 30, "h": 20, "r": 5, "material": "screen", "profile": "none"}
+    ]},
+    {"id": "eyes", "bone": "head", "pivot": [50, 35], "z": 5, "shapes": [
+      {"type": "rect", "x": 40.625, "y": 30, "w": 6.25, "h": 9.375, "r": 2, "material": "face", "minDetail": 2},
+      {"type": "rect", "x": 53.125, "y": 30, "w": 6.25, "h": 9.375, "r": 2, "material": "face", "minDetail": 2},
+      {"type": "rect", "x": 37.5, "y": 31.25, "w": 6.25, "h": 6.25, "material": "face", "maxDetail": 1},
+      {"type": "rect", "x": 56.25, "y": 31.25, "w": 6.25, "h": 6.25, "material": "face", "maxDetail": 1},
+      {"type": "capsule", "x1": 47, "y1": 41.5, "x2": 53, "y2": 41.5, "r": 1, "material": "face", "minDetail": 3}
+    ]},
+    {"id": "antenna", "bone": "head", "pivot": [50, 21], "z": 3.9, "follow": {"freq": 2.2, "damping": 0.18, "amount": 1.6, "max": 25}, "shapes": [
+      {"type": "capsule", "x1": 50, "y1": 22, "x2": 50, "y2": 14, "r": 1.3, "material": "dark"}
+    ]},
+    {"id": "tip", "parent": "antenna", "pivot": [50, 10], "z": 5, "shapes": [
+      {"type": "circle", "cx": 50, "cy": 10, "r": 6.5, "material": "halo", "minDetail": 2},
+      {"type": "circle", "cx": 50, "cy": 10, "r": 4.2, "material": "glow"}
+    ]}
+  ],
+  "animations": {
+    "idle": {"motion": "idle", "breathe": 0.4, "tracks": {
+      "tip": {"sx": [1, 1.25, 1, 0.8], "sy": [1, 1.25, 1, 0.8]},
+      "eyes": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}
+    }},
+    "walk": {"motion": "walk", "lift": 3, "shift": 1.8, "rock": 3.5, "armSwing": 18, "head": {"steady": 0.4}},
+    "wave": {"motion": "pose", "frames": 8, "fps": 8, "tracks": {
+      "armR": {"rot": {"keys": [-115, -90, -115, -140], "ease": "smooth"}},
+      "head": {"rot": [0, 4, 6, 4, 0, -2, -3, -2]},
+      "body": {"y": {"wave": 1}},
+      "eyes": {"sy": [1, 1, 1, 1, 1, 1, 0.3, 1]},
+      "tip": {"sx": [1, 1.3, 1, 1.3, 1, 1.3, 1, 1.3], "sy": [1, 1.3, 1, 1.3, 1, 1.3, 1, 1.3]}
+    }}
+  },
+  "style": {"outline": "selective", "light": -45, "contactShadow": false}
+}

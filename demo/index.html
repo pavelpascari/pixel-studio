@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trailmark — demo site using &lt;pixel-sprite&gt;</title>
+  <script type="module" src="assets/pixel-sprite.js"></script>
+  <style>
+    :root { --ink: #231d2e; --muted: #6b6380; --paper: #fbf8f1; --card: #fff; --accent: #e8573f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--paper); }
+    a { color: var(--accent); }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+    nav { display: flex; align-items: center; gap: 10px; padding: 18px 0; font-weight: 700; }
+    nav pixel-sprite { margin-right: 2px; }
+    nav .links { margin-left: auto; display: flex; gap: 22px; font-weight: 500; font-size: 15px; }
+    nav .links a { color: var(--ink); text-decoration: none; }
+    .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; padding: 40px 0 56px; }
+    .hero h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.05; margin: 0 0 16px; letter-spacing: -0.02em; }
+    .hero p { color: var(--muted); font-size: 19px; margin: 0 0 24px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: #fff; border: 0; border-radius: 10px; padding: 12px 18px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .stage { position: relative; height: 340px; border-radius: 20px; overflow: hidden;
+      background: linear-gradient(#bfe7ff 0, #e9f7ff 62%, #a6d77f 62%, #8cc56a 100%); display: grid; place-items: end center; padding-bottom: 46px; }
+    .stage .cloud { position: absolute; background: #fff; border-radius: 40px; height: 22px; opacity: .9; }
+    .stage .tip { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font-size: 13px; color: #3b6d8a; }
+    .stage .crew { display: flex; align-items: flex-end; gap: 4px; }
+    section h2 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
+    section > .lede { color: var(--muted); margin: 0 0 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; padding-bottom: 56px; }
+    .card { background: var(--card); border-radius: 16px; padding: 22px; box-shadow: 0 1px 0 #ece6da, 0 8px 24px -16px rgba(35, 29, 46, .35); }
+    .card h3 { margin: 10px 0 4px; font-size: 18px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .lod { display: flex; align-items: flex-end; gap: 28px; flex-wrap: wrap; background: var(--card); border-radius: 16px; padding: 24px; margin-bottom: 56px; }
+    .lod figure { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+    .lod code { color: var(--ink); }
+    .inline-sprite { vertical-align: -6px; }
+    footer { padding: 28px 0 48px; color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #ece6da; }
+    @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+  .brains { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .brains label { margin-right: 12px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <pixel-sprite src="assets/pip.bundle.json" anim="idle" size="36" alt="Trailmark logo"></pixel-sprite>
+      Trailmark
+      <div class="links"><a href="#features">Features</a><a href="#lod">One asset, every size</a><a href="flock.html">🪿 The flock</a><a href="../studio/">Open the studio →</a></div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <h1>Plan small adventures with a tiny companion.</h1>
+        <p>This is a demo page. Every character on it is a single <code>&lt;pixel-sprite&gt;</code> tag that points at a bundle an agent drew. Hover the characters, click them.</p>
+        <a class="btn" href="../studio/">
+          <pixel-sprite src="assets/pip.bundle.json" anim="idle" size="28" hover-anim="walk" alt=""></pixel-sprite>
+          Start a trail
+        </a>
+      </div>
+      <div class="stage" aria-label="Hero scene">
+        <div class="cloud" style="width:90px; top:40px; left:30px"></div>
+        <div class="cloud" style="width:60px; top:70px; right:50px"></div>
+        <div class="tip">hover = walk · click = wave</div>
+        <div class="crew">
+          <pixel-sprite src="assets/fox.bundle.json" anim="idle" size="150" hover-anim="walk" alt="A fox"></pixel-sprite>
+          <pixel-sprite src="assets/pip.bundle.json" anim="idle" size="200" hover-anim="walk" click-anim="wave" alt="Pip the adventurer"></pixel-sprite>
+          <pixel-sprite src="assets/slime.bundle.json" anim="idle" size="110" click-anim="hop" alt="A slime"></pixel-sprite>
+        </div>
+      </div>
+    </header>
+
+    <section id="features">
+      <h2>Characters as UI</h2>
+      <p class="lede">Feature cards, empty states, loading indicators: the same component, different animations.</p>
+      <div class="cards">
+        <div class="card">
+          <pixel-sprite src="assets/robot.bundle.json" anim="idle" size="72" hover-anim="wave" alt="Robot"></pixel-sprite>
+          <h3>Auto-planning</h3><p>The robot waves when you hover the card's sprite.</p>
+        </div>
+        <div class="card">
+          <pixel-sprite src="assets/slime.bundle.json" anim="idle" size="72" click-anim="hop" alt="Slime"></pixel-sprite>
+          <h3>Offline maps</h3><p>Click the slime: a one-shot animation that returns to idle and fires <code>spriteend</code>.</p>
+        </div>
+        <div class="card">
+          <pixel-sprite src="assets/fox.bundle.json" anim="walk" size="72" alt="Fox"></pixel-sprite>
+          <h3>Trail buddies</h3><p>A looping walk cycle, paused automatically when scrolled off-screen.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="lod">
+      <h2>One asset, every size</h2>
+      <p class="lede">Each bundle carries 16, 32 and 64 px renders at different levels of detail. The component picks the one that fits, like <code>srcset</code>. It never scales a big sprite down.</p>
+      <div class="lod">
+        <figure><pixel-sprite src="assets/pip.bundle.json" anim="idle" size="24"></pixel-sprite><br><code>size=24</code> → 16px icon</figure>
+        <figure><pixel-sprite src="assets/pip.bundle.json" anim="idle" size="64"></pixel-sprite><br><code>size=64</code> → 32px sprite</figure>
+        <figure><pixel-sprite src="assets/pip.bundle.json" anim="idle" size="128"></pixel-sprite><br><code>size=128</code> → 64px portrait</figure>
+        <figure><pixel-sprite src="assets/pip.bundle.json" anim="idle" size="128" res="16"></pixel-sprite><br><code>res=16</code> forced (chunky look)</figure>
+      </div>
+      <p>Sprites can sit inline in text too
+        <pixel-sprite class="inline-sprite" src="assets/slime.bundle.json" anim="idle" size="24" alt=""></pixel-sprite>
+        like an emoji, using the 16px icon render.</p>
+    </section>
+
+    <section id="brains">
+      <h2>A character with a mind of its own</h2>
+      <p class="lede">This goose's bundle carries a small state machine and two extra skins. The page only sets a speed; the
+        character chooses idle, walk or run, switches gait without breaking stride, stops on a footstep, fidgets when bored,
+        hacks while you hover it and honks when clicked. <a href="stage.html">See characters living on a page →</a></p>
+      <div class="brains">
+        <pixel-sprite id="brainy" src="assets/goose-root.bundle.json" size="128" alt="root, a goose in a hoodie"></pixel-sprite>
+        <div>
+          <label>Speed <input id="speed" type="range" min="0" max="100" value="0"> <output id="speedOut">0</output></label><br>
+          <button id="honk">Honk</button>
+          <label>Skin <select id="skin"><option value="">default</option><option>party</option><option>redteam</option></select></label>
+          <p>State: <code id="node">idle</code> · last event: <code id="evt">–</code></p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <pixel-sprite src="assets/robot.bundle.json" anim="idle" size="40" alt=""></pixel-sprite>
+      Built with Pixel Studio PoC. Respects <code>prefers-reduced-motion</code>.
+    </footer>
+  </div>
+  <script type="module">
+    // The state machine: the page sets inputs, the character does the choreography.
+    const brainy = document.getElementById('brainy');
+    document.getElementById('speed').oninput = (e) => { brainy.set('speed', Number(e.target.value)); document.getElementById('speedOut').value = e.target.value; };
+    document.getElementById('honk').onclick = () => brainy.fire('honk');
+    document.getElementById('skin').onchange = (e) => (e.target.value ? brainy.setAttribute('skin', e.target.value) : brainy.removeAttribute('skin'));
+    brainy.addEventListener('statechange', (e) => { document.getElementById('node').textContent = e.detail.to; });
+    brainy.addEventListener('spriteevent', (e) => { document.getElementById('evt').textContent = `${e.detail.name} (${e.detail.anim} frame ${e.detail.frame})`; });
+
+    // Example of the JS API: log one-shot completions.
+    document.addEventListener('spriteend', (e) => {
+      if (e.target.localName === 'pixel-sprite') console.log('[pixel-sprite] finished', e.detail.anim);
+    });
+  </script>
+</body>
+</html>

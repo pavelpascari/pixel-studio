@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pixel Studio</title>
+  <link rel="stylesheet" href="studio.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 4' shape-rendering='crispEdges'><rect width='4' height='4' fill='%23ffcc4d'/><rect x='1' y='1' width='2' height='2' fill='%231b1424'/></svg>" />
+</head>
+<body>
+  <header class="bar">
+    <div class="brand"><span class="logo"></span>Pixel&nbsp;Studio <small>PoC</small></div>
+    <label class="field inline">Example
+      <select id="example"></select>
+    </label>
+    <a class="field inline" href="figures.html" style="color:inherit">Figures ↗</a>
+    <div class="spacer"></div>
+    <button id="btn-new" title="Start from a blank template">New</button>
+    <button id="btn-format" title="Pretty-print the JSON">Format</button>
+    <button id="btn-download-spec">Spec ⤓</button>
+    <button id="btn-download-png">Sheet PNG ⤓</button>
+    <button id="btn-export" class="primary">Export for web</button>
+  </header>
+
+  <main class="layout">
+    <!-- Left: authoring -->
+    <section class="panel left">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="spec" class="active">Spec</button>
+        <button role="tab" data-tab="agent">Agent</button>
+        <button role="tab" data-tab="brief">Brief</button>
+      </nav>
+      <div class="tab-body" data-tab-body="spec">
+        <textarea id="editor" spellcheck="false" autocomplete="off" aria-label="Character spec JSON"></textarea>
+      </div>
+      <div class="tab-body hidden" data-tab-body="agent">
+        <div class="agent">
+          <p class="hint">Claude writes the spec, the studio renders it, then the render goes back to Claude to critique and revise. Your key is stored only in this browser's localStorage and requests go straight to api.anthropic.com.</p>
+          <label class="field">API key <input id="api-key" type="password" placeholder="sk-ant-..." autocomplete="off" /></label>
+          <label class="field">Model
+            <select id="model">
+              <option value="claude-opus-5-5">Claude Opus 5.5</option>
+              <option value="claude-sonnet-5-5">Claude Sonnet 5.5</option>
+              <option value="claude-fable-5-1">Claude Fable 5.1</option>
+            </select>
+          </label>
+          <label class="field">Describe a character
+            <textarea id="prompt" rows="4">A tiny witch with a big floppy purple hat and a broom, side view facing right. Idle with a hat wobble and blink; a "cast" animation with sparkles.</textarea>
+          </label>
+          <div class="row">
+            <button id="btn-generate" class="primary">Generate</button>
+            <button id="btn-refine" title="Send the current render back to Claude for critique">Look &amp; refine</button>
+            <label class="field inline">rounds <input id="rounds" type="number" min="1" max="5" value="1" /></label>
+          </div>
+          <ol id="agent-log" class="log"></ol>
+        </div>
+      </div>
+      <div class="tab-body hidden" data-tab-body="brief">
+        <div class="brief">
+          <p class="hint">This is the agent brief: the spec format plus craft tips. It is the system prompt used by the Agent tab. Paste it into any LLM, or run <code>node bin/pixel.mjs brief</code>.</p>
+          <button id="btn-copy-brief">Copy brief</button>
+          <pre id="brief-text"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Center: stage -->
+    <section class="panel center">
+      <div class="stage-toolbar">
+        <div id="anim-chips" class="chips" role="radiogroup" aria-label="Animation"></div>
+        <div class="spacer"></div>
+        <button id="btn-play" title="Play / pause (space)">❚❚</button>
+        <input id="scrub" type="range" min="0" max="7" value="0" aria-label="Frame" />
+        <span id="frame-label" class="mono">0/0</span>
+        <select id="bg" aria-label="Background">
+          <option value="checker">checker</option>
+          <option value="dark">dark</option>
+          <option value="light">light</option>
+          <option value="sky">sky</option>
+        </select>
+        <label class="toggle"><input id="grid" type="checkbox" /> grid</label>
+        <label class="toggle"><input id="onion" type="checkbox" /> onion</label>
+        <label class="toggle" title="Show part pivots and reach targets"><input id="rig" type="checkbox" /> rig</label>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="view"></canvas>
+      </div>
+      <div class="lod-strip" id="lod-strip" aria-label="Same character at every level of detail"></div>
+    </section>
+
+    <!-- Right: render settings -->
+    <section class="panel right">
+      <h3>Resolution &amp; detail</h3>
+      <label class="field">Resolution <span class="mono" id="res-label"></span>
+        <input id="res" type="range" min="12" max="96" step="2" value="48" />
+      </label>
+      <label class="field">Detail level
+        <select id="lod">
+          <option value="">auto (from resolution)</option>
+          <option value="1">1 · icon</option>
+          <option value="2">2 · sprite</option>
+          <option value="3">3 · portrait</option>
+        </select>
+      </label>
+
+      <h3>Shading &amp; texture</h3>
+      <label class="field">Tones per material
+        <select id="tones"><option value="">preset</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+      </label>
+      <label class="field">Texture <span class="mono" id="texture-label">preset</span>
+        <input id="texture" type="range" min="-0.05" max="1.5" step="0.05" value="-0.05" />
+      </label>
+      <label class="field">Dither
+        <select id="dither"><option value="">preset</option><option value="true">on</option><option value="false">off</option></select>
+      </label>
+      <label class="field">Outline
+        <select id="outline"><option value="">preset</option><option>selective</option><option>dark</option><option>none</option></select>
+      </label>
+      <label class="field">Inner lines
+        <select id="innerLines"><option value="">preset</option><option value="true">on</option><option value="false">off</option></select>
+      </label>
+      <label class="field">Light direction <span class="mono" id="light-label"></span>
+        <input id="light" type="range" min="-180" max="180" step="15" value="-45" />
+      </label>
+      <label class="field">Ambient <span class="mono" id="ambient-label"></span>
+        <input id="ambient" type="range" min="-0.3" max="0.8" step="0.05" value="0.15" />
+      </label>
+      <label class="field">Curvature <span class="mono" id="curvature-label"></span>
+        <input id="curvature" type="range" min="0" max="1" step="0.05" value="0.8" />
+      </label>
+      <label class="toggle"><input id="flip" type="checkbox" /> flip horizontally</label>
+      <button id="btn-reset-style" class="ghost">Reset to preset</button>
+
+      <h3>Sprite sheet</h3>
+      <div class="sheet-wrap"><canvas id="sheet"></canvas></div>
+      <p id="stats" class="mono small"></p>
+
+      <h3>On a web page</h3>
+      <div class="webview" id="webview">
+        <p class="small">Live <code>&lt;pixel-sprite&gt;</code> — hover / click it.</p>
+        <div id="webview-slot"></div>
+        <div class="row small">
+          <label class="field inline">hover <select id="wv-hover"></select></label>
+          <label class="field inline">click <select id="wv-click"></select></label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status" id="status" aria-live="polite"></footer>
+
+  <dialog id="export-dialog">
+    <form method="dialog">
+      <h2>Export for the web</h2>
+      <label class="field">Resolutions in the bundle <input id="export-res" value="16,32,64" /></label>
+      <p class="small">The bundle holds one sprite sheet per resolution; <code>&lt;pixel-sprite&gt;</code> picks the one that fits the size it is displayed at, like <code>srcset</code>.</p>
+      <div class="row">
+        <button id="btn-export-bundle" value="none" class="primary">Download bundle.json</button>
+        <button id="btn-export-runtime" value="none">Download pixel-sprite.js</button>
+      </div>
+      <h3>Embed (bundle file)</h3>
+      <pre id="embed-src" class="code"></pre>
+      <h3>Embed (self-contained, inline)</h3>
+      <div class="row"><button id="btn-copy-inline" value="none">Copy inline snippet</button> <span id="inline-size" class="small mono"></span></div>
+      <div class="row end"><button value="close">Close</button></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

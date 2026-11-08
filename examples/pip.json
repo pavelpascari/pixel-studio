@@ -1,0 +1,74 @@
+{
+  "name": "Pip the adventurer",
+  "figure": "chibi",
+  "size": [100, 100],
+  "materials": {
+    "skin":    { "color": "#f2b58c" },
+    "hair":    { "color": "#7a4a2a", "texture": "fur" },
+    "tunic":   { "color": "#3f7f5f", "texture": "cloth" },
+    "scarf":   { "color": "#d2453b", "texture": "stripes", "textureStrength": 0.4 },
+    "leather": { "color": "#6b4429", "texture": "noise" },
+    "boots":   { "color": "#4a3328" },
+    "pants":   { "color": "#4b5d84", "texture": "cloth" },
+    "eye":     { "color": "#22182c", "flat": true },
+    "glint":   { "color": "#ffffff", "flat": true, "outline": false },
+    "blush":   { "color": "#ee8a86", "flat": true, "outline": false },
+    "mouth":   { "color": "#a8505a", "flat": true, "outline": false }
+  },
+  "parts": [
+    { "id": "body", "shapes": [
+      { "type": "rect", "x": 36, "y": 52, "w": 28, "h": 22, "r": 7, "material": "tunic" },
+      { "type": "rect", "x": 36, "y": 66, "w": 28, "h": 4, "r": 1, "material": "leather", "profile": "flat" },
+      { "type": "rect", "x": 48, "y": 66, "w": 4, "h": 4, "r": 0.5, "material": "glint", "minDetail": 2, "profile": "none" }
+    ]},
+    { "id": "legL", "shapes": [ { "type": "capsule", "x1": 44, "y1": 73, "x2": 44, "y2": 86, "r": 5, "material": "pants" } ]},
+    { "id": "footL", "shapes": [ { "type": "rect", "x": 38, "y": 84, "w": 12, "h": 8, "r": 3, "material": "boots" } ]},
+    { "id": "legR", "shade": -0.3, "shapes": [ { "type": "capsule", "x1": 56, "y1": 73, "x2": 56, "y2": 86, "r": 5, "material": "pants" } ]},
+    { "id": "footR", "shade": -0.3, "shapes": [ { "type": "rect", "x": 50, "y": 84, "w": 12, "h": 8, "r": 3, "material": "boots" } ]},
+    { "id": "armR", "z": 1, "shade": -0.35, "shapes": [
+      { "type": "capsule", "x1": 63, "y1": 56, "x2": 67, "y2": 68, "r": 4, "material": "tunic" },
+      { "type": "circle", "cx": 67, "cy": 70, "r": 4, "material": "skin" }
+    ]},
+    { "id": "head", "shapes": [
+      { "type": "circle", "cx": 50, "cy": 34, "r": 19, "material": "skin" },
+      { "type": "ellipse", "cx": 50, "cy": 25, "rx": 21, "ry": 13, "material": "hair" },
+      { "type": "polygon", "points": [[30, 26], [40, 33], [47, 27], [55, 33], [64, 27], [70, 30], [70, 20], [30, 20]], "material": "hair" },
+      { "type": "ellipse", "cx": 40, "cy": 44, "rx": 3, "ry": 1.5, "material": "blush", "minDetail": 2 },
+      { "type": "ellipse", "cx": 60, "cy": 44, "rx": 3, "ry": 1.5, "material": "blush", "minDetail": 2 },
+      { "type": "capsule", "x1": 48.5, "y1": 47, "x2": 51.5, "y2": 47, "r": 0.6, "material": "mouth", "minDetail": 3 }
+    ]},
+    { "id": "eyes", "bone": "head", "pivot": [50, 39], "z": 5, "shapes": [
+      { "type": "ellipse", "cx": 43, "cy": 39, "rx": 2.2, "ry": 3.2, "material": "eye" },
+      { "type": "ellipse", "cx": 57, "cy": 39, "rx": 2.2, "ry": 3.2, "material": "eye" },
+      { "type": "circle", "cx": 43.8, "cy": 37.8, "r": 0.9, "material": "glint", "minDetail": 3 },
+      { "type": "circle", "cx": 57.8, "cy": 37.8, "r": 0.9, "material": "glint", "minDetail": 3 }
+    ]},
+    { "id": "scarf", "bone": "body", "pivot": [50, 54], "z": 5, "shapes": [
+      { "type": "rect", "x": 37, "y": 50, "w": 26, "h": 6, "r": 3, "material": "scarf" }
+    ]},
+    { "id": "scarfTail", "bone": "body", "pivot": [43, 54], "z": 5.5, "follow": { "freq": 2.5, "damping": 0.25, "amount": 1.2, "max": 20 }, "shapes": [
+      { "type": "polygon", "points": [[40, 54], [46, 54], [44, 64], [38, 62]], "material": "scarf" }
+    ]},
+    { "id": "armL", "z": 6, "shapes": [
+      { "type": "capsule", "x1": 37, "y1": 56, "x2": 33, "y2": 68, "r": 4, "material": "tunic" },
+      { "type": "circle", "cx": 33, "cy": 70, "r": 4, "material": "skin" }
+    ]}
+  ],
+  "animations": {
+    "idle": { "motion": "idle", "tracks": {
+      "eyes": { "show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1] }
+    }},
+    "walk": { "motion": "walk" },
+    "run":  { "motion": "run" },
+    "wave": { "motion": "pose", "frames": 8, "fps": 8, "tracks": {
+      "armR": { "rot": { "keys": [-140, -115, -140, -165], "ease": "smooth" } },
+      "body": { "y": { "wave": 0.8 } },
+      "eyes": { "sy": [1, 1, 0.4, 0.4, 1, 1, 1, 1] }
+    }},
+    "jump": { "motion": "jump" },
+    "fall": { "motion": "fall" },
+    "sit":  { "motion": "sit" },
+    "duck": { "motion": "duck" },
+    "peek": { "motion": "peek", "tracks": { "eyes": { "show": [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1] } } }
+  }
+}

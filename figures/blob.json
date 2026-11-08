@@ -1,0 +1,19 @@
+{
+  "name": "blob",
+  "description": "A soft body with no bones to speak of (slime, jelly, ghost). It squashes and stretches but keeps its volume, its top jiggles behind the motion, and its shadow stays on the ground and shrinks as it rises.",
+  "size": [100, 100],
+  "bones": [
+    {"id": "shadow", "from": [50, 92], "to": [78, 92], "z": 0},
+    {"id": "body", "from": [50, 92], "to": [50, 42], "z": 1},
+    {"id": "top", "parent": "body", "from": [50, 52], "to": [50, 31], "z": 1.5, "follow": {"freq": 3, "damping": 0.22, "amount": 1.3, "max": 25}}
+  ],
+  "rig": {"root": "body", "shadow": "shadow"},
+  "points": {"top": {"part": "top", "at": "tip"}},
+  "motions": {
+    "idle": {"model": "idle", "frames": 12, "fps": 8, "pulse": 0.05, "rock": 1.5},
+    "hop": {"model": "hop", "frames": 12, "fps": 12, "duty": 0.42, "height": 18, "squash": 0.24, "stretch": 0.16, "lean": 2},
+    "travel": {"model": "hop", "frames": 12, "fps": 12, "duty": 0.42, "height": 14, "squash": 0.2, "stretch": 0.14, "stride": 20, "lean": 6},
+    "fall": {"model": "fall", "frames": 6, "fps": 10, "wobble": 6, "bob": 0},
+    "peek": {"model": "idle", "frames": 12, "fps": 8, "pulse": 0.08, "rock": 3}
+  }
+}

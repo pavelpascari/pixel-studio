@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pixel-sprite runtime checks</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; }
+  table { border-collapse: collapse; margin-top: 12px; }
+  td { border-top: 1px solid #ddd; padding: 2px 6px; vertical-align: top; font-size: 12px; }
+  .pass { color: #1a7f37; } .fail { color: #cf222e; font-weight: 600; }
+  #stage { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; min-height: 140px; }
+</style>
+</head>
+<body>
+<h1>&lt;pixel-sprite&gt; runtime checks</h1>
+<p>Open this page on any device (desktop, phone, tablet) to check playback there. <span id="env"></span></p>
+<p id="summary">running…</p>
+<table id="out"></table>
+<div id="stage">
+  <!-- In the HTML before the module runs, so these are upgraded (the double-load case). -->
+  <pixel-sprite id="upgraded" src="../../demo/assets/goose-root.bundle.json" anim="waddle" size="64"></pixel-sprite>
+  <pixel-sprite id="reserved" src="does-not-exist.bundle.json" size="24"></pixel-sprite>
+</div>
+
+<script>
+  // Errors that escape (shown at the top, for devices without a console at hand).
+  window.__errors = [];
+  addEventListener('error', (e) => window.__errors.push(String(e.message || e.error)));
+  addEventListener('unhandledrejection', (e) => window.__errors.push('rejection: ' + String(e.reason?.message || e.reason)));
+  // Count events on the upgraded element before the runtime is defined.
+  window.__readyCount = 0;
+  document.getElementById('upgraded').addEventListener('ready', () => window.__readyCount++);
+</script>
+<script type="module">
+import { clock } from '../../src/runtime/pixel-sprite.js';
+
+const GOOSE = '../../demo/assets/goose-root.bundle.json';
+const PIP = '../../demo/assets/pip.bundle.json';
+const stage = document.getElementById('stage');
+const out = document.getElementById('out');
+const results = [];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const once = (el, type) => new Promise((r) => el.addEventListener(type, r, { once: true }));
+const ready = (el) => (el.state === 'ready' ? Promise.resolve() : once(el, 'ready'));
+// Ready and actually playing (on screen): some browsers report visibility a little after a scroll.
+const playing = async (el) => { await ready(el); el.scrollIntoView({ block: 'center' }); for (let i = 0; i < 60 && !el._running; i++) await sleep(50); };
+function sprite(attrs) {
+  const el = document.createElement('pixel-sprite');
+  if (!('states' in attrs)) el.setAttribute('states', 'off');   // these checks drive animations by attribute
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  stage.append(el);
+  el.scrollIntoView({ block: 'nearest' });   // off-screen sprites pause, so keep the one under test visible
+  return el;
+}
+async function check(name, fn) {
+  let ok = false, note = '';
+  try { const r = await fn(); ok = r === true || (r && r.ok); note = (r && r.note) || ''; }
+  catch (e) { note = String(e && e.message || e); }
+  results.push({ name, ok, note });
+  const tr = out.insertRow();
+  tr.insertCell().textContent = ok ? 'pass' : 'FAIL';
+  tr.cells[0].className = ok ? 'pass' : 'fail';
+  tr.insertCell().textContent = name;
+  tr.insertCell().textContent = note;
+}
+
+document.getElementById('env').textContent = `devicePixelRatio ${devicePixelRatio}, ${matchMedia('(hover: hover)').matches ? 'hover' : 'no hover'}, ${matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced motion' : 'motion ok'}.`;
+
+await check('an upgraded element loads once', async () => {
+  const el = document.getElementById('upgraded');
+  await ready(el); await sleep(300);
+  return { ok: window.__readyCount === 1, note: `${window.__readyCount} ready event(s)` };
+});
+
+await check('the box is reserved from size before load and on error', async () => {
+  const el = document.getElementById('reserved');
+  if (el.state !== 'error') await once(el, 'error');
+  const r = el.getBoundingClientRect();
+  return { ok: Math.round(r.width) === 24 && Math.round(r.height) === 24 && el.state === 'error', note: `${r.width}×${r.height}, state ${el.state}` };
+});
+
+await check('a failed load fires error, and reload() fetches again', async () => {
+  const el = sprite({ src: 'missing.bundle.json', size: 32 });
+  const e1 = await once(el, 'error');
+  const second = once(el, 'error');
+  el.reload();
+  const e2 = await second;
+  return { ok: /HTTP 404/.test(e1.detail.error.message) && e2 !== e1, note: e1.detail.error.message };
+});
+
+await check('a wrong format fails with a clear error', async () => {
+  const el = document.createElement('pixel-sprite');
+  el.innerHTML = '<script type="application/json">{"format":"lottie"}<\/script>';
+  stage.append(el);
+  const e = el.state === 'error' ? null : await once(el, 'error');
+  return { ok: el.state === 'error' && /expected "pixel-sprite\/1"/.test(e?.detail.error.message), note: e?.detail.error.message };
+});
+
+await check('one throwing sprite does not freeze the others', async () => {
+  const bad = sprite({ src: GOOSE, anim: 'waddle', size: 64 });
+  const good = sprite({ src: GOOSE, anim: 'waddle', size: 64 });
+  await Promise.all([ready(bad), ready(good)]);
+  await playing(good);
+  const orig = console.error; console.error = () => {};
+  bad._advance = () => { throw new Error('boom'); };
+  await sleep(50);
+  let ticks = 0, dts = 0; const off = clock.add((dt) => { ticks++; dts += dt; });
+  // Count frame changes (comparing start and end frames can be fooled by a full loop).
+  let changes = 0, last = good.frame;
+  for (let i = 0; i < 24; i++) { await sleep(50); if (good.frame !== last) { changes++; last = good.frame; } }
+  off();
+  const f0 = 0, f1 = changes;
+  console.error = orig;
+  return { ok: changes >= 3 && bad.state === 'error', note: `good advanced ${changes} frames, bad state ${bad.state}, good vis=${good._visible} run=${good._running} ticks=${ticks} dtsum=${dts.toFixed(0)} acc=${good._acc?.toFixed(0)} y=${Math.round(good.getBoundingClientRect().top)}/${innerHeight}` };
+});
+
+await check('changing src mid-load: the last src wins', async () => {
+  const el = sprite({ src: GOOSE, size: 64 });
+  el.setAttribute('src', PIP);
+  await ready(el); await sleep(200);
+  return { ok: el.bundle.name === 'Pip' || /pip/i.test(el.bundle.name), note: `bundle "${el.bundle.name}", anim ${el.currentAnim}` };
+});
+
+await check('sprites with the same bundle share one decoded sheet', async () => {
+  const a = sprite({ src: GOOSE, size: 64 }), b = sprite({ src: GOOSE, size: 64 });
+  await Promise.all([ready(a), ready(b)]);
+  return { ok: a._img === b._img, note: a._img?.constructor.name };
+});
+
+await check('each sprite pixel is a whole number of device pixels', async () => {
+  const el = sprite({ src: GOOSE, size: 128 });
+  await ready(el);
+  const c = el.shadowRoot.querySelector('canvas');
+  const m = c.width / el._variant.frameW;
+  const cssW = parseFloat(c.style.width);
+  return { ok: Number.isInteger(m) && Math.abs(cssW * devicePixelRatio - c.width) < 0.01, note: `${m} device px per sprite px, ${cssW.toFixed(2)} CSS px wide at DPR ${devicePixelRatio}` };
+});
+
+await check('displaySize and pxPerSecond follow the displayed size', async () => {
+  const el = sprite({ src: GOOSE, size: 128, anim: 'waddle' });
+  await ready(el);
+  const v = el.pxPerSecond('waddle'), want = el.bundle.animations.waddle.speed * el.displaySize.height / 100;
+  return { ok: Math.abs(v - want) < 1e-9 && el.pxPerSecond('idle') === null, note: `${v.toFixed(1)} px/s at ${el.displaySize.height.toFixed(1)} px` };
+});
+
+await check('alt="" makes the sprite decorative', async () => {
+  const el = sprite({ src: GOOSE, size: 32, alt: '' });
+  await ready(el);
+  const named = sprite({ src: GOOSE, size: 32, alt: 'a goose' });
+  await ready(named);
+  return { ok: el.getAttribute('aria-hidden') === 'true' && !el.hasAttribute('role') && named.getAttribute('aria-label') === 'a goose' && named.getAttribute('role') === 'img',
+    note: `decorative: aria-hidden=${el.getAttribute('aria-hidden')}; named: ${named.getAttribute('aria-label')}` };
+});
+
+await check('touch: no hover flash; a tap plays the hover animation once', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'idle', 'hover-anim': 'hack' });
+  await ready(el);
+  const pe = (type) => new PointerEvent(type, { pointerType: 'touch', bubbles: type !== 'pointerenter' && type !== 'pointerleave' });
+  el.dispatchEvent(pe('pointerenter'));
+  const afterEnter = el.currentAnim;
+  el.dispatchEvent(pe('pointerdown')); el.dispatchEvent(pe('pointerleave'));
+  el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  const afterTap = el.currentAnim;
+  return { ok: afterEnter === 'idle' && afterTap === 'hack', note: `after touch enter: ${afterEnter}; after tap: ${afterTap}` };
+});
+
+await check('mouse: hover plays and leave returns, without restarting', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'idle', 'hover-anim': 'waddle' });
+  await playing(el);
+  el.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+  await sleep(350);
+  const f = el.frame;
+  el.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));   // re-enter: no restart
+  const same = el.frame === f && el.currentAnim === 'waddle';
+  el.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+  return { ok: same && f > 0 && el.currentAnim === 'idle', note: `frame ${f} kept on re-enter; now ${el.currentAnim}` };
+});
+
+await check('a one-shot fires spriteend and returns to the base animation', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'idle' });
+  await playing(el);
+  const a = el.bundle.animations.honk;
+  const t0 = performance.now();
+  el.play('honk', { once: true });
+  const e = await once(el, 'spriteend');
+  const ms = performance.now() - t0, want = a.durations ? a.durations.reduce((s, d) => s + d, 0) : (a.frames * 1000) / a.fps;
+  return { ok: e.detail.anim === 'honk' && el.currentAnim === 'idle' && Math.abs(ms - want) < 150, note: `${ms.toFixed(0)} ms (nominal ${want.toFixed(0)})` };
+});
+
+await check('the shared clock runs page code with the sprites\' dt', async () => {
+  const dts = [];
+  const off = clock.add((dt) => dts.push(dt));
+  await sleep(300); off();
+  return { ok: dts.length > 5 && dts.every((d) => d >= 0 && d <= clock.maxDt), note: `${dts.length} frames, mean dt ${(dts.reduce((a, b) => a + b, 0) / dts.length).toFixed(1)} ms` };
+});
+
+await check('footstep events fire on the touchdown frames while walking', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'waddle' });
+  await playing(el);
+  const seen = [];
+  el.addEventListener('spriteevent', (e) => seen.push(`${e.detail.frame}:${e.detail.name}:${e.detail.data?.leg}`));
+  await sleep(1700);
+  const want = el.bundle.animations.waddle.events.map((e) => `${e.frame}:${e.name}:${e.data.leg}`);
+  return { ok: seen.length >= 3 && seen.every((s) => want.includes(s)), note: seen.slice(0, 4).join(', ') };
+});
+
+await check('holds: a held frame stays up longer (durations)', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'idle' });
+  await playing(el);
+  const a = el.bundle.animations.honk;
+  const t0 = performance.now();
+  el.play('honk', { once: true });
+  let honkAt = 0;
+  el.addEventListener('spriteevent', (e) => { if (e.detail.name === 'honk') honkAt = performance.now() - t0; });
+  await once(el, 'spriteend');
+  const total = performance.now() - t0, want = a.durations.reduce((s, d) => s + d, 0);
+  return { ok: Array.isArray(a.durations) && Math.abs(total - want) < 150 && honkAt > 250, note: `${total.toFixed(0)} ms (durations sum ${want}); honk event at ${honkAt.toFixed(0)} ms; vis=${el._visible} y=${Math.round(el.getBoundingClientRect().top)}/${innerHeight}` };
+});
+
+await check('point(): the beak follows the head, mirrored with flip', async () => {
+  const el = sprite({ src: GOOSE, size: 128, anim: 'idle' });
+  await ready(el); el.pause();
+  const p = el.point('beak', { relative: true });
+  el.setAttribute('flip', '');
+  const q = el.point('beak', { relative: true });
+  const W = el.displaySize.width;
+  return { ok: p && p.x > W * 0.6 && Math.abs(q.x - (W - p.x)) < 0.01 && Math.abs(q.y - p.y) < 0.01 && el.point('nope') === null,
+    note: `beak at ${p.x.toFixed(1)}, ${p.y.toFixed(1)} px; flipped x ${q.x.toFixed(1)}` };
+});
+
+await check('groundOffset puts the foot line near the feet', async () => {
+  const el = sprite({ src: GOOSE, size: 128 });
+  await ready(el);
+  const g = el.groundOffset, h = el.displaySize.height;
+  return { ok: Math.abs(g - (el.bundle.ground / 100) * h) < 1e-9 && g > h * 0.85 && g < h, note: `${g.toFixed(1)} of ${h.toFixed(1)} px` };
+});
+
+await check('hitTest(): opaque body pixels hit, empty corners miss', async () => {
+  const el = sprite({ src: GOOSE, size: 128, anim: 'idle' });
+  await ready(el); el.pause();
+  const b = el.shadowRoot.querySelector('canvas').getBoundingClientRect();
+  const body = el.point('head');   // client coordinates of the head pivot (inside the neck)
+  return { ok: el.hitTest(body.x, body.y) && !el.hitTest(b.left + 2, b.top + 2) && !el.hitTest(b.left - 5, b.top), note: `head ${el.hitTest(body.x, body.y)}, corner ${el.hitTest(b.left + 2, b.top + 2)}` };
+});
+
+await check('state machine: speed picks the gait, stops on a footstep, a click honks and returns', async () => {
+  const el = sprite({ src: GOOSE, size: 64, states: 'on' });
+  await playing(el);
+  const seen = [];
+  el.addEventListener('statechange', (e) => seen.push(`${e.detail.from}>${e.detail.to}`));
+  el.set('speed', 30); await sleep(300);
+  el.set('speed', 90); await sleep(300);
+  el.set('speed', 0);
+  for (let i = 0; i < 40 && el.stateNode !== 'idle'; i++) await sleep(25);
+  el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  const honking = el.stateNode;
+  await once(el, 'spriteend'); await sleep(50);
+  return { ok: seen.join(' ') === 'idle>walk walk>run run>idle idle>honk honk>idle' && honking === 'honk' && el.stateNode === 'idle', note: seen.join(' ') };
+});
+
+await check('skins: the skin attribute swaps the sheet without restarting', async () => {
+  const el = sprite({ src: GOOSE, size: 64, anim: 'waddle' });
+  await playing(el);
+  const before = el._img;
+  await sleep(250);
+  const anim = el.currentAnim;
+  el.setAttribute('skin', 'party');
+  for (let i = 0; i < 40 && el._variant.skin !== 'party'; i++) await sleep(25);
+  const swapped = el._variant.skin === 'party' && el._img !== before && el.currentAnim === anim;
+  el.setAttribute('skin', 'nope');
+  await sleep(100);
+  return { ok: swapped && !el._variant.skin && el.bundle.skins.includes('party'), note: `skins ${el.bundle.skins}; unknown skin → default` };
+});
+
+const failed = results.filter((r) => !r.ok).length;
+scrollTo(0, 0);
+document.getElementById('summary').textContent = (failed ? results.filter((r) => !r.ok).map((r) => `FAIL ${r.name}: ${r.note}`).join(' • ') + ' • ' : '') +
+  (window.__errors.length ? `errors: ${window.__errors.slice(0, 4).join(' | ')} • ` : '');
+document.getElementById('summary').textContent += failed ? `${failed} of ${results.length} checks failed` : `all ${results.length} checks passed`;
+window.__results = results;
+</script>
+</body>
+</html>

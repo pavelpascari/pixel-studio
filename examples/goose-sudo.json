@@ -1,0 +1,45 @@
+{
+  "extends": "goose-base.json",
+  "name": "sudo (canada goose, loud)",
+  "materials": {
+    "feather": {"color": "#33313a", "textureStrength": 0.2},
+    "plumage": {"color": "#8f7a62", "textureStrength": 0.45},
+    "beak": {"color": "#4a4852", "shine": 0.4},
+    "leg": {"color": "#4a4852"},
+    "eye": {"color": "#f4efe4"},
+    "belly": {"color": "#e9e0cf", "texture": "fur", "textureStrength": 0.25},
+    "strap": {"color": "#f4efe4"},
+    "phones": {"color": "#ff4fa3", "shine": 0.5},
+    "band": {"color": "#2b2b33"},
+    "bandana": {"color": "#d8443a", "texture": "spots", "textureStrength": 0.5}
+  },
+  "parts": [
+    {"id": "body", "addShapes": [
+      {"type": "ellipse", "cx": 48, "cy": 73, "rx": 15, "ry": 6, "rot": -8, "material": "belly"}
+    ]},
+    {"id": "wing", "shade": -0.15},
+    {"id": "neck", "addShapes": [
+      {"type": "capsule", "x1": 53, "y1": 56, "x2": 64, "y2": 54, "r": 3, "material": "bandana"},
+      {"type": "polygon", "points": [[54, 55], [49, 63], [56, 58]], "r": 1, "material": "bandana"}
+    ]},
+    {"id": "head", "addShapes": [
+      {"type": "ellipse", "cx": 63, "cy": 29, "rx": 5, "ry": 3, "rot": -25, "material": "strap"}
+    ]},
+    {"id": "phones", "parent": "head", "pivot": [60, 22], "z": 7, "shapes": [
+      {"type": "capsule", "x1": 58, "y1": 23, "x2": 61, "y2": 15, "r": 1.4, "material": "band"},
+      {"type": "capsule", "x1": 61, "y1": 15, "x2": 69, "y2": 16, "r": 1.4, "material": "band"},
+      {"type": "ellipse", "cx": 57.5, "cy": 24, "rx": 3.4, "ry": 4.6, "material": "phones"}
+    ]}
+  ],
+  "animations": {
+    "headbang": {"motion": "pose", "frames": 8, "fps": 12, "tracks": {
+      "body": {"y": {"wave": 1.5, "cycles": 2, "shape": "bounce"}},
+      "neck": {"rot": [-6, 10, 22, 10, -6, 10, 22, 10]},
+      "neckUp": {"rot": [-4, 6, 14, 6, -4, 6, 14, 6]},
+      "head": {"rot": [8, 0, -10, 0, 8, 0, -10, 0]},
+      "jaw": {"rot": [0, 0, 14, 0, 0, 0, 14, 0]},
+      "wing": {"rot": [0, 6, 14, 6, 0, 6, 14, 6]},
+      "legNear": {"rot": [0, 0, 0, 0, 0, -14, 0, 0]}
+    }}
+  }
+}

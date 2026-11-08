@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Flock — unruly hacker geese</title>
+  <script type="module" src="assets/pixel-sprite.js"></script>
+  <style>
+    :root { --bg: #0f1412; --ink: #d6f5df; --muted: #6f8f7a; --green: #46ff7a; --pink: #ff4fa3; --grass: #1d3a26; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+    h1 { font-size: clamp(28px, 4.5vw, 46px); margin: 18px 0 4px; letter-spacing: -0.02em; }
+    h1 .cur { color: var(--green); animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .prompt { color: var(--muted); margin: 0; }
+    .prompt b { color: var(--green); font-weight: 500; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+    button { font: inherit; color: var(--bg); background: var(--green); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-weight: 700; }
+    button.ghost { background: transparent; color: var(--green); outline: 1px solid var(--green); }
+    .lawn { position: relative; height: 380px; border-radius: 14px; overflow: hidden;
+      background: radial-gradient(ellipse at 50% 120%, #2b5a37 0%, var(--grass) 55%, #13241a 100%); outline: 1px solid #23402d; }
+    .lawn::before { content: ""; position: absolute; inset: 0; opacity: .18; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent 0 3px, #000 3px 4px); }
+    .goose { position: absolute; cursor: pointer; will-change: transform; }
+    .goose pixel-sprite { display: block; }
+    .bubble { position: absolute; left: 50%; top: -6px; transform: translateX(-30%); pointer-events: none;
+      background: #fff; color: #111; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
+      opacity: 0; transition: opacity .15s; }
+    .bubble.on { opacity: 1; }
+    .log { height: 110px; overflow: hidden; margin-top: 14px; color: var(--muted); font-size: 13px; display: flex; flex-direction: column-reverse; }
+    .log div b { color: var(--green); font-weight: 500; }
+    h2 { margin: 44px 0 12px; font-size: 22px; }
+    .roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .card { background: #151d19; border: 1px solid #23402d; border-radius: 12px; padding: 14px; text-align: center; }
+    .card h3 { margin: 6px 0 2px; color: var(--green); font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .card small { display: block; margin-top: 8px; color: #4d6b57; font-size: 12px; }
+    footer { margin-top: 40px; color: #4d6b57; font-size: 13px; }
+    footer a { color: var(--green); }
+  </style>
+</head>
+<body>
+<main>
+  <p class="prompt">guest@pond:~$ <b>./release --flock --no-supervision</b></p>
+  <h1>The Flock<span class="cur">_</span></h1>
+  <p class="prompt">Four geese. Zero permissions. Click one to provoke it, or move your cursor onto the lawn and see who follows.</p>
+
+  <div class="controls">
+    <button id="honkAll">sudo honk --all</button>
+    <button id="scatter" class="ghost">scatter</button>
+  </div>
+
+  <div class="lawn" id="lawn"></div>
+  <div class="log" id="log"></div>
+
+  <h2>// roster</h2>
+  <div class="roster">
+    <div class="card">
+      <pixel-sprite src="assets/goose-root.bundle.json" anim="idle" size="128" hover-anim="hack" click-anim="honk" alt="root, a white goose in a hoodie and green shades"></pixel-sprite>
+      <h3>root</h3><p>Hoodie up, shades on. Pecks production servers for fun.</p><small>hover: hack · click: honk</small>
+    </div>
+    <div class="card">
+      <pixel-sprite src="assets/goose-sudo.bundle.json" anim="idle" size="128" hover-anim="headbang" click-anim="honk" alt="sudo, a Canada goose in pink headphones"></pixel-sprite>
+      <h3>sudo</h3><p>Canada goose. Loudest one on the pond. Never takes the headphones off.</p><small>hover: headbang · click: honk</small>
+    </div>
+    <div class="card">
+      <pixel-sprite src="assets/goose-phreak.bundle.json" anim="idle" size="128" hover-anim="sneak" click-anim="honk" alt="phreak, a grey goose in a ski mask"></pixel-sprite>
+      <h3>phreak</h3><p>Ski mask, stolen floppy. Nobody knows what's on it.</p><small>hover: sneak · click: honk</small>
+    </div>
+    <div class="card">
+      <pixel-sprite src="assets/goose-kiddie.bundle.json" anim="idle" size="128" hover-anim="flap" click-anim="honk" alt="kiddie, a yellow gosling in a backwards cap"></pixel-sprite>
+      <h3>kiddie</h3><p>Script kiddie. Can't fly yet. Tries anyway.</p><small>hover: flap · click: honk</small>
+    </div>
+  </div>
+
+  <footer>Every goose is a JSON rig drawn by the Pixel Studio engine and played by <code>&lt;pixel-sprite&gt;</code>. <a href="index.html">← back to the other demo</a></footer>
+</main>
+
+<script type="module">
+  // The runtime's shared clock: page movement and frame stepping get the same (clamped) dt.
+  import { clock } from './assets/pixel-sprite.js';
+  const lawn = document.getElementById('lawn');
+  const logEl = document.getElementById('log');
+  const SIZE = 128;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const FLOCK = [
+    { name: 'root',   walk: 'waddle', speed: 55, special: 'hack',     specialMs: 3200, lines: ['pwned the pond wifi', 'rm -rf /bread', 'honk.exe has stopped responding'] },
+    { name: 'sudo',   walk: 'waddle', speed: 65, special: 'headbang', specialMs: 2400, lines: ['HONK (with feeling)', 'turned it up to 11', 'denied your permission'] },
+    { name: 'phreak', walk: 'sneak',  speed: 30, special: 'sneak',    specialMs: 0,    lines: ['exfiltrated 1.44 MB', 'nobody saw that', 'dialing in at 56k'] },
+    { name: 'kiddie', walk: 'waddle', speed: 70, special: 'flap',     specialMs: 1600, lines: ['ran a script it found', 'almost flew (no)', 'peep'] },
+  ];
+
+  const log = (who, msg) => {
+    const d = document.createElement('div');
+    d.innerHTML = `[${new Date().toLocaleTimeString()}] <b></b> `;
+    d.querySelector('b').textContent = who;
+    d.append(msg);
+    logEl.prepend(d);
+    while (logEl.children.length > 8) logEl.lastChild.remove();
+  };
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+
+  const geese = FLOCK.map((g, i) => {
+    const el = document.createElement('div');
+    el.className = 'goose';
+    el.innerHTML = `<div class="bubble">HONK!</div>`;
+    const sprite = document.createElement('pixel-sprite');
+    sprite.setAttribute('src', `assets/goose-${g.name}.bundle.json`);
+    sprite.setAttribute('anim', 'idle');
+    sprite.setAttribute('size', SIZE);
+    sprite.setAttribute('alt', g.name);
+    sprite.setAttribute('states', 'off');   // this page chooses the animations itself
+    el.append(sprite);
+    lawn.append(el);
+    const st = { ...g, el, sprite, bubble: el.firstChild, x: 0, y: 0, dir: 1, mode: 'idle', until: 0, tx: 0, ty: 0 };
+    el.addEventListener('click', (e) => { e.stopPropagation(); honk(st, true); });
+    return st;
+  });
+
+  function layout() {
+    const W = lawn.clientWidth, H = lawn.clientHeight;
+    geese.forEach((g, i) => {
+      g.x = ((i + 0.5) / geese.length) * (W - SIZE);
+      g.y = rand(40, H - SIZE - 10);
+      g.dir = Math.random() < 0.5 ? 1 : -1;
+    });
+  }
+
+  function setAnim(g, name) {
+    if (g.sprite.getAttribute('anim') !== name) g.sprite.setAttribute('anim', name);
+    g.sprite.toggleAttribute('flip', g.dir < 0);
+  }
+
+  function choose(g, now) {
+    const W = lawn.clientWidth, H = lawn.clientHeight;
+    const r = Math.random();
+    if (r < 0.55) {
+      g.mode = 'walk';
+      g.tx = rand(0, W - SIZE); g.ty = rand(30, H - SIZE - 10);
+      g.until = now + 9000;
+    } else if (r < 0.8 && g.specialMs) {
+      g.mode = 'special'; g.until = now + g.specialMs; setAnim(g, g.special);
+      log(g.name, pick(g.lines));
+    } else {
+      g.mode = 'idle'; g.until = now + rand(900, 2600); setAnim(g, 'idle');
+    }
+  }
+
+  function honk(g, provoked) {
+    if (g.mode === 'honk') return;
+    g.mode = 'honk'; g.until = performance.now() + 1000;
+    g.sprite.play('honk', { once: true });
+    g.bubble.classList.add('on');
+    setTimeout(() => g.bubble.classList.remove('on'), 800);
+    log(g.name, provoked ? 'HONK!! (provoked)' : 'HONK');
+    // Unruly: honking is contagious.
+    if (provoked) geese.filter((o) => o !== g && Math.random() < 0.6)
+      .forEach((o) => setTimeout(() => honk(o, false), rand(150, 700)));
+  }
+
+  // The kiddie follows your cursor around the lawn.
+  let cursor = null;
+  lawn.addEventListener('pointermove', (e) => { const r = lawn.getBoundingClientRect(); cursor = { x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }; });
+  lawn.addEventListener('pointerleave', () => { cursor = null; });
+
+  function tick(dtMs, now) {
+    const dt = dtMs / 1000;
+    for (const g of geese) {
+      if (g.name === 'kiddie' && cursor && g.mode !== 'honk' && Math.hypot(cursor.x - (g.x + SIZE / 2), cursor.y - (g.y + SIZE * 0.8)) > 50) {
+        g.mode = 'walk'; g.tx = cursor.x - SIZE / 2; g.ty = Math.max(20, cursor.y - SIZE * 0.8); g.until = now + 2000;
+      }
+      if (g.mode === 'walk') {
+        const dx = g.tx - g.x, dy = g.ty - g.y, d = Math.hypot(dx, dy);
+        if (d < 3 || now > g.until) { choose(g, now); }
+        else {
+          if (Math.abs(dx) > 4) g.dir = dx > 0 ? 1 : -1;
+          // Gait: run when scattering or when the kiddie has fallen far behind the cursor.
+          const gait = now < (g.runUntil || 0) || (g.name === 'kiddie' && cursor && d > 170) ? 'run' : g.walk;
+          // Move at the animation's own speed (from the motion model, in px/s at the displayed size)
+          // so the feet do not slide.
+          const s = (g.sprite.pxPerSecond(gait) ?? g.speed) * dt;
+          g.x += (dx / d) * s; g.y += (dy / d) * s;
+          setAnim(g, gait);
+        }
+      } else if (now > g.until) choose(g, now);
+      // Snap to device pixels so the sprite's pixels stay aligned with the screen's.
+      const snap = (v) => Math.round(v * devicePixelRatio) / devicePixelRatio;
+      g.el.style.transform = `translate(${snap(g.x)}px, ${snap(g.y)}px)`;
+      const z = String(Math.round(g.y));
+      if (g.el.style.zIndex !== z) g.el.style.zIndex = z;
+    }
+  }
+
+  document.getElementById('honkAll').onclick = () => geese.forEach((g, i) => setTimeout(() => honk(g, false), i * 120));
+  document.getElementById('scatter').onclick = () => {
+    const W = lawn.clientWidth, H = lawn.clientHeight;
+    geese.forEach((g) => { g.mode = 'walk'; g.runUntil = performance.now() + 1800; g.tx = rand(0, W - SIZE); g.ty = rand(30, H - SIZE - 10); g.until = performance.now() + 6000; });
+    log('flock', 'scattered');
+  };
+
+  layout();
+  geese.forEach((g) => { g.el.style.transform = `translate(${g.x}px, ${g.y}px)`; });
+  // Run only while the lawn is on screen.
+  if (!reduced) new IntersectionObserver((es) => (es.at(-1).isIntersecting ? clock.add(tick) : clock.remove(tick))).observe(lawn);
+  else log('flock', 'reduced motion: the geese are pretending to behave');
+</script>
+</body>
+</html>

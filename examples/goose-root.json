@@ -1,0 +1,104 @@
+{
+  "extends": "goose-base.json",
+  "name": "root (hacker goose)",
+  "materials": {
+    "hoodie": {"color": "#4a5272", "texture": "cloth", "textureStrength": 0.4},
+    "string": {"color": "#d8d8e0"},
+    "shades": {"color": "#16161e", "flat": true, "shine": 0.6},
+    "lens": {"color": "#46ff7a", "flat": true, "outline": false},
+    "laptop": {"color": "#9aa0ad", "texture": "metal", "shine": 0.6},
+    "code": {"color": "#46ff7a", "flat": true, "outline": false},
+    "rack": {"color": "#4a5060", "texture": "metal", "textureStrength": 0.3},
+    "vent": {"color": "#262a33", "flat": true, "outline": false},
+    "ledG": {"color": "#46ff7a", "flat": true, "outline": false},
+    "ledR": {"color": "#ff4d5e", "flat": true, "outline": false}
+  },
+  "materialMap": {"plumage": "hoodie"},
+  "skins": {
+    "party": {
+      "materials": {"partyHat": {"color": "#ff5fa2", "texture": "stripes", "textureStrength": 0.5}, "pompom": {"color": "#ffd84a"}},
+      "parts": [{"id": "hat", "parent": "head", "pivot": [68, 19], "z": 8, "shapes": [
+        {"type": "polygon", "points": [[62.5, 20], [73.5, 20], [69, 6]], "material": "partyHat"},
+        {"type": "circle", "cx": 69, "cy": 6, "r": 2.4, "material": "pompom"}
+      ]}]
+    },
+    "redteam": {
+      "materials": {"hoodie": {"color": "#8e2b3a"}, "lens": {"color": "#ff4d5e"}, "code": {"color": "#ff4d5e"}}
+    }
+  },
+  "states": {
+    "initial": "idle",
+    "inputs": {"speed": 0, "honk": "trigger", "hovered": false},
+    "nodes": {
+      "idle": {"anim": "idle", "random": [{"anim": "hack", "every": [6, 12]}]},
+      "walk": {"anim": "waddle"},
+      "run": {"anim": "run"},
+      "honk": {"anim": "honk", "then": "previous"},
+      "hack": {"anim": "hack"}
+    },
+    "transitions": [
+      {"from": "*", "to": "honk", "when": "honk"},
+      {"from": ["idle", "hack"], "to": "walk", "when": "speed > 0 && speed <= 60"},
+      {"from": ["idle", "hack", "walk"], "to": "run", "when": "speed > 60", "at": "sync"},
+      {"from": "run", "to": "walk", "when": "speed > 0 && speed <= 60", "at": "sync"},
+      {"from": ["walk", "run"], "to": "idle", "when": "speed == 0", "at": "footstep"},
+      {"from": "idle", "to": "hack", "when": "hovered"},
+      {"from": "hack", "to": "idle", "when": "!hovered"}
+    ],
+    "interactions": [{"on": "click", "fire": "honk"}, {"on": "enter", "set": {"hovered": true}}, {"on": "leave", "set": {"hovered": false}}]
+  },
+  "parts": [
+    {"id": "eye", "remove": true},
+    {"id": "body", "addShapes": [
+      {"type": "ellipse", "cx": 51, "cy": 53, "rx": 9, "ry": 6.5, "rot": -25, "material": "hoodie", "shade": -0.2}
+    ]},
+    {"id": "neck", "addShapes": [
+      {"type": "capsule", "x1": 57, "y1": 58, "x2": 57, "y2": 68, "r": 0.6, "material": "string", "minDetail": 3},
+      {"type": "capsule", "x1": 62, "y1": 59, "x2": 62, "y2": 67, "r": 0.6, "material": "string", "minDetail": 3}
+    ]},
+    {"id": "glasses", "parent": "head", "pivot": [66, 22], "z": 7, "shapes": [
+      {"type": "rect", "x": 58, "y": 20, "w": 8, "h": 1.6, "material": "shades", "minDetail": 2},
+      {"type": "rect", "x": 64, "y": 19, "w": 9, "h": 5, "r": 1.2, "material": "shades", "minDetail": 2},
+      {"type": "rect", "x": 65.5, "y": 20.3, "w": 6, "h": 1.4, "material": "lens", "minDetail": 2},
+      {"type": "rect", "x": 62.5, "y": 18.75, "w": 12.5, "h": 6.25, "material": "lens", "maxDetail": 1}
+    ]},
+    {"id": "server", "pivot": [86, 92], "z": 2, "show": 0, "shapes": [
+      {"type": "rect", "x": 75, "y": 50, "w": 21, "h": 42, "r": 1, "material": "rack", "profile": "flat"},
+      {"type": "rect", "x": 78, "y": 56, "w": 15, "h": 1.5, "material": "vent", "minDetail": 2},
+      {"type": "rect", "x": 78, "y": 62, "w": 15, "h": 1.5, "material": "vent", "minDetail": 2},
+      {"type": "rect", "x": 78, "y": 76, "w": 15, "h": 1.5, "material": "vent", "minDetail": 3},
+      {"type": "rect", "x": 78, "y": 82, "w": 15, "h": 1.5, "material": "vent", "minDetail": 3}
+    ]},
+    {"id": "ledsA", "parent": "server", "pivot": [86, 70], "z": 3, "shapes": [
+      {"type": "rect", "x": 78.125, "y": 68.75, "w": 3.125, "h": 3.125, "material": "ledG"},
+      {"type": "rect", "x": 87.5, "y": 68.75, "w": 3.125, "h": 3.125, "material": "ledR"}
+    ]},
+    {"id": "ledsB", "parent": "server", "pivot": [86, 70], "z": 3, "shapes": [
+      {"type": "rect", "x": 81.25, "y": 68.75, "w": 3.125, "h": 3.125, "material": "ledG"},
+      {"type": "rect", "x": 90.625, "y": 68.75, "w": 3.125, "h": 3.125, "material": "ledG"}
+    ]},
+    {"id": "laptop", "parent": "server", "pivot": [86, 50], "z": 8, "shapes": [
+      {"type": "polygon", "points": [[74, 46.5], [93, 46.5], [95, 50], [73, 50]], "material": "laptop"},
+      {"type": "polygon", "points": [[92, 48], [96, 30], [99, 31], [95, 48]], "material": "laptop", "shade": -0.25},
+      {"type": "polygon", "points": [[91.6, 46], [95.4, 31], [96.6, 31.4], [92.8, 46]], "material": "code", "minDetail": 2}
+    ]}
+  ],
+  "animations": {
+    "hack": {"motion": "pose", "frames": 8, "fps": 10,
+      "tracks": {
+        "server": {"show": 1},
+        "ledsA": {"show": [1, 0, 1, 1, 0, 1, 0, 0]},
+        "ledsB": {"show": [0, 1, 1, 0, 1, 0, 0, 1]},
+        "body": {"rot": 3, "y": {"wave": 0.6, "cycles": 2}},
+        "jaw": {"rot": [0, 6, 0, 0, 8, 0, 0, 6]},
+        "wing": {"rot": {"wave": 3, "cycles": 4}}
+      },
+      "reach": [{
+        "chain": ["neck", "neckUp", "head"],
+        "tip": [84, 26],
+        "target": [[80, 83, 79, 84, 81, 83, 78, 84], [46.5, 44, 46.5, 43.5, 46.5, 44, 46.5, 43.5]],
+        "aim": [44, 36, 44, 34, 44, 36, 46, 34]
+      }]
+    }
+  }
+}

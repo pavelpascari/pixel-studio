@@ -1,0 +1,56 @@
+{
+  "name": "human",
+  "description": "Adult biped (about 7.5 heads tall), side view facing right. Knees bend forward, heels lift at toe-off, arms swing against the legs, the head stays level.",
+  "size": [100, 100],
+  "bones": [
+    {"id": "hips", "from": [50, 52], "to": [50, 47], "z": 3},
+    {"id": "spine", "parent": "hips", "from": [50, 48], "to": [52, 30], "z": 3},
+    {"id": "armFar", "parent": "spine", "side": "far", "from": [51, 31], "to": [50, 46], "z": 1},
+    {"id": "forearmFar", "parent": "armFar", "side": "far", "from": [50, 46], "to": [52, 58], "z": 1},
+    {"id": "handFar", "parent": "forearmFar", "side": "far", "from": [52, 58], "to": [53, 64], "z": 1},
+    {"id": "thighFar", "parent": "hips", "side": "far", "from": [50, 52], "to": [51, 72], "z": 2, "limits": [-85, 30]},
+    {"id": "shinFar", "parent": "thighFar", "side": "far", "from": [51, 72], "to": [49, 89], "z": 2, "limits": [-8, 130]},
+    {"id": "footFar", "parent": "shinFar", "side": "far", "from": [49, 89], "to": [56, 93.5], "z": 2, "limits": [-45, 60]},
+    {"id": "thighNear", "parent": "hips", "from": [50, 52], "to": [51, 72], "z": 4, "limits": [-85, 30]},
+    {"id": "shinNear", "parent": "thighNear", "from": [51, 72], "to": [49, 89], "z": 4, "limits": [-8, 130]},
+    {"id": "footNear", "parent": "shinNear", "from": [49, 89], "to": [56, 93.5], "z": 4, "limits": [-45, 60]},
+    {"id": "neck", "parent": "spine", "from": [52, 29], "to": [53, 23], "z": 3, "limits": [-30, 30]},
+    {"id": "head", "parent": "neck", "from": [53, 23], "to": [57, 12], "z": 5},
+    {"id": "armNear", "parent": "spine", "from": [51, 31], "to": [50, 46], "z": 6},
+    {"id": "forearmNear", "parent": "armNear", "from": [50, 46], "to": [52, 58], "z": 6},
+    {"id": "handNear", "parent": "forearmNear", "from": [52, 58], "to": [53, 64], "z": 6, "follow": {"freq": 4, "damping": 0.4, "amount": 0.4, "max": 15}}
+  ],
+  "rig": {
+    "root": "hips",
+    "legs": [
+      {"chain": ["thighNear", "shinNear", "footNear"], "phase": 0},
+      {"chain": ["thighFar", "shinFar", "footFar"], "phase": 0.5}
+    ],
+    "arms": [
+      {"chain": ["armNear", "forearmNear"], "phase": 0.5},
+      {"chain": ["armFar", "forearmFar"], "phase": 0}
+    ],
+    "neck": ["neck"],
+    "head": "head"
+  },
+  "points": {
+    "head": {"part": "head", "at": "tip"},
+    "handNear": {"part": "handNear", "at": "tip"},
+    "handFar": {"part": "handFar", "at": "tip"}
+  },
+  "motions": {
+    "idle": {"model": "idle", "frames": 12, "fps": 8, "breathe": 0.5, "sway": 0.7, "head": {"steady": 0.6, "look": 1, "nod": 2}},
+    "walk": {"model": "gait", "frames": 8, "fps": 8, "stride": 26, "duty": 0.6, "lift": 5, "bob": 1.5, "reach": 0.995, "toeOff": 25, "armSwing": 20, "elbow": 10,
+             "head": {"steady": 0.3}},
+    "run": {"model": "gait", "frames": 8, "fps": 12, "stride": 26, "duty": 0.38, "lift": 13, "bob": 2.5, "bounce": "spring", "crouch": 1.5, "lean": 9,
+            "toeOff": 30, "armSwing": 32, "elbow": 75, "head": {"steady": 0.3, "tilt": -6}},
+    "jump": {"model": "jump", "frames": 10, "fps": 10, "loop": false, "dip": 8, "tuck": 8, "lean": 8, "elbow": 20, "head": {"steady": 0.5}},
+    "fall": {"model": "fall", "frames": 6, "fps": 10, "kick": 3, "wobble": 4, "armsUp": 115, "elbow": 35, "head": {"steady": 0.6}},
+    "sit": {"model": "sit", "frames": 12, "fps": 6, "lower": 19, "legsForward": 20, "legsUp": 23, "kick": 2, "breathe": 0.4, "elbow": 30,
+            "phases": {"thighNear": 0, "thighFar": 0.5}, "head": {"steady": 0.6, "look": 1}},
+    "duck": {"model": "idle", "frames": 8, "fps": 6, "crouch": 10, "breathe": 0.4, "elbow": 40, "head": {"steady": 0.8, "offset": [3, 4], "look": 1}},
+    "peek": {"model": "idle", "frames": 12, "fps": 6, "breathe": 0.4, "head": {"steady": 0.8, "offset": [2, -1], "look": 2.5, "nod": 2}},
+    "climb": {"model": "climb", "frames": 8, "fps": 8, "stride": 12, "duty": 0.6, "lift": 4, "wall": 4, "lean": -6, "footAim": -50, "armReach": 150, "elbow": 20,
+              "head": {"steady": 0.5}}
+  }
+}

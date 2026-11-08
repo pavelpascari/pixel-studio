@@ -1,0 +1,43 @@
+{
+  "extends": "goose-base.json",
+  "name": "phreak (ski-mask goose)",
+  "materials": {
+    "feather": {"color": "#9a9284", "textureStrength": 0.4},
+    "plumage": {"color": "#9a9284"},
+    "mask": {"color": "#2c2b38", "texture": "cloth", "textureStrength": 0.6},
+    "eyewhite": {"color": "#f4f0e6", "flat": true, "outline": false},
+    "floppy": {"color": "#3a6fd8", "shine": 0.3},
+    "label": {"color": "#f2f2f2", "flat": true, "outline": false},
+    "shutter": {"color": "#b8bcc8", "flat": true}
+  },
+  "parts": [
+    {"id": "wing", "shade": -0.3},
+    {"id": "neckUp", "shapes": [
+      {"type": "capsule", "x1": 60, "y1": 44, "x2": 62, "y2": 30, "r": 5.8, "r2": 5, "material": "mask"}
+    ]},
+    {"id": "head", "shapes": [
+      {"type": "circle", "cx": 64, "cy": 25, "r": 8.5, "material": "mask"},
+      {"type": "polygon", "points": [[69, 21], [84, 26], [70, 29]], "r": 1.5, "material": "beak"}
+    ]},
+    {"id": "eye", "pivot": [63, 20], "shapes": [
+      {"type": "rect", "x": 56.25, "y": 17.1875, "w": 10.9375, "h": 4.6875, "r": 1, "material": "eyewhite"},
+      {"type": "rect", "x": 62.5, "y": 18.75, "w": 3.125, "h": 3.125, "material": "eye", "minDetail": 2}
+    ]},
+    {"id": "pompom", "parent": "head", "pivot": [60, 16], "z": 5, "shapes": [
+      {"type": "circle", "cx": 59, "cy": 15, "r": 3.2, "material": "mask", "shade": 0.15}
+    ]},
+    {"id": "disk", "parent": "head", "pivot": [80, 30], "z": 9, "show": 0, "shapes": [
+      {"type": "rect", "x": 72, "y": 27, "w": 12, "h": 12, "r": 0.5, "material": "floppy", "profile": "flat"},
+      {"type": "rect", "x": 74, "y": 33, "w": 8, "h": 5, "material": "label", "minDetail": 2},
+      {"type": "rect", "x": 75.5, "y": 27, "w": 5, "h": 4, "material": "shutter", "minDetail": 2}
+    ]}
+  ],
+  "animations": {
+    "idle": {"tracks": {"eye": null}},
+    "sneak": {"motion": "sneak", "tracks": {
+      "disk": {"show": 1},
+      "jaw": {"rot": 6},
+      "wing": {"rot": -4}
+    }}
+  }
+}
