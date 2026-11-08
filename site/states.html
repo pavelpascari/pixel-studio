@@ -35,22 +35,26 @@
     </template>
   </div>
   <p>Drag the speed up: the goose walks, then runs without restarting its stride. Drag it to zero: it stops on the next
-    footstep, feet together. Hover it: it hacks. Leave it alone: it fidgets now and then.</p>
+    footstep, feet together. Hover it: it hacks. Leave it alone: it fidgets now and then. Click it fast, again and again:
+    each quick click speeds up its honk, and from the fifth it panics; stop and it calms down.</p>
 
   <h3>The machine, as written in the spec</h3>
   <pre class="snippet" data-lang="json">
     "states": {
       "initial": "idle",
-      "inputs": {"speed": 0, "honk": "trigger", "hovered": false},
+      "inputs": {"speed": 0, "honk": "trigger", "hovered": false, "fury": 1},
       "nodes": {
         "idle": {"anim": "idle", "random": [{"anim": "hack", "every": [6, 12]}]},
         "walk": {"anim": "waddle"},
         "run":  {"anim": "run"},
-        "honk": {"anim": "honk", "then": "previous"},
+        "honk": {"anim": "honk", "then": "previous", "rate": "fury"},
+        "panic": {"anim": "run", "rate": "fury"},
         "hack": {"anim": "hack"}
       },
       "transitions": [
-        {"from": "*", "to": "honk", "when": "honk"},
+        {"from": ["idle", "walk", "run", "hack", "honk"], "to": "panic", "when": "fury >= 2"},
+        {"from": "panic", "to": "idle", "when": "fury < 2", "at": "footstep"},
+        {"from": ["idle", "walk", "run", "hack"], "to": "honk", "when": "honk"},
         {"from": ["idle", "hack"], "to": "walk", "when": "speed > 0 && speed <= 60"},
         {"from": ["idle", "hack", "walk"], "to": "run", "when": "speed > 60", "at": "sync"},
         {"from": "run", "to": "walk", "when": "speed > 0 && speed <= 60", "at": "sync"},
@@ -58,7 +62,10 @@
         {"from": "idle", "to": "hack", "when": "hovered"},
         {"from": "hack", "to": "idle", "when": "!hovered"}
       ],
-      "interactions": [{"on": "click", "fire": "honk"}, {"on": "enter", "set": {"hovered": true}}, {"on": "leave", "set": {"hovered": false}}]
+      "interactions": [
+        {"on": "click", "fire": "honk"}, {"on": "burst", "set": {"fury": "$rate"}}, {"on": "calm", "set": {"fury": 1}},
+        {"on": "enter", "set": {"hovered": true}}, {"on": "leave", "set": {"hovered": false}}
+      ]
     }
   </pre>
   <table>

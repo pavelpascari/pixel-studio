@@ -29,13 +29,16 @@
 // Stage attributes:  controls = bottom-right (default) | bottom-left | top-right | top-left | none
 //                    floor    = document (default: the bottom of the page) | none
 //                    roam     = viewport (default: prefer places on screen) | page
-// Actor attributes:  src, size (default 64), alt, start (selector to stand on first),
+// Actor attributes:  src, size (default 64), alt, start (selector to stand on first), keep-in-view (come
+//                    back when scrolled out of sight: run there, or drop in from the top of the screen),
 //                    behaviours (default "wander sit hide climb jump"), anims ("walk=waddle run=run ...")
-// JS:  stage.actors, stage.pause(), stage.resume(), stage.paused, stage.world.invalidate()
+// JS:  stage.actors, stage.pause(), stage.resume(), stage.paused, stage.world.invalidate(), stage.scrollSpeed;
+//      stage events 'fastscroll' {speed} and 'scrollsettle'
 //      actor.goTo(element | {x, y}, {then: 'sit' | 'hide' | 'idle'}), actor.hideBehind(el), actor.say(text, ms),
-//      actor.shoo(), actor.state; events on the actor: 'actorstate' {from, to}, 'land', 'arrive'
+//      actor.shoo(), actor.catchUp(), actor.state; events on the actor: 'actorstate' {from, to}, 'land', 'arrive',
+//      'burst' {count, rate} (rage taps: it panics) and 'calm', 'catchup'
 
-import { clock } from './pixel-sprite.js';
+import { clock, BurstDetector } from './pixel-sprite.js';
 
 const FLAGS = ['surface', 'climbable', 'perch', 'hide', 'occluder', 'avoid'];
 const SELECTOR = FLAGS.map((f) => `[data-pixel-${f}]`).join(',');
@@ -193,6 +196,7 @@ export class PixelStage extends Base {
     this._onRm = () => this._sync();
     this._rm.addEventListener?.('change', this._onRm);
     this._input();
+    this._scrolling();
     this._sync();
   }
 
@@ -200,6 +204,7 @@ export class PixelStage extends Base {
     clock.remove(this._tick);
     this.world.disconnect();
     this._rm?.removeEventListener?.('change', this._onRm);
+    this._unscroll?.();
     for (const [t, fn] of this._inputs || []) document.removeEventListener(t, fn, true);
   }
 
@@ -230,6 +235,32 @@ export class PixelStage extends Base {
     const s = Math.min(dt, 100) / 1000;
     for (const a of this.actors) if (a._ready) a._update(placeOnly ? 0 : s, w, placeOnly);
     for (const a of this.actors) if (a._ready) a._write(w);
+  }
+
+  // ----- scrolling: how fast the reader moves; actors that keep in view catch up when it settles -----
+  _scrolling() {
+    let lastY = scrollY, lastT = performance.now(), fast = false, timer = 0;
+    this.scrollSpeed = 0;
+    const settle = () => {
+      this.scrollSpeed = 0;
+      if (fast) { fast = false; this.dispatchEvent(new CustomEvent('scrollsettle')); }
+      for (const a of this.actors) a._checkInView?.(this.world, true);
+    };
+    const onScroll = () => {
+      const t = performance.now(), dt = Math.max(1, t - lastT);
+      const v = ((scrollY - lastY) / dt) * 1000;   // px/s, + is down
+      this.scrollSpeed = this.scrollSpeed * 0.6 + v * 0.4;
+      lastY = scrollY; lastT = t;
+      // "Fast" is more than a screen height and a half per second.
+      if (!fast && Math.abs(this.scrollSpeed) > innerHeight * 1.5) {
+        fast = true;
+        this.dispatchEvent(new CustomEvent('fastscroll', { detail: { speed: Math.round(this.scrollSpeed) } }));
+      }
+      clearTimeout(timer);
+      timer = setTimeout(settle, 160);
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+    this._unscroll = () => removeEventListener('scroll', onScroll);
   }
 
   // ----- input: tap or click a character to shoo it; never block other clicks -----
@@ -275,7 +306,10 @@ export class PixelStage extends Base {
       const a = hit(e);
       if (!a) return;
       swallow = performance.now() + 500;
-      a.shoo(local(e));
+      // Taps in quick succession are a burst (rage taps): the character panics instead.
+      const det = (a._bursts ??= new BurstDetector());
+      const b = det.hit(performance.now());
+      if (b.burst) a._rage({ ...b, min: det.min }, local(e)); else a.shoo(local(e));
     };
     const onClick = (e) => { if (performance.now() < swallow) { e.preventDefault(); e.stopPropagation(); swallow = 0; } };
     this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['click', onClick]];
@@ -339,7 +373,7 @@ export class PixelActor extends Base {
     const a = this.anims?.jump && this.sprite.bundle.animations[this.anims.jump];
     const launch = a?.events?.find((e) => e.name === 'launch')?.frame, land = a?.events?.find((e) => e.name === 'land')?.frame;
     if (launch == null || land == null) return null;
-    const ms = (f) => (a.durations ? a.durations[f] : 1000 / a.fps);
+    const ms = (f) => (a.durations ? a.durations[f] : 1000 / a.fps) / this.sprite.effectiveRate;
     let flight = 0, total = 0;
     for (let f = 0; f < a.frames; f++) { if (f >= launch && f < land) flight += ms(f); total += ms(f); }
     return { launch, land, flightMs: flight, totalMs: total };
@@ -393,10 +427,10 @@ export class PixelActor extends Base {
   }
 
   /** Startle: react, then run somewhere away from `from` (stage coordinates). */
-  shoo(from = { x: this.x, y: this.y }) {
+  shoo(from = { x: this.x, y: this.y }, { react = true } = {}) {
     const w = this.stage?.world;
     if (!w || !this._ready) return;
-    if (this._busy()) { this._pending = () => this.shoo(from); return; }
+    if (this._busy()) { this._pending = () => this.shoo(from, { react }); return; }
     this.facing = from.x > this.x ? -1 : 1;
     const away = w.platforms.filter((p) => p.y <= w.viewport().b + this.H && p.y >= w.viewport().t)
       .map((p) => ({ p, x: clampTo(p, from.x > this.x ? p.x1 + this.W : p.x2 - this.W, this.W) }))
@@ -405,12 +439,89 @@ export class PixelActor extends Base {
     for (const c of away.slice(0, 4)) {
       const path = this._route(c.p, c.x, w, true);
       if (path) {
-        this.plan = [...(this.anims.react ? [{ type: 'react' }] : []), ...path, { type: 'idle', ms: rand(800, 1600) }];
+        this.plan = [...(react && this.anims.react ? [{ type: 'react' }] : []), ...path, { type: 'idle', ms: rand(800, 1600) }];
         this._step = null;
         return;
       }
     }
   }
+
+  /**
+   * Rage taps: panic. The character plays faster (the burst's rate) and runs from the taps; a 'burst'
+   * event {count, rate} lets pages react. When the taps stop, a 'calm' event, and back to normal speed.
+   */
+  _rage(b, from) {
+    this.dispatchEvent(new CustomEvent('burst', { detail: { count: b.count, rate: b.rate } }));
+    this._boost(b.rate, 'rage');
+    if (this.anims.react && b.count % 3 === 0) this.say(['!!', 'HONK!!', '?!'][(b.count / 3) % 3 | 0], 700);
+    // Already panicking: keep running (re-planned away from the latest tap) rather than reacting again.
+    this.shoo(from, { react: b.count === b.min });
+    clearTimeout(this._calmTimer);
+    this._calmTimer = setTimeout(() => {
+      if (!this._bursts.calm(performance.now())) return;
+      this._boost(1, 'rage');
+      this.dispatchEvent(new CustomEvent('calm'));
+    }, this._bursts.gap + 20);
+  }
+
+  /** Temporary speed-ups by reason ('rage', 'catchup'); the largest wins. */
+  _boost(rate, why) {
+    (this._boosts ??= {})[why] = rate;
+    const r = Math.max(1, ...Object.values(this._boosts));
+    if (r === 1) this.sprite.removeAttribute('rate'); else this.sprite.setAttribute('rate', String(Math.round(r * 100) / 100));
+  }
+
+  /**
+   * keep-in-view: if the character has left the screen, come back. Close enough → run there at a
+   * boost (feet still planted); far → drop in from the top of the screen onto a visible surface.
+   * Checked a few times a second and whenever scrolling settles; never in the middle of a fast scroll.
+   */
+  _checkInView(w, settled = false) {
+    if (!this.hasAttribute('keep-in-view') || !this._ready || !this._placed || this._still || this._busy() || (this._catching ?? 0) > performance.now()) return;
+    const now = performance.now();
+    if (!settled && now - (this._lastViewCheck ?? 0) < 300) return;
+    this._lastViewCheck = now;
+    if (!settled && Math.abs(this.stage?.scrollSpeed ?? 0) > 50) return;   // let the reader finish scrolling
+    const vp = w.viewport(), m = this.H * 0.25;
+    const top = this.y - (this.sprite.groundOffset ?? this.H), out = this.y < vp.t + m || top > vp.b - m || this.x < vp.l || this.x > vp.r;
+    if (out) this.catchUp();
+  }
+
+  /** Come back into view now (see keep-in-view). Returns how: 'run', 'drop' or null. */
+  catchUp() {
+    const w = this.stage?.world;
+    if (!w || !this._ready) return null;
+    const vp = w.viewport();
+    const visible = w.platforms.filter((p) => p.y > vp.t + this.H && p.y < vp.b - 4 && Math.min(p.x2, vp.r) - Math.max(p.x1, vp.l) > this.W);
+    if (!visible.length) return null;
+    // The visible surface nearest to where the character is.
+    const near = (p) => Math.abs(p.y - this.y) + Math.abs(Math.max(p.x1, Math.min(p.x2, this.x)) - this.x);
+    const target = visible.sort((a, b) => near(a) - near(b))[0];
+    const x = clampTo(target, Math.max(vp.l + this.W, Math.min(vp.r - this.W, this.x)), this.W * 0.5);
+    this.dispatchEvent(new CustomEvent('catchup', { detail: { from: { x: this.x, y: this.y } } }));
+    this._catching = performance.now() + 10000;   // at most this long, even if the plan is abandoned
+    const done = () => { this._catching = 0; this._boost(1, 'catchup'); };
+    clearTimeout(this._catchTimer);
+    this._catchTimer = setTimeout(done, 10000);
+    const path = this.platform && near(target) < innerHeight * 1.2 ? this._route(target, x, w, true) : null;
+    if (path) {
+      this._boost(2.5, 'catchup');
+      this.plan = [...path, { type: 'call', fn: done }, { type: 'idle', ms: 800 }];
+      this._step = null;
+      return 'run';
+    }
+    // Too far to run: drop in from just above the top of the screen.
+    this.plan = [{ type: 'call', fn: done }];
+    this._step = null;
+    this.x = x;
+    this.y = vp.t - 4;
+    this.facing = x > (vp.l + vp.r) / 2 ? -1 : 1;
+    this._fall(0);
+    this._vy = this.H * 4;
+    return 'drop';
+  }
+
+  _do_call(st) { st.fn(); return true; }
 
   /** In the air, held, or on a wall: new orders wait until the character lands. */
   _busy() { return this.state === 'falling' || this.state === 'dragged' || ['jump', 'climb'].includes(this._step?.type); }
@@ -505,7 +616,8 @@ export class PixelActor extends Base {
 
   _speed(role) {
     const name = this.anims[role];
-    return (name && this.sprite.pxPerSecond(name)) || this.H * (role === 'run' ? 1.4 : 0.5);
+    // Faster playback (a boost, a burst) means proportionally faster movement: the feet stay planted.
+    return ((name && this.sprite.pxPerSecond(name)) || this.H * (role === 'run' ? 1.4 : 0.5)) * this.sprite.effectiveRate;
   }
 
   // ----- the brain: run the plan, or choose what to do next -----
@@ -515,6 +627,7 @@ export class PixelActor extends Base {
     if (this._sayUntil && performance.now() > this._sayUntil) { this._bubble.classList.remove('on'); this._sayUntil = 0; }
     if (placeOnly || this._still) return;
     if (this.state === 'dragged') return;
+    this._checkInView(w);
     if (this.state === 'falling') return this._fallStep(dt, w);
     // Riding a moving surface: carried along with it; off its end, fall.
     if (this.platform?.animated) {
@@ -555,7 +668,8 @@ export class PixelActor extends Base {
     const step = Math.min(Math.abs(dx), this._speed(role) * dt);
     this.x += this.facing * step;
     // Walked off the end of the platform: fall.
-    if (this.platform && (this.x < this.platform.x1 - 1 || this.x > this.platform.x2 + 1)) { this._fall(this.facing * this._speed(role) * 0.6); return true; }
+    // Walked off the end: drop, with only a little sideways speed so it lands where the route expects.
+    if (this.platform && (this.x < this.platform.x1 - 1 || this.x > this.platform.x2 + 1)) { this._fall(this.facing * Math.min(this._speed(role) * 0.6, this.W)); return true; }
     return false;
   }
 
@@ -609,7 +723,7 @@ export class PixelActor extends Base {
       this._setState('climbing');
     }
     this._play('climb');
-    this.y -= this.sprite.pxPerSecondY(this.anims.climb) * dt;
+    this.y -= this.sprite.pxPerSecondY(this.anims.climb) * this.sprite.effectiveRate * dt;
     if (this.y <= it.t + this.H * 0.15) {
       this.y = Math.max(this.y, it.t);
       // Over the top: hop onto it (or step on if there is no jump).
@@ -675,6 +789,7 @@ export class PixelActor extends Base {
   // ----- choosing what to do -----
 
   _choose(w) {
+    if (this._catching) { this._catching = 0; this._boost(1, 'catchup'); }   // a catch-up whose plan was abandoned
     const vp = w.viewport();
     const roamPage = this.stage?.getAttribute('roam') === 'page';
     const near = (p) => roamPage || (p.y > vp.t + this.H * 0.5 && p.y < vp.b + this.H);

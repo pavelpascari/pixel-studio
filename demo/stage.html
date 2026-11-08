@@ -35,6 +35,9 @@
   .crate { flex: 0 0 74px; height: 34px; border: 3px solid #5b3a24; border-radius: 4px;
     background: repeating-linear-gradient(90deg, #c08552 0 14px, #a8703f 14px 16px); position: relative; }
   .crate::after { content: ""; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 46%, #5b3a24 46% 54%, transparent 54%); }
+  .notes { margin-top: 64px; max-width: 640px; min-height: 900px; }
+  .notes p { margin: 0 0 18px; font-size: 18px; }
+  .groups.lower { margin-top: 40px; }
   .controls { margin-top: 48px; padding: 16px; border: 2px dashed #22212b55; border-radius: 12px; }
   .controls h2 { margin: 0 0 8px; font-size: 18px; }
   .controls button { margin: 4px 6px 4px 0; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--ink); background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
@@ -82,6 +85,27 @@
     </div>
   </div>
 
+  <section class="notes">
+    <h2>Trail notes</h2>
+    <p>Scroll down quickly: root the goose keeps you company (<code>keep-in-view</code>). If you get away, it runs to catch
+      up, or drops in from the top of the screen when you are too far. Tap a character several times quickly and it panics.</p>
+    <p>Spring brings mud to the lower paths; take the ridge after rain. The lakeside loop is flat and good for an evening.
+      Old forest is cool in summer, with long stretches of roots. Summit is short, steep and worth it at sunrise.</p>
+    <p>Pack water, a layer, and a snack for the goose (it will ask). Leave gates as you find them. Keep to the paths
+      where the ground is soft. Dogs on leads near the lake, please.</p>
+  </section>
+
+  <div class="groups lower">
+    <div class="group">
+      <div class="row">
+        <article class="card mid" data-pixel-surface data-pixel-climbable><h3>Valley</h3><p>Wide views, gentle.</p></article>
+        <article class="card low" data-pixel-surface data-pixel-perch><h3>Bridge</h3><p>Good for a rest.</p></article>
+        <article class="card tall" data-pixel-surface data-pixel-climbable><h3>Tower</h3><p>Steep stairs.</p></article>
+      </div>
+      <div class="shelf" data-pixel-surface></div>
+    </div>
+  </div>
+
   <section class="controls" id="controls">
     <h2>Script them</h2>
     <button id="hide">Goose: hide behind the crate</button>
@@ -96,7 +120,7 @@
 <footer>Characters by Pixel Studio. They live in a 0×0 layer that never blocks the page.</footer>
 
 <pixel-stage label="characters">
-  <pixel-actor id="goose" src="assets/goose-root.bundle.json" size="64" alt="root, a goose in a hoodie" start="#card-b"></pixel-actor>
+  <pixel-actor id="goose" src="assets/goose-root.bundle.json" size="64" alt="root, a goose in a hoodie" start="#card-b" keep-in-view></pixel-actor>
   <pixel-actor id="pip" src="assets/pip.bundle.json" size="56" alt="Pip" start="#card-c"></pixel-actor>
   <pixel-actor id="slime" src="assets/slime.bundle.json" size="44" alt="a slime" behaviours="wander hide" start="#card-d"></pixel-actor>
 </pixel-stage>
@@ -114,7 +138,12 @@
   };
   for (const a of document.querySelectorAll('pixel-actor')) {
     a.addEventListener('actorstate', (e) => log(a.id, e.detail.to));
+    a.addEventListener('burst', (e) => log(a.id, `rage taps ×${e.detail.count}: panicking at ${e.detail.rate.toFixed(2)}× speed`));
+    a.addEventListener('calm', () => log(a.id, 'calmed down'));
+    a.addEventListener('catchup', () => log(a.id, 'catching up with you'));
   }
+  const stageEl = document.querySelector('pixel-stage');
+  stageEl.addEventListener('fastscroll', (e) => { log('page', `fast scroll (${e.detail.speed} px/s)`); goose.say('wait for me!', 1200); });
   goose.sprite.addEventListener('spriteevent', (e) => { if (e.detail.name === 'honk') log('goose', 'HONK (event from the bundle)'); });
   $('#hide').onclick = () => log('goose', goose.hideBehind($('#crate')) ? 'heading for the crate' : 'cannot get there');
   $('#sit').onclick = () => log('goose', goose.goTo($('#card-d'), { then: 'sit' }) ? 'going to Summit' : 'cannot get there');

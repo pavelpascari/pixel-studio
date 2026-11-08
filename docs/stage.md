@@ -71,6 +71,7 @@ Layout tips, learned building the demo:
 |---|---|---|
 | `src`, `size`, `alt`, `skin` | `size` 64 | Passed to the inner `<pixel-sprite>`. |
 | `start` | a platform on screen | CSS selector of the element to stand on first. |
+| `keep-in-view` | off | Stay in sight: when the reader scrolls the character off-screen, it comes back once scrolling settles. Close by, it runs there at 2.5× speed (feet still planted); further away, it drops in from the top of the screen onto a visible surface. |
 | `behaviours` | `wander sit hide climb jump` | What it may choose to do on its own. Behaviours the bundle cannot do (no `climb` animation, …) are skipped. |
 | `anims` | automatic | Map roles to animation names when the defaults don't find them: `anims="walk=waddle run=gallop"`. |
 
@@ -98,11 +99,14 @@ stage.world.invalidate();                                          // after movi
 | `actor.goTo(element \| {x, y}, {then})` | Plan a route and go. `then`: `'idle'` (default) or `'sit'`. Returns false if there is no route. Orders given mid-jump, mid-climb or mid-fall wait until the character lands. |
 | `actor.hideBehind(element)` | Go behind a `data-pixel-hide` element. |
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
+| `actor.catchUp()` | Come back into view now, the way `keep-in-view` does. Returns `'run'`, `'drop'` or `null` (nothing visible to stand on). |
 | `actor.shoo(from?)` | React (`honk`, `wave`, …) and run to the farthest reachable place on screen. Tapping a character does this. |
 | `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`. |
 | `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
-| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`). |
+| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`. |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
+| `stage.scrollSpeed` | How fast the page is scrolling, px/s (+ down), smoothed. |
+| stage events | `fastscroll` `{speed}` when scrolling goes faster than 1.5 screen heights a second; `scrollsettle` when it stops. |
 
 The module also exports `World`, `PixelStage`, `PixelActor`, `jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
 
@@ -151,6 +155,20 @@ List them in the spec's animations, for example `"jump": {"motion": "jump"}`.
   against the character's opaque pixels (`hitTest`); only a tap on the character itself shoos it, and that one click does
   not reach the page.
 - **One clock.** Movement uses the same frame clock and `dt` as the sprites' frame stepping (see [runtime.md](runtime.md)).
+
+## Rage taps and fast scrolls
+
+- **Rage taps.** Three or more quick taps or clicks on a character (each within 450 ms of the last) are a burst: the
+  character panics. It plays and moves faster with every tap (1.35×, then +0.35 per tap, up to 3×), keeps running away
+  from the latest tap, and the actor fires `burst` `{count, rate}`. When the taps stop, it fires `calm` and slows down.
+  Movement always scales with the playback rate, so the feet stay planted at any speed.
+- **Fast scrolls.** The stage tracks scroll speed (`stage.scrollSpeed`) and fires `fastscroll` and `scrollsettle`.
+  Characters with `keep-in-view` wait for the scroll to settle, then catch up (see above).
+
+```js
+stage.addEventListener('fastscroll', () => goose.say('wait for me!'));
+goose.addEventListener('burst', (e) => { if (e.detail.count >= 8) goose.say('OK OK OK'); });
+```
 
 ## Phones, accessibility and performance
 

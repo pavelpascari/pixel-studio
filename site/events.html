@@ -113,6 +113,24 @@
     </template>
   </div>
 
+  <h2 id="bursts">Rage clicks</h2>
+  <p>Click a sprite three or more times in quick succession and it fires <code>spriteburst</code> with the count and a
+    suggested speed-up, then <code>spritecalm</code> when you stop. A playing click animation speeds up instead of restarting.
+    Hook your own reactions on it: an easter egg, a "calm down" message, a faster animation.</p>
+  <div class="demo" data-title="Click Pip fast">
+    <template>
+      <pixel-sprite id="rc-pip" src="../demo/assets/pip.bundle.json" anim="idle" size="128" click-anim="wave" alt="Pip"></pixel-sprite>
+      <div class="controls"><span class="readout" id="rc-out">click Pip several times quickly</span></div>
+      <script type="module">
+        const pip = document.getElementById('rc-pip'), out = document.getElementById('rc-out');
+        pip.addEventListener('spriteburst', (e) => (out.textContent = `burst ×${e.detail.count}: waving at ${pip.effectiveRate.toFixed(2)}× speed`));
+        pip.addEventListener('spritecalm', (e) => (out.textContent = `calm again after ${e.detail.count} clicks`));
+      </script>
+    </template>
+  </div>
+  <p>With a <a href="states.html">state machine</a>, <code>{"on": "burst", "set": {"fury": "$rate"}}</code> turns bursts
+    into an input; the goose on that page honks faster and then panics.</p>
+
   <h2 id="holds">Holding a frame</h2>
   <p>A spec's <code>"holds": {"3": 2}</code> shows frame 3 twice as long, for timing a key pose. Bundles carry per-frame
     <code>durations</code>; the goose's honk holds its loudest frame.</p>

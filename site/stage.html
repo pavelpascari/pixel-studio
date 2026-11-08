@@ -61,6 +61,19 @@
   <p>Tap or click a character to shoo it; with a mouse, drag one to pick it up and throw it. This page hides the stage's own pause button (<code>controls="none"</code>) and its
     floor; the <a href="../demo/stage.html">full demo page</a> has both.</p>
 
+  <h2 id="inview">Staying in sight</h2>
+  <p>Give a character <code>keep-in-view</code> and it follows the reader: after a scroll settles, it runs back if it is
+    close (at 2.5× speed, feet still planted), or drops in from the top of the screen onto a visible surface. The stage also
+    reports scroll speed, so a page can react to fast scrolling. Try it on the <a href="../demo/stage.html">demo page</a>,
+    which is long enough to scroll.</p>
+  <pre class="snippet" data-lang="js">
+    &lt;pixel-actor src="goose.bundle.json" size="64" keep-in-view&gt;&lt;/pixel-actor&gt;
+
+    stage.addEventListener('fastscroll', (e) => goose.say('wait for me!'));   // e.detail.speed in px/s
+    goose.addEventListener('catchup', () => console.log('coming back'));
+    goose.addEventListener('burst', (e) => console.log('rage taps', e.detail.count));   // tapping fast makes it panic
+  </pre>
+
   <h2 id="markup">Marking up your page</h2>
   <table>
     <tr><th>attribute</th><th>meaning</th></tr>

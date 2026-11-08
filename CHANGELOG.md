@@ -6,6 +6,14 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Rage clicks, playback rate, fast scrolls
+- `<pixel-sprite>`: bursts of quick clicks fire `spriteburst` {count, rate} and `spritecalm`; a burst speeds up a
+  playing click animation; a `rate` attribute (0.25..4) and `effectiveRate`; state machines get `burst`/`calm`
+  interactions (`$count`, `$rate`) and node rates from inputs. The goose honks faster with each quick click and panics.
+- `<pixel-stage>`: rage taps make a character panic (faster, fleeing) with `burst`/`calm` events; `fastscroll` and
+  `scrollsettle` events and `stage.scrollSpeed`; `keep-in-view` characters catch up after a scroll (run at 2.5×, or
+  drop in from the top of the screen); `actor.catchUp()`. Movement scales with playback rate everywhere.
+
 ### Stage
 - Drag and throw characters with a mouse or pen (touch keeps tap-to-shoo, so scrolling is never hijacked).
 - `data-pixel-surface="animated"`: moving surfaces are re-read every frame; characters ride them, and jumps onto them
@@ -46,7 +54,7 @@ Until 1.0, minor versions may change the spec format.
 - Added: bundle validation (`checkBundle`), decoded sheets shared between sprites (`ImageBitmap`), one shared
   `IntersectionObserver`, `fps` observed.
 - Changed: on touch screens `hover-anim` no longer flashes during a tap; a tap plays it once when there is no `click-anim`.
-- Added: `test/browser/runtime.html`, 22 in-browser checks to run on real devices (pass in Chromium, Firefox, WebKit and iOS Safari),
+- Added: `test/browser/runtime.html`, 24 in-browser checks to run on real devices (pass in Chromium, Firefox, WebKit and iOS Safari),
   and `scripts/browser-check.mjs`, which runs them and every docs-site page in Firefox and WebKit with Playwright
   (installed outside the project; no dependency).
 - Fixed: a one-shot started while off-screen never fired `spriteend`; it now ends on time, as under reduced motion.
