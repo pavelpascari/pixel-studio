@@ -12,6 +12,7 @@
 //
 // Page elements opt in with attributes:
 //   data-pixel-surface    its top edge is a platform characters can stand and walk on
+//                         (="animated": it moves by CSS animation/transform; read every frame, characters ride it)
 //   data-pixel-climbable  its left and right sides are walls (implies surface)
 //   data-pixel-perch      a favourite place to sit (implies surface)
 //   data-pixel-hide       a hiding spot: characters duck behind it and peek out (it must stand on a surface)
@@ -22,7 +23,7 @@
 // document's coordinates, so scrolling costs nothing. Element boxes are read only when something
 // changes (resize, DOM changes, fonts, transitions). Occlusion cuts the occluder's box out of the
 // character with clip-path. Tapping or clicking a character's opaque pixels shoos it away (that
-// click does not reach the page). A real button pauses all characters (WCAG 2.2.2) and remembers
+// click does not reach the page); with a mouse or pen, drag one to pick it up and throw it. A real button pauses all characters (WCAG 2.2.2) and remembers
 // the choice. With prefers-reduced-motion the characters stand still.
 //
 // Stage attributes:  controls = bottom-right (default) | bottom-left | top-right | top-left | none
@@ -103,16 +104,35 @@ export class World {
       this.items.push({
         el, l: r.left + scrollX - ox, t: r.top + scrollY - oy, r: r.right + scrollX - ox, b: r.bottom + scrollY - oy, radius,
         surface: has('surface') || has('climbable') || has('perch'), climbable: has('climbable'), perch: has('perch'),
+        animated: el.getAttribute('data-pixel-surface') === 'animated',
         hide: has('hide'), occluder: has('occluder'), avoid: has('avoid'),
       });
     }
     // Platforms: the top edge of each surface (off its rounded corners), plus the floor.
     this.platforms = this.items.filter((it) => it.surface && !it.avoid).map((it) => ({
-      el: it.el, item: it, x1: it.l + Math.min(it.radius, (it.r - it.l) / 4), x2: it.r - Math.min(it.radius, (it.r - it.l) / 4), y: it.t,
+      el: it.el, item: it, animated: it.animated, x1: it.l + Math.min(it.radius, (it.r - it.l) / 4), x2: it.r - Math.min(it.radius, (it.r - it.l) / 4), y: it.t,
     }));
     if ((this.stage.getAttribute('floor') ?? 'document') !== 'none') this.platforms.push({ el: null, floor: true, x1: 0, x2: this.width, y: this.height });
     this.dirty = false;
     this.version++;
+  }
+
+  /**
+   * Re-read only the elements marked data-pixel-surface="animated" (moved by CSS animations or
+   * transforms, which no observer reports), updating their items and platforms in place.
+   * Each platform's dx is how far it moved since the last frame.
+   */
+  readAnimated() {
+    const o = this.origin;
+    for (const p of this.platforms) {
+      if (!p.animated) continue;
+      const it = p.item, r = it.el.getBoundingClientRect();
+      const l = r.left + scrollX - o.x, t = r.top + scrollY - o.y;
+      p.dx = l - it.l;
+      it.l = l; it.r = r.right + scrollX - o.x; it.t = t; it.b = r.bottom + scrollY - o.y;
+      const inset = Math.min(it.radius, (it.r - it.l) / 4);
+      p.x1 = it.l + inset; p.x2 = it.r - inset; p.y = it.t;
+    }
   }
 
   /** The viewport in stage coordinates. */
@@ -205,6 +225,7 @@ export class PixelStage extends Base {
   tick(dt, placeOnly = false) {
     const w = this.world;
     if (w.dirty) { w.read(); for (const a of this.actors) a._worldChanged(w); }
+    else if (w.platforms.some((p) => p.animated)) w.readAnimated();
     for (const a of this.actors) if (a._ready && !a._placed) a._place(w);
     const s = Math.min(dt, 100) / 1000;
     for (const a of this.actors) if (a._ready) a._update(placeOnly ? 0 : s, w, placeOnly);
@@ -213,20 +234,52 @@ export class PixelStage extends Base {
 
   // ----- input: tap or click a character to shoo it; never block other clicks -----
   _input() {
-    let down = null, swallow = 0;
+    let down = null, drag = null, swallow = 0;
     const hit = (e) => this.actors.find((a) => a._ready && a._hit(e.clientX, e.clientY, this.world));
-    const onDown = (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; };
+    const local = (e) => ({ x: e.clientX + scrollX - this.world.origin.x, y: e.clientY + scrollY - this.world.origin.y });
+    const onDown = (e) => {
+      down = { x: e.clientX, y: e.clientY, t: performance.now() };
+      // Mouse and pen can pick a character up. Touch never does: a drag there must stay a scroll.
+      if (e.pointerType === 'touch' || e.button !== 0 || this._paused || reducedMotion()) return;
+      const a = hit(e);
+      if (!a) return;
+      e.preventDefault();   // no text selection or native drag while holding a character
+      const p = local(e);
+      drag = { a, id: e.pointerId, dx: a.x - p.x, dy: a.y - p.y, moved: false, track: [{ ...p, t: performance.now() }] };
+    };
+    const onMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const p = local(e);
+      if (!drag.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { drag.moved = true; drag.a._grab(); }
+      if (!drag.moved) return;
+      drag.track.push({ ...p, t: performance.now() });
+      if (drag.track.length > 6) drag.track.shift();
+      drag.a._dragTo(p.x + drag.dx, p.y + drag.dy);
+    };
     const onUp = (e) => {
+      if (drag && e.pointerId === drag.id) {
+        const d = drag;
+        drag = null;
+        if (d.moved) {
+          // Throw with the pointer's recent velocity (px/s), capped so it stays on the page.
+          const a0 = d.track[0], a1 = d.track[d.track.length - 1], dt = Math.max(16, a1.t - a0.t) / 1000;
+          const cap = d.a.H * 30;
+          const v = (k) => Math.max(-cap, Math.min(cap, (a1[k] - a0[k]) / dt));
+          d.a._throw(v('x'), v('y'));
+          swallow = performance.now() + 500;
+          return;
+        }
+      }
       if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12 || performance.now() - down.t > 600) return (down = null);
       down = null;
       const a = hit(e);
       if (!a) return;
       swallow = performance.now() + 500;
-      a.shoo({ x: e.clientX + scrollX - this.world.origin.x, y: e.clientY + scrollY - this.world.origin.y });
+      a.shoo(local(e));
     };
     const onClick = (e) => { if (performance.now() < swallow) { e.preventDefault(); e.stopPropagation(); swallow = 0; } };
-    this._inputs = [['pointerdown', onDown], ['pointerup', onUp], ['click', onClick]];
-    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t !== 'click' });
+    this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['click', onClick]];
+    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' });
   }
 }
 
@@ -359,15 +412,29 @@ export class PixelActor extends Base {
     }
   }
 
-  /** In the air or on a wall: new orders wait until the character lands. */
-  _busy() { return this.state === 'falling' || ['jump', 'climb'].includes(this._step?.type); }
+  /** In the air, held, or on a wall: new orders wait until the character lands. */
+  _busy() { return this.state === 'falling' || this.state === 'dragged' || ['jump', 'climb'].includes(this._step?.type); }
+
+  /** Picked up by the pointer: dangle (the fall animation) and follow it. */
+  _grab() {
+    this.plan = []; this._step = null; this.platform = null; this.behind.clear();
+    this._setState('dragged');
+    this._play('fall');
+  }
+  _dragTo(x, y) { this.x = x; this.y = y; }
+  /** Let go: fly with the throw's velocity and land on whatever is below. */
+  _throw(vx, vy) {
+    this._fall(vx);
+    this._vy = vy;
+    this.facing = vx < 0 ? -1 : 1;
+  }
 
   // ----- the body -----
 
   _worldChanged(w) {
     if (!this._ready) return;
     if (!this._placed) return this._place(w);
-    if (this.state === 'climbing' || this.state === 'jumping' || this.state === 'falling') return this._remap(w);
+    if (['climbing', 'jumping', 'falling', 'dragged'].includes(this.state)) return this._remap(w);
     // Stay on the same element; if it went away or moved from under us, fall.
     const p = this.platform && (this.platform.floor ? w.platformOf(null) : w.platformOf(this.platform.el));
     if (p && this.x >= p.x1 - 2 && this.x <= p.x2 + 2) { this.platform = p; this.y = p.y; }
@@ -447,7 +514,14 @@ export class PixelActor extends Base {
     if (!this._placed) return;
     if (this._sayUntil && performance.now() > this._sayUntil) { this._bubble.classList.remove('on'); this._sayUntil = 0; }
     if (placeOnly || this._still) return;
+    if (this.state === 'dragged') return;
     if (this.state === 'falling') return this._fallStep(dt, w);
+    // Riding a moving surface: carried along with it; off its end, fall.
+    if (this.platform?.animated) {
+      this.x += this.platform.dx ?? 0;
+      this.y = this.platform.y;
+      if (this.x < this.platform.x1 - 2 || this.x > this.platform.x2 + 2) { this._fall(0); return; }
+    }
     if (this._pending && !this._busy()) { const run = this._pending; this._pending = null; run(); }
     if (!this._step) {
       if (!this.plan.length) this._choose(w);
@@ -469,6 +543,7 @@ export class PixelActor extends Base {
   }
 
   _do_walk(st, dt, w) {
+    if (st.p?.animated && st.p === this.platform) st.x += st.p.dx ?? 0;   // the spot moves with its surface
     // Long way to go: run (at the run's own no-slide speed).
     if (!st.run && st.t === dt * 1000 && Math.abs(st.x - this.x) > this.W * 4 && this.anims.run) st.run = true;
     const role = st.run ? 'run' : 'walk';
@@ -488,27 +563,38 @@ export class PixelActor extends Base {
     const j = this._jumpTimes();
     if (!st.started) {
       st.started = true;
+      if (st.p.animated && st.rel != null) st.x = clampTo(st.p, st.p.x1 + st.rel, this.W * 0.2);   // it has moved since planning
       this.facing = st.x >= this.x ? 1 : -1;
       st.waitEnd = this._play('jump', { once: true });
       this._setState('jumping');
       const lift = Math.max(this.H * 0.3, 8);
       st.arc = jumpArc(this.x, this.y, st.x, st.p.y, lift, j.flightMs / 1000);
+      st.arc.y1 = st.p.y;
       st.x0 = this.x; st.y0 = this.y; st.air = 0;
       st.limit = j.totalMs + 800;
     }
     if (st.airborne && st.air < st.arc.T) {
+      st.x1L ??= st.p.x1;   // where the target surface was at launch (it may be moving)
       st.air = Math.min(st.arc.T, st.air + dt);
-      const t = st.air;
-      this.x = st.x0 + st.arc.vx * t;
-      this.y = st.y0 + st.arc.vy * t + (st.arc.g * t * t) / 2;
+      const t = st.air, drift = (st.p.x1 - st.x1L) * (t / st.arc.T);   // follow a moving target in the air
+      this.x = st.x0 + st.arc.vx * t + drift;
+      this.y = st.y0 + st.arc.vy * t + (st.arc.g * t * t) / 2 + (st.p.y - st.arc.y1) * (t / st.arc.T);
       this.platform = null;
-      if (t >= st.arc.T) { this.x = st.x; this.y = st.p.y; this.platform = st.p; this.dispatchEvent(new CustomEvent('land')); }
+      if (t >= st.arc.T) { this._land(st); this.dispatchEvent(new CustomEvent('land')); }
     }
     if (st.done || st.t > st.limit) {
-      this.x = st.x; this.y = st.p.y; this.platform = st.p;
+      this._land(st);
       return true;
     }
     return false;
+  }
+
+  /** Finish a jump on its target surface (where it is now, if it moved), on it. */
+  _land(st) {
+    const moved = st.x1L == null ? 0 : st.p.x1 - st.x1L;
+    this.x = clampTo(st.p, st.x + moved, 1);
+    this.y = st.p.y;
+    this.platform = st.p;
   }
 
   _do_climb(st, dt, w) {
@@ -571,7 +657,8 @@ export class PixelActor extends Base {
     this._play('fall');
     const y0 = this.y;
     this._vy = Math.min(vmax, this._vy + g * dt);
-    this.x += this._vx * dt;
+    this._vx *= Math.max(0, 1 - 0.8 * dt);   // a little air drag on throws
+    this.x = Math.max(this.W / 2, Math.min(w.width - this.W / 2, this.x + this._vx * dt));
     this.y += this._vy * dt;
     // Land on the first platform crossed from above (no tunnelling through thin cards).
     let land = null;
@@ -699,7 +786,7 @@ export class PixelActor extends Base {
     const steps = [];
     for (const l of hops) {
       if (l.kind === 'drop') steps.push({ type: 'walk', x: l.edge, run, p: l.from });
-      else if (l.kind === 'jump') steps.push({ type: 'walk', x: l.takeoff, run, p: l.from }, { type: 'jump', p: l.to, x: l.land });
+      else if (l.kind === 'jump') steps.push({ type: 'walk', x: l.takeoff, run, p: l.from }, { type: 'jump', p: l.to, x: l.land, rel: l.land - l.to.x1 });
       else if (l.kind === 'climb') steps.push({ type: 'walk', x: l.baseX, run, p: l.from }, { type: 'climb', item: l.item, side: l.side, p: l.to });
     }
     steps.push({ type: 'walk', x, run, p: dest });

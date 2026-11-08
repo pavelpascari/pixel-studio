@@ -6,6 +6,11 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Stage
+- Drag and throw characters with a mouse or pen (touch keeps tap-to-shoo, so scrolling is never hijacked).
+- `data-pixel-surface="animated"`: moving surfaces are re-read every frame; characters ride them, and jumps onto them
+  follow them in the air. The stage demo has a drifting cloud.
+
 ### Plug-ins
 - `registerShape`, `registerTexture`, `registerMotion` (and `usePlugin`, `registeredPlugins`): new shapes, textures
   and motion models validate, render and animate like built-ins, and `pixel brief` lists them. CLI `--plugin`.

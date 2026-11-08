@@ -20,6 +20,11 @@
   .hero p { max-width: 560px; margin: 0 0 20px; font-size: 18px; }
   .cta { display: inline-block; padding: 12px 20px; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; }
   .groups { display: flex; flex-wrap: wrap; gap: 28px 32px; margin-top: 56px; }
+  .sky { position: relative; height: 0; }
+  .cloud { position: absolute; left: 4%; top: 96px; width: 140px; height: 26px; border-radius: 14px; background: #fff;
+    border: 2px solid #22212b33; box-shadow: 0 4px 0 #22212b14; animation: drift 9s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform: translateX(min(60vw, 520px)); } }
+  @media (prefers-reduced-motion: reduce) { .cloud { animation: none; } }
   .group { flex: 1 1 420px; min-width: 0; }
   .row { display: flex; align-items: flex-end; gap: 14px; padding: 0 10px; }
   .shelf { height: 14px; border-radius: 4px; background: var(--shelf); box-shadow: inset 0 -4px #0003; }
@@ -53,10 +58,12 @@
   <section class="hero">
     <h1 id="title">Plan your next trail</h1>
     <p>Characters walk along these cards, drop and jump between them, climb their sides, sit on edges and duck
-       behind the crate. Tap or click one to shoo it. Everything else on the page still works.</p>
+       behind the crate, or ride the drifting cloud. Tap or click one to shoo it; with a mouse, drag one and throw it.
+       Everything else on the page still works.</p>
     <a class="cta" href="#controls" data-pixel-avoid>Get started</a>
   </section>
 
+  <div class="sky"><div class="cloud" id="cloud" data-pixel-surface="animated" title="a drifting cloud (a moving surface)"></div></div>
   <div class="groups">
     <div class="group">
       <div class="row">

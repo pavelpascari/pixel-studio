@@ -38,7 +38,7 @@ document coordinates, so they scroll with the page.
 
 | attribute | meaning |
 |---|---|
-| `data-pixel-surface` | The element's top edge is a platform: characters stand and walk on it (off its rounded corners). |
+| `data-pixel-surface` | The element's top edge is a platform: characters stand and walk on it (off its rounded corners). `data-pixel-surface="animated"` marks a surface that moves by CSS animation or transform (a drifting cloud, a sliding panel): it is re-read every frame, characters standing on it ride along, and jumps onto it follow it in the air. |
 | `data-pixel-climbable` | Its left and right sides are walls a character can climb, if the side's foot rests on a platform. Implies surface. |
 | `data-pixel-perch` | A favourite place to sit. Implies surface. |
 | `data-pixel-hide` | A hiding spot. A character stands behind it (on a platform whose line passes behind it), ducks and peeks out. |
@@ -99,7 +99,7 @@ stage.world.invalidate();                                          // after movi
 | `actor.hideBehind(element)` | Go behind a `data-pixel-hide` element. |
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
 | `actor.shoo(from?)` | React (`honk`, `wave`, …) and run to the farthest reachable place on screen. Tapping a character does this. |
-| `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`. |
+| `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`. |
 | `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
 | events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`). |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
@@ -155,7 +155,11 @@ List them in the spec's animations, for example `"jump": {"motion": "jump"}`.
 ## Phones, accessibility and performance
 
 - Touch works like a mouse click: a tap on a character shoos it. Characters never call `preventDefault` on touch and never
-  set `touch-action`, so scrolling and zooming are unaffected. Dragging characters is not supported.
+  set `touch-action`, so scrolling and zooming are unaffected.
+- With a mouse or pen, press on a character and drag to pick it up (it dangles, using its `fall` animation); let go to
+  throw it with the pointer's speed. It flies, falls and lands on the first surface below. A press without a drag is a
+  click, which shoos it. Dragging is off while paused or under reduced motion. Touch never drags, so a finger on a
+  character still scrolls the page.
 - The pause button is a real `<button>` in the tab order, above the characters, clear of the iPhone home indicator. The
   choice is stored in `localStorage` (`pixel-stage:paused`). This is what WCAG 2.2.2 (Pause, Stop, Hide) asks for.
 - With `prefers-reduced-motion: reduce` the characters are placed and stand still; the setting is watched live.
@@ -166,7 +170,8 @@ List them in the spec's animations, for example `"jump": {"motion": "jump"}`.
 
 - Occluders are rectangles. A character "behind" a heading's text is cut by the whole box.
 - Elements moved by CSS `transform` or animations are not noticed until something marks the world dirty
-  (`transitionend` / `animationend` do; otherwise call `stage.world.invalidate()`).
+  (`transitionend` / `animationend` do; otherwise call `stage.world.invalidate()`), unless they are marked
+  `data-pixel-surface="animated"`, which is read every frame (a layout read per such element per frame, so use it for a few).
 - Sticky and fixed elements are treated as if they stayed put: mark them `data-pixel-occluder`, not surface.
 - Nested scroll containers and iframes are not supported; the stage works in the document's own scroll.
 - A climbable side needs a platform at its foot; a hiding spot needs a platform passing behind it.
