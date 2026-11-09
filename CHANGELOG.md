@@ -15,6 +15,13 @@ Until 1.0, minor versions may change the spec format.
 - A sketch panel picks the goose (greylag, plain, sudo, kiddie, root, phreak) and its size (40–128 px; phones get 3/4),
   kept in the URL (`?goose=sudo&size=96`) so a setup can be shared; `?ui=0` hides the panel. Spacing around the logo
   and the product row grows with the goose.
+- Scenes (short scripts that take the goose over, then hand it back): it flies in from off-screen on arrival; in-page
+  links scroll a little slower and the goose lags ~0.6 s behind, so it flies into the frame and lands (on the logo when
+  going to the top); subscribing (sketch form) makes it honk, carry the letter off one edge and return from the other.
+- Portals: a hole opens under the goose, it sinks in and rises out of another hole elsewhere, flaps, then does one thing
+  (peck, sit, honk). After a quiet spell it portals to an annotation in view (at most every 45 s). Click it and it honks;
+  four clicks in 3 s and it puffs up, rushes at the cursor, honks, dives, and comes out on the far side from the cursor.
+- Ambient life: when scrolling stops, the goose paces a few steps (leaving prints), turns, pecks, or sits where it is.
 
 ### Views: front, back and a three-quarter look
 - Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":

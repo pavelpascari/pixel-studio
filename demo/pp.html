@@ -137,6 +137,12 @@
   .tweak select { font: 15px var(--sans); min-height: 44px; padding: 0 8px; background: #fff; color: var(--ink); border: 1.5px solid var(--ink); border-radius: 2px; }
   @media print { .tweak { display: none; } }
 
+  /* a portal: a hole in the page the goose can dive into and come out of somewhere else */
+  .portal { position: absolute; z-index: 4; border-radius: 50%; background: var(--ink); pointer-events: none;
+    box-shadow: 0 0 0 2px var(--stamp), 0 0 0 5px var(--paper), 0 0 0 6.5px var(--ink);
+    transform: translate(-50%, -50%) scale(0, 0); transition: transform 0.22s cubic-bezier(.3,1.6,.6,1); }
+  .portal.open { transform: translate(-50%, -50%) scale(1, 1); }
+
   /* the goose */
   #goose { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; will-change: transform; }
   .no-goose #goose, .no-goose .left-print { display: none; }
@@ -174,7 +180,7 @@
       <h1>We make things we’d like to exist.</h1>
       <p class="desc">P/P builds apps, software and courses, and takes on a few projects for other people. Small, useful, and made to last.</p>
       <a class="btn" href="#work">Take a look <span class="arr" aria-hidden="true">↓</span></a>
-      <p class="aside label">Field note: the goose is not the logo. It does not take direction.</p>
+      <p class="aside label" data-spot data-at="0.6" data-do="peck" data-face="left">Field note: the goose is not the logo. It does not take direction.</p>
     </div>
   </div>
 
@@ -219,7 +225,7 @@
         <div>
           <p>P/P is one person for now, building a small set of products and looking after them for a long time.</p>
           <p class="small">No growth hacks, no dark patterns, nothing you have to fight to cancel. Things should earn their place on your screen.</p>
-          <ul class="label">
+          <ul class="label" data-spot data-at="0.55" data-do="sit" data-face="left">
             <li><span class="idx">a.</span><span>Useful before clever</span></li>
             <li><span class="idx">b.</span><span>Paid for honestly</span></li>
             <li><span class="idx">c.</span><span>Kept up, or put down kindly</span></li>
@@ -235,7 +241,7 @@
       <div class="two">
         <div>
           <h2 id="notes-h">Field notes</h2>
-          <ul class="notes">
+          <ul class="notes" data-spot data-at="0.7" data-do="peck" data-face="left">
             <li><a href="#"><span class="label">2026-10-14</span><b>[Note title: what we learned shipping X]</b></a></li>
             <li><a href="#"><span class="label">2026-09-02</span><b>[Note title: an experiment that did not work]</b></a></li>
             <li><a href="#"><span class="label">2026-07-21</span><b>[Note title: how we price things]</b></a></li>
@@ -266,7 +272,7 @@
     <div class="foot">
       <div>
         <p style="font-size:clamp(22px,3vw,34px); margin:0 0 18px; letter-spacing:-0.02em">hello@[domain]</p>
-        <ul><li><a href="#">Mastodon</a></li><li><a href="#">GitHub</a></li><li><a href="#">RSS</a></li><li><a href="#">Imprint</a></li><li><a href="#">Privacy</a></li></ul>
+        <ul data-spot data-at="0.35" data-do="honk" data-face="right"><li><a href="#">Mastodon</a></li><li><a href="#">GitHub</a></li><li><a href="#">RSS</a></li><li><a href="#">Imprint</a></li><li><a href="#">Privacy</a></li></ul>
         <p class="small">© 2026 P/P. Goose: <a href="index.html">Pixel Studio</a>.</p>
       </div>
       <button class="stamp" type="button" aria-label="Made by P/P (stamp)">
@@ -355,7 +361,9 @@
   const perches = [...document.querySelectorAll('[data-perch]')];
   const home = perches[0];
   const cards = perches.filter((p) => p.dataset.hover !== undefined);
-  const isPoint = (t) => typeof t?.at === 'function';
+  const isPoint = (t) => typeof t?.at === 'function';           // {at, land?, pose?, face?}
+  const poseOf = (t) => (isPoint(t) ? t.pose : t.dataset.pose) || 'idle';
+  const faceOf = (t) => ((isPoint(t) ? t.face : t.dataset.face === 'left' ? -1 : 1) || G.face);
 
   /** Document coordinates of a target's standing point. */
   function spot(t) {
@@ -378,7 +386,8 @@
   }
 
   const G = { x: 0, y: 0, mode: 'perched', target: home, face: 1, t: 0, dur: 1, from: null,
-              override: null, lastScrollPerch: home, hold: 0, arrive: null, carry: false };
+              override: null, lastScrollPerch: home, hold: 0, arrive: null, carry: false,
+              sink: 0, walk: { anim: 'waddle', k: 1 } };
 
   function face(dir) {
     if (!dir) return;
@@ -388,17 +397,21 @@
   function place() {
     const w = goose.displaySize?.width ?? size();
     const g = goose.groundOffset ?? size() * 0.905;
-    goose.style.transform = `translate(${Math.round(G.x - w / 2)}px, ${Math.round(G.y - g)}px)`;
+    goose.style.transform = `translate(${Math.round(G.x - w / 2)}px, ${Math.round(G.y - g + G.sink)}px)`;
+    // sinking into a portal: everything below the rim is cut away
+    const h = goose.displaySize?.height ?? size();
+    goose.style.clipPath = G.sink > 0 ? `inset(0 0 ${Math.max(0, h - g + G.sink - 2)}px 0)` : '';
   }
   function arrived() {
     const done = G.arrive; G.arrive = null; done?.(true);
   }
   function settle(t) {
     G.target = t;
-    if (isPoint(t)) { G.mode = 'away'; arrived(); return; }     // a point in the air: no landing
+    if (isPoint(t) && !t.land) { G.mode = 'away'; arrived(); return; }     // a point in the air: no landing
     G.mode = 'perched';
-    face(t.dataset.face === 'left' ? -1 : 1);
-    goose.play(t.dataset.pose || 'idle');
+    goose.rate = 1;
+    face(faceOf(t));
+    goose.play(poseOf(t));
     arrived();
   }
 
@@ -409,8 +422,8 @@
     const to = spot(t);
     const dx = to.x - G.x, dy = to.y - G.y;
     if (reduce.matches) { G.x = to.x; G.y = to.y; settle(t); place(); return; }
-    if (!dur && !isPoint(t) && Math.abs(dy) < 6 && Math.abs(dx) < 90 && G.mode === 'perched') {   // a few steps; it waddles slowly
-      G.mode = 'walk'; face(Math.sign(dx)); goose.play('waddle'); return;
+    if (!dur && (!isPoint(t) || t.land) && Math.abs(dy) < 6 && Math.abs(dx) < 90 && G.mode === 'perched') {   // a few steps; it waddles slowly
+      G.mode = 'walk'; G.walk = { anim: 'waddle', k: 1 }; face(Math.sign(dx)); goose.play('waddle'); return;
     }
     G.mode = 'fly'; G.from = { x: G.x, y: G.y }; G.t = 0;
     G.dur = dur ?? Math.min(1.5, Math.max(0.55, Math.hypot(dx, dy) / 900));
@@ -434,12 +447,13 @@
 
   /** Run a scene: scroll-following is suspended while it plays, then the goose goes back to the scroll's perch. */
   let sceneId = 0;
-  async function scene(fn) {
+  async function scene(fn, { stay = false } = {}) {
     const id = ++sceneId; G.hold++;
     try { await fn(() => id !== sceneId); }       // the scene may ask whether a newer one has taken over
     finally {
       G.hold--;
-      if (!G.hold) { G.override = null; G.lastScrollPerch = scrollPerch(); }
+      // stay: the goose keeps its spot until the reader scrolls to another perch
+      if (!G.hold) { G.override = stay && id === sceneId ? G.target : null; G.lastScrollPerch = scrollPerch(); }
     }
   }
 
@@ -458,9 +472,9 @@
     }
 
     const to = spot(G.target);                         // live: layout may move under it
-    if (G.mode === 'perched' || G.mode === 'away') { G.x = to.x; G.y = to.y; }
+    if (G.mode === 'perched' || G.mode === 'away' || G.mode === 'portal') { G.x = to.x; G.y = to.y; }
     else if (G.mode === 'walk') {
-      const v = goose.pxPerSecond('waddle') ?? 40;
+      const v = (goose.pxPerSecond(G.walk.anim) ?? 40) * G.walk.k;
       const step = Math.sign(to.x - G.x) * v * dt;
       G.y = to.y;
       if (Math.abs(to.x - G.x) <= Math.abs(step)) { G.x = to.x; settle(G.target); } else G.x += step;
@@ -470,8 +484,8 @@
       const lift = Math.min(140, 24 + Math.abs(to.y - G.from.y) * 0.2 + Math.abs(to.x - G.from.x) * 0.08) * Math.sin(Math.PI * G.t);
       G.x = G.from.x + (to.x - G.from.x) * e;
       G.y = G.from.y + (to.y - G.from.y) * e - lift;
-      if (G.t > 0.82 && !isPoint(G.target) && goose.currentAnim === 'fly') goose.play('flap');   // brake
-      if (G.t >= 1) { const t = G.target; settle(t); if (!isPoint(t) && t !== home) touchdown(); }
+      if (G.t > 0.82 && !(isPoint(G.target) && !G.target.land) && goose.currentAnim === 'fly') goose.play('flap');   // brake
+      if (G.t >= 1) { const t = G.target; settle(t); if (!(isPoint(t) && !t.land) && t !== home) touchdown(); }
     }
     place();
 
@@ -599,16 +613,198 @@
     if (reduce.matches) return;
     scene(async (stale) => { if ((await fly(footPerch)) && !stale()) await honk(); });
   });
-  goose.addEventListener('spriteend', (e) => { if (e.detail.anim === 'honk' && G.mode === 'perched') goose.play(G.target.dataset.pose || 'idle'); });
+  goose.addEventListener('spriteend', (e) => { if (e.detail.anim === 'honk' && G.mode === 'perched') goose.play(poseOf(G.target)); });
+
+  // ── Portals. dive(): a hole opens under the goose and it sinks in. emerge(t, act): a hole opens at t, the goose
+  // rises out flapping, the hole closes, and it does one thing there (peck, honk, sit) before settling.
+  const tween = (ms, f) => new Promise((res) => {
+    const t0 = performance.now();
+    const step = (now) => { const k = Math.min(1, (now - t0) / ms); f(k); k < 1 ? requestAnimationFrame(step) : res(); };
+    requestAnimationFrame(step);
+  });
+  function openPortal(x, y) {
+    const el = document.createElement('div');
+    el.className = 'portal'; el.setAttribute('aria-hidden', 'true');
+    const w = size() * 0.95;
+    Object.assign(el.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${Math.max(8, w * 0.22)}px` });
+    document.body.append(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('open')));
+    return { close() { el.classList.remove('open'); setTimeout(() => el.remove(), 300); } };
+  }
+  const depth = () => (goose.groundOffset ?? size()) + 6;
+  async function dive() {
+    const x = G.x, y = G.y;
+    const hole = openPortal(x, y + 1);
+    G.mode = 'portal'; G.target = { at: () => ({ x, y }), land: true };
+    await wait(240);
+    goose.play('duck');
+    await wait(140);
+    goose.play('fall');
+    await tween(380, (k) => { G.sink = depth() * k * k; place(); });
+    goose.style.visibility = 'hidden';
+    hole.close();
+  }
+  const ACTS = {
+    async peck() { for (let i = 0; i < 3; i++) { goose.play('duck'); await wait(170); goose.play('idle'); await wait(230); } },
+    honk: () => honk(),
+    async sit() { goose.play('sit'); await wait(600); },
+  };
+  async function emerge(t, act) {
+    const at = spot(t);
+    G.target = t; G.mode = 'portal'; G.x = at.x; G.y = at.y; G.sink = depth(); place();
+    const hole = openPortal(at.x, at.y + 1);
+    face(faceOf(t));
+    await wait(260);
+    goose.style.visibility = '';
+    goose.play('flap');
+    await tween(360, (k) => { G.sink = depth() * (1 - k) ** 2; place(); });
+    G.sink = 0;
+    await wait(520);                                   // a few wingbeats to shake it off
+    hole.close();
+    settle(t);
+    const name = act ?? (isPoint(t) ? t.act : t.dataset.do);
+    if (ACTS[name]) { await ACTS[name](); if (G.target === t) goose.play(poseOf(t)); }
+  }
+
+  // lines the goose can stand on, and whether a point is well inside the frame
+  const inFrame = (y, x) => y > scrollY + size() + 10 && y < scrollY + innerHeight - 30 && (x == null || (x > scrollX + 20 && x < scrollX + innerWidth - 20));
+  const lines = () => [...document.querySelectorAll('[data-perch], [data-spot]')].filter((e) => e !== home && !e.classList.contains('sub-line'));
+  /** A landing spot on an element's top edge at document x (kept inside the element). */
+  function pin(line, x, { pose = 'idle', face: f = G.face, act } = {}) {
+    return { line, land: true, pose, face: f, act, at: () => {
+      const r = line.getBoundingClientRect(), half = size() * 0.4;
+      const lo = r.left + scrollX + half, hi = r.right + scrollX - half;
+      return { x: Math.max(lo, Math.min(hi, x)), y: spot(line).y };
+    } };
+  }
+  const lineOf = (t) => (isPoint(t) ? t.line : t);
+
+  // ── Ambient life. When the reader stops scrolling, the goose gets on with things where it stands: paces a few
+  // steps, turns round, pecks at the line, sits a while. Nothing here holds the goose: the next scroll (to another
+  // perch) takes it along as usual.
+  let lastScroll = performance.now(), lastInput = performance.now(), nextAmbient = 0, lastIdle = performance.now();
+  addEventListener('scroll', () => { lastScroll = lastInput = performance.now(); nextAmbient = 0; }, { passive: true });
+  for (const ev of ['pointermove', 'keydown', 'touchstart']) addEventListener(ev, () => { lastInput = performance.now(); }, { passive: true });
+  const AMBIENT = [
+    ['pace', 4], ['turn', 2], ['peck', 3], ['sit', 1.5], ['idle', 2],
+  ];
+  function chooseAmbient() {
+    let r = Math.random() * AMBIENT.reduce((a, [, w]) => a + w, 0);
+    for (const [name, w] of AMBIENT) if ((r -= w) < 0) return name;
+    return 'idle';
+  }
+  async function ambient() {
+    const t = G.target, line = lineOf(t);
+    let what = chooseAmbient();
+    if (!line || line === home) what = what === 'pace' || what === 'sit' ? 'peck' : what;   // the logo is a small perch
+    if (what === 'pace') {
+      const r = line.getBoundingClientRect();
+      const room = r.width - size();
+      if (room < 40) what = 'turn';
+      else {
+        let dx = (14 + Math.random() * 36) * (Math.random() < 0.65 ? G.face : -G.face);   // mostly onward
+        const nx = G.x + dx, lo = r.left + scrollX + size() * 0.4, hi = r.right + scrollX - size() * 0.4;
+        if (nx < lo || nx > hi) dx = -dx;
+        G.override = pin(line, G.x + dx, { face: Math.sign(dx) });
+        return;
+      }
+    }
+    if (what === 'turn') { face(-G.face); if (isPoint(t)) t.face = G.face; return; }
+    if (what === 'sit') { goose.play('sit'); return; }
+    if (what === 'idle') { goose.play(poseOf(t)); return; }
+    if (what === 'peck') {
+      for (let i = 0; i < 2 + (Math.random() < 0.5); i++) {
+        if (G.mode !== 'perched' || G.target !== t) return;
+        goose.play('duck'); await wait(160);
+        if (G.mode !== 'perched' || G.target !== t) return;
+        goose.play('idle'); await wait(240);
+      }
+    }
+  }
+
+  setInterval(() => {
+    const now = performance.now();
+    if (reduce.matches || G.hold || G.mode !== 'perched' || now - lastScroll < 1300) return;
+
+    // ── Scene: idle portal. After a longer quiet spell (no input for 9 s), now and then (at most every 45 s)
+    // the goose dives into a portal and pops up at an annotation in view to peck at it, sit by it or honk.
+    if (now - lastInput > 9000 && now - lastIdle > 45000) {
+      const spots = [...document.querySelectorAll('[data-spot][data-do]')].filter((e) => e !== G.target && inFrame(spot(e).y, spot(e).x));
+      if (spots.length) {
+        lastIdle = now;
+        const t = spots[Math.floor(Math.random() * spots.length)];
+        scene(async () => { await dive(); await wait(500); await emerge(t); }, { stay: true });
+        return;
+      }
+    }
+    if (!nextAmbient) { nextAmbient = now + 600; return; }
+    if (now < nextAmbient) return;
+    nextAmbient = now + 2500 + Math.random() * 3500;
+    ambient();
+  }, 250);
+
+  // ── Scene: poking the goose. A click honks; four within three seconds and it rushes at the cursor, honks,
+  // dives into a portal and comes out on the far side of the screen from the cursor. It stays there.
+  let pokes = [], cursor = { x: innerWidth / 2, y: innerHeight / 2 }, angry = false;
+  // forgiving: a moving goose is hard to hit pixel-exact, so anything within ~10 px of its pixels counts
+  const R = [[0, 0], [10, 0], [-10, 0], [0, 10], [0, -10], [7, 7], [-7, 7], [7, -7], [-7, -7]];
+  const onGoose = (x, y) => goose.style.visibility !== 'hidden' && R.some(([dx, dy]) => goose.hitTest?.(x + dx, y + dy));
+  addEventListener('pointermove', (e) => {
+    cursor = { x: e.clientX, y: e.clientY };
+    document.documentElement.style.cursor = onGoose(e.clientX, e.clientY) ? 'pointer' : '';
+  }, { passive: true });
+  document.addEventListener('click', (e) => {
+    if (reduce.matches || angry || !onGoose(e.clientX, e.clientY)) return;
+    cursor = { x: e.clientX, y: e.clientY };
+    const now = performance.now();
+    pokes = pokes.filter((t) => now - t < 3000).concat(now);
+    if (pokes.length < 4) { if (G.mode === 'perched' && !G.hold) honk(); return; }
+    pokes = []; angry = true;
+    scene(async () => {
+      try {
+        // puff up for a moment (time for the cursor to flee), then rush along the line it stands on, toward the
+        // cursor, stopping short of it; at least a lunge even if the cursor stayed put
+        if (G.mode === 'perched') {
+          face(Math.sign(cursor.x + scrollX - G.x) || G.face);
+          goose.play('flap');
+          await wait(450);
+          const cx = cursor.x + scrollX, dir = Math.sign(cx - G.x) || G.face;
+          const r = lineOf(G.target)?.getBoundingClientRect?.();
+          const room = r ? (dir > 0 ? r.right + scrollX - G.x : G.x - r.left - scrollX) - size() * 0.4 : 260;
+          const dist = Math.max(0, Math.min(260, room, Math.max(40, Math.abs(cx - G.x) - 36)));
+          if (dist > 8) {
+            const x = G.x + dir * dist, y = G.y;
+            G.target = { at: () => ({ x, y }), land: true, pose: 'idle', face: dir };
+            G.walk = { anim: 'rush', k: 2.6 }; goose.rate = 2.6;
+            G.mode = 'walk'; face(dir); goose.play('rush');
+            await new Promise((res) => { G.arrive = res; });
+          }
+        }
+        face(Math.sign(cursor.x + scrollX - G.x) || G.face);
+        await honk();
+        await dive();
+        // the far side from the cursor, on a line that is in view
+        const fx = scrollX + (cursor.x < innerWidth / 2 ? innerWidth * 0.84 : innerWidth * 0.16);
+        const best = lines().map((e) => ({ e, y: spot(e).y, r: e.getBoundingClientRect() }))
+          .filter((c) => inFrame(c.y) && c.r.left + scrollX <= fx && c.r.right + scrollX >= fx)
+          .sort((a, b) => Math.abs(a.y - scrollY - innerHeight / 2) - Math.abs(b.y - scrollY - innerHeight / 2))[0];
+        const toward = Math.sign(cursor.x + scrollX - fx) || -1;
+        const y0 = G.y;
+        const t = best ? pin(best.e, fx, { face: toward }) : { land: true, pose: 'idle', face: toward, at: () => ({ x: fx, y: y0 }) };
+        await wait(450);
+        await emerge(t, 'honk');
+      } finally { angry = false; goose.rate = 1; G.sink = 0; goose.style.visibility = ''; }
+    }, { stay: true });
+  });
 
   // a new goose (picker): keep doing what the old one was doing
   goose.addEventListener('ready', () => {
-    if (G.mode === 'perched') goose.play(G.target.dataset.pose || 'idle');
+    if (G.mode === 'perched') goose.play(poseOf(G.target));
     else goose.play(G.mode === 'walk' ? 'waddle' : 'fly');
     face(G.face); place();
   });
   addEventListener('resize', place);
-  window.pp = { G, goTo, scrollPerch, scene };   // for tests
+  window.pp = { G, goTo, scrollPerch, scene, dive, emerge };   // for tests
 </script>
 </body>
 </html>
