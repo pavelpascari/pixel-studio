@@ -45,6 +45,8 @@ Until 1.0, minor versions may change the spec format.
 - It walks the flock lawn and has a roster card (hover: peek); the playground, the studio and the goose workbench list
   it. The workbench's features are drawn on goose-base's body, so for a goose with its own proportions they are off
   (with a note saying why); picks come back on switching to a flock goose.
+- The workbench's skeleton overlay draws only the bones shown in the frame. It used to draw every view's skeleton at
+  once, so the side view had the front view's spine and wings standing through the body.
 
 ### Playground
 

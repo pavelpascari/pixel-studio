@@ -375,9 +375,10 @@ function draw(force = false) {
 
 function drawBones(a, u) {
   const pose = samplePose(view, a, S.frame);
-  const { world } = worldMatrices(view.parts, pose);
+  const { world, visible } = worldMatrices(view.parts, pose);
   const P = (m, [x, y]) => [(m[0] * x + m[2] * y + m[4]) * u, (m[1] * x + m[3] * y + m[5]) * u];
-  for (const p of view.parts.filter((q) => q.tip).sort((q, r) => q.z - r.z)) {
+  // Only the skeleton drawn in this frame: the other views' bones (front.*, back.*) are hidden here.
+  for (const p of view.parts.filter((q) => q.tip && visible.get(q.id)).sort((q, r) => q.z - r.z)) {
     const m = world.get(p.id), far = p.shade < 0;
     const [x1, y1] = P(m, p.pivot), [x2, y2] = P(m, p.tip);
     bctx.strokeStyle = far ? 'rgba(160,150,200,.8)' : 'rgba(255,255,255,.9)'; bctx.lineWidth = 2.5; bctx.lineCap = 'round';
