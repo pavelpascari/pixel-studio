@@ -1,0 +1,16 @@
+# Pixel Studio
+
+> Pixel-art characters described as JSON (shapes on a skeleton, materials, animations) and rendered to sprites at any size. Agents are welcome here.
+
+## Try a look
+
+- [Playground](/studio/play.html): one character, set up entirely by its URL (`?c=goose-root&view=front&anim=waddle&skin=party&res=64#spec=<payload>`).
+- [Playground guide](/docs/playground.md): URL options, how the payload changes a character, examples, and `window.playground` for browser agents.
+- [Payload schema](/studio/play.schema.json): JSON Schema of the `#spec=` payload.
+
+## Reference
+
+- [Character format](/docs/SPEC.md): materials, parts, shapes, animations, skins, variants, style.
+- [Figures](/docs/figures.md): the skeletons characters are built on, and front/back views.
+- [Example characters](/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, clawd, fox, pip, robot, slime (`/examples/<name>.json`).
+- [Runtime](/docs/runtime.md): `<pixel-sprite>` for putting a character on a web page.

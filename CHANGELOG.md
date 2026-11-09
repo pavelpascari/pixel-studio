@@ -31,6 +31,9 @@ Until 1.0, minor versions may change the spec format.
   Panels for colours, textures and style write into the link; **Copy link** shares it.
 - For agents: [docs/playground.md](docs/playground.md) (URL options, payload rules, examples), `studio/play.schema.json` (JSON
   Schema of the payload), and `window.playground` (`ready`, `options()`, `set()`, `link()`, `frame()`) in the page.
+- `llms.txt` at the site root points agents to the playground, its guide and the spec.
+- `scripts/serve.mjs` no longer serves dotfiles or dot-folders (`.git` was reachable through a tunnel) and answers
+  `/robots.txt` with "allow everything".
 
 ### Speech bubbles above the head
 
