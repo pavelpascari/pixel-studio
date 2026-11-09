@@ -6,6 +6,13 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### P/P site sketch: a goose that follows the scroll
+- `demo/pp.html`: a one-page studio site (field-guide direction: paper, ink, stamp red) where the greylag goose starts on
+  the logo's baseline, takes off on the first scroll and flies between "perches" (any element with `data-perch`,
+  standing on its top edge at `data-at`, in `data-pose`) as you read down. Pointing at a product card sends it over;
+  pressing the footer stamp makes it come and honk. Landings stamp footprints; only the last 7 stay. Decorative only:
+  under reduced motion it stays home in a still pose, and the page reads the same with it hidden.
+
 ### Views: front, back and a three-quarter look
 - Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":
   [...]}`). View parts join as `front.*`, shown only in that view's animations (`idle@front`, `waddle@back`); turns are
