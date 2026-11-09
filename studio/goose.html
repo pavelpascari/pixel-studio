@@ -57,6 +57,13 @@
   .styles select, .styles input[type=range] { width: 100%; }
   label.opt { display: flex; gap: 6px; align-items: center; color: var(--dim); }
 
+  @media (pointer: coarse) {
+    header a { display: inline-block; padding: 8px 2px; }
+    summary { min-height: 36px; display: flex; align-items: center; }
+    input[type=range] { min-height: 32px; }
+    input[type=checkbox] { width: 20px; height: 20px; }
+    select, button { min-height: 40px; }
+  }
   @media (max-width: 860px) {
     main { display: flex; flex-direction: column; }
     #view { padding: 12px; }

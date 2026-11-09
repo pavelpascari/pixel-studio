@@ -90,3 +90,10 @@ th { font-weight: 600; background: #f3ede2; }
   .pg-view { border-right: 0; border-bottom: 1px solid var(--line); }
   .preview { padding: 16px; }
 }
+
+/* Fingers, not cursors: the live examples' controls big enough to tap. */
+@media (pointer: coarse) {
+  select, button { min-height: 40px; font-size: 16px; }
+  input[type=range] { min-height: 32px; }
+  input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+}

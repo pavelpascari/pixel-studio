@@ -56,6 +56,12 @@
   .letter[hidden] { display: none; }
   #signup-done { font-weight: 600; }
   footer { padding: 24px 20px 40px; text-align: center; font-size: 14px; }
+  @media (pointer: coarse) {
+    header nav a, nav a { display: inline-block; padding: 10px 6px; }
+    button, select { min-height: 44px; }
+    input[type=range] { min-height: 32px; }
+    input[type=checkbox] { width: 20px; height: 20px; }
+  }
   @media (max-width: 560px) {
     .hero { padding-top: 40px; }
     .card p { display: none; }

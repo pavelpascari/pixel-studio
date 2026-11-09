@@ -24,6 +24,16 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### Every page on a phone
+
+- The studio works on phones and tablets: one column with the character first, a wrapping toolbar, the spec editor in
+  its own scroll area, and the animation chips in one row you swipe (goose-base has 40).
+- Trailmark's nav links drop to a swipeable row of pills instead of squeezing into one-word columns (the page was 12 px
+  too wide on a phone).
+- On touch screens every page (studio, workbench, figures, playground, docs, demos) makes buttons, selects, sliders,
+  checkboxes and the parts list's toggles big enough to tap, and fields use 16 px text so iOS doesn't zoom in on focus.
+  Desktop is unchanged.
+
 ### A wild one joins the flock: greylag
 
 - New `examples/goose-greylag.json`: a natural greylag goose (heavy grey-brown body, slim neck, buff-edged coverts,

@@ -45,6 +45,14 @@
   #howto { padding: 4px 20px 30px; color: var(--dim); max-width: 900px; }
   #howto code, #howto pre { color: var(--text); }
   #howto pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; }
+  @media (pointer: coarse) {
+    select, input:not([type=range]):not([type=color]):not([type=checkbox]), button { min-height: 40px; font-size: 16px; }
+    .mat { grid-template-columns: 80px 40px 1fr 56px 34px; }
+    .mat input[type=color] { width: 40px; height: 36px; }
+    .mat button { min-height: 36px; font-size: 16px; }
+    input[type=range] { min-height: 32px; }
+    textarea { font-size: 16px; }
+  }
   body.bare header, body.bare aside, body.bare #howto, body.bare #strip, body.bare #info { display: none; }
   body.bare main { grid-template-columns: 1fr; }
   body.bare #stageCol { padding: 0; }

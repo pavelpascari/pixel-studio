@@ -28,6 +28,10 @@
   .views { display: flex; flex-direction: column; gap: 6px; }
 
   /* Phones: the animation first, then the pickers as rows of chips to swipe through, then the view options. */
+  @media (pointer: coarse) {
+    header a { display: inline-block; padding: 8px 2px; }
+    input[type=range] { min-height: 32px; }
+  }
   @media (max-width: 760px) {
     header { padding: 12px 14px; }
     header .tag { order: 3; flex-basis: 100%; font-size: 13px; }

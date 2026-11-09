@@ -35,7 +35,20 @@
     .lod code { color: var(--ink); }
     .inline-sprite { vertical-align: -6px; }
     footer { padding: 28px 0 48px; color: var(--muted); font-size: 14px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #ece6da; }
-    @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; padding-top: 20px; }
+      .wrap { padding: 0 18px; }
+      nav { flex-wrap: wrap; row-gap: 4px; }
+      nav .links { margin-left: 0; flex-basis: 100%; gap: 6px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+      nav .links::-webkit-scrollbar { display: none; }
+      nav .links a { padding: 8px 12px; border-radius: 999px; background: #f1ebde; font-size: 14px; }
+      .stage { height: 300px; }
+    }
+    @media (pointer: coarse) {
+      button, select { min-height: 44px; font-size: 16px; }
+      input[type=range] { min-height: 32px; }
+      input[type=checkbox], input[type=radio] { width: 20px; height: 20px; }
+    }
   .brains { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
   .brains label { margin-right: 12px; }
 </style>
