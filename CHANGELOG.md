@@ -24,6 +24,19 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### Where our motion comes from
+
+- New `references/`: a registry of motion sources (`sources.json`: Muybridge plates with record IDs, frame layout and
+  exposure intervals, papers with DOIs, videos), each cited in full with its rights statement word for word, and one
+  log per figure saying which source each tuned parameter and each derived frame comes from. The format is in
+  `references/README.md`.
+- `scripts/references.mjs` checks the logs (part of `npm test`): unknown sources, licences outside the rule (public
+  domain, CC0, CC BY with credit, or numbers only from copyrighted papers), values that drifted from the figure, and
+  frames measured from a source whose images we may not use. `node scripts/references.mjs credits` writes
+  `references/CREDITS.md`, which ships with the package.
+- Research notes behind it: `docs/research/motion-references.md` (public-domain photo plates, published gait and
+  flight numbers, our presets against them), `mit-libraries.md`, `motion-data-sources.md`, `mesh2motion.md`.
+
 ### Every page on a phone
 
 - The studio works on phones and tablets: one column with the character first, a wrapping toolbar, the spec editor in

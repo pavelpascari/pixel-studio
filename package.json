@@ -15,7 +15,7 @@
     "./package.json": "./package.json"
   },
   "bin": { "pixel": "bin/pixel.mjs" },
-  "files": ["src", "bin", "figures", "docs", "examples", "LICENSE", "README.md", "CHANGELOG.md"],
+  "files": ["src", "bin", "figures", "docs", "examples", "references", "LICENSE", "README.md", "CHANGELOG.md"],
   "scripts": {
     "studio": "node scripts/serve.mjs",
     "test": "node --test test/*.test.mjs",
