@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "play.schema.json",
+  "title": "Pixel Studio playground payload",
+  "description": "The JSON in the playground's #spec=. Usually a change to the character picked with ?c= (a variant: list only what differs). With its own `figure` or `size` and no `extends` it is a whole character instead. Guide: ../docs/playground.md. Full format: ../docs/SPEC.md (Materials, Parts, Shapes, Variants, Style, Skins).",
+  "type": "object",
+  "properties": {
+    "extends": { "type": "string", "description": "Base character file, e.g. \"goose-root.json\". Set automatically from ?c= when absent (unless this is a whole character).", "examples": ["goose-base.json", "goose-root.json", "goose-sudo.json", "goose-phreak.json", "goose-kiddie.json", "clawd.json", "fox.json", "pip.json", "robot.json", "slime.json"] },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "materials": {
+      "type": "object",
+      "description": "Merged into the base per material and per field: {\"color\": ...} keeps the base texture. null removes a material. A material no shape uses is dropped. The playground's options().materials lists the current ones.",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/hex" },
+          { "$ref": "#/$defs/material" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "materialMap": {
+      "type": "object",
+      "description": "Re-point every shape drawn in one material to another: {\"plumage\": \"hoodie\"}.",
+      "additionalProperties": { "type": "string" }
+    },
+    "style": { "$ref": "#/$defs/style" },
+    "parts": {
+      "type": "array",
+      "description": "Each entry with an existing id patches that part (fields replace; `shapes` replaces the list; `addShapes` appends). {\"id\": ..., \"remove\": true} deletes the part and its children. A new id adds a part (give it `parent`, `pivot`, `z`, `shapes`). options().parts lists the ids.",
+      "items": { "$ref": "#/$defs/partPatch" }
+    },
+    "skins": {
+      "type": "object",
+      "description": "Named looks every animation shares; pick one with ?skin=. Each is a patch with only parts, materials, materialMap and style.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "materials": { "$ref": "#/properties/materials" },
+          "materialMap": { "$ref": "#/properties/materialMap" },
+          "parts": { "$ref": "#/properties/parts" },
+          "style": { "$ref": "#/$defs/style" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "animations": {
+      "type": "object",
+      "description": "null removes an animation; an existing one merges (tracks merge per part and property, null removes); a new name adds one. Format: ../docs/SPEC.md#animations.",
+      "additionalProperties": { "type": ["object", "null"] }
+    },
+    "views": {
+      "type": "object",
+      "description": "Front/back views: {\"front\": {\"parts\": [...part patches, ids without the \"front.\" prefix]}, \"back\": {...}}. See ../docs/figures.md.",
+      "additionalProperties": { "type": "object" }
+    },
+    "figure": { "description": "Whole characters only: the skeleton to build on, e.g. \"goose\". See ../docs/SPEC.md#figures-start-from-a-skeleton-that-already-moves-well." },
+    "size": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "Whole characters only: canvas size in units, usually [100, 100]." },
+    "points": { "type": "object", "description": "Attachment points: {\"beak\": {\"part\": \"head\", \"at\": [x, y]}}." },
+    "ground": { "type": "number", "description": "y of the foot line in units." },
+    "states": { "type": "object", "description": "State machine for <pixel-sprite>; not used by the playground." },
+    "mixes": { "type": "object", "description": "Transition clips; see ../docs/SPEC.md#transition-clips." }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", "description": "Hex colour, e.g. \"#c9c2b4\"." },
+    "material": {
+      "type": "object",
+      "properties": {
+        "color": { "$ref": "#/$defs/hex", "description": "Base colour (required for a new material). The engine builds a hue-shifted ramp around it; pick mid-value, fairly saturated colours." },
+        "texture": { "enum": ["noise", "fur", "scales", "stripes", "checker", "cloth", "bricks", "spots", "metal", null], "description": "Shown at detail 2+ only (res ≥ 21 px or ?lod=2/3). null removes the base texture." },
+        "textureStrength": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.35 },
+        "textureScale": { "type": "integer", "minimum": 1, "default": 1, "description": "Feature size in pixels." },
+        "shine": { "type": "number", "minimum": 0, "maximum": 1, "description": "Specular highlight: metal, glass, slime, eyes." },
+        "flat": { "type": "boolean", "description": "No lighting: always the exact colour (eyes, emissive bits)." },
+        "outline": { "type": "boolean", "description": "false skips outlines and inner lines next to this material (glints, glows, blush)." },
+        "tones": { "type": "integer", "minimum": 2, "maximum": 6, "description": "Force the ramp length regardless of detail level." }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "description": "Rendering style; each key overrides the detail preset at every detail level. Merged into the base per key.",
+      "properties": {
+        "outline": { "enum": ["none", "dark", "selective"], "description": "Silhouette outline; selective is tinted by the neighbouring material." },
+        "outlineColor": { "$ref": "#/$defs/hex", "description": "Colour of dark outlines (default #1b1424)." },
+        "light": { "type": "number", "description": "Light direction in degrees: 0 from above, -45 top-left (default), 90 from the right." },
+        "elevation": { "type": "number", "description": "Light height in degrees (default 50)." },
+        "ambient": { "type": "number", "minimum": -0.3, "maximum": 0.8, "description": "Lifts everything toward the base tone (default 0.15)." },
+        "curvature": { "type": "number", "minimum": 0, "maximum": 1, "description": "0 flat shapes, 1 full spheres (default 0.8)." },
+        "tones": { "type": "integer", "minimum": 2, "maximum": 6, "description": "Ramp length per material." },
+        "texture": { "type": "number", "minimum": 0, "maximum": 1.5, "description": "Texture intensity multiplier." },
+        "dither": { "type": "boolean", "description": "Ordered dithering between tones." },
+        "innerLines": { "type": "boolean", "description": "Dark line where a front part overlaps a back part." },
+        "contactShadow": { "type": "boolean", "description": "1-px shadow cast by front parts onto back parts." },
+        "hueShift": { "type": "number", "minimum": 0, "maximum": 2, "description": "Cool-shadow / warm-highlight hue drift (default 1)." },
+        "snap": { "type": "boolean", "description": "Pixel-snap part motion (default true)." },
+        "flip": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "partPatch": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "remove": { "const": true, "description": "Delete this part and its children." },
+        "parent": { "type": ["string", "null"], "description": "Part it moves with, e.g. \"head\"." },
+        "bone": { "type": "string", "description": "Characters built on a figure: attach this new part to that bone (parent = the bone, pivot = its joint, z = its z + 0.5). See ../docs/figures.md." },
+        "pivot": { "$ref": "#/$defs/point", "description": "Point it rotates and scales around." },
+        "z": { "type": "number", "description": "Draw order; higher is in front." },
+        "shade": { "type": "number", "description": "Brightness offset, e.g. -0.35 for the far wing or leg." },
+        "x": { "type": "number" }, "y": { "type": "number" }, "rot": { "type": "number" }, "sx": { "type": "number" }, "sy": { "type": "number" },
+        "show": { "type": ["number", "boolean"], "description": "0 hides the part at rest (animations can show it)." },
+        "shapes": { "type": "array", "items": { "$ref": "#/$defs/shape" }, "description": "Replaces the part's shapes." },
+        "addShapes": { "type": "array", "items": { "$ref": "#/$defs/shape" }, "description": "Appended to the part's shapes." },
+        "tip": { "$ref": "#/$defs/point" },
+        "follow": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "point": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "shape": {
+      "type": "object",
+      "description": "Coordinates in canvas units (0..100 for the examples) at rest. circle: cx cy r · ellipse: cx cy rx ry (+rot) · rect: x y w h (+r corner radius, rot) · capsule: x1 y1 x2 y2 r (+r2 tapered end) · polygon: points (+r rounding).",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["circle", "ellipse", "rect", "capsule", "polygon"] },
+        "material": { "type": "string", "description": "Required unless op is \"cut\"." },
+        "op": { "const": "cut", "description": "Erase what earlier shapes of the same part drew." },
+        "minDetail": { "enum": [1, 2, 3] }, "maxDetail": { "enum": [1, 2, 3] },
+        "profile": { "enum": ["dome", "flat", "none"] },
+        "shade": { "type": "number" },
+        "x": { "type": "number" }, "y": { "type": "number" }, "w": { "type": "number" }, "h": { "type": "number" },
+        "r": { "type": "number" }, "r2": { "type": "number" }, "rot": { "type": "number" },
+        "cx": { "type": "number" }, "cy": { "type": "number" }, "rx": { "type": "number" }, "ry": { "type": "number" },
+        "x1": { "type": "number" }, "y1": { "type": "number" }, "x2": { "type": "number" }, "y2": { "type": "number" },
+        "points": { "type": "array", "items": { "$ref": "#/$defs/point" }, "minItems": 3 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

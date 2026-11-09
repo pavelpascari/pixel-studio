@@ -24,6 +24,14 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### Playground
+
+- New `studio/play.html`: one character, animated, set up entirely by its URL: `?c=goose-root&view=front&anim=waddle&skin=party&res=64`
+  plus `#spec=` with changes to materials, style and parts (URL-encoded JSON, or deflate-raw + base64url; a whole goose is about 2 KB).
+  Panels for colours, textures and style write into the link; **Copy link** shares it.
+- For agents: [docs/playground.md](docs/playground.md) (URL options, payload rules, examples), `studio/play.schema.json` (JSON
+  Schema of the payload), and `window.playground` (`ready`, `options()`, `set()`, `link()`, `frame()`) in the page.
+
 ### Speech bubbles above the head
 
 - `actor.say()` puts its bubble just above the highest pixel over the head and beak (a hat or hood included), not at the beak, where it covered the head. The flock demo's HONK! does the same.

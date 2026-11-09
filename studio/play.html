@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground — Pixel Studio</title>
+<meta name="description" content="Try a Pixel Studio character's colours, textures, style, skins and animations. The whole setup lives in the URL. Guide for agents: /docs/playground.md">
+<style>
+  :root { --bg: #17151f; --panel: #211e2c; --line: #3a3550; --text: #e9e6f2; --dim: #8d87a3; --accent: #ffcf4a; --bad: #ff8d6c; --warn: #ffd27a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+  a { color: var(--accent); }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; }
+  header p { margin: 0; color: var(--dim); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 0; min-height: calc(100vh - 50px); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  #stageCol { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  #stage { display: grid; place-items: center; min-height: 360px; border-radius: 12px; border: 1px solid var(--line); overflow: hidden; }
+  .checker { background: repeating-conic-gradient(#2a2638 0 25%, #221f2e 0 50%) 0 0 / 24px 24px; }
+  canvas { image-rendering: pixelated; display: block; }
+  #strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  #strip canvas { border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+  #strip canvas.on { border-color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  aside { border-left: 1px solid var(--line); background: var(--panel); padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; max-height: calc(100vh - 50px); position: sticky; top: 0; }
+  @media (max-width: 900px) { aside { border-left: 0; border-top: 1px solid var(--line); max-height: none; position: static; } }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 6px; }
+  label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--dim); }
+  select, input, textarea, button { font: inherit; color: var(--text); background: #2b2739; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+  button { cursor: pointer; padding: 5px 10px; }
+  button.primary { background: var(--accent); color: #1b1424; border-color: var(--accent); font-weight: 600; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .grid2 > label > *, .grid3 > label > * { width: 100%; min-width: 0; }
+  .mat { display: grid; grid-template-columns: 88px 34px 1fr 64px 18px; gap: 6px; align-items: center; font-size: 12px; }
+  .mat input[type=color] { padding: 0; width: 34px; height: 24px; }
+  .mat .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mat .touched { color: var(--accent); }
+  .mat button { padding: 0 4px; font-size: 11px; background: none; border: 0; color: var(--dim); }
+  textarea { width: 100%; min-height: 150px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+  #msgs { white-space: pre-wrap; font: 12px/1.4 ui-monospace, monospace; margin: 0; }
+  #msgs .bad { color: var(--bad); } #msgs .warn { color: var(--warn); }
+  .dim { color: var(--dim); font-size: 12px; }
+  #howto { padding: 4px 20px 30px; color: var(--dim); max-width: 900px; }
+  #howto code, #howto pre { color: var(--text); }
+  #howto pre { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; }
+  body.bare header, body.bare aside, body.bare #howto, body.bare #strip, body.bare #info { display: none; }
+  body.bare main { grid-template-columns: 1fr; }
+  body.bare #stageCol { padding: 0; }
+  body.bare #stage { border: 0; border-radius: 0; min-height: 100vh; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Playground</h1>
+  <p>Colours, textures, style, skins and animations, all kept in the link. <a href="../docs/playground.md">Payload guide</a> · <a href="play.schema.json">schema</a> · <a href="../docs/SPEC.md">full spec</a> · <a href="index.html">studio</a></p>
+</header>
+<main>
+  <section id="stageCol">
+    <div id="stage" class="checker"><canvas id="big" aria-label="character preview"></canvas></div>
+    <div id="strip" aria-label="every frame of this animation"></div>
+    <div id="info" class="dim"></div>
+  </section>
+  <aside>
+    <div>
+      <h2>Character</h2>
+      <div class="grid2">
+        <label>character <select id="c"></select></label>
+        <label>skin <select id="skin"></select></label>
+        <label>view <select id="view"></select></label>
+        <label>animation <select id="anim"></select></label>
+        <label>size (px) <select id="res"></select></label>
+        <label>detail <select id="lod"><option value="">auto</option><option value="1">1 icon</option><option value="2">2 sprite</option><option value="3">3 rich</option></select></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="play">pause</button>
+        <button id="prev" title="previous frame">◀</button><button id="next" title="next frame">▶</button>
+        <span id="frameNo" class="dim"></span>
+      </div>
+    </div>
+    <div>
+      <h2>Materials</h2>
+      <div id="mats" style="display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+    <div>
+      <h2>Style</h2>
+      <div class="grid3" id="style"></div>
+    </div>
+    <div>
+      <h2>Payload (the spec in the link)</h2>
+      <textarea id="patch" spellcheck="false" aria-label="payload JSON"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button id="apply" class="primary" title="Ctrl/⌘+Enter">Apply</button>
+        <button id="reset">Clear</button>
+        <span class="dim">Changes to the base character. <a href="../docs/playground.md#the-payload">What can go here</a></span>
+      </div>
+    </div>
+    <div>
+      <h2>Link</h2>
+      <div class="row"><button id="copy">Copy link</button><button id="copyJson">Copy readable link</button><span id="linkLen" class="dim"></span></div>
+    </div>
+    <div>
+      <h2>Messages</h2>
+      <pre id="msgs" role="status"></pre>
+    </div>
+  </aside>
+</main>
+<section id="howto">
+  <h2>For agents</h2>
+  <p>Everything on this page is set by its URL. Read <a href="../docs/playground.md">docs/playground.md</a> (URL options, payload format, examples) and <a href="play.schema.json">play.schema.json</a> (every field of the payload); the full character format is <a href="../docs/SPEC.md">docs/SPEC.md</a>.</p>
+<pre>play.html?c=goose-root&amp;view=front&amp;anim=waddle&amp;skin=party&amp;res=64#spec={"materials":{"hoodie":{"color":"#2f6b4f","texture":"cloth"}}}</pre>
+  <p>In a browser, <code>window.playground</code> drives the page: <code>await playground.ready</code>, <code>playground.options()</code>, <code>await playground.set({...})</code>, <code>await playground.link()</code>, <code>playground.frame()</code>.</p>
+  <h2 style="margin-top:14px">This character</h2>
+  <pre id="inventory"></pre>
+</section>
+
+<script type="module">
+import { resolveSpec, compile, renderFrame, resolveStyle, TEXTURES } from '../src/core/index.js';
+
+const CHARACTERS = ['goose-base', 'goose-root', 'goose-sudo', 'goose-phreak', 'goose-kiddie', 'clawd', 'fox', 'pip', 'robot', 'slime'];
+const RES = [16, 24, 32, 48, 64, 96, 128, 192];
+// Style keys the panel offers (the payload accepts every key in play.schema.json).
+const STYLE_CONTROLS = [
+  { key: 'outline', type: 'select', options: ['', 'none', 'dark', 'selective'] },
+  { key: 'dither', type: 'select', options: ['', 'true', 'false'] },
+  { key: 'tones', type: 'select', options: ['', '2', '3', '4', '5', '6'] },
+  { key: 'light', type: 'range', min: -180, max: 180, step: 5, def: -45 },
+  { key: 'elevation', type: 'range', min: 0, max: 90, step: 5, def: 50 },
+  { key: 'ambient', type: 'range', min: -0.3, max: 0.8, step: 0.05, def: 0.15 },
+  { key: 'curvature', type: 'range', min: 0, max: 1, step: 0.05, def: 0.8 },
+  { key: 'hueShift', type: 'range', min: 0, max: 2, step: 0.1, def: 1 },
+  { key: 'texture', type: 'range', min: 0, max: 1.5, step: 0.05, def: 1 },
+];
+
+const $ = (s) => document.querySelector(s);
+const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+
+// ---------- the link ----------
+const b64url = (bytes) => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (ch) => ch.charCodeAt(0));
+const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+async function encodeSpec(obj) { return b64url(await pipe(new TextEncoder().encode(JSON.stringify(obj)), new CompressionStream('deflate-raw'))); }
+/** The payload from `#spec=`: URL-encoded JSON (starts with "{") or deflate-raw + base64url. */
+async function decodeSpec(v) {
+  const text = decodeURIComponent(v).trim();
+  if (text.startsWith('{')) return JSON.parse(text);
+  return JSON.parse(new TextDecoder().decode(await pipe(unb64url(text), new DecompressionStream('deflate-raw'))));
+}
+
+const q = new URLSearchParams(location.search);
+const hash = new URLSearchParams(location.hash.slice(1));
+const S = {
+  c: q.get('c') || 'goose-base',
+  view: q.get('view') || 'side',
+  anim: q.get('anim') || 'idle',
+  skin: q.get('skin') || '',
+  res: Number(q.get('res')) || 64,
+  lod: q.get('lod') || '',
+  zoom: Number(q.get('zoom')) || 0,
+  bg: q.get('bg') || '',
+  ui: q.get('ui') !== '0',
+  frame: q.has('frame') ? Number(q.get('frame')) || 0 : 0,
+  playing: !q.has('frame'),
+  spec: {},
+};
+const notes = { errors: [], warnings: [] };   // from the last build, shown in Messages and returned by the API
+try { if (hash.get('spec')) S.spec = await decodeSpec(hash.get('spec')); }
+catch (e) { notes.errors.push(`#spec: could not read the payload (${e.message}). Use URL-encoded JSON or deflate-raw + base64url.`); }
+if (!isObj(S.spec)) { notes.errors.push('#spec: the payload must be a JSON object'); S.spec = {}; }
+
+/** A full character (has its own figure or size and no extends) or a change to the character picked with ?c=. */
+const isFull = (spec) => !spec.extends && !!(spec.figure || spec.size);
+
+const queryOf = () => {
+  const p = new URLSearchParams();
+  if (!isFull(S.spec) || S.c !== 'goose-base') p.set('c', S.c);
+  if (S.view !== 'side') p.set('view', S.view);
+  if (S.view !== 'look') p.set('anim', S.anim);
+  if (S.skin) p.set('skin', S.skin);
+  p.set('res', S.res);
+  if (S.lod) p.set('lod', S.lod);
+  if (S.zoom) p.set('zoom', S.zoom);
+  if (S.bg) p.set('bg', S.bg);
+  if (!S.ui) p.set('ui', '0');
+  if (!S.playing) p.set('frame', S.frame);
+  return p.toString();
+};
+async function link({ readable = false } = {}) {
+  const base = `${location.origin}${location.pathname}?${queryOf()}`;
+  if (!Object.keys(S.spec).length) return base;
+  return `${base}#spec=${readable ? encodeURIComponent(JSON.stringify(S.spec)) : await encodeSpec(S.spec)}`;
+}
+let persistN = 0;
+async function persist() {
+  const n = ++persistN, url = await link();
+  if (n === persistN) history.replaceState(null, '', url);
+  $('#linkLen').textContent = `${url.length} characters`;
+}
+
+// ---------- build ----------
+const cache = new Map();
+const loadJSON = (url) => {
+  if (!cache.has(url)) cache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); }));
+  return cache.get(url);
+};
+let resolved = null, compiled = null, frames = new Map();
+
+async function build() {
+  notes.errors = []; notes.warnings = [];
+  if (!isFull(S.spec) && !CHARACTERS.includes(S.c)) { notes.warnings.push(`c=${S.c} is not a character here; using goose-base (have: ${CHARACTERS.join(', ')})`); S.c = 'goose-base'; }
+  const spec = isFull(S.spec) || S.spec.extends ? S.spec : { extends: `${S.c}.json`, ...S.spec };
+  try {
+    resolved = await resolveSpec(structuredClone(spec), {
+      loadRef: (ref) => loadJSON(`../examples/${ref}`),
+      loadFigure: (n) => loadJSON(`../figures/${n}.json`),
+      warn: (p, m) => notes.warnings.push(`${p}: ${m}`),
+    });
+    compiled = compile(resolved);
+  } catch (e) {
+    notes.errors.push(e.message);
+    resolved = compiled = null;
+  }
+  frames = new Map();
+  if (compiled) pickAnim();
+  return report();
+}
+
+/** Views this character has: side, the turned views, and the ¾ look. */
+const viewsOf = () => compiled ? ['side', ...Object.keys(compiled.animations).filter((n) => n.startsWith('turn@')).map((n) => n.slice(5)), ...(compiled.animations['look@front'] ? ['look'] : [])] : ['side'];
+/** Animation names (without the @view) available in a view. */
+function animsOf(view) {
+  const names = Object.keys(compiled?.animations ?? {}).filter((n) => !n.includes('>'));
+  if (view === 'side') return names.filter((n) => !n.includes('@'));
+  if (view === 'look') return ['look'];
+  return names.filter((n) => n.endsWith(`@${view}`) && !/^(turn|unturn|look)@/.test(n)).map((n) => n.slice(0, -view.length - 1));
+}
+const animName = () => S.view === 'side' ? S.anim : S.view === 'look' ? 'look@front' : `${S.anim}@${S.view}`;
+function pickAnim() {
+  if (!viewsOf().includes(S.view)) { notes.warnings.push(`view=${S.view}: this character has ${viewsOf().join(', ')}; showing side`); S.view = 'side'; }
+  const list = animsOf(S.view);
+  if (S.view !== 'look' && !list.includes(S.anim)) {
+    const alias = { walk: 'waddle', waddle: 'walk' }[S.anim];
+    const next = list.includes(alias) ? alias : list.includes('idle') ? 'idle' : list[0];
+    if (!alias || next !== alias) notes.warnings.push(`anim=${S.anim}: not in the ${S.view} view; showing ${next} (have: ${list.join(', ')})`);
+    S.anim = next;
+  }
+  if (S.skin && !compiled.skins?.[S.skin]) { notes.warnings.push(`skin=${S.skin}: this character has ${Object.keys(compiled.skins ?? {}).join(', ') || 'no skins'}`); S.skin = ''; }
+  const a = compiled.animations[animName()];
+  S.frame = Math.min(Math.max(0, S.frame | 0), a.frames - 1);
+}
+
+function frameImage(f) {
+  const key = `${S.skin}:${animName()}:${f}:${S.res}:${S.lod}`;
+  if (!frames.has(key)) {
+    const c = S.skin ? compiled.skins[S.skin] : compiled;
+    frames.set(key, renderFrame(c, { res: S.res, anim: animName(), frame: f, style: resolveStyle(c, S.res, S.lod ? { lod: Number(S.lod) } : {}) }));
+  }
+  return frames.get(key);
+}
+const toCanvas = (img, cv = document.createElement('canvas')) => { cv.width = img.w; cv.height = img.h; cv.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(img.rgba), img.w, img.h), 0, 0); return cv; };
+
+// ---------- drawing ----------
+const big = $('#big'), scratch = document.createElement('canvas');
+let lastKey = '';
+function draw() {
+  if (!compiled) return;
+  const stage = $('#stage');
+  const key = `${S.skin}:${animName()}:${S.frame}:${S.res}:${S.lod}:${stage.clientWidth}:${S.zoom}`;
+  if (key === lastKey) return;
+  lastKey = key;
+  const img = frameImage(S.frame);
+  toCanvas(img, scratch);
+  const fit = Math.min((stage.clientWidth - 24) / img.w, Math.min(560, innerHeight * (S.ui ? 0.6 : 0.95)) / img.h);
+  const zoom = S.zoom || (fit >= 2 ? Math.floor(fit) : fit);
+  const dpr = devicePixelRatio || 1, w = img.w * zoom, h = img.h * zoom;
+  big.style.width = `${w}px`; big.style.height = `${h}px`;
+  big.width = Math.round(w * dpr); big.height = Math.round(h * dpr);
+  const ctx = big.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(scratch, 0, 0, big.width, big.height);
+  $('#frameNo').textContent = `frame ${S.frame + 1}/${compiled.animations[animName()].frames}`;
+  for (const [i, cv] of [...$('#strip').children].entries()) cv.classList.toggle('on', i === S.frame);
+}
+function drawStrip() {
+  const box = $('#strip');
+  box.replaceChildren();
+  if (!compiled) return;
+  const a = compiled.animations[animName()];
+  const z = Math.max(1, Math.floor(96 / S.res));
+  for (let f = 0; f < a.frames; f++) {
+    const cv = toCanvas(frameImage(f));
+    cv.style.width = `${cv.width * z}px`; cv.style.height = `${cv.height * z}px`;
+    cv.className = S.bg ? '' : 'checker';
+    if (S.bg) cv.style.background = bgCss();
+    cv.title = `frame ${f + 1}`;
+    cv.onclick = () => { S.playing = false; S.frame = f; syncPlay(); draw(); persist(); };
+    box.append(cv);
+  }
+}
+
+let acc = 0, last = performance.now(), holdUntil = 0;
+function tick(now) {
+  const dt = Math.min(100, now - last); last = now;
+  if (S.playing && compiled && now > holdUntil) {
+    const a = compiled.animations[animName()];
+    acc += dt;
+    const step = 1000 / (a.fps || 8);
+    while (acc >= step) {
+      acc -= step;
+      if (S.frame + 1 < a.frames) S.frame++;
+      else if (a.loop !== false) S.frame = 0;
+      else { holdUntil = now + 700; S.frame = 0; acc = 0; break; }   // one-shots: rest on the last frame, then replay
+    }
+  }
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ---------- panel ----------
+const fill = (sel, values, cur, label = (v) => v) => { sel.replaceChildren(...values.map((v) => el('option', { value: v, textContent: label(v), selected: String(v) === String(cur) }))); };
+function syncPlay() { $('#play').textContent = S.playing ? 'pause' : 'play'; }
+
+function materialRows() {
+  const box = $('#mats');
+  box.replaceChildren();
+  if (!resolved) return;
+  const touched = isFull(S.spec) ? {} : S.spec.materials ?? {};
+  for (const [name, raw] of Object.entries(resolved.materials ?? {})) {
+    const m = typeof raw === 'string' ? { color: raw } : raw;
+    const set = (field, value) => {
+      const mats = (S.spec.materials ??= {});
+      const cur = mats[name];
+      const next = isObj(cur) ? { ...cur } : typeof cur === 'string' ? { color: cur } : {};
+      if (typeof raw === 'string' && next.color == null) next.color = raw;   // a base material written as "#hex" needs its colour restated
+      if (value === null || value === '') delete next[field]; else next[field] = value;
+      mats[name] = next;
+      changed();
+    };
+    const tex = el('select', { title: 'texture' }, ...['', ...TEXTURES].map((t) => el('option', { value: t, textContent: t || '— none', selected: (m.texture ?? '') === t })));
+    tex.onchange = () => set('texture', tex.value || null);
+    const strength = el('input', { type: 'range', min: 0, max: 1, step: 0.05, value: m.textureStrength ?? 0.35, title: `textureStrength ${m.textureStrength ?? 0.35}` });
+    strength.oninput = () => { strength.title = `textureStrength ${strength.value}`; set('textureStrength', Number(strength.value)); };
+    const colour = el('input', { type: 'color', value: /^#[0-9a-f]{6}$/i.test(m.color) ? m.color : '#888888', title: m.color });
+    colour.oninput = () => set('color', colour.value);
+    const reset = el('button', { textContent: '↺', title: 'back to the character\'s own', disabled: !(name in touched) });
+    reset.onclick = () => { delete S.spec.materials[name]; if (!Object.keys(S.spec.materials).length) delete S.spec.materials; changed(); };
+    box.append(el('div', { className: 'mat' }, el('span', { className: `name${name in touched ? ' touched' : ''}`, textContent: name, title: name }), colour, tex, strength, reset));
+  }
+}
+
+function styleControls() {
+  const box = $('#style');
+  box.replaceChildren();
+  const st = S.spec.style ?? {};
+  const set = (key, v) => {
+    S.spec.style ??= {};
+    if (v === null) delete S.spec.style[key]; else S.spec.style[key] = v;
+    if (!Object.keys(S.spec.style).length) delete S.spec.style;
+    changed();
+  };
+  for (const c of STYLE_CONTROLS) {
+    let input;
+    if (c.type === 'select') {
+      input = el('select', {}, ...c.options.map((o) => el('option', { value: o, textContent: o || 'auto', selected: String(st[c.key] ?? '') === o })));
+      input.onchange = () => set(c.key, input.value === '' ? null : c.key === 'tones' ? Number(input.value) : c.key === 'dither' ? input.value === 'true' : input.value);
+    } else {
+      input = el('input', { type: 'range', min: c.min, max: c.max, step: c.step, value: st[c.key] ?? resolved?.style?.[c.key] ?? c.def });
+      input.oninput = () => { lbl.firstChild.textContent = `${c.key} ${input.value}`; set(c.key, Number(input.value)); };
+      input.ondblclick = () => set(c.key, null);
+      input.title = 'double-click: back to the character\'s own';
+    }
+    const lbl = el('label', {}, `${c.key}${c.type === 'range' ? ` ${st[c.key] ?? resolved?.style?.[c.key] ?? c.def}` : ''}`, input);
+    box.append(lbl);
+  }
+}
+
+function panel() {
+  fill($('#c'), isFull(S.spec) ? ['(from the payload)'] : CHARACTERS, S.c);
+  $('#c').disabled = isFull(S.spec);
+  fill($('#skin'), ['', ...Object.keys(compiled?.skins ?? {})], S.skin, (v) => v || 'default');
+  fill($('#view'), viewsOf(), S.view);
+  fill($('#anim'), compiled ? animsOf(S.view) : [], S.view === 'look' ? 'look' : S.anim);
+  fill($('#res'), RES.includes(S.res) ? RES : [...RES, S.res].sort((a, b) => a - b), S.res);
+  $('#lod').value = S.lod;
+  if (document.activeElement !== $('#patch')) $('#patch').value = Object.keys(S.spec).length ? JSON.stringify(S.spec, null, 2) : '';
+  materialRows();
+  styleControls();
+  syncPlay();
+  const a = compiled?.animations[animName()];
+  $('#info').textContent = a ? `${resolved.name ?? S.c} · ${animName()} · ${a.frames} frames at ${a.fps} fps${a.loop === false ? ' · plays once' : ''} · ${S.res} px` : '';
+  $('#inventory').textContent = JSON.stringify(inventory(), null, 1).replace(/\n\s+(?=[\]"\d-])/g, ' ').slice(0, 6000);
+}
+
+function report() {
+  const box = $('#msgs');
+  box.replaceChildren(
+    ...notes.errors.map((m) => el('div', { className: 'bad', textContent: `✗ ${m}` })),
+    ...notes.warnings.map((m) => el('div', { className: 'warn', textContent: `! ${m}` })),
+    ...(notes.errors.length || notes.warnings.length ? [] : [el('div', { textContent: compiled ? '✓ builds' : '' })]),
+  );
+  document.body.dataset.state = notes.errors.length ? 'error' : 'ready';
+  return { ok: !notes.errors.length, errors: [...notes.errors], warnings: [...notes.warnings] };
+}
+
+let changeTimer = 0;
+function changed() {
+  clearTimeout(changeTimer);
+  changeTimer = setTimeout(async () => { await refresh(); }, 120);
+}
+async function refresh({ rebuild = true } = {}) {
+  const r = rebuild ? await build() : report();
+  lastKey = '';
+  panel(); drawStrip(); draw(); persist();
+  return r;
+}
+
+$('#c').onchange = (e) => { S.c = e.target.value; refresh(); };
+$('#skin').onchange = (e) => { S.skin = e.target.value; refresh({ rebuild: false }); };
+$('#view').onchange = (e) => { S.view = e.target.value; S.frame = 0; pickAnim(); refresh({ rebuild: false }); };
+$('#anim').onchange = (e) => { S.anim = e.target.value; S.frame = 0; pickAnim(); refresh({ rebuild: false }); };
+$('#res').onchange = (e) => { S.res = Number(e.target.value); refresh({ rebuild: false }); };
+$('#lod').onchange = (e) => { S.lod = e.target.value; refresh({ rebuild: false }); };
+$('#play').onclick = () => { S.playing = !S.playing; syncPlay(); persist(); };
+const step = (d) => { const n = compiled.animations[animName()].frames; S.playing = false; S.frame = (S.frame + d + n) % n; syncPlay(); draw(); persist(); };
+$('#prev').onclick = () => step(-1);
+$('#next').onclick = () => step(1);
+const applyPatch = () => {
+  const text = $('#patch').value.trim();
+  try { S.spec = text ? JSON.parse(text) : {}; if (!isObj(S.spec)) throw new Error('the payload must be a JSON object'); }
+  catch (e) { notes.errors = [`payload: ${e.message}`]; notes.warnings = []; report(); return; }
+  $('#patch').blur(); refresh();
+};
+$('#apply').onclick = applyPatch;
+$('#patch').onkeydown = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); applyPatch(); } };
+$('#reset').onclick = () => { S.spec = {}; refresh(); };
+const copy = async (readable, btn) => { await navigator.clipboard.writeText(await link({ readable })); const t = btn.textContent; btn.textContent = 'copied'; setTimeout(() => { btn.textContent = t; }, 1000); };
+$('#copy').onclick = (e) => copy(false, e.target);
+$('#copyJson').onclick = (e) => copy(true, e.target);
+addEventListener('resize', () => { lastKey = ''; });
+
+// ---------- for agents ----------
+function inventory() {
+  return {
+    character: isFull(S.spec) ? '(from the payload)' : S.c,
+    characters: CHARACTERS,
+    views: viewsOf(),
+    animations: Object.fromEntries(viewsOf().map((v) => [v, compiled ? animsOf(v) : []])),
+    skins: Object.keys(compiled?.skins ?? {}),
+    materials: resolved?.materials ?? {},
+    parts: (resolved?.parts ?? []).map((p) => p.id),
+    style: resolved?.style ?? {},
+    textures: TEXTURES,
+    resolutions: RES,
+  };
+}
+
+window.playground = {
+  ready: null,
+  /** The current setup: URL options and the payload. */
+  get state() { return { c: S.c, view: S.view, anim: S.view === 'look' ? 'look' : S.anim, skin: S.skin, res: S.res, lod: S.lod ? Number(S.lod) : null, frame: S.frame, playing: S.playing, spec: structuredClone(S.spec) }; },
+  /** What can be chosen for the current character: views, animations per view, skins, materials (as resolved), part ids, textures. */
+  options: inventory,
+  /**
+   * Change the setup. Keys: c, view, anim, skin, res, lod, frame (pauses there; null plays), bg, zoom,
+   * spec (replaces the payload), merge (merged into the payload: materials per field, style per key, parts appended).
+   * Resolves to {ok, errors, warnings, link}.
+   */
+  async set(o = {}) {
+    for (const k of ['c', 'view', 'anim', 'skin', 'bg']) if (o[k] !== undefined) S[k] = o[k] ?? '';
+    if (o.res !== undefined) S.res = Number(o.res) || 64;
+    if (o.lod !== undefined) S.lod = o.lod ? String(o.lod) : '';
+    if (o.zoom !== undefined) S.zoom = Number(o.zoom) || 0;
+    if (o.frame !== undefined) { S.playing = o.frame === null; S.frame = Number(o.frame) || 0; }
+    if (o.spec !== undefined) S.spec = structuredClone(o.spec ?? {});
+    if (o.merge) {
+      const m = o.merge;
+      for (const [name, v] of Object.entries(m.materials ?? {})) {
+        S.spec.materials ??= {};
+        const cur = S.spec.materials[name];
+        S.spec.materials[name] = v === null ? null : isObj(v) && isObj(cur) ? { ...cur, ...v } : v;
+      }
+      if (m.style) S.spec.style = { ...(S.spec.style ?? {}), ...m.style };
+      if (m.parts) S.spec.parts = [...(S.spec.parts ?? []), ...m.parts];
+      for (const [k, v] of Object.entries(m)) if (!['materials', 'style', 'parts'].includes(k)) S.spec[k] = v;
+    }
+    applyLook();
+    const r = await refresh();
+    return { ...r, link: await link() };
+  },
+  /** The shareable link: compressed by default, or with the payload as readable JSON. */
+  link: (opts) => link(opts),
+  /** The frame showing now as a PNG data URL, at `scale` × its pixel size (default 4). */
+  frame({ scale = 4 } = {}) {
+    if (!compiled) return null;
+    const img = frameImage(S.frame), cv = el('canvas', { width: img.w * scale, height: img.h * scale }), ctx = cv.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(toCanvas(img), 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/png');
+  },
+  get errors() { return [...notes.errors]; },
+  get warnings() { return [...notes.warnings]; },
+  docs: { guide: new URL('../docs/playground.md', location.href).href, schema: new URL('play.schema.json', location.href).href, spec: new URL('../docs/SPEC.md', location.href).href },
+};
+
+/** ?bg=: a hex colour without the # (fff, 1b1424) or any CSS colour name. */
+const bgCss = () => /^[0-9a-f]{3,8}$/i.test(S.bg) ? `#${S.bg}` : S.bg;
+
+function applyLook() {
+  document.body.classList.toggle('bare', !S.ui);
+  const stage = $('#stage');
+  stage.classList.toggle('checker', !S.bg);
+  stage.style.background = S.bg ? bgCss() : '';
+}
+
+applyLook();
+const startNotes = { ...notes, errors: [...notes.errors], warnings: [...notes.warnings] };
+window.playground.ready = refresh().then((r) => {
+  if (startNotes.errors.length) { notes.errors.unshift(...startNotes.errors); r = report(); }
+  requestAnimationFrame(tick);
+  return r;
+});
+</script>
+</body>
+</html>
