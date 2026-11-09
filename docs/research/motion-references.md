@@ -161,6 +161,8 @@ The vulture and eagle are the closest stand-ins for a large bird's slow stroke. 
 
 The catalogue says "racing hound", never "greyhound". Commons has animated GIFs built from 710 ([Dog_galloping.gif](https://commons.wikimedia.org/wiki/File:Dog_galloping.gif)) and 707, marked Public domain.
 
+**Update 2026-11-09, after measuring plate 706** ([references/measurements/dog-pl706.json](../../references/measurements/dog-pl706.json)): despite its catalogue title, the mastiff on plate 706 is walking, not trotting. Support alternates between a same-side pair (frame 2) and a diagonal pair (frame 6), the pattern of a slow lateral-sequence walk, and the cycle is 0.88 s. Use it as a check on `dog.walk`, not `dog.trot`. Joint angles and stride length were not measured: at this reading precision the background-marker cues disagreed by up to 35 px.
+
 ### 2.4 Humans
 
 All plates have a lateral row on top; "N" means nude and "PC" means pelvis cloth, as in the catalogue.

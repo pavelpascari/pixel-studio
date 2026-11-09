@@ -1,0 +1,196 @@
+{
+ "source": "muybridge-1887-pl706",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796941b/full/full/0/default.jpg",
+ "imageSize": [
+  4964,
+  3940
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "dog",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each frame cropped from the full scan at 1-2x with a grid labelled in scan pixels (plus contrast for the shadowed legs). Near legs are the sunlit ones, far legs the shadowed ones. A paw is 'down' when it rests flat on the ground line. Only frames and legs that could be identified with confidence are recorded; everything else is left out rather than guessed.",
+ "frameBoxes": [
+  [
+   665,
+   1310,
+   1244,
+   1761
+  ],
+  [
+   1264,
+   1310,
+   1857,
+   1761
+  ],
+  [
+   1876,
+   1310,
+   2465,
+   1761
+  ],
+  [
+   2485,
+   1310,
+   3074,
+   1761
+  ],
+  [
+   3094,
+   1310,
+   3683,
+   1761
+  ],
+  [
+   3703,
+   1310,
+   4296,
+   1761
+  ],
+  [
+   665,
+   1823,
+   1244,
+   2270
+  ],
+  [
+   1264,
+   1823,
+   1857,
+   2270
+  ],
+  [
+   1876,
+   1823,
+   2465,
+   2270
+  ],
+  [
+   2485,
+   1823,
+   3074,
+   2270
+  ],
+  [
+   3094,
+   1823,
+   3683,
+   2270
+  ],
+  [
+   3703,
+   1823,
+   4296,
+   2270
+  ]
+ ],
+ "timing": {
+  "intervalMs": 110,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1.5,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "cycleS": 0.88,
+  "framesPerCycle": 8,
+  "computed": "12 frames x 110 ms / 1.5 cycles"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1690,
+   "paws": {
+    "pawHindNear": {
+     "down": true,
+     "toe": [
+      838,
+      1694
+     ],
+     "confidence": "high"
+    },
+    "pawForeNear": {
+     "down": true,
+     "toe": [
+      1128,
+      1695
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "One shadowed leg lifted mid-body (about x 1000, paw near y 1650); the fourth leg is hidden."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1690,
+   "paws": {
+    "pawHindNear": {
+     "down": true,
+     "toe": [
+      1378,
+      1691
+     ],
+     "confidence": "high"
+    },
+    "pawForeNear": {
+     "down": true,
+     "toe": [
+      1660,
+      1692
+     ],
+     "confidence": "high"
+    },
+    "pawHindFar": {
+     "down": false,
+     "toe": [
+      1535,
+      1682
+     ],
+     "confidence": "medium"
+    },
+    "pawForeFar": {
+     "down": false,
+     "toe": [
+      1705,
+      1680
+     ],
+     "confidence": "medium"
+    }
+   },
+   "notes": "Support on the near (same-side) pair; both far legs swing. Checked at 2x with contrast."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1690,
+   "paws": {
+    "pawHindNear": {
+     "down": true,
+     "toe": [
+      3890,
+      1690
+     ],
+     "confidence": "high"
+    },
+    "pawForeNear": {
+     "down": false,
+     "toe": [
+      4110,
+      1652
+     ],
+     "confidence": "high"
+    },
+    "pawForeFar": {
+     "down": true,
+     "toe": [
+      4022,
+      1690
+     ],
+     "confidence": "medium"
+    }
+   },
+   "notes": "Support on a diagonal pair (near hind + far fore); the near fore reaches forward in the air. The far hind is not clear."
+  }
+ ],
+ "findings": [
+  "The cycle is 0.88 s (catalogue timing). Our dog.walk is 0.8 s (Maes et al. 2008 at 1 m/s); a heavier, slower mastiff fits.",
+  "Support alternates between a same-side pair (frame 2) and a diagonal pair (frame 6): a slow lateral-sequence walk, not a trot, despite the catalogue title 'Dog; trotting; interrupted'. Do not use this plate to tune dog.trot.",
+  "Not measured: stride length (camera shifts read from the background markers disagreed by up to 35 px between cues, so world positions are unreliable at this reading precision), joint angles, and contacts in frames 3-5 and 7-12 where near and far legs could not be told apart with confidence."
+ ]
+}

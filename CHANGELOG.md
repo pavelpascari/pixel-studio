@@ -36,6 +36,9 @@ Until 1.0, minor versions may change the spec format.
   The greylag's own waddle gets the same duty and head-bob.
 - **Human**, from Fukuchi et al. 2018/2017: walk `stride` 26 → 36 (real step length), run `duty` 0.38 → 0.35,
   `stride` 26 → 30, 11 fps (0.73 s cycle).
+- Muybridge plate 706 measured (`references/measurements/dog-pl706.json`): the mastiff is walking, not trotting
+  (support switches between a same-side and a diagonal pair; 0.88 s cycle), which agrees with the new `dog.walk`; it
+  is not used for the trot.
 - Wings are unchanged: 6–7 Hz matches a goose taking off (Meir et al. 2019, Marey 1890).
 - Each value is logged with its source and exact location (table, equation, plate) in `references/dog.json`,
   `goose.json`, `human.json` and `goose-greylag.json`, and `npm test` fails if a value drifts from its log.
