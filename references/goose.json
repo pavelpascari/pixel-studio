@@ -1,0 +1,50 @@
+{
+ "figure": "goose",
+ "params": [
+  {
+   "param": "motions.walk.duty",
+   "value": 0.7,
+   "source": "han-2023-mallard",
+   "location": "Table 2, walking: duty factor 0.74 at 0.60 m/s (mallard)",
+   "method": "rounded down toward 0.7 for the heavier, slower goose (research recommendation, docs/research/motion-references.md first pass item 2)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.head.hold",
+   "value": 0.38,
+   "source": "wang-2025-goose",
+   "location": "Results: \"The stage from 11 to 73% of the half a gait cycle represents the thrust phase\" (62% of a step), so the head holds still for about 38%",
+   "method": "computed: 1 − 0.62",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sneak.head.hold",
+   "value": 0.38,
+   "source": "wang-2025-goose",
+   "location": "Same head-bob finding as walk: thrust 62%, hold 38% of each step",
+   "method": "applied to the sneaking walk too",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.run.duty",
+   "value": 0.58,
+   "source": "han-2023-mallard",
+   "location": "Table 2, grounded running: duty factor 0.62 at 1.26 m/s; duty never fell below 0.5 (no flight phase in waterfowl running)",
+   "method": "chosen in the recommended 0.55–0.6 range; was 0.42 (a run with a flight phase)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.rush.duty",
+   "value": 0.58,
+   "source": "han-2023-mallard",
+   "location": "Table 2, grounded running: duty 0.62; never below 0.5",
+   "method": "chosen in the recommended 0.55–0.6 range; was 0.42",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  }
+ ]
+}

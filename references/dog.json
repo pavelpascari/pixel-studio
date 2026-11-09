@@ -1,0 +1,104 @@
+{
+ "figure": "dog",
+ "params": [
+  {
+   "param": "motions.walk.fps",
+   "value": 10,
+   "source": "maes-2008",
+   "location": "Appendix 1, all gaits (N=486): cycle D = 0.383 + 1.168·e^(−u) s, at u = 1.0 m/s gives 0.81 s",
+   "method": "computed; 8 frames at 10 fps = 0.8 s",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.frames",
+   "value": 8,
+   "source": "maes-2008",
+   "location": "Appendix 1 cycle fit at u = 1.0 m/s (0.81 s)",
+   "method": "kept 8 frames; fps sets the cycle",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.duty",
+   "value": 0.65,
+   "source": "maes-2008",
+   "location": "Appendix 1: DF = 0.652 − 0.210·ln u, at u = 1.0 m/s gives 0.65",
+   "method": "computed; unchanged (already matched)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.stride",
+   "value": 27,
+   "source": "maes-2008",
+   "location": "Appendix 1: L = 0.489 + 0.297·u m, at u = 1.0 m/s gives 0.79 m = 42 units. Scale: Maes subjects' withers height 0.61 m (Methods, Subjects) = our dog's withers 32.5 units, so 1 unit = 1.88 cm.",
+   "method": "computed; our stride is the per-stance sweep = L × duty = 42 × 0.65 ≈ 27",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.phases.armForeNear",
+   "value": 0.16,
+   "source": "maes-2008",
+   "location": "Table 2, lateral walk: PL = 84 ± 5 % (f1 to h1 footfall lag)",
+   "method": "forefoot lands 1 − 0.84 = 0.16 of a cycle after the same-side hindfoot (thighHindNear 0)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.phases.armForeFar",
+   "value": 0.66,
+   "source": "maes-2008",
+   "location": "Table 2, lateral walk: PL = 84 ± 5 %",
+   "method": "same-side offset 0.16 after thighHindFar (0.5)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.trot.frames",
+   "value": 8,
+   "source": "maes-2008",
+   "location": "Appendix 1 cycle fit at u = 2.5 m/s: D = 0.48 s",
+   "method": "computed; 8 frames at 16 fps = 0.5 s (the research suggested 6 at 12; 8 frames sample the longer stride's planted feet cleanly, same timing)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.trot.fps",
+   "value": 16,
+   "source": "maes-2008",
+   "location": "Appendix 1 cycle fit at u = 2.5 m/s: D = 0.48 s",
+   "method": "computed; 8 frames at 16 fps = 0.5 s cycle",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.trot.duty",
+   "value": 0.46,
+   "source": "maes-2008",
+   "location": "Appendix 1: DF = 0.652 − 0.210·ln u, at u = 2.5 m/s gives 0.46",
+   "method": "computed",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.trot.stride",
+   "value": 30,
+   "source": "maes-2008",
+   "location": "Appendix 1: L at u = 2.5 m/s = 1.23 m = 65 units. Scale: Maes subjects' withers height 0.61 m (Methods, Subjects) = our dog's withers 32.5 units, so 1 unit = 1.88 cm.",
+   "method": "computed; sweep = 65 × 0.46 ≈ 30",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.trot.phases.armForeNear",
+   "value": 0.5,
+   "source": "maes-2008",
+   "location": "Table 2, trot: PL = 50 ± 4 % (diagonal pairs land together)",
+   "method": "confirmed; unchanged",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  }
+ ]
+}

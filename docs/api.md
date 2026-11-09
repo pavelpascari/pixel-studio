@@ -476,7 +476,7 @@ const spec = await resolveSpec({ figure: 'goose' }, {     // no parts: the bare 
   warn: (path, message) => notes.push(`${path}: ${message}`),
 });
 console.log(spec.name, Object.keys(spec.animations));     // goose skeleton [ 'idle', 'walk', 'run', 'sneak', 'jump', 'fall', 'sit', 'duck', 'peek', 'climb' ]
-console.log(compile(spec).animations.walk.speed);         // 26.21 (units per second)
+console.log(compile(spec).animations.walk.speed);         // 23.21 (units per second)
 
 try {
   await resolveSpec({ extends: 'base.json' });
@@ -1456,7 +1456,7 @@ const parts = goose.bones.map((b) => ({
   base: { x: 0, y: 0, rot: 0, sx: 1, sy: 1, show: 1 },
 }));
 const { tracks, speed, events, notes } = generateMotion(parts, goose.rig, { ...goose.motions.walk });
-console.log(speed, tracks.body.y.length, notes); // 26.21 32 []
+console.log(speed, tracks.body.y.length, notes); // 23.21 32 []
 console.log(events); // [ { u: 0, name: 'footstep', data: { leg: 'legNear' } }, { u: 0.5, name: 'footstep', data: { leg: 'legFar' } } ]
 ```
 

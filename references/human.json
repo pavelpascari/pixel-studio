@@ -1,0 +1,50 @@
+{
+ "figure": "human",
+ "params": [
+  {
+   "param": "motions.walk.stride",
+   "value": 36,
+   "source": "fukuchi-2018",
+   "location": "Comfortable overground walking 1.24 m/s (WBDSinfo.csv, n=24); stride length 1.28–1.34 m with mainka-2023 Table 2 (1.34 m at 1.28 m/s) ≈ 62–65 units. Scale: our human is about 82 units tall; ASSUMED adult height 1.70 m (not from a source), so 1 unit ≈ 2.1 cm.",
+   "method": "computed; sweep = 60 units per cycle × 0.6 ≈ 36 (upper end that the legs reach without warnings)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.walk.duty",
+   "value": 0.6,
+   "source": "fukuchi-2018",
+   "location": "Duty 0.59–0.62 computed from the force data at comfortable speed (docs/research/motion-references.md §3.2)",
+   "method": "confirmed; unchanged",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.run.fps",
+   "value": 11,
+   "source": "fukuchi-2017",
+   "location": "Table 4, 2.5 m/s: cadence 80.8 strides/min = 0.74 s cycle",
+   "method": "computed; 8 frames at 11 fps = 0.73 s",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.run.duty",
+   "value": 0.35,
+   "source": "fukuchi-2017",
+   "location": "Duty about 0.36 at 2.5 m/s, computed from the force files (docs/research/motion-references.md §3.2)",
+   "method": "rounded to 0.35 (recommended 0.34–0.36)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.run.stride",
+   "value": 30,
+   "source": "fukuchi-2017",
+   "location": "Table 4, 2.5 m/s: stride length 1.86 m ≈ 90 units. Scale: our human is about 82 units tall; ASSUMED adult height 1.70 m (not from a source), so 1 unit ≈ 2.1 cm.",
+   "method": "computed; sweep ≈ 86 × 0.35 = 30 (86 units per cycle as built)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  }
+ ]
+}

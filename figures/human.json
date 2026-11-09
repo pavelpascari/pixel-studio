@@ -40,9 +40,9 @@
   },
   "motions": {
     "idle": {"model": "idle", "frames": 12, "fps": 8, "breathe": 0.5, "sway": 0.7, "head": {"steady": 0.6, "look": 1, "nod": 2}},
-    "walk": {"model": "gait", "frames": 8, "fps": 8, "stride": 26, "duty": 0.6, "lift": 5, "bob": 1.5, "reach": 0.995, "toeOff": 25, "armSwing": 20, "elbow": 10,
+    "walk": {"model": "gait", "frames": 8, "fps": 8, "stride": 36, "duty": 0.6, "lift": 5, "bob": 1.5, "reach": 0.995, "toeOff": 25, "armSwing": 20, "elbow": 10,
              "head": {"steady": 0.3}},
-    "run": {"model": "gait", "frames": 8, "fps": 12, "stride": 26, "duty": 0.38, "lift": 13, "bob": 2.5, "bounce": "spring", "crouch": 1.5, "lean": 9,
+    "run": {"model": "gait", "frames": 8, "fps": 11, "stride": 30, "duty": 0.35, "lift": 13, "bob": 2.5, "bounce": "spring", "crouch": 1.5, "lean": 9,
             "toeOff": 30, "armSwing": 32, "elbow": 75, "head": {"steady": 0.3, "tilt": -6}},
     "jump": {"model": "jump", "frames": 10, "fps": 10, "loop": false, "dip": 8, "tuck": 8, "lean": 8, "elbow": 20, "head": {"steady": 0.5}},
     "fall": {"model": "fall", "frames": 6, "fps": 10, "kick": 3, "wobble": 4, "armsUp": 115, "elbow": 35, "head": {"steady": 0.6}},

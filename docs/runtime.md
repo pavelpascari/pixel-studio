@@ -378,7 +378,7 @@ Gait animations made by the figure motion models (walk, run, trot, sneak, travel
 px per second = speed × displayed height (CSS px) / canvas height (units)
 ```
 
-For example, the `waddle` of `goose-root` has `speed: 26.21`; displayed at 128 px on a 100-unit canvas, the goose moves at 26.21 × 128 / 100 ≈ 33.5 px/s. Its `run` (`speed: 76.19`) moves at ≈ 97.5 px/s. Bundles built before `size` was added assume 100 units.
+For example, the `waddle` of `goose-root` has `speed: 23.21`; displayed at 128 px on a 100-unit canvas, the goose moves at 23.21 × 128 / 100 ≈ 29.7 px/s. Its `run` (`speed: 55.17`) moves at ≈ 70.6 px/s. Bundles built before `size` was added assume 100 units.
 
 **Use the shared clock.** Move sprites from `clock.add(fn)`, not from a `requestAnimationFrame` loop of your own. `fn(dt, now)` gets the same capped `dt` the sprites step their frames with, so after a slow frame the body and the legs advance by the same amount and the feet still do not slide. `clock.add` returns a function that removes `fn`.
 
@@ -489,7 +489,7 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
   "ground": 90.5,
   "animations": {
     "idle":   { "row": 0, "frames": 8,  "fps": 6,  "loop": true },
-    "waddle": { "row": 1, "frames": 8,  "fps": 10, "loop": true, "speed": 26.21,
+    "waddle": { "row": 1, "frames": 8,  "fps": 10, "loop": true, "speed": 23.21,
                 "events": [{ "frame": 0, "name": "footstep", "data": { "leg": "legNear" } },
                            { "frame": 4, "name": "footstep", "data": { "leg": "legFar" } }] },
     "honk":   { "row": 3, "frames": 10, "fps": 10, "loop": false, "events": [{ "frame": 3, "name": "honk" }],

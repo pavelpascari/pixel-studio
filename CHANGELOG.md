@@ -24,6 +24,22 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### Motion re-timed from real animals (every change cited in `references/`)
+
+- **Dog** (fox and anything on `figures/dog.json`), from Maes et al. 2008: `walk` takes real dog-sized steps
+  (`stride` 15 → 27, 0.8 s cycle) with each forefoot landing 16% of a cycle after its hindfoot (Table 2, was 25%);
+  `trot` is a real trot instead of a walking-speed jog (0.5 s cycle, `duty` 0.46, `stride` 17 → 30; 8 frames at
+  16 fps). Speeds: walk 23 → 52, trot 57 → 130 units/s.
+- **Goose** (every goose), from Wang et al. 2025 and Han et al. 2023: the walk and sneak head-bob, holding the head
+  still for 38% of each step (`head.hold`); walking `duty` 0.62 → 0.7; `run` and `rush` are grounded runs (`duty`
+  0.42 → 0.58: waterfowl keep a foot down when they run), so they are slower (run 76 → 55, rush 100 → 72 units/s).
+  The greylag's own waddle gets the same duty and head-bob.
+- **Human**, from Fukuchi et al. 2018/2017: walk `stride` 26 → 36 (real step length), run `duty` 0.38 → 0.35,
+  `stride` 26 → 30, 11 fps (0.73 s cycle).
+- Wings are unchanged: 6–7 Hz matches a goose taking off (Meir et al. 2019, Marey 1890).
+- Each value is logged with its source and exact location (table, equation, plate) in `references/dog.json`,
+  `goose.json`, `human.json` and `goose-greylag.json`, and `npm test` fails if a value drifts from its log.
+
 ### Where our motion comes from
 
 - New `references/`: a registry of motion sources (`sources.json`: Muybridge plates with record IDs, frame layout and

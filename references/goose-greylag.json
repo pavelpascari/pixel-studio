@@ -1,0 +1,23 @@
+{
+ "character": "goose-greylag",
+ "params": [
+  {
+   "param": "animations.waddle.duty",
+   "value": 0.7,
+   "source": "han-2023-mallard",
+   "location": "Table 2, walking: duty factor 0.74",
+   "method": "same as goose.walk; was 0.66",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "animations.waddle.head.hold",
+   "value": 0.38,
+   "source": "wang-2025-goose",
+   "location": "Thrust 11–73% of half a gait cycle, so hold ≈ 38%",
+   "method": "same as goose.walk; was 0.1",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  }
+ ]
+}
