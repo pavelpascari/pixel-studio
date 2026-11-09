@@ -101,6 +101,18 @@
   .notes a { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px; padding: 14px 0; min-height: 44px; text-decoration: none; }
   .notes a:hover b, .notes a:focus-visible b { text-decoration: underline; text-decoration-color: var(--stamp); }
   .services p { margin: 0 0 14px; }
+  form.sub { margin-top: calc(var(--goose) + 40px); }
+  .sub-line { border-top: 1.5px solid var(--ink); margin-bottom: 14px; }
+  .sub label { display: block; margin-bottom: 12px; }
+  .sub-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sub input { flex: 1 1 220px; min-height: 48px; padding: 0 14px; font: 16px var(--sans); background: #fff; color: var(--ink);
+    border: 1.5px solid var(--ink); border-radius: 2px; }
+  .sub input[aria-invalid="true"] { border-color: var(--stamp); box-shadow: inset 0 0 0 1px var(--stamp); }
+  .sub button { border: 0; cursor: pointer; font: 600 16px var(--sans); }
+  .sub-status { min-height: 1.4em; margin: 10px 0 0; color: var(--ink); }
+  /* the letter the goose carries off after a subscription */
+  #letter { position: fixed; left: 0; top: 0; z-index: 6; width: 22px; height: 15px; pointer-events: none; display: none; }
+  #letter svg { display: block; width: 100%; height: 100%; }
   h3.sub { font-size: 20px; margin: 0 0 14px; }
 
   /* footer */
@@ -228,6 +240,15 @@
             <li><a href="#"><span class="label">2026-09-02</span><b>[Note title: an experiment that did not work]</b></a></li>
             <li><a href="#"><span class="label">2026-07-21</span><b>[Note title: how we price things]</b></a></li>
           </ul>
+          <form class="sub" id="subscribe" novalidate>
+            <div class="sub-line" data-spot data-at="0.86" data-pose="idle" data-face="left"></div>
+            <label for="sub-email"><b>Field notes by email.</b> <span class="small">One a month at most. No tracking pixels.</span></label>
+            <div class="sub-row">
+              <input id="sub-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" aria-describedby="sub-status">
+              <button class="btn" type="submit">Subscribe</button>
+            </div>
+            <p id="sub-status" class="label sub-status" role="status" aria-live="polite"></p>
+          </form>
         </div>
         <div class="services">
           <h3 class="sub">Working together</h3>
@@ -287,6 +308,7 @@
   </div>
 </details>
 
+<span id="letter" aria-hidden="true"><svg viewBox="0 0 22 15"><rect x="0.75" y="0.75" width="20.5" height="13.5" fill="#fff" stroke="#171714" stroke-width="1.5"/><path d="M1 1l10 7.5L21 1" fill="none" stroke="#171714" stroke-width="1.5"/><circle cx="11" cy="9" r="2.6" fill="#D94B32"/></svg></span>
 <pixel-sprite id="goose" anim="idle" states="off" alt="" aria-hidden="true"></pixel-sprite>
 
 <script type="module">
@@ -297,8 +319,6 @@
   // Which perch it wants follows the scroll; hovering a product card or pressing the stamp overrides that.
   // Everything here is decoration: hide #goose and the page is unchanged.
   const goose = document.getElementById('goose');
-  const perches = [...document.querySelectorAll('[data-perch]')];
-  const home = perches[0];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const narrow = matchMedia('(max-width: 640px)');
   const FACES_RIGHT = true;                         // the bundle is drawn facing right
@@ -329,11 +349,20 @@
   narrow.addEventListener('change', apply);
   apply();
 
-  /** Document coordinates of a perch's standing point. */
-  function spot(el) {
-    const r = el.getBoundingClientRect();
-    const at = el === home ? 0.5 : parseFloat(el.dataset.at ?? 0.5);
-    return { x: r.left + scrollX + r.width * at, y: (el === home ? r.bottom : r.top + 0.5) + scrollY };
+  // ── Where the goose can be. A perch is an element (it stands on the top edge at data-at, in data-pose, facing
+  // data-face); [data-perch] ones follow the scroll, [data-spot] ones are only used by scenes. A scene can also
+  // send it to a bare point {at: () => ({x, y})} — off the edge of the screen, say — where it does not land.
+  const perches = [...document.querySelectorAll('[data-perch]')];
+  const home = perches[0];
+  const cards = perches.filter((p) => p.dataset.hover !== undefined);
+  const isPoint = (t) => typeof t?.at === 'function';
+
+  /** Document coordinates of a target's standing point. */
+  function spot(t) {
+    if (isPoint(t)) return t.at();
+    const r = t.getBoundingClientRect();
+    const at = t === home ? 0.5 : parseFloat(t.dataset.at ?? 0.5);
+    return { x: r.left + scrollX + r.width * at, y: (t === home ? r.bottom : r.top + 0.5) + scrollY };
   }
 
   /** The perch for this scroll position: the last one above 70% of the viewport. Leaves home on the first scroll. */
@@ -341,15 +370,15 @@
     const line = scrollY + innerHeight * 0.7;
     let pick = home;
     for (const p of perches) {
-      if (p === home || (!narrow.matches && p.dataset.hover !== undefined && p !== cards[0])) continue; // side-by-side cards: one perch for the row
+      if (p === home || (!narrow.matches && cards.includes(p) && p !== cards[0])) continue; // side-by-side cards: one perch for the row
       if (spot(p).y < line) pick = p;
     }
     if (pick === home && scrollY > 40) pick = perches.find((p) => p !== home && spot(p).y > scrollY + 60) ?? home;
     return pick;
   }
 
-  const cards = perches.filter((p) => p.dataset.hover !== undefined);
-  const G = { x: 0, y: 0, mode: 'perched', perch: home, face: 1, t: 0, dur: 1, from: null, override: null, lastScrollPerch: home };
+  const G = { x: 0, y: 0, mode: 'perched', target: home, face: 1, t: 0, dur: 1, from: null,
+              override: null, lastScrollPerch: home, hold: 0, arrive: null, carry: false };
 
   function face(dir) {
     if (!dir) return;
@@ -361,57 +390,95 @@
     const g = goose.groundOffset ?? size() * 0.905;
     goose.style.transform = `translate(${Math.round(G.x - w / 2)}px, ${Math.round(G.y - g)}px)`;
   }
-  function settle(p) {
-    G.mode = 'perched'; G.perch = p;
-    face(p.dataset.face === 'left' ? -1 : 1);
-    goose.play(p.dataset.pose || 'idle');
-    if (G.after) { const f = G.after; G.after = null; f(); }
+  function arrived() {
+    const done = G.arrive; G.arrive = null; done?.(true);
+  }
+  function settle(t) {
+    G.target = t;
+    if (isPoint(t)) { G.mode = 'away'; arrived(); return; }     // a point in the air: no landing
+    G.mode = 'perched';
+    face(t.dataset.face === 'left' ? -1 : 1);
+    goose.play(t.dataset.pose || 'idle');
+    arrived();
   }
 
-  /** Go to a perch: waddle if it is on the same line and close, otherwise fly. */
-  function goTo(p) {
-    if (p === G.perch && G.mode === 'perched') return;
-    G.perch = p;
-    const to = spot(p);
+  /** Go to a target: waddle if it is on the same line and close, otherwise fly (in `dur` seconds if given). */
+  function goTo(t, dur) {
+    G.arrive?.(false); G.arrive = null;                         // an interrupted move just ends
+    G.target = t;
+    const to = spot(t);
     const dx = to.x - G.x, dy = to.y - G.y;
-    if (reduce.matches) { G.x = to.x; G.y = to.y; settle(p); place(); return; }
-    if (Math.abs(dy) < 6 && Math.abs(dx) < 90 && G.mode !== 'fly') {   // a few steps; the goose waddles slowly
+    if (reduce.matches) { G.x = to.x; G.y = to.y; settle(t); place(); return; }
+    if (!dur && !isPoint(t) && Math.abs(dy) < 6 && Math.abs(dx) < 90 && G.mode === 'perched') {   // a few steps; it waddles slowly
       G.mode = 'walk'; face(Math.sign(dx)); goose.play('waddle'); return;
     }
     G.mode = 'fly'; G.from = { x: G.x, y: G.y }; G.t = 0;
-    G.dur = Math.min(1.5, Math.max(0.55, Math.hypot(dx, dy) / 900));
+    G.dur = dur ?? Math.min(1.5, Math.max(0.55, Math.hypot(dx, dy) / 900));
     if (Math.abs(dx) > 24) face(Math.sign(dx));
     goose.play('fly');
   }
+  /** A promise for scenes: resolves true on arrival, false if something else sent the goose elsewhere. */
+  const fly = (t, dur) => new Promise((res) => {
+    if (G.target === t && G.mode === 'perched') return res(true);
+    goTo(t, dur); if (G.mode === 'fly' || G.mode === 'walk') G.arrive = res; else res(true);
+  });
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  function honk() {
+    return new Promise((res) => {
+      const end = (e) => { if (e.detail.anim === 'honk') { goose.removeEventListener('spriteend', end); res(); } };
+      goose.addEventListener('spriteend', end);
+      goose.play('honk', { once: true, restart: true });
+      setTimeout(() => { goose.removeEventListener('spriteend', end); res(); }, 2500);   // never hang a scene
+    });
+  }
 
+  /** Run a scene: scroll-following is suspended while it plays, then the goose goes back to the scroll's perch. */
+  let sceneId = 0;
+  async function scene(fn) {
+    const id = ++sceneId; G.hold++;
+    try { await fn(() => id !== sceneId); }       // the scene may ask whether a newer one has taken over
+    finally {
+      G.hold--;
+      if (!G.hold) { G.override = null; G.lastScrollPerch = scrollPerch(); }
+    }
+  }
+
+  // ── the loop
   const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+  const letter = document.getElementById('letter');
   clock.add((dtMs) => {
     if (!goose.displaySize) return;
     const dt = dtMs / 1000;
 
-    // who should the goose be with?
-    const sp = scrollPerch();
-    if (sp !== G.lastScrollPerch) { G.lastScrollPerch = sp; G.override = null; }
-    const want = G.override ?? sp;
-    if (want !== G.perch) goTo(want);
+    if (!G.hold) {                                     // who should the goose be with?
+      const sp = scrollPerch();
+      if (sp !== G.lastScrollPerch) { G.lastScrollPerch = sp; G.override = null; }
+      const want = G.override ?? sp;
+      if (want !== G.target) goTo(want);
+    }
 
-    const to = spot(G.perch);                         // live: layout may move under it
-    if (G.mode === 'perched') { G.x = to.x; G.y = to.y; }
+    const to = spot(G.target);                         // live: layout may move under it
+    if (G.mode === 'perched' || G.mode === 'away') { G.x = to.x; G.y = to.y; }
     else if (G.mode === 'walk') {
       const v = goose.pxPerSecond('waddle') ?? 40;
       const step = Math.sign(to.x - G.x) * v * dt;
       G.y = to.y;
-      if (Math.abs(to.x - G.x) <= Math.abs(step)) { G.x = to.x; settle(G.perch); } else G.x += step;
+      if (Math.abs(to.x - G.x) <= Math.abs(step)) { G.x = to.x; settle(G.target); } else G.x += step;
     } else if (G.mode === 'fly') {
       G.t = Math.min(1, G.t + dt / G.dur);
-      const e = ease(G.t), d = Math.hypot(to.x - G.from.x, to.y - G.from.y);
+      const e = ease(G.t);
       const lift = Math.min(140, 24 + Math.abs(to.y - G.from.y) * 0.2 + Math.abs(to.x - G.from.x) * 0.08) * Math.sin(Math.PI * G.t);
       G.x = G.from.x + (to.x - G.from.x) * e;
       G.y = G.from.y + (to.y - G.from.y) * e - lift;
-      if (G.t > 0.82 && goose.currentAnim === 'fly') goose.play('flap');   // brake
-      if (G.t >= 1) { settle(G.perch); if (G.perch !== home) touchdown(); }
+      if (G.t > 0.82 && !isPoint(G.target) && goose.currentAnim === 'fly') goose.play('flap');   // brake
+      if (G.t >= 1) { const t = G.target; settle(t); if (!isPoint(t) && t !== home) touchdown(); }
     }
     place();
+
+    // the letter hangs from the beak while the goose carries it
+    const beak = G.carry && goose.point('beak');
+    letter.style.display = beak ? 'block' : 'none';
+    if (beak) letter.style.transform = `translate(${Math.round(beak.x - 11 + G.face * 4)}px, ${Math.round(beak.y - 2)}px) rotate(${G.face * 8}deg)`;
   });
 
   // footprints: each landing (and each step of a short waddle) stamps prints; only the last 7 stay,
@@ -433,33 +500,115 @@
   });
   const touchdown = () => { stamp1(G.x - G.face * 9, G.y, 1); stamp1(G.x + G.face * 5, G.y, -1); };
 
-  // portfolio interaction: pointing at a product sends the goose to inspect it
+  // points just outside the frame, in document coordinates
+  const offRight = (dy = 0.15) => ({ at: () => ({ x: scrollX + innerWidth + size(), y: scrollY + innerHeight * dy }) });
+  const offLeft = (dy = 0.15) => ({ at: () => ({ x: scrollX - size(), y: scrollY + innerHeight * dy }) });
+
+  // ── Scene: entrance. Content first; then the goose flies in from off the top-right and lands where the reader is.
+  goose.addEventListener('ready', () => {
+    if (reduce.matches) { const s = spot(home); G.x = s.x; G.y = s.y; face(1); place(); return; }
+    const o = offRight(-0.1).at(); G.x = o.x; G.y = o.y; G.mode = 'away'; G.target = offRight(-0.1); place();
+    scene(async () => { await wait(700); await fly(scrollPerch(), 1.4); });
+  }, { once: true });
+
+  // ── Scene: in-page navigation. The page scrolls a little slower than a jump, and the goose sets off with it
+  // but arrives after the page has settled, so you see it fly into the frame and land (on the logo, if you went
+  // to the top). Any wheel, touch or key during the scroll hands it straight back to the reader.
+  let nav = null;
+  const stopNav = () => { if (nav) { cancelAnimationFrame(nav.raf); nav = null; } };
+  for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, stopNav, { passive: true });
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || a.classList.contains('skip') || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const id = a.getAttribute('href').slice(1);
+    const top = !id || id === 'top';
+    if (!id && !a.classList.contains('mark')) return;                  // placeholder links
+    const el = top ? document.documentElement : document.getElementById(id);
+    if (!el) return;
+    e.preventDefault();
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const toY = top ? 0 : Math.min(max, el.getBoundingClientRect().top + scrollY);
+    const u = new URL(location.href); u.hash = top ? '' : id; history.pushState(null, '', u);
+    const focusTarget = () => { if (top) return; el.setAttribute('tabindex', '-1'); el.focus({ preventScroll: true }); };
+    if (reduce.matches) { scrollTo(0, toY); focusTarget(); return; }
+
+    stopNav();
+    const fromY = scrollY, dist = Math.abs(toY - fromY);
+    const dur = Math.min(1.6, 0.75 + dist / 3500);
+    const t0 = performance.now();
+    nav = { raf: 0 };
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / (dur * 1000));
+      scrollTo(0, fromY + (toY - fromY) * ease(t));
+      if (t < 1 && nav) nav.raf = requestAnimationFrame(step); else { nav = null; focusTarget(); }
+    };
+    nav.raf = requestAnimationFrame(step);
+
+    const dest = top ? home : (el.querySelector('[data-perch]') ?? null);
+    scene(async () => {
+      if (!dest) { await wait(dur * 1000); return; }
+      await fly(dest, dur + 0.65);                    // lags the page by ~0.6 s: it flies into the frame
+      await wait(400);
+    });
+  });
+
+  // ── Scene: portfolio. Pointing at a product sends the goose to inspect it (only while it is with the work).
   for (const c of cards) {
-    const look = () => { if (cards.includes(G.lastScrollPerch)) G.override = c; };   // only while it is already with the work
+    const look = () => { if (!G.hold && cards.includes(G.lastScrollPerch)) G.override = c; };
     c.addEventListener('pointerenter', look);
     c.addEventListener('focusin', look);
   }
 
-  // footer easter egg: press the stamp, the goose comes over and honks at it
-  const stamp = document.querySelector('.stamp');
-  const footPerch = document.getElementById('foot-perch');
-  stamp.addEventListener('click', () => {
-    stamp.classList.add('thump'); setTimeout(() => stamp.classList.remove('thump'), 140);
-    const honk = () => { goose.play('honk', { once: true, restart: true }); };
-    if (G.perch === footPerch && G.mode === 'perched') honk();
-    else { G.override = footPerch; G.after = honk; }
+  // ── Scene: subscribe. The form works on its own; the goose comes over, honks, takes the letter and flies off
+  // the edge of the screen with it, then comes back from the other side.
+  const form = document.getElementById('subscribe'), email = document.getElementById('sub-email'), status = document.getElementById('sub-status');
+  const subSpot = form.querySelector('[data-spot]');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!email.checkValidity()) {
+      email.setAttribute('aria-invalid', 'true');
+      status.textContent = 'That doesn’t look like an email address.';
+      email.focus(); return;
+    }
+    email.removeAttribute('aria-invalid');
+    status.textContent = `Thanks. A note will reach ${email.value} (sketch: nothing was sent).`;
+    form.reset();
+    if (reduce.matches) return;
+    scene(async (stale) => {
+      if (!(await fly(subSpot)) || stale()) return;
+      await honk(); if (stale()) return;
+      G.carry = true;
+      await wait(350);
+      face(1);
+      await fly(offRight(0.2), 1.5);
+      G.carry = false;
+      goose.style.visibility = 'hidden';
+      await wait(1800);                                // delivering
+      const back = offLeft(0.25).at(); G.x = back.x; G.y = back.y;
+      goose.style.visibility = '';
+      if (!stale()) await fly(scrollPerch(), 1.3);
+    });
   });
-  goose.addEventListener('spriteend', (e) => { if (e.detail.anim === 'honk' && G.mode === 'perched') goose.play(G.perch.dataset.pose || 'idle'); });
+  email.addEventListener('input', () => email.removeAttribute('aria-invalid'));
 
-  goose.addEventListener('ready', () => { const s = spot(home); G.x = s.x; G.y = s.y; face(1); place(); }, { once: true });
+  // ── Scene: footer easter egg. Press the stamp; the goose comes over and honks at it.
+  const stampBtn = document.querySelector('.stamp');
+  const footPerch = document.getElementById('foot-perch');
+  stampBtn.addEventListener('click', () => {
+    stampBtn.classList.add('thump'); setTimeout(() => stampBtn.classList.remove('thump'), 140);
+    if (reduce.matches) return;
+    scene(async (stale) => { if ((await fly(footPerch)) && !stale()) await honk(); });
+  });
+  goose.addEventListener('spriteend', (e) => { if (e.detail.anim === 'honk' && G.mode === 'perched') goose.play(G.target.dataset.pose || 'idle'); });
+
   // a new goose (picker): keep doing what the old one was doing
   goose.addEventListener('ready', () => {
-    if (G.mode === 'perched') goose.play(G.perch.dataset.pose || 'idle');
+    if (G.mode === 'perched') goose.play(G.target.dataset.pose || 'idle');
     else goose.play(G.mode === 'walk' ? 'waddle' : 'fly');
     face(G.face); place();
   });
   addEventListener('resize', place);
-  window.pp = { G, goTo, scrollPerch };   // for tests
+  window.pp = { G, goTo, scrollPerch, scene };   // for tests
 </script>
 </body>
 </html>
