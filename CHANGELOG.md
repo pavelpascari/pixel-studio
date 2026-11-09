@@ -12,6 +12,9 @@ Until 1.0, minor versions may change the spec format.
   standing on its top edge at `data-at`, in `data-pose`) as you read down. Pointing at a product card sends it over;
   pressing the footer stamp makes it come and honk. Landings stamp footprints; only the last 7 stay. Decorative only:
   under reduced motion it stays home in a still pose, and the page reads the same with it hidden.
+- A sketch panel picks the goose (greylag, plain, sudo, kiddie, root, phreak) and its size (40–128 px; phones get 3/4),
+  kept in the URL (`?goose=sudo&size=96`) so a setup can be shared; `?ui=0` hides the panel. Spacing around the logo
+  and the product row grows with the goose.
 
 ### Views: front, back and a three-quarter look
 - Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":
