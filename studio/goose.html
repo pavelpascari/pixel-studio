@@ -44,6 +44,8 @@
   .row input { margin-top: 3px; width: 16px; height: 16px; flex: none; }
   .row small { display: block; color: var(--dim); font-size: 11.5px; }
   .row .badge { font-size: 10px; border: 1px solid var(--line); color: var(--dim); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+  .featNote { margin: 0 0 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--dim); font-size: 12px; }
+  #features:has(.featNote) .group { opacity: .45; }
   .row .badge.feature { color: var(--add); border-color: #3c5c44; }
   .part.hidden > .row b { color: var(--off); text-decoration: line-through; }
   details.shapes { margin: 0 0 4px 30px; }
@@ -133,7 +135,7 @@
 <script type="module">
 import { resolveSpec, compile, renderFrame, resolveStyle, samplePose, worldMatrices } from '../src/core/index.js';
 
-const BASES = { 'goose-base': 'plain goose', 'goose-root': 'root (hoodie)', 'goose-sudo': 'sudo', 'goose-phreak': 'phreak', 'goose-kiddie': 'kiddie' };
+const BASES = { 'goose-base': 'plain goose', 'goose-root': 'root (hoodie)', 'goose-sudo': 'sudo', 'goose-phreak': 'phreak', 'goose-kiddie': 'kiddie', 'goose-greylag': 'greylag (wild)' };
 const RES = [32, 48, 64, 96, 128, 192];
 const $ = (s) => document.querySelector(s);
 const el = (tag, { dataset, style, ...props } = {}, ...kids) => {
@@ -169,20 +171,25 @@ const featureParts = new Set(FEATURES.flatMap((f) => [
 ]));
 
 let resolved, compiled, view, frames = new Map(), baseMap = {};
+// Features are drawn on goose-base's body; a goose with its own proportions (the greylag) cannot wear them.
+let onBaseRig = true;
 
 /** The material renames along the chosen goose's "extends" chain. */
 async function loadBaseMap() {
   baseMap = {};
+  let rig = false;
   for (let ref = `${S.base}.json`; ref;) {
+    if (ref === 'goose-base.json') rig = true;
     const sp = await loadJSON(`../examples/${ref}`);
     baseMap = { ...(sp.materialMap ?? {}), ...baseMap };
     ref = sp.extends;
   }
+  if (rig !== onBaseRig) { onBaseRig = rig; renderFeatures(); }
 }
 
 /** The look as a variant spec: the chosen goose, the features on, the hidden parts and shapes. */
 function variantSpec({ forExport = false } = {}) {
-  const on = FEATURES.filter((f) => S.features.has(f.id));
+  const on = onBaseRig ? FEATURES.filter((f) => S.features.has(f.id)) : [];
   // Features are written for the plain goose; a variant that renames a material (root: plumage → hoodie) gets its own.
   const map = (parts) => JSON.parse(JSON.stringify(parts), (k, v) => (k === 'material' && baseMap[v] ? baseMap[v] : v));
   const spec = { extends: `${S.base}.json`, materials: Object.assign({}, ...on.map((f) => f.materials ?? {})), parts: map(on.flatMap((f) => f.parts)) };
@@ -399,9 +406,11 @@ function drawSizes() {
 // ----- panels -----
 function renderFeatures() {
   const groups = [...new Set(FEATURES.map((f) => f.group))];
-  $('#features').replaceChildren(...groups.map((g) => el('div', { className: 'group' }, el('h3', { textContent: g }),
+  for (const b of [$('#featAll'), $('#featNone')]) b.disabled = !onBaseRig;
+  const note = onBaseRig ? [] : [el('p', { className: 'featNote', textContent: `These features are drawn on the flock's body (goose-base and the geese that extend it). This goose has its own proportions and already carries its own bill nail, eye ring, coverts, primaries and pale belly, so they are off for it. Your picks come back when you switch to a flock goose.` })];
+  $('#features').replaceChildren(...note, ...groups.map((g) => el('div', { className: 'group' }, el('h3', { textContent: g }),
     ...FEATURES.filter((f) => f.group === g).map((f) => {
-      const cb = el('input', { type: 'checkbox', checked: S.features.has(f.id) });
+      const cb = el('input', { type: 'checkbox', checked: S.features.has(f.id), disabled: !onBaseRig });
       cb.onchange = () => { cb.checked ? S.features.add(f.id) : S.features.delete(f.id); rebuild(); };
       return el('label', { className: 'row' }, cb, el('span', {}, el('b', { textContent: f.label }), el('small', { textContent: f.note })));
     }))));

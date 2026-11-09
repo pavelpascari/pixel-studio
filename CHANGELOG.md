@@ -42,7 +42,9 @@ Until 1.0, minor versions may change the spec format.
   dropped (a comb below ~100 px), a paler belly only underneath (it showed as a white goose when the wing lifted), a
   bigger honk, every flock move (run, rush, jump, fall, sit, duck, peek, climb, flap) and goose-base's front and back
   views in greylag colours. `rush` leans less so the longer bill stays in the frame.
-- It walks the flock lawn and has a roster card (hover: peek); the playground and studio list it.
+- It walks the flock lawn and has a roster card (hover: peek); the playground, the studio and the goose workbench list
+  it. The workbench's features are drawn on goose-base's body, so for a goose with its own proportions they are off
+  (with a note saying why); picks come back on switching to a flock goose.
 
 ### Playground
 
