@@ -14,7 +14,7 @@
 //             state (set by the element: loading | ready | error)
 // API:        el.play(name, {once, restart, mix}), el.pause(), el.resume(), el.reload(),
 //             el.bundle, el.animations, el.currentAnim, el.frame, el.displaySize, el.groundOffset,
-//             el.pxPerSecond(name), el.pxPerSecondY(name), el.point(name, {relative}), el.hitTest(x, y)
+//             el.pxPerSecond(name), el.pxPerSecondY(name), el.point(name, {relative}), el.topAt(x0, x1), el.hitTest(x, y)
 // Events:     'ready'; 'error' (detail: {error}); 'spriteend' (bubbles; detail: {anim}) when a one-shot or
 //             non-looping animation ends — also under reduced motion, after the animation's duration;
 //             'spriteevent' (bubbles; detail: {anim, frame, name, data}) when a frame with a baked event
@@ -499,6 +499,33 @@ export class PixelSprite extends Base {
     if (this.hasAttribute('flip')) { x = this._css.width - x; r = 180 - rot; }
     if (!relative) { const box = this._canvas.getBoundingClientRect(); x += box.left; y += box.top; }
     return { x, y, rot: r };
+  }
+
+  /**
+   * The highest opaque pixel between x0 and x1 (px relative to the sprite's box, as `point` gives
+   * them with {relative: true}) in the frame showing now, as a y relative to the box; null if that
+   * strip is empty or the sheet cannot be read (cross-origin). Cached per frame.
+   */
+  topAt(x0, x1) {
+    if (!this._css || this.state !== 'ready') return null;
+    const v = this._variant, an = this._bundle.animations[this._anim], W = this._css.width;
+    if (this.hasAttribute('flip')) [x0, x1] = [W - x1, W - x0];
+    const a = Math.max(0, Math.floor((Math.min(x0, x1) / W) * v.frameW)), b = Math.min(v.frameW, Math.ceil((Math.max(x0, x1) / W) * v.frameW));
+    if (b <= a) return null;
+    if (this._topImg !== this._img) { this._topImg = this._img; this._topCache = new Map(); }   // new sheet or skin
+    const key = `${this._anim}:${this._frame}:${a}:${b}`;
+    if (!this._topCache.has(key)) {
+      let top = null;
+      try {
+        const c = Object.assign(document.createElement('canvas'), { width: b - a, height: v.frameH }).getContext('2d', { willReadFrequently: true });
+        c.drawImage(this._img, this._frame * v.frameW + a, an.row * v.frameH, b - a, v.frameH, 0, 0, b - a, v.frameH);
+        const d = c.getImageData(0, 0, b - a, v.frameH).data;
+        for (let i = 3; i < d.length; i += 4) if (d[i] > 0) { top = Math.floor((i >> 2) / (b - a)); break; }
+      } catch { /* cross-origin sheet */ }
+      this._topCache.set(key, top);
+    }
+    const top = this._topCache.get(key);
+    return top == null ? null : (top / v.frameH) * this._css.height;
   }
 
   /** True if the sprite has an opaque pixel at this client point in the frame showing now. */

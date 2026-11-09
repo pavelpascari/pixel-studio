@@ -24,7 +24,7 @@
       background: repeating-linear-gradient(0deg, transparent 0 3px, #000 3px 4px); }
     .goose { position: absolute; cursor: pointer; will-change: transform; }
     .goose pixel-sprite { display: block; }
-    .bubble { position: absolute; left: 50%; top: -6px; transform: translateX(-30%); pointer-events: none;
+    .bubble { position: absolute; left: 50%; top: 10px; transform: translate(-50%, -100%); pointer-events: none;
       background: #fff; color: #111; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
       opacity: 0; transition: opacity .15s; }
     .bubble.on { opacity: 1; }
@@ -149,10 +149,20 @@
     }
   }
 
+  // The bubble sits just above the head (hat or hood included), centred on the beak.
+  function placeBubble(g) {
+    const beak = g.sprite.point('beak', { relative: true }), head = g.sprite.point('head', { relative: true });
+    if (!beak || !head) return;
+    const top = g.sprite.topAt(Math.min(beak.x, head.x) - 8, Math.max(beak.x, head.x) + 8) ?? Math.min(beak.y, head.y);
+    g.bubble.style.left = `${beak.x}px`;
+    g.bubble.style.top = `${top - 4}px`;
+  }
+
   function honk(g, provoked) {
     if (g.mode === 'honk') return;
     g.mode = 'honk'; g.until = performance.now() + 1000;
     g.sprite.play('honk', { once: true });
+    placeBubble(g);
     g.bubble.classList.add('on');
     setTimeout(() => g.bubble.classList.remove('on'), 800);
     log(g.name, provoked ? 'HONK!! (provoked)' : 'HONK');

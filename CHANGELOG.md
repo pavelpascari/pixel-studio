@@ -24,6 +24,11 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### Speech bubbles above the head
+
+- `actor.say()` puts its bubble just above the highest pixel over the head and beak (a hat or hood included), not at the beak, where it covered the head. The flock demo's HONK! does the same.
+- New `el.topAt(x0, x1)` on `<pixel-sprite>`: the highest opaque pixel in a strip of the frame showing now.
+
 ### Smaller bundles
 - Sheets are written as indexed PNGs (palette, 1–8 bits per pixel) when they have at most 256 colours, which pixel
   art nearly always does: 35–45% smaller. New `pngBytes(w, h, rgba, deflate)` in the core works in any host; the

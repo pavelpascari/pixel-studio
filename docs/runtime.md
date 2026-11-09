@@ -105,6 +105,7 @@ Attribute changes made before the element is first connected (including the attr
 | `el.groundOffset` | CSS px from the top of the box down to the foot line (bundle `ground`): place the box at `feetY − groundOffset` to stand on something. |
 | `el.point(name, { relative = false })` | Where an attachment point (bundle `points`, e.g. `beak`) is in the frame showing now: `{ x, y, rot }` in client px, or relative to the box. Mirrored with `flip`. `null` if the bundle has no such point. |
 | `el.hitTest(clientX, clientY)` | `true` if the frame showing now has an opaque pixel there (for clicks on the character, not its box). |
+| `el.topAt(x0, x1)` | The y of the highest opaque pixel between `x0` and `x1` in the frame showing now, in px relative to the sprite's box (as `point(name, {relative: true})` gives them); `null` if that strip is empty or the sheet is cross-origin. Put a speech bubble above the head with it. |
 | `el.rate` / `el.effectiveRate` | The `rate` attribute, and the speed frames actually play at: `rate` × the state machine node's `rate` × a burst speed-up. |
 | `el.set(input, value)` / `el.fire(trigger)` | Drive the bundle's state machine (no-ops without one). |
 | `el.stateNode` | The state machine's current node, or `null`. |

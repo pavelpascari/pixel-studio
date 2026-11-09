@@ -1510,11 +1510,18 @@ export class PixelActor extends Base {
     const clip = holes.length ? `path(evenodd, "M0 0H${snap(this.W)}V${snap(this.H)}H0Z${cells(holes, this.W, this.H).map(([a, b, c, d]) => `M${a} ${b}H${c}V${d}H${a}Z`).join('')}")` : '';
     if (clip !== this._clip) { this.style.clipPath = clip; this._clip = clip; }
     if (this._sayUntil) {
-      const p = this.sprite.point('beak', { relative: true }) || this.sprite.point('head', { relative: true }) || { x: this.W / 2, y: this.H * 0.1 };
+      const beak = this.sprite.point('beak', { relative: true }), head = this.sprite.point('head', { relative: true });
+      const p = beak || head || { x: this.W / 2, y: this.H * 0.1 };
+      // Above the head, not over it: the highest opaque pixel over the head and beak (a hat or hood
+      // included), else the points themselves.
+      const xs = [beak?.x, head?.x].filter((x) => x != null);
+      const pad = this.W * 0.06;
+      const top = xs.length ? this.sprite.topAt(Math.min(...xs) - pad, Math.max(...xs) + pad) : null;
+      const y = top ?? Math.min(...[beak?.y, head?.y].filter((v) => v != null), p.y);
       // Kept inside the page: a bubble poking past its right edge would add a scrollbar.
       const half = (this._bubbleW ??= this._bubble.offsetWidth) / 2;
       const bx = Math.max(half - L, Math.min(w.width - L - half, p.x));
-      this._bubble.style.left = `${bx}px`; this._bubble.style.top = `${p.y - 6}px`;
+      this._bubble.style.left = `${bx}px`; this._bubble.style.top = `${y - 4}px`;
     }
   }
 }
