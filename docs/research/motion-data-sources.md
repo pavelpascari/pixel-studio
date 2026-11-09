@@ -69,7 +69,7 @@ nothing of it ships. **Fails** means it breaks the constraint.
 | meshoptimizer (JS decoder) | library | MIT | **OK** | npm 1.3.0 (2026-09-25), 0 dependencies |
 | ufbx (C FBX reader) | library | MIT **or** Unlicense | **OK** | "available under 2 licenses -- choose whichever you prefer". [LICENSE](https://github.com/ufbx/ufbx/blob/master/LICENSE) |
 | fbx-parser (npm) | library | MIT | **OK**, stale | Last publish 2021-02-12 |
-| bvh-parser / bvh (npm) | library | MIT (npm metadata) | **OK**, unmaintained | Last publishes 2018. `parse-bvh` has no LICENSE file in the repo |
+| bvh-parser / bvh (npm) | library | MIT (npm metadata) | **Don't use** | Last publishes 2018. Tested in [mit-libraries.md](mit-libraries.md): `bvh-parser`/`parse-bvh` drop the X of every joint offset, and npm `bvh` is a 3D-geometry library, not a mocap parser |
 | closed-chain-ik | library | Apache-2.0 | **OK**, not needed | npm 0.0.3 (2023); repo active |
 | ezc3d (C3D reader, C++/Python) | tool | MIT | **OK** | [pyomeca/ezc3d](https://github.com/pyomeca/ezc3d) |
 
@@ -385,7 +385,7 @@ importer outputs plain `rot` tracks.
 | Meshopt decoding | `meshoptimizer` (`MeshoptDecoder`) | MIT | 1.3.0, 2026-09-25; 0 deps; repo active | **Use.** The minimal path is our GLB reader plus this decoder |
 | Draco (if a source uses it) | `draco3d` | Apache-2.0 | 1.5.9, 2026-10-16 | Only if needed; Mesh2Motion uses meshopt, not Draco |
 | BVH | three.js `BVHLoader.js` | MIT | Part of three r187; 486 lines; "only supports BVH files containing a single root" | **Reference for our own parser** |
-| | `bvh-parser` (npm), `bvh` (npm) | MIT per npm metadata | Last published 2018-01-31 and 2018-12-20 | Do not depend on them; `parse-bvh`'s repo has no LICENSE file |
+| | `bvh-parser` (npm), `bvh` (npm) | MIT per npm metadata | Last published 2018-01-31 and 2018-12-20 | Do not depend on them; `parse-bvh`'s repo has no LICENSE file. Testing later showed `bvh-parser` drops each offset's X and npm `bvh` is not a mocap parser ([mit-libraries.md](mit-libraries.md)) |
 | FBX | three.js `FBXLoader.js` | MIT | r187; "Requires FBX file to be >= 7.0 and in ASCII or >= 6400 in Binary format" | Works for Mixamo-era FBX, but drags three.js in |
 | | `ufbx` (C, single file) | MIT **or** Unlicense | Repo active (push 2026-10-01, about 1.4k stars); "Supports binary and ASCII FBX files starting from version 3000"; no npm package | Best permissive FBX reader. Would need our own WASM build. Only worth it if FBX import becomes a feature |
 | | `fbx-parser` (npm) | MIT | 2.1.3, published 2021-02-12 | Low-level node tree only; stale |
