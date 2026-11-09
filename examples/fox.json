@@ -75,6 +75,7 @@
     "walk": {"motion": "walk"},
     "trot": {"motion": "trot"},
     "gallop": {"motion": "gallop"},
+    "leap": {"motion": "jump", "frames": 8, "fps": 12, "loop": false, "anticipate": 0.05, "air": 0.9, "dip": 0, "tuck": 6, "lean": -4},
     "jump": {"motion": "jump"},
     "fall": {"motion": "fall"},
     "duck": {"motion": "duck"},

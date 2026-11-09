@@ -24,6 +24,14 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### A game: Fox Trail
+
+- New `demo/runner.html`: an endless runner played by the fox (gallop measured from Muybridge's hounds, a new in-place
+  `leap`, pixel-accurate collisions with `hitTest`, speed ramp through `rate`, best distance kept locally). Linked from
+  the demo site.
+- `docs/runtime.md` has a "Games" section: what `<pixel-sprite>` offers a game loop, why `<pixel-stage>` scenes are for
+  choreography rather than play, and three gaps worth closing (rectangle overlap, frame seek, reduced-motion opt-in).
+
 ### New motions measured from photographs
 
 - All 26 relevant Muybridge plates (1887, public domain, full-resolution BPL scans) measured into

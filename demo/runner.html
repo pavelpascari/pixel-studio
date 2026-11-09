@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fox Trail — a tiny runner played by &lt;pixel-sprite&gt;</title>
+<style>
+  :root { --ink: #f4ead7; --dim: #b9a98f; --night: #1d1830; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #120f1d; color: var(--ink); font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  main { width: min(920px, 100%); padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0 0 12px; color: var(--dim); }
+  a { color: #ffb36b; }
+  .game { position: relative; height: 300px; border-radius: 14px; overflow: hidden; outline: 1px solid #3a2f55; touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: pointer; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  #fox { position: absolute; left: 64px; top: 0; will-change: transform; }
+  .hud { position: absolute; top: 10px; right: 14px; font: 600 14px/1 ui-monospace, monospace; text-align: right; text-shadow: 0 1px 0 #000; }
+  .hud small { display: block; color: var(--dim); font-weight: 400; margin-top: 4px; }
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; background: rgba(18, 15, 29, .45); }
+  .overlay[hidden] { display: none; }
+  .overlay b { display: block; font-size: 22px; margin-bottom: 6px; }
+  .overlay button { margin-top: 12px; font: 600 16px/1 system-ui; padding: 12px 20px; border-radius: 10px; border: 0; background: #ffb36b; color: #2a1a08; cursor: pointer; min-height: 44px; }
+  .keys { color: var(--dim); font-size: 13px; }
+  .note { font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fox Trail</h1>
+  <p>An endless run through a dusk forest. The fox is one Pixel Studio bundle: its gallop is measured from Muybridge's racing
+    hounds (1887), and the trail scrolls at exactly the speed its paws push, so they never slide.
+    <a href="index.html">← demo site</a></p>
+  <div class="game" id="game" tabindex="0" role="application" aria-label="Fox Trail game. Press space, up arrow or tap to jump.">
+    <canvas id="world"></canvas>
+    <pixel-sprite id="fox" src="assets/fox.bundle.json" anim="idle" size="96" states="off" alt="Ember the fox"></pixel-sprite>
+    <div class="hud" aria-live="off"><span id="score">0 m</span><small id="best"></small></div>
+    <div class="overlay" id="overlay">
+      <div><b id="title">Fox Trail</b><span class="keys">Space, ↑ or tap to jump over logs and rocks</span><br>
+        <button id="start">Run</button><div class="note" id="note"></div></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { clock } from './assets/pixel-sprite.js';
+  const $ = (s) => document.querySelector(s);
+  const game = $('#game'), cv = $('#world'), ctx = cv.getContext('2d'), fox = $('#fox');
+  const PX = 3;                       // one world "pixel" is 3 CSS px: chunky, like the sprite
+  const GROUND = 52;                  // ground band height in CSS px
+  let W = 0, H = 0;
+  const resize = () => { W = game.clientWidth; H = game.clientHeight; cv.width = Math.ceil(W / PX); cv.height = Math.ceil(H / PX); place(); };
+
+  // ---------- state ----------
+  const S = { mode: 'ready', dist: 0, rate: 1, y: 0, vy: 0, air: false, obstacles: [], next: 0, t: 0, scroll: 0 };
+  const best = () => Number(localStorage.getItem('fox-trail-best') || 0);
+  const groundY = () => H - GROUND;
+  function place() {
+    const off = fox.groundOffset ?? 96 * 0.905;
+    fox.style.transform = `translate(0, ${Math.round(groundY() - off - S.y)}px)`;
+  }
+
+  // Speed comes from the bundle: the gallop's own px/s at this size, times the playback rate, so the paws never slide.
+  const speed = () => (fox.pxPerSecond('gallop') ?? 480) * S.rate;
+  // The leap is 8 frames at 12 fps with launch at frame 1 and landing at frame 7: 0.5 s in the air at rate 1.
+  const AIR = 0.5, APEX = 104;
+
+  function start() {
+    if (S.mode === 'paused') { S.mode = 'run'; $('#overlay').hidden = true; game.focus(); return; }
+    Object.assign(S, { mode: 'run', dist: 0, rate: 1, y: 0, vy: 0, air: false, obstacles: [], next: 1.2, t: 0 });
+    fox.setAttribute('rate', '1');
+    fox.play('gallop', { restart: true });
+    $('#overlay').hidden = true;
+    game.focus();
+  }
+  function jump() {
+    if (S.mode !== 'run') return start();
+    if (S.air) return;
+    const T = AIR / S.rate;
+    S.air = true; S.vy = (4 * APEX) / T; S.g = (8 * APEX) / (T * T);
+    fox.play('leap', { once: true, restart: true });
+  }
+  function crash() {
+    S.mode = 'over';
+    fox.play('fall', { restart: true });
+    const m = Math.floor(S.dist);
+    if (m > best()) localStorage.setItem('fox-trail-best', String(m));
+    $('#title').textContent = `Tumbled at ${m} m`;
+    $('#start').textContent = 'Run again';
+    $('#overlay').hidden = false;
+    hud();
+  }
+  function hud() {
+    $('#score').textContent = `${Math.floor(S.dist)} m`;
+    $('#best').textContent = best() ? `best ${best()} m` : '';
+  }
+
+  // ---------- obstacles: original pixel art, drawn in world pixels ----------
+  const KINDS = [
+    { name: 'log', w: 16, h: 8 }, { name: 'rocks', w: 12, h: 10 }, { name: 'stump', w: 9, h: 14 }, { name: 'logs', w: 26, h: 8 },
+  ];
+  function spawn() {
+    const k = KINDS[(Math.random() * (S.dist < 120 ? 3 : KINDS.length)) | 0];
+    S.obstacles.push({ ...k, x: W + 20 });
+  }
+  function drawObstacle(o) {
+    const gx = Math.round(o.x / PX), gy = Math.round(groundY() / PX);
+    const r = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(gx + x, gy - y - h, w, h); };
+    if (o.name === 'log' || o.name === 'logs') {
+      r(0, 0, o.w, o.h, '#5b3a24'); r(0, o.h - 2, o.w, 2, '#7a5034'); r(0, 0, o.w, 1, '#3a2416');
+      for (let x = 3; x < o.w - 2; x += 5) r(x, 3, 2, 1, '#3f2818');
+      r(o.w - 3, 1, 3, o.h - 2, '#c9a27a'); r(o.w - 2, 3, 1, 2, '#8a6440');            // cut end with rings
+      if (o.name === 'logs') { r(4, o.h, 14, 6, '#6a4429'); r(4, o.h + 5, 14, 1, '#875a39'); r(15, o.h + 1, 3, 4, '#c9a27a'); }
+    } else if (o.name === 'rocks') {
+      r(0, 0, 7, 6, '#6c6f80'); r(1, 6, 5, 2, '#6c6f80'); r(5, 0, 7, 9, '#7f8396'); r(6, 9, 4, 1, '#7f8396');
+      r(6, 7, 2, 2, '#9ea3b8'); r(1, 4, 2, 1, '#9ea3b8'); r(2, 0, 9, 1, '#4c4e5c');
+      r(9, 9, 2, 1, '#5d9c58'); r(0, 6, 1, 1, '#5d9c58');                                  // moss
+    } else {
+      r(1, 0, 7, o.h - 1, '#6b4a2c'); r(0, 0, 9, 2, '#4d3420'); r(1, o.h - 1, 7, 1, '#c9a27a');
+      r(3, o.h - 1, 3, 1, '#a7835c'); r(2, 3, 1, 6, '#56391f'); r(6, 5, 1, 5, '#56391f');
+    }
+  }
+
+  // ---------- scenery: parallax hills and trees, generated once per tile ----------
+  const hash = (n) => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
+  function drawWorld() {
+    const w = cv.width, h = cv.height, gy = Math.round(groundY() / PX);
+    const sky = ctx.createLinearGradient(0, 0, 0, gy);
+    sky.addColorStop(0, '#2b2350'); sky.addColorStop(0.6, '#6a4a7a'); sky.addColorStop(1, '#d98a6a');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#f6d48a'; ctx.fillRect(w - 46, 14, 9, 9); ctx.fillStyle = '#fbe6b0'; ctx.fillRect(w - 44, 16, 4, 4);   // the moon
+    const layer = (k, base, amp, col, step) => {                                                   // k: parallax factor
+      ctx.fillStyle = col; const off = (S.scroll / PX) * k;
+      for (let x = 0; x < w; x++) { const wx = Math.floor((x + off) / step); const f = (x + off) / step - wx;
+        const a = hash(wx), b = hash(wx + 1), y = base - amp * (a + (b - a) * (f * f * (3 - 2 * f))); ctx.fillRect(x, Math.round(y), 1, gy - Math.round(y)); }
+    };
+    layer(0.15, gy - 26, 18, '#4a3a6a', 40);
+    layer(0.35, gy - 14, 14, '#2f2a4a', 22);
+    // pines in the middle distance
+    const off = (S.scroll / PX) * 0.6;
+    for (let i = Math.floor(off / 26) - 1; i < (off + w) / 26 + 1; i++) {
+      if (hash(i * 3.1) < 0.45) continue;
+      const x = Math.round(i * 26 - off + hash(i) * 10), th = 18 + Math.round(hash(i * 7) * 16);
+      ctx.fillStyle = '#1f1d33'; for (let k = 0; k < th; k++) { const half = Math.max(1, Math.round((th - k) / 3.2)); ctx.fillRect(x - half, gy - 3 - k, half * 2 + 1, 1); }
+      ctx.fillStyle = '#2a2036'; ctx.fillRect(x, gy - 3, 1, 3);
+    }
+    // ground: grass edge, earth, pebbles that scroll at full speed
+    ctx.fillStyle = '#3f6b3a'; ctx.fillRect(0, gy, w, 2); ctx.fillStyle = '#2f4f2c'; ctx.fillRect(0, gy + 2, w, 1);
+    ctx.fillStyle = '#5a3f2a'; ctx.fillRect(0, gy + 3, w, h - gy - 3);
+    const go = S.scroll / PX;
+    for (let i = Math.floor(go / 9); i < (go + w) / 9 + 1; i++) {
+      const x = Math.round(i * 9 - go), y = gy + 5 + Math.round(hash(i) * (h - gy - 8));
+      ctx.fillStyle = hash(i * 2) < 0.5 ? '#6f5038' : '#463020'; ctx.fillRect(x, y, 2, 1);
+      if (hash(i * 5) < 0.3) { ctx.fillStyle = '#4f8a47'; ctx.fillRect(x + 3, gy - 1, 1, 1); }
+    }
+  }
+
+  // ---------- collision: the sprite's own pixels, sampled along each obstacle's outline ----------
+  function hits(o) {
+    const g = game.getBoundingClientRect(), f = fox.getBoundingClientRect();
+    const x0 = g.left + o.x, x1 = x0 + o.w * PX, y1 = g.top + groundY(), y0 = y1 - o.h * PX;
+    if (x1 < f.left || x0 > f.right || y0 > f.bottom || y1 < f.top) return false;          // boxes apart
+    for (let x = x0 + 2; x <= x1 - 2; x += 4) if (fox.hitTest(x, y0 + 2)) return true;      // top edge
+    for (let y = y0 + 2; y <= y1 - 2; y += 4) if (fox.hitTest(x0 + 2, y) || fox.hitTest(x1 - 2, y)) return true;   // sides
+    return false;
+  }
+
+  // ---------- one loop, on the sprites' own clock ----------
+  clock.add((dtMs) => {
+    const dt = dtMs / 1000;
+    if (S.mode === 'run') {
+      S.t += dt;
+      S.rate = Math.min(1.7, 1 + S.t / 90);                                                   // speeds up over 90 s
+      fox.setAttribute('rate', S.rate.toFixed(2));
+      const v = speed();
+      S.scroll += v * dt;
+      S.dist += (v * dt) / fox.displaySize.height * 0.9;                                       // the fox is about 0.9 m tall
+      if (S.air) {
+        S.y += S.vy * dt; S.vy -= S.g * dt;
+        if (S.y <= 0) { S.y = 0; S.air = false; fox.play('gallop', { restart: true }); }
+      }
+      for (const o of S.obstacles) o.x -= v * dt;
+      S.obstacles = S.obstacles.filter((o) => o.x > -o.w * PX - 10);
+      S.next -= dt;
+      if (S.next <= 0) { spawn(); S.next = (0.9 + Math.random() * 1.1) / Math.sqrt(S.rate); }
+      for (const o of S.obstacles) if (hits(o)) { crash(); break; }
+      hud();
+    } else if (S.mode === 'over' && S.y > 0) {                                                 // fall back down after a crash in the air
+      S.y = Math.max(0, S.y + S.vy * dt); S.vy -= (S.g || 2000) * dt;
+    }
+    place();
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    drawWorld();
+    for (const o of S.obstacles) drawObstacle(o);
+  });
+
+  // ---------- input: keyboard, tap, click ----------
+  addEventListener('keydown', (e) => {
+    if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); if (S.mode === 'run') jump(); else start(); }
+  });
+  game.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; if (S.mode === 'run') jump(); });
+  $('#start').addEventListener('click', start);
+  document.addEventListener('visibilitychange', () => { if (document.hidden && S.mode === 'run') { S.mode = 'paused'; $('#title').textContent = 'Paused'; $('#start').textContent = 'Keep running'; $('#overlay').hidden = false; } });
+
+  // Reduced motion: the sprite holds still (its choice to respect); the game still works, so say so.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches)
+    $('#note').textContent = 'Your system asks for reduced motion: the fox will hold still poses while the trail scrolls.';
+
+  fox.addEventListener('ready', () => { resize(); hud(); });
+  addEventListener('resize', resize);
+  resize(); hud();
+  window.foxTrail = { S, jump, start, hits };   // for testing
+</script>
+</body>
+</html>

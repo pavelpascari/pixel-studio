@@ -413,6 +413,30 @@ new IntersectionObserver((es) => (es.at(-1).isIntersecting ? clock.add(tick) : c
 
 The flock page also checks `prefers-reduced-motion` itself and does not start its movement loop when it matches; the element only stops its own frame animation.
 
+## Games
+
+`<pixel-sprite>` is enough to drive a small arcade game; [demo/runner.html](../demo/runner.html) ("Fox Trail", an endless
+runner with the fox) is the worked example. `<pixel-stage>` is not the tool for this: its characters choose their own
+routes over the page and its [scenes](stage.md#scenes) are scripted sequences (go there, say this, wait for that), with no
+direct control of position, gravity or collisions. Use a stage scene for an intro or an ending, and a bare sprite for play.
+
+| Need | How |
+|---|---|
+| One game loop in step with the legs | `clock.add((dtMs) => …)` from the module: the same frame loop and clamped `dt` the sprites use. |
+| Scroll speed that matches the feet | `el.pxPerSecond('gallop') * rate`: the world moves exactly as fast as the planted feet push. |
+| Getting faster | Raise the `rate` attribute (0.25–4): the animation speeds up, and multiplying the scroll by the same rate keeps the feet planted. |
+| An instant jump the game controls | Bake an in-place leap: `{"motion": "jump", "anticipate": 0.05, "air": 0.9, "dip": 0}` (height 0 is the default: the page moves the sprite). Use its air time (frames ÷ fps × `air`, divided by `rate`) for the game's own arc, and `play('leap', {once: true, restart: true})`. |
+| Pixel-accurate collisions | `el.hitTest(x, y)` against the frame showing now: test the obstacle's box first, then sample points along its outline. |
+| Standing on the ground | Place the box at `groundY − el.groundOffset`. |
+| Crash, pause | `play('fall')`; pause the world on `visibilitychange`. |
+
+**Gaps found while building it** (none blocks a game; each would make the next one shorter):
+- No overlap test for a rectangle: games sample `hitTest` along an outline. An `el.hitRect(rect)` would do it in one call.
+- No way to show a chosen frame (`seek`): an airborne pose must last as long as its baked clip, so the game's jump has a
+  fixed air time. A variable-height jump needs a held pose or a seek.
+- Reduced motion is always honoured: the sprite holds still even in a game the reader started. Fox Trail keeps playing
+  with still poses and says why; a page-level opt-in for user-started games would be a deliberate API choice.
+
 ## Testing on devices
 
 `test/browser/runtime.html` runs 24 behaviour checks in a real browser: single load on upgrade, the reserved box, errors and `reload()`, format checks, a throwing sprite not freezing the rest, `src` races, shared sheets, device-pixel scaling, `pxPerSecond`, decorative `alt`, touch and mouse input, one-shots, the shared clock, footstep events, holds, attachment points, the foot line, hit testing, the state machine, skins, transition clips and rage clicks. They pass in desktop Chromium, Firefox and WebKit (Playwright builds, via `scripts/browser-check.mjs`), and in iOS 18.1 Safari (iPhone 16 simulator, device pixel ratio 3). Results and any failures are listed at the top of the page, so they can be read on a phone. Serve the repo (`npm run studio`) and open `/test/browser/runtime.html` on each device; the page prints the device pixel ratio, hover capability and reduced-motion setting next to the results.
