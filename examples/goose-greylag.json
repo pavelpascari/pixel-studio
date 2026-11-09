@@ -1,0 +1,191 @@
+{
+  "name": "greylag (natural plumage)",
+  "description": "A wild greylag goose: heavy grey-brown body, long slim neck, small head, buff-edged wing coverts, pale belly, pink legs and an orange-pink bill. Its own proportions on the goose figure; contributed via the playground, tuned to read at sprite sizes.",
+  "size": [100, 100],
+  "figure": {"use": "goose", "bones": {
+    "body": {"from": [45, 67], "to": [64, 58]},
+    "tail": {"from": [23, 63], "to": [10, 59], "follow": {"freq": 3.2, "damping": 0.8, "amount": 0.08, "max": 3}},
+    "legFar": {"from": [51, 74], "to": [48, 81.5]},
+    "shinFar": {"from": [48, 81.5], "to": [51, 88.4]},
+    "footFar": {"from": [51, 88.4], "to": [59, 90]},
+    "legNear": {"from": [44, 75], "to": [41, 82]},
+    "shinNear": {"from": [41, 82], "to": [44, 89]},
+    "footNear": {"from": [44, 89], "to": [52, 90.5]},
+    "neck": {"from": [63, 57], "to": [67, 43]},
+    "neckUp": {"from": [67, 43], "to": [72, 29]},
+    "head": {"from": [72, 29], "to": [91, 27]},
+    "jaw": {"from": [81, 28], "to": [90.2, 28.4]},
+    "wing": {"from": [60, 56], "to": [20, 65], "follow": {"freq": 4.2, "damping": 0.8, "amount": 0.04, "max": 2}}
+  }},
+  "materials": {
+    "mantle": {"color": "#8d8a7d", "texture": "fur", "textureStrength": 0.1},
+    "belly": {"color": "#d0cdc1", "texture": "fur", "textureStrength": 0.06},
+    "rump": {"color": "#e0ded3"},
+    "neck": {"color": "#aaa697", "flat": true},
+    "face": {"color": "#b2ae9e", "flat": true},
+    "streak": {"color": "#918d80", "flat": true},
+    "wing": {"flat": true, "color": "#777467"},
+    "edge": {"flat": true, "color": "#a29c8c"},
+    "coverts": {"flat": true, "color": "#8d8776"},
+    "covertsLight": {"flat": true, "color": "#928c7d"},
+    "primaries": {"flat": true, "color": "#605f55"},
+    "beak": {"color": "#e5a176", "shine": 0.09},
+    "billLower": {"color": "#cf8a69"},
+    "billLine": {"color": "#956b56", "flat": true},
+    "billNail": {"color": "#efd0aa"},
+    "leg": {"color": "#cd9887"},
+    "legLight": {"color": "#e2b1a1"},
+    "toeLine": {"color": "#a97769"},
+    "eyeRing": {"color": "#a78d65", "flat": true},
+    "eye": {"color": "#242520", "flat": true, "outline": false},
+    "glint": {"color": "#e3dfcb", "flat": true, "outline": false}
+  },
+  "parts": [
+    {"id": "tail", "shapes": [
+      {"type": "polygon", "points": [[28, 58], [16, 55.7], [8.7, 57], [13, 61], [29, 67]], "material": "rump", "r": 1},
+      {"type": "polygon", "points": [[25, 57.7], [14, 56.6], [10.2, 57.8], [15, 60], [27, 64.2]], "material": "primaries", "r": 0.7},
+      {"type": "capsule", "x1": 12.7, "y1": 58.1, "x2": 24, "y2": 61.5, "r": 0.25, "material": "edge", "minDetail": 3}
+    ]},
+    {"id": "body", "shapes": [
+      {"type": "ellipse", "cx": 43.5, "cy": 63.8, "rx": 26.8, "ry": 16, "material": "mantle", "rot": 2},
+      {"type": "ellipse", "cx": 49, "cy": 72.5, "rx": 20, "ry": 8.2, "material": "belly", "rot": -4},
+      {"type": "ellipse", "cx": 25.5, "cy": 69.5, "rx": 8, "ry": 5.5, "material": "rump", "rot": 14},
+      {"type": "polygon", "points": [[56, 51.5], [62, 50], [68, 55], [70, 62], [67, 70], [59, 77], [54, 76]], "material": "neck", "r": 3.2}
+    ]},
+    {"id": "shinFar", "shapes": [
+      {"type": "capsule", "x1": 48, "y1": 81.5, "x2": 51, "y2": 88.4, "r": 1.03, "material": "leg"},
+      {"type": "capsule", "x1": 48.25, "y1": 82, "x2": 51.3, "y2": 87.9, "r": 0.3, "material": "legLight", "minDetail": 3}
+    ]},
+    {"id": "footFar", "shapes": [
+      {"type": "polygon", "points": [[50.4, 87.9], [52.5, 88.4], [56.4, 88.9], [59.1, 89.9], [58.4, 90.5], [54.8, 90.4], [52.8, 90.85], [49.8, 90.1]], "material": "leg", "r": 0.5},
+      {"type": "capsule", "x1": 51.3, "y1": 89.1, "x2": 57.9, "y2": 89.85, "r": 0.2, "material": "toeLine", "minDetail": 3},
+      {"type": "capsule", "x1": 52, "y1": 89.2, "x2": 54.7, "y2": 90.3, "r": 0.15, "material": "toeLine", "minDetail": 3}
+    ]},
+    {"id": "shinNear", "shapes": [
+      {"type": "capsule", "x1": 41, "y1": 82, "x2": 44, "y2": 89, "r": 1.03, "material": "leg"},
+      {"type": "capsule", "x1": 41.25, "y1": 82.5, "x2": 44.3, "y2": 87.9, "r": 0.3, "material": "legLight", "minDetail": 3}
+    ]},
+    {"id": "footNear", "shapes": [
+      {"type": "polygon", "points": [[43.4, 88.5], [45.5, 89], [49.4, 89.5], [52.1, 90.5], [51.4, 91.1], [47.8, 91], [45.8, 91.45], [42.8, 90.7]], "material": "leg", "r": 0.5},
+      {"type": "capsule", "x1": 44.3, "y1": 89.7, "x2": 50.9, "y2": 90.45, "r": 0.2, "material": "toeLine", "minDetail": 3},
+      {"type": "capsule", "x1": 45, "y1": 89.8, "x2": 47.7, "y2": 90.9, "r": 0.15, "material": "toeLine", "minDetail": 3}
+    ]},
+    {"id": "neck", "shapes": [
+      {"type": "polygon", "points": [[57.3, 61], [58.3, 53], [61, 48], [62.8, 42.7], [65.3, 39.8], [69.7, 40.2], [71.5, 43.5], [70.4, 49.3], [68.8, 56.3], [68.5, 62], [63, 65]], "material": "neck", "r": 2.5},
+      {"type": "capsule", "x1": 66.7, "y1": 44, "x2": 65.5, "y2": 54.5, "r": 2.4, "material": "neck", "r2": 3},
+      {"type": "capsule", "x1": 61.9, "y1": 49.5, "x2": 61.4, "y2": 52.6, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 63.7, "y1": 47.2, "x2": 63, "y2": 50.1, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 64.5, "y1": 43.5, "x2": 63.7, "y2": 46.6, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 61.4, "y1": 55, "x2": 61.2, "y2": 58.5, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"}
+    ]},
+    {"id": "neckUp", "shapes": [
+      {"type": "capsule", "x1": 67, "y1": 43, "x2": 69.2, "y2": 33.8, "r": 4.3, "material": "neck", "r2": 3.8},
+      {"type": "capsule", "x1": 69.2, "y1": 33.8, "x2": 72.3, "y2": 28.4, "r": 3.8, "material": "neck", "r2": 4.15},
+      {"type": "capsule", "x1": 70.3, "y1": 39, "x2": 73, "y2": 29.6, "r": 1.7, "material": "neck", "r2": 2.4},
+      {"type": "capsule", "x1": 66, "y1": 39, "x2": 66.6, "y2": 36.5, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 67.2, "y1": 34.6, "x2": 68.3, "y2": 32.4, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 69, "y1": 30.4, "x2": 70.3, "y2": 28.6, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"},
+      {"type": "capsule", "x1": 68, "y1": 40.6, "x2": 68.5, "y2": 38.5, "r": 0.18, "material": "streak", "minDetail": 3, "profile": "none"}
+    ]},
+    {"id": "head", "shapes": [
+      {"type": "ellipse", "cx": 75.2, "cy": 25.6, "rx": 7.15, "ry": 5.2, "material": "face", "rot": 4},
+      {"type": "ellipse", "cx": 76.2, "cy": 27.5, "rx": 5.5, "ry": 2.4, "material": "face", "rot": -6},
+      {"type": "polygon", "points": [[80, 22.6], [84.1, 23.1], [88.7, 24.6], [91.2, 26.2], [91.25, 27.6], [88.8, 28.2], [81.4, 28.6]], "material": "beak", "r": 0.8},
+      {"type": "polygon", "points": [[89.4, 25.5], [90.8, 26.1], [91.15, 27.3], [89.9, 27.8]], "material": "billNail", "r": 0.35, "minDetail": 3},
+      {"type": "capsule", "x1": 84.2, "y1": 24.9, "x2": 85.9, "y2": 25.1, "r": 0.3, "material": "billLine", "minDetail": 3},
+      {"type": "capsule", "x1": 81.7, "y1": 27.8, "x2": 89.7, "y2": 27.45, "r": 0.15, "material": "billLine", "minDetail": 3, "profile": "none"}
+    ]},
+    {"id": "jaw", "shapes": [{"type": "polygon", "points": [[81.1, 27.9], [90.7, 27.3], [89.6, 28.5], [82, 29.4]], "material": "billLower", "r": 0.45}]},
+    {"id": "eye", "bone": "head", "pivot": [77, 24.4], "z": 8, "shapes": [
+      {"type": "ellipse", "cx": 77, "cy": 24.4, "rx": 1.18, "ry": 1.12, "material": "eyeRing", "minDetail": 2},
+      {"type": "ellipse", "cx": 77.15, "cy": 24.4, "rx": 0.88, "ry": 0.86, "material": "eye"},
+      {"type": "ellipse", "cx": 77.42, "cy": 24.12, "rx": 0.23, "ry": 0.23, "material": "glint", "minDetail": 3}
+    ]},
+    {"id": "wing", "shapes": [
+      {"type": "polygon", "points": [[62, 54.5], [55, 49], [41, 48], [27, 51.3], [18, 58.5], [18, 65.6], [30, 71.7], [48, 71], [60, 65]], "material": "wing", "r": 3},
+      {"type": "polygon", "points": [[47.46, 53.71], [28.01, 58.71], [16.5, 63.5], [34.21, 60.98], [48.54, 58.29]], "material": "edge", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[47.59, 54.27], [28.12, 59.18], [17.04, 63.37], [34.11, 60.59], [48.41, 57.73]], "material": "primaries", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[49.5, 54.63], [30.18, 60.08], [18.8, 65.15], [36.43, 62.2], [50.7, 59.17]], "material": "edge", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[49.65, 55.18], [30.31, 60.55], [19.33, 65.01], [36.33, 61.82], [50.55, 58.62]], "material": "primaries", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[51.55, 55.54], [32.36, 61.46], [21.1, 66.8], [38.66, 63.43], [52.85, 60.06]], "material": "edge", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[51.71, 56.09], [32.5, 61.93], [21.63, 66.65], [38.55, 63.05], [52.69, 59.51]], "material": "primaries", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[53.59, 56.46], [34.54, 62.84], [23.4, 68.45], [40.89, 64.66], [55.01, 60.94]], "material": "edge", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[53.76, 57], [34.69, 63.3], [23.92, 68.28], [40.77, 64.28], [54.84, 60.4]], "material": "primaries", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[55.64, 57.38], [36.72, 64.22], [25.7, 70.1], [43.12, 65.88], [57.16, 61.82]], "material": "edge", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[55.82, 57.92], [36.88, 64.68], [26.22, 69.92], [42.99, 65.5], [56.98, 61.28]], "material": "primaries", "r": 0.65, "minDetail": 2},
+      {"type": "polygon", "points": [[27.7, 61.87], [32.4, 63.07], [31.55, 65.87], [23.88, 68.81], [26.11, 65.57]], "material": "covertsLight", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[32.35, 61.73], [37.05, 62.92], [36.2, 65.72], [28.53, 68.66], [30.76, 65.42]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[37, 61.57], [41.7, 62.77], [40.85, 65.57], [33.18, 68.51], [35.41, 65.27]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[41.65, 60.23], [46.35, 61.42], [45.5, 64.22], [37.83, 67.16], [40.06, 63.92]], "material": "covertsLight", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[46.3, 60.07], [51, 61.27], [50.15, 64.07], [42.48, 67.01], [44.71, 63.77]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[50.95, 59.92], [55.65, 61.12], [54.8, 63.92], [47.13, 66.86], [49.36, 63.62]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[28.7, 56.38], [33.7, 57.57], [32.77, 60.38], [25.24, 62.99], [26.86, 60.07]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[33.35, 56.23], [38.35, 57.42], [37.42, 60.23], [29.89, 62.84], [31.5, 59.92]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[38, 56.07], [43, 57.27], [42.07, 60.07], [34.54, 62.69], [36.15, 59.77]], "material": "covertsLight", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[42.65, 54.73], [47.65, 55.92], [46.73, 58.73], [39.19, 61.34], [40.8, 58.42]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[47.3, 54.57], [52.3, 55.77], [51.38, 58.57], [43.84, 61.19], [45.45, 58.27]], "material": "coverts", "r": 1.1, "minDetail": 2},
+      {"type": "polygon", "points": [[51.95, 54.42], [56.95, 55.62], [56.02, 58.42], [48.49, 61.04], [50.1, 58.12]], "material": "covertsLight", "r": 1.1, "minDetail": 2},
+      {"type": "ellipse", "cx": 54.8, "cy": 52.7, "rx": 6.4, "ry": 3.4, "material": "mantle", "rot": 23},
+      {"type": "ellipse", "cx": 46.6, "cy": 51.1, "rx": 5.8, "ry": 2.7, "material": "mantle", "rot": 6}
+    ]}
+  ],
+  "views": {
+    "front": {"figure": "goose-front", "look": {"part": "head", "replaces": "head"}, "animations": {"idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}}}, "waddle": {"motion": "walk"}, "run": {"motion": "run"}, "honk": {"motion": "honk"}, "jump": {"motion": "jump"}, "fall": {"motion": "fall"}, "sit": {"motion": "sit", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}}, "duck": {"motion": "duck"}, "peek": {"motion": "peek"}, "flap": {"motion": "flap"}},
+      "parts": [
+        {"id": "body", "shapes": [
+          {"type": "ellipse", "cx": 50, "cy": 67, "rx": 16, "ry": 13, "material": "mantle"},
+          {"type": "ellipse", "cx": 50, "cy": 73, "rx": 11, "ry": 6.5, "material": "belly"}
+        ]},
+        {"id": "wingL", "z": 2, "shapes": [{"type": "polygon", "points": [[38, 56.5], [33, 61], [32.5, 70], [35.5, 77], [39, 72], [40, 60]], "r": 2, "material": "mantle", "shade": -0.15}]},
+        {"id": "wingR", "z": 2, "shapes": [{"type": "polygon", "points": [[62, 56.5], [67, 61], [67.5, 70], [64.5, 77], [61, 72], [60, 60]], "r": 2, "material": "mantle", "shade": -0.15}]},
+        {"id": "shinL", "shapes": [{"type": "capsule", "x1": 45, "y1": 79, "x2": 45, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footL", "shapes": [{"type": "polygon", "points": [[43.8, 88], [46.2, 88], [49.5, 91.6], [40.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "shinR", "shapes": [{"type": "capsule", "x1": 55, "y1": 79, "x2": 55, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footR", "shapes": [{"type": "polygon", "points": [[56.2, 88], [53.8, 88], [50.5, 91.6], [59.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "neck", "shapes": [{"type": "capsule", "x1": 50, "y1": 59, "x2": 50, "y2": 43.5, "r": 6, "r2": 5.4, "material": "neck"}]},
+        {"id": "neckUp", "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "neck"}]},
+        {"id": "head", "shapes": [
+          {"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "neck"},
+          {"type": "polygon", "points": [[46.8, 25.2], [53.2, 25.2], [52.3, 30.8], [50, 31.8], [47.7, 30.8]], "r": 1, "material": "beak"}
+        ]},
+        {"id": "jaw", "shapes": [{"type": "polygon", "points": [[47.8, 31], [52.2, 31], [51.2, 33.2], [48.8, 33.2]], "r": 0.8, "material": "beak", "shade": -0.2}]},
+        {"id": "eye", "bone": "head", "pivot": [50, 23], "z": 7, "shapes": [
+          {"type": "rect", "x": 44.2, "y": 21.8, "w": 2, "h": 2.2, "material": "eye"},
+          {"type": "rect", "x": 53.8, "y": 21.8, "w": 2, "h": 2.2, "material": "eye"}
+        ]}
+      ]},
+    "back": {"figure": "goose-front", "animations": {"idle": {"motion": "idle"}, "waddle": {"motion": "walk"}, "run": {"motion": "run"}, "honk": {"motion": "honk"}, "jump": {"motion": "jump"}, "fall": {"motion": "fall"}, "sit": {"motion": "sit"}, "duck": {"motion": "duck"}, "peek": {"motion": "peek"}, "flap": {"motion": "flap"}},
+      "parts": [
+        {"id": "body", "shapes": [
+          {"type": "ellipse", "cx": 50, "cy": 67, "rx": 16, "ry": 13, "material": "mantle"},
+          {"type": "ellipse", "cx": 50, "cy": 73, "rx": 11, "ry": 6.5, "material": "belly"}
+        ]},
+        {"id": "tail", "z": 7, "shapes": [{"type": "polygon", "points": [[46, 66], [54, 66], [53, 60], [50, 58.5], [47, 60]], "r": 2, "material": "neck"}]},
+        {"id": "wingL", "shapes": [{"type": "polygon", "points": [[37, 56], [33.5, 64], [34.5, 75], [41, 79.5], [48.5, 71], [49.5, 58]], "r": 2.5, "material": "mantle", "shade": -0.1}]},
+        {"id": "wingR", "shapes": [{"type": "polygon", "points": [[63, 56], [66.5, 64], [65.5, 75], [59, 79.5], [51.5, 71], [50.5, 58]], "r": 2.5, "material": "mantle", "shade": -0.1}]},
+        {"id": "shinL", "shapes": [{"type": "capsule", "x1": 45, "y1": 79, "x2": 45, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footL", "shapes": [{"type": "polygon", "points": [[43.8, 88], [46.2, 88], [48.5, 91.6], [41.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "shinR", "shapes": [{"type": "capsule", "x1": 55, "y1": 79, "x2": 55, "y2": 88.5, "r": 1.8, "material": "leg"}]},
+        {"id": "footR", "shapes": [{"type": "polygon", "points": [[56.2, 88], [53.8, 88], [51.5, 91.6], [58.5, 91.6]], "r": 0.8, "material": "leg"}]},
+        {"id": "neck", "z": 2, "shapes": [{"type": "capsule", "x1": 50, "y1": 59, "x2": 50, "y2": 43.5, "r": 6, "r2": 5.4, "material": "neck"}]},
+        {"id": "neckUp", "z": 2, "shapes": [{"type": "capsule", "x1": 50, "y1": 44.5, "x2": 50, "y2": 31, "r": 5.4, "r2": 4.8, "material": "neck"}]},
+        {"id": "head", "z": 2.5, "shapes": [{"type": "ellipse", "cx": 50, "cy": 24.5, "rx": 6.4, "ry": 7.2, "material": "neck"}]}
+      ]}
+  },
+  "animations": {
+    "idle": {"motion": "idle", "frames": 32, "fps": 12, "breathe": 0.28, "sway": 0.12, "tail": 0.55, "head": {"steady": 0.88, "look": 0.35, "nod": 0.65}, "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]}}},
+    "waddle": {"motion": "walk", "frames": 24, "fps": 16, "stride": 9, "duty": 0.66, "lift": 2.35, "bob": 0.5, "rock": 1.1, "toeCurl": 16, "toeOff": 11, "tail": 1, "head": {"steady": 0.8, "nod": 0.8, "hold": 0.1}},
+    "honk": {"motion": "pose", "frames": 20, "fps": 12, "loop": false, "tracks": {"neck": {"rot": [0, -2, 1, 3, 1, 0]}, "neckUp": {"rot": [0, -3, -6, -4, 0, 0]}, "head": {"rot": [0, -8, -16, -13, -2, 0]}, "jaw": {"rot": [0, 4, 30, 34, 8, 0]}}, "events": [{"frame": 7, "name": "honk"}]},
+    "run": {"motion": "run"},
+    "rush": {"motion": "rush", "lean": 6, "head": {"steady": 0.4, "offset": [-2, 6], "tilt": 8}, "tracks": {"neck": {"rot": 5}}},
+    "jump": {"motion": "jump"},
+    "fall": {"motion": "fall", "tracks": {"eye": {"show": 1}}},
+    "sit": {"motion": "sit", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}},
+    "duck": {"motion": "duck"},
+    "peek": {"motion": "peek", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]}}},
+    "climb": {"motion": "climb"},
+    "flap": {"motion": "flap"}
+  },
+  "mixes": {"idle>waddle": {"frames": 3}, "waddle>idle": {"frames": 3}, "run>idle": {"frames": 3}},
+  "style": {"outline": "selective", "light": -35, "elevation": 50, "ambient": 0.1, "curvature": 0.55, "tones": 6, "texture": 0.65, "dither": false, "innerLines": true, "contactShadow": true, "hueShift": 0.25}
+}

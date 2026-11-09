@@ -12,5 +12,5 @@
 
 - [Character format](/docs/SPEC.md): materials, parts, shapes, animations, skins, variants, style.
 - [Figures](/docs/figures.md): the skeletons characters are built on, and front/back views.
-- [Example characters](/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, clawd, fox, pip, robot, slime (`/examples/<name>.json`).
+- [Example characters](/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, goose-greylag, clawd, fox, pip, robot, slime (`/examples/<name>.json`).
 - [Runtime](/docs/runtime.md): `<pixel-sprite>` for putting a character on a web page.

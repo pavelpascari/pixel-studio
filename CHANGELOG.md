@@ -24,6 +24,16 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### A wild one joins the flock: greylag
+
+- New `examples/goose-greylag.json`: a natural greylag goose (heavy grey-brown body, slim neck, buff-edged coverts,
+  pink legs, orange-pink bill) on the goose figure with its own proportions. Contributed through the playground, then
+  tuned to read at sprite sizes: a selective outline and rounder shading, the flank streaks and covert edge strokes
+  dropped (a comb below ~100 px), a paler belly only underneath (it showed as a white goose when the wing lifted), a
+  bigger honk, every flock move (run, rush, jump, fall, sit, duck, peek, climb, flap) and goose-base's front and back
+  views in greylag colours. `rush` leans less so the longer bill stays in the frame.
+- It walks the flock lawn and has a roster card (hover: peek); the playground and studio list it.
+
 ### Playground
 
 - New `studio/play.html`: one character, animated, set up entirely by its URL: `?c=goose-root&view=front&anim=waddle&skin=party&res=64`

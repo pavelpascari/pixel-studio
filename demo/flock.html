@@ -31,7 +31,7 @@
     .log { height: 110px; overflow: hidden; margin-top: 14px; color: var(--muted); font-size: 13px; display: flex; flex-direction: column-reverse; }
     .log div b { color: var(--green); font-weight: 500; }
     h2 { margin: 44px 0 12px; font-size: 22px; }
-    .roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
     .card { background: #151d19; border: 1px solid #23402d; border-radius: 12px; padding: 14px; text-align: center; }
     .card h3 { margin: 6px 0 2px; color: var(--green); font-size: 17px; }
     .card p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -72,6 +72,10 @@
       <pixel-sprite src="assets/goose-kiddie.bundle.json" anim="idle" size="128" hover-anim="flap" click-anim="honk" alt="kiddie, a yellow gosling in a backwards cap"></pixel-sprite>
       <h3>kiddie</h3><p>Script kiddie. Can't fly yet. Tries anyway.</p><small>hover: flap · click: honk</small>
     </div>
+    <div class="card">
+      <pixel-sprite src="assets/goose-greylag.bundle.json" anim="idle" size="128" hover-anim="peek" click-anim="honk" alt="greylag, a wild grey-brown goose with an orange bill"></pixel-sprite>
+      <h3>greylag</h3><p>The wild one. No hoodie, no handle, no idea what a computer is. Here for the grass.</p><small>hover: peek · click: honk</small>
+    </div>
   </div>
 
   <footer>Every goose is a JSON rig drawn by the Pixel Studio engine and played by <code>&lt;pixel-sprite&gt;</code>. <a href="index.html">← back to the other demo</a></footer>
@@ -90,6 +94,7 @@
     { name: 'sudo',   walk: 'waddle', speed: 65, special: 'headbang', specialMs: 2400, lines: ['HONK (with feeling)', 'turned it up to 11', 'denied your permission'] },
     { name: 'phreak', walk: 'sneak',  speed: 30, special: 'sneak',    specialMs: 0,    lines: ['exfiltrated 1.44 MB', 'nobody saw that', 'dialing in at 56k'] },
     { name: 'kiddie', walk: 'waddle', speed: 70, special: 'flap',     specialMs: 1600, lines: ['ran a script it found', 'almost flew (no)', 'peep'] },
+    { name: 'greylag', walk: 'waddle', speed: 45, special: 'peek',    specialMs: 2000, lines: ['ate some grass', 'is that bread', 'does not know what wifi is'] },
   ];
 
   const log = (who, msg) => {

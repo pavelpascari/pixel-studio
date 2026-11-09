@@ -17,7 +17,7 @@ The full character format is [SPEC.md](SPEC.md).
 
 | option | values | default |
 |---|---|---|
-| `c` | `goose-base` `goose-root` `goose-sudo` `goose-phreak` `goose-kiddie` `clawd` `fox` `pip` `robot` `slime` | `goose-base` |
+| `c` | `goose-base` `goose-root` `goose-sudo` `goose-phreak` `goose-kiddie` `goose-greylag` `clawd` `fox` `pip` `robot` `slime` | `goose-base` |
 | `view` | `side`, and when the character has them `front`, `back`, `look` (¾ glance toward the reader) | `side` |
 | `anim` | an animation of that view; the page lists them (the geese: `idle waddle run rush honk jump fall sit duck peek climb flap`, and `hack` for root) | `idle` |
 | `skin` | a skin of the character (`goose-root`: `party`, `redteam`) | none |
