@@ -99,12 +99,27 @@ export function checkLog(log, file, sources) {
   return out;
 }
 
-/** Every log in references/ (all JSON files except sources.json), checked against the registry. */
+/** Problems in a raw measurement file (references/measurements/): an unknown source, or no record of who, when and how. */
+export function checkMeasurement(m, file, sources) {
+  const out = [];
+  if (!m.source || !sources[m.source]) out.push(`${file}: source "${m.source}" is not in sources.json`);
+  else if (sources[m.source].licence === 'facts-only') out.push(`${file}: "${m.source}" is facts-only; measurements must come from a public-domain, CC0 or CC BY image or video`);
+  for (const k of ['by', 'date', 'method']) if (!m[k]) out.push(`${file}: missing "${k}"`);
+  if (m.date && !DATE.test(m.date)) out.push(`${file}: date must be YYYY-MM-DD`);
+  if (!Array.isArray(m.frames)) out.push(`${file}: "frames" must list the measured frames`);
+  else for (const [i, f] of m.frames.entries()) if (f.sourceFrame == null) out.push(`${file} frames[${i}]: missing "sourceFrame"`);
+  return out;
+}
+
+/** Every log in references/ (all JSON files except sources.json) and every measurement file, checked against the registry. */
 export function checkAll() {
   const sources = loadSources();
   const out = checkSources(sources);
   for (const f of readdirSync(REF).filter((f) => f.endsWith('.json') && f !== 'sources.json'))
     out.push(...checkLog(readJSON(join(REF, f)), `references/${f}`, sources));
+  const MEAS = join(REF, 'measurements');
+  if (existsSync(MEAS)) for (const f of readdirSync(MEAS).filter((f) => f.endsWith('.json')))
+    out.push(...checkMeasurement(readJSON(join(MEAS, f)), `references/measurements/${f}`, sources));
   return out;
 }
 

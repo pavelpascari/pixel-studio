@@ -45,6 +45,237 @@
    "method": "computed; sweep ≈ 86 × 0.35 = 30 (86 units per cycle as built)",
    "by": "Claude (agent)",
    "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.frames",
+   "value": 8,
+   "source": "muybridge-1887-pl062",
+   "location": "references/measurements/human-pl062.json: cycle about 0.49 s at full speed (pl060 0.50 s, pl064 0.45 s)",
+   "method": "8 frames at 16 fps = 0.5 s",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.fps",
+   "value": 16,
+   "source": "muybridge-1887-pl062",
+   "location": "human-pl062.json cycle 0.49 s",
+   "method": "computed",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.duty",
+   "value": 0.29,
+   "source": "muybridge-1887-pl062",
+   "location": "human-pl062.json: duty 0.29 (0.17-0.42); pl060 0.33, pl064 0.25",
+   "method": "pl062 value",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.elbow",
+   "value": 90,
+   "source": "muybridge-1887-pl062",
+   "location": "human-pl062.json: elbow bend 63-126°",
+   "method": "midpoint",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.armSwing",
+   "value": 45,
+   "source": "muybridge-1887-pl060",
+   "location": "human-pl060.json: upper arm −62 to +25° (87° range; pl062 130°, pl064 119°)",
+   "method": "half the narrowest range, rounded",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sprint.stride",
+   "value": 34,
+   "source": "fukuchi-2017",
+   "location": "Table 4, 4.5 m/s: stride 2.96 m ≈ 141 units (assumed 1.70 m adult); the plates give no distances",
+   "method": "sweep 141 × 0.29 = 41 exceeds the leg (37 units), so capped at 34, the longest the legs reach without warnings",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.sitDown.fps",
+   "value": 5.5,
+   "source": "muybridge-1887-pl236",
+   "location": "catalogue interval 183 ms between exposures (muybridge-1887-catalogue)",
+   "method": "one frame per plate frame: 1000/183 ≈ 5.5",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.standUp.fps",
+   "value": 11,
+   "source": "muybridge-1887-pl249",
+   "location": "catalogue interval 92 ms",
+   "method": "one frame per plate frame: 1000/92 ≈ 11",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
   }
- ]
+ ],
+ "frames": {
+  "sitDown": [
+   {
+    "frame": 0,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 6,
+    "method": "hips.y = (1 − hip height 1.0 of standing) × 41.5 units = 0.0; spine.rot = measured trunk lean 0° (frame 6: lean not measured, upright)",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 1,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 7,
+    "method": "hips.y = (1 − hip height 0.87 of standing) × 41.5 units = 5.4; spine.rot = measured trunk lean 9.2°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 2,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 8,
+    "method": "hips.y = (1 − hip height 0.78 of standing) × 41.5 units = 9.1; spine.rot = measured trunk lean 12.6°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 3,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 9,
+    "method": "hips.y = (1 − hip height 0.75 of standing) × 41.5 units = 10.4; spine.rot = measured trunk lean 6.1°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 4,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 10,
+    "method": "hips.y = (1 − hip height 0.72 of standing) × 41.5 units = 11.6; spine.rot = measured trunk lean 2.8°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 5,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 11,
+    "method": "hips.y = (1 − hip height 0.7 of standing) × 41.5 units = 12.5; spine.rot = measured trunk lean 4.5°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 6,
+    "source": "muybridge-1887-pl236",
+    "sourceFrame": 12,
+    "method": "hips.y = (1 − hip height 0.67 of standing) × 41.5 units = 13.7; spine.rot = measured trunk lean 5.7°",
+    "points": "references/measurements/human-pl236.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   }
+  ],
+  "standUp": [
+   {
+    "frame": 0,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 1,
+    "method": "hips.y = 13.7 − hip rise 3 px × 13.7/110 = 13.3; spine.rot = measured trunk lean -8.5°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 1,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 2,
+    "method": "hips.y = 13.7 − hip rise -4 px × 13.7/110 = 14.2; spine.rot = measured trunk lean -5.4°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 2,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 3,
+    "method": "hips.y = 13.7 − hip rise -8 px × 13.7/110 = 14.7; spine.rot = measured trunk lean 2.2°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 3,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 4,
+    "method": "hips.y = 13.7 − hip rise -2 px × 13.7/110 = 13.9; spine.rot = measured trunk lean 6.6°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 4,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 5,
+    "method": "hips.y = 13.7 − hip rise 2 px × 13.7/110 = 13.5; spine.rot = measured trunk lean 15.3°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 5,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 6,
+    "method": "hips.y = 13.7 − hip rise 6 px × 13.7/110 = 13.0; spine.rot = measured trunk lean 21.8°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 6,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 7,
+    "method": "hips.y = 13.7 − hip rise 16 px × 13.7/110 = 11.7; spine.rot = measured trunk lean 33.7°",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 7,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 8,
+    "method": "hips.y = 13.7 − hip rise 35 px × 13.7/110 = 9.3; spine.rot 24° eased to upright (not measured: back turned to the camera)",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 8,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 9,
+    "method": "hips.y = 13.7 − hip rise 85 px × 13.7/110 = 3.1; spine.rot 10° eased to upright (not measured: back turned to the camera)",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   },
+   {
+    "frame": 9,
+    "source": "muybridge-1887-pl249",
+    "sourceFrame": 10,
+    "method": "hips.y = 13.7 − hip rise 110 px × 13.7/110 = 0.0; spine.rot 2° eased to upright (not measured: back turned to the camera)",
+    "points": "references/measurements/human-pl249.json",
+    "by": "Claude (agent)",
+    "date": "2026-11-09"
+   }
+  ]
+ }
 }

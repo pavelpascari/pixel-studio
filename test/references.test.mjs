@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { checkAll, checkSources, checkLog, credits } from '../scripts/references.mjs';
+import { checkAll, checkSources, checkLog, checkMeasurement, credits } from '../scripts/references.mjs';
 
 test('references: every source is cited and every logged value matches', () => {
   assert.deepEqual(checkAll(), []);
@@ -34,5 +34,15 @@ test('references: a log catches drifted values, unknown sources and frames from 
   assert.deepEqual(checkLog({ figure: 'dog', frames: { trot: [frame] } }, 'dog.json', sources), []);
   assert.match(checkLog({ figure: 'dog', frames: { trot: [{ ...frame, source: 'paper' }] } }, 'dog.json', sources)[0], /facts-only/);
   assert.match(checkLog({ figure: 'dog', frames: { trot: [{ ...frame, frame: 99 }] } }, 'dog.json', sources)[0], /outside/);
-  assert.match(checkLog({ figure: 'dog', frames: { gallop: [frame] } }, 'dog.json', sources)[0], /no such animation/);
+  assert.match(checkLog({ figure: 'dog', frames: { canter: [frame] } }, 'dog.json', sources)[0], /no such animation/);
+});
+
+test('references: a measurement file must cite a registered, usable source and say who, when and how', () => {
+  const sources = { plate: pd, paper };
+  const m = { source: 'plate', by: 'test', date: '2026-11-09', method: 'points on the scan', frames: [{ sourceFrame: 1 }] };
+  assert.deepEqual(checkMeasurement(m, 'm.json', sources), []);
+  assert.match(checkMeasurement({ ...m, source: 'nope' }, 'm.json', sources)[0], /not in sources/);
+  assert.match(checkMeasurement({ ...m, source: 'paper' }, 'm.json', sources)[0], /facts-only/);
+  assert.match(checkMeasurement({ ...m, by: '' }, 'm.json', sources)[0], /missing "by"/);
+  assert.match(checkMeasurement({ ...m, frames: [{}] }, 'm.json', sources)[0], /sourceFrame/);
 });

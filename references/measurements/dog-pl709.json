@@ -1,0 +1,347 @@
+{
+ "source": "muybridge-1887-pl709",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:707969470/full/full/0/default.jpg",
+ "imageSize": [
+  4948,
+  3933
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "dog",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1.4x with a grid labelled in scan pixels, the legs zoomed at 2-3x with contrast, and a strip of the ground under every frame rendered at 1.3x with a 10/50 px grid to read toe positions. A paw is 'down' when it rests on the ground line (within about 8 px, usually with its shadow touching it) and 'not down' when it is clearly (15 px or more) above it. At these exposures the legs are blurred and the near (lit) and far (shadowed) legs cannot be told apart with confidence, so feet are identified only as fore or hind and, where the order is clear, as 'first' (the first of the pair to land, i.e. the trailing foot) or 'second' (the leading foot); 'side' is left unknown. Frame boxes were read off a 1500 px copy and are approximate (about +-10 px). Only frames and feet that could be identified with confidence are recorded; everything else is left out rather than guessed.",
+ "frameBoxes": [
+  [
+   653,
+   1155,
+   1247,
+   1494
+  ],
+  [
+   1267,
+   1155,
+   1857,
+   1494
+  ],
+  [
+   1877,
+   1155,
+   2471,
+   1494
+  ],
+  [
+   2490,
+   1155,
+   3081,
+   1494
+  ],
+  [
+   3101,
+   1155,
+   3695,
+   1494
+  ],
+  [
+   3714,
+   1155,
+   4341,
+   1494
+  ],
+  [
+   653,
+   1527,
+   1247,
+   1874
+  ],
+  [
+   1267,
+   1527,
+   1857,
+   1874
+  ],
+  [
+   1877,
+   1527,
+   2471,
+   1874
+  ],
+  [
+   2490,
+   1527,
+   3081,
+   1874
+  ],
+  [
+   3101,
+   1527,
+   3695,
+   1874
+  ],
+  [
+   3714,
+   1527,
+   4341,
+   1874
+  ]
+ ],
+ "timing": {
+  "intervalMs": 41,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1.5,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "cycleS": 0.27,
+  "framesPerCycle": 6.5,
+  "computed": "measured: second hind alone 2 -> 8 (6 frames), extended flight 3 -> 9/10 (6-7), first fore touchdown 4 -> 11 (7); 6.5 x 41 ms = 0.27 s (range 0.25-0.29 s)",
+  "catalogueCycleS": 0.3,
+  "catalogueComputed": "(12 - 1) x 41 ms / 1.5 = 0.30 s (12 x 41 / 1.5 = 0.33 s with the dog-pl706 convention); the plate shows about 1.7 cycles"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1452,
+   "paws": {
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "first (trailing) hind",
+     "down": true,
+     "toe": [
+      818,
+      1455
+     ],
+     "confidence": "high"
+    },
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "second (leading) hind, touchdown",
+     "down": true,
+     "toe": [
+      998,
+      1448
+     ],
+     "confidence": "medium"
+    }
+   },
+   "support": "both hinds",
+   "notes": "Both hinds down: one behind the hip, the other reaching forward under the body. Fores swept back in the air. Thin dark lines near 820-880,1420-1470 are scratches, not legs."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1452,
+   "paws": {
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "second (leading) hind",
+     "down": true,
+     "toe": [
+      1448,
+      1455
+     ],
+     "confidence": "high"
+    },
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "first (trailing) hind, lifted",
+     "down": false,
+     "toe": [
+      1310,
+      1430
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single hind",
+   "notes": "Second hind alone; fores reach forward in the air."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1452,
+   "paws": {},
+   "support": "none (extended flight)",
+   "notes": "Extended flight: hind toes about 1915,1405, fore toe about 2440,1395, all 45 px or more above the ground."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1452,
+   "paws": {
+    "fore1": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "first (trailing) fore, touchdown",
+     "down": true,
+     "toe": [
+      2898,
+      1452
+     ],
+     "confidence": "high"
+    },
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore, reaching",
+     "down": false,
+     "toe": [
+      3030,
+      1395
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "First fore lands; hinds stretched back in the air."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1452,
+   "paws": {
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore",
+     "down": true,
+     "toe": [
+      3531,
+      1455
+     ],
+     "confidence": "high"
+    },
+    "fore1": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "first (trailing) fore, just lifted",
+     "down": false,
+     "toe": [
+      3288,
+      1432
+     ],
+     "confidence": "medium"
+    }
+   },
+   "support": "single fore",
+   "notes": "Second fore down; the first fore trails at toe-off, about 20 px up; hinds swing forward."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1452,
+   "paws": {},
+   "support": "none (gathered flight)",
+   "notes": "Gathered flight: hinds under the body (lowest toe about 3890,1420, 30 px up), fores swept back. Confidence medium."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 1857,
+   "paws": {
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "first (trailing) hind",
+     "down": true,
+     "toe": [
+      891,
+      1855
+     ],
+     "confidence": "high"
+    },
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "second (leading) hind, about to land",
+     "down": false,
+     "toe": [
+      1014,
+      1819
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single hind",
+   "notes": "Just before the phase of frame 1: the second hind is still 35 px up."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 1857,
+   "paws": {
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "second (leading) hind",
+     "down": true,
+     "toe": [
+      1471,
+      1860
+     ],
+     "confidence": "high"
+    },
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "first (trailing) hind, lifted",
+     "down": false,
+     "toe": [
+      1305,
+      1823
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single hind",
+   "notes": "Same phase as frame 2."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 1857,
+   "paws": {},
+   "support": "none (extended flight)",
+   "notes": "Extended flight, all toes 60 px or more above the ground."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 1857,
+   "paws": {},
+   "support": "none (extended flight)",
+   "notes": "Still in extended flight: lowest fore toe about 3020,1796, 60 px up."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 1857,
+   "paws": {
+    "fore1": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "first (trailing) fore",
+     "down": true,
+     "toe": [
+      3490,
+      1848
+     ],
+     "confidence": "medium"
+    },
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore, reaching",
+     "down": false,
+     "toe": [
+      3620,
+      1810
+     ],
+     "confidence": "medium"
+    }
+   },
+   "support": "single fore",
+   "notes": "Same phase as frame 4. Frame is blurred and darker."
+  }
+ ],
+ "findings": [
+  "Gait: gallop with double suspension. Sequence per cycle: first hind, second hind (both down together in frame 1), second hind alone (2), extended flight (3; 9-10), first fore (4; 11), second fore with the first at toe-off (5), gathered flight (6), first hind again (7).",
+  "Cycle about 0.27 s (6-7 frames at 41 ms, range 0.25-0.29 s); the catalogue fraction would give 0.30-0.33 s.",
+  "Duty: each foot is seen down in 1-2 consecutive frames of a 6.5-frame cycle, so duty per foot is about 0.15-0.3 (best guess 0.2-0.25). The two hinds overlap (both down in frame 1); the fores overlap only at the first fore's toe-off (frame 5).",
+  "Lags (touchdown, fraction of the cycle from the first hind): second hind about 0.15 (one frame later, frames 7 -> 8), first fore about 0.45-0.6, second fore about 0.6-0.75. Extended flight lasts 1-2 frames (0.15-0.3 of the cycle), gathered flight about 1 frame (0.15).",
+  "Comparison with dog.trot (8 frames at 16 fps = 0.50 s, duty 0.46, diagonal pairs in phase: thighHindNear/armForeFar 0, thighHindFar/armForeNear 0.5): cycle 0.27 vs 0.50 s; duty 0.2-0.25 vs 0.46; two flight phases per cycle vs none; feet land one at a time in the order hind, hind, fore, fore, with the hind pair offset by about 0.15 and the fores about half a cycle after the hinds, instead of diagonal pairs at 0 and 0.5.",
+  "Suggested future dog.gallop (from plates 708-710 together): cycle about 0.25-0.27 s (e.g. 6 frames at 24 fps = 0.25 s); duty about 0.2-0.25 per foot; touchdown order first hind 0, second hind about 0.1-0.15, first fore about 0.45-0.6, second fore about 0.6-0.75 of the cycle; two flight phases per cycle, an extended one (legs stretched, after the hinds and before the fores, about 0.15-0.3 of the cycle) and a gathered one (legs under the body, after the fores and before the hinds, about 0.15-0.2). Whether it is a rotary gallop (first fore on the same side as the second hind: phases thighHindFar 0, thighHindNear 0.1, armForeNear 0.5, armForeFar 0.6) or transverse (armForeFar 0.5, armForeNear 0.6) is NOT settled by the lateral rows; racing hounds are usually described as rotary gallopers, but that is not verified here. The rear-view row on the same plate, exposed at the same instants, is where to check it.",
+  "Not measured: near vs far side (both legs of a pair are white and lit similarly; shading did not separate them with confidence), so lead leg and rotary vs transverse are unknown; frame 12 (blurred; a fore may be down at about 4100,1840 but that could not be confirmed); joint angles and stride length."
+ ]
+}

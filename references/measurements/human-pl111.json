@@ -1,0 +1,365 @@
+{
+ "source": "muybridge-1887-pl111",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795v33s/full/full/0/default.jpg",
+ "imageSize": [
+  5028,
+  3988
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Lateral (bottom) row only; the climber faces left, so 'forward' is -x. Frames cropped from the full scan at 1.0x with 25 px grids labelled in scan pixels (contrast 1.3-1.7). This plate is soft and low in contrast and the climber is seen slightly from behind, so only the near shoulder and the two hands could be placed with confidence; points were drawn back as dots and lines (pl111/sheet-v*.png in the scratch folder) and checked. The upper hand belongs to the far arm, whose shoulder is hidden behind the head; its reach angle is measured from the near shoulder and is approximate (the shoulders nearly coincide in this view). Angles: from straight down, + = forward (toward the ladder), 180 = straight up. Point accuracy about +-10 px.",
+ "derivedKey": "derived: upperHandReach (near shoulder to upper wrist, deg from straight down, + toward the ladder), lowerArm (near shoulder to lower wrist, same convention)",
+ "frameBoxes": [
+  [
+   913,
+   1910,
+   1190,
+   2600
+  ],
+  [
+   1196,
+   1910,
+   1480,
+   2600
+  ],
+  [
+   1486,
+   1910,
+   1780,
+   2600
+  ],
+  [
+   1786,
+   1910,
+   2067,
+   2600
+  ],
+  [
+   2073,
+   1910,
+   2367,
+   2600
+  ],
+  [
+   2373,
+   1910,
+   2667,
+   2600
+  ],
+  [
+   2673,
+   1910,
+   2960,
+   2600
+  ],
+  [
+   2966,
+   1910,
+   3250,
+   2600
+  ],
+  [
+   3256,
+   1910,
+   3537,
+   2600
+  ],
+  [
+   3543,
+   1910,
+   3830,
+   2600
+  ],
+  [
+   3836,
+   1910,
+   4107,
+   2600
+  ]
+ ],
+ "frameBoxNumbering": "frameBoxes[i] is lateral frame i+1 (bottom row of the plate)",
+ "timing": {
+  "intervalMs": 95,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 0.5,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a cycle shown on the plate)",
+  "cycleS": 2.09,
+  "computed": "frames 1-11 span 10 intervals plus the extra one between frames 5 and 6 = 11 x 95 ms = 1.045 s for half a cycle (catalogue fraction 1/2), so a full cycle is about 2.1 s",
+  "frameTimesS": "frame n at (n - 1) x 0.095 s for n <= 5, n x 0.095 s for n >= 6",
+  "doubleInterval": "between frames 5 and 6 (catalogue)"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "points": {
+    "wristUpper": [
+     943,
+     2040
+    ],
+    "shoulderNear": [
+     1078,
+     2135
+    ],
+    "wristLower": [
+     968,
+     2180
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 125.1,
+    "lowerArm": 67.8
+   },
+   "confidence": "medium",
+   "notes": "Upper hand on a rail near the ladder top, lower hand on the rail at chest height. Feet low on the ladder; contacts not clear."
+  },
+  {
+   "sourceFrame": 2,
+   "points": {
+    "wristUpper": [
+     1233,
+     2015
+    ],
+    "shoulderNear": [
+     1378,
+     2140
+    ],
+    "wristLower": [
+     1263,
+     2180
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 130.8,
+    "lowerArm": 70.8
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 3,
+   "points": {
+    "wristUpper": [
+     1528,
+     2005
+    ],
+    "shoulderNear": [
+     1673,
+     2125
+    ],
+    "wristLower": [
+     1568,
+     2185
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 129.6,
+    "lowerArm": 60.3
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 4,
+   "points": {
+    "wristUpper": [
+     1818,
+     2005
+    ],
+    "shoulderNear": [
+     1973,
+     2125
+    ],
+    "wristLower": [
+     1873,
+     2200
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 127.7,
+    "lowerArm": 53.1
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 5,
+   "points": {
+    "wristUpper": [
+     2113,
+     2000
+    ],
+    "shoulderNear": [
+     2273,
+     2090
+    ],
+    "wristLower": [
+     2178,
+     2195
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 119.4,
+    "lowerArm": 42.1
+   },
+   "confidence": "medium",
+   "notes": "Followed by a double interval (catalogue)."
+  },
+  {
+   "sourceFrame": 6,
+   "points": {
+    "wristUpper": [
+     2408,
+     2010
+    ],
+    "shoulderNear": [
+     2563,
+     2100
+    ],
+    "wristLower": [
+     2478,
+     2205
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 120.1,
+    "lowerArm": 39.0
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 7,
+   "points": {
+    "wristUpper": [
+     2703,
+     2005
+    ],
+    "shoulderNear": [
+     2853,
+     2095
+    ],
+    "wristLower": [
+     2763,
+     2205
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 121.0,
+    "lowerArm": 39.3
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 8,
+   "points": {
+    "wristUpper": [
+     2998,
+     2015
+    ],
+    "shoulderNear": [
+     3133,
+     2095
+    ],
+    "wristLower": [
+     3063,
+     2210
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 120.7,
+    "lowerArm": 31.3
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 9,
+   "points": {
+    "wristUpper": [
+     3296,
+     2010
+    ],
+    "shoulderNear": [
+     3431,
+     2085
+    ],
+    "wristLower": [
+     3356,
+     2210
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 119.1,
+    "lowerArm": 31.0
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 10,
+   "points": {
+    "wristUpper": [
+     3586,
+     2010
+    ],
+    "shoulderNear": [
+     3711,
+     2080
+    ],
+    "wristLower": [
+     3641,
+     2210
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 119.2,
+    "lowerArm": 28.3
+   },
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 11,
+   "points": {
+    "wristUpper": [
+     3876,
+     2015
+    ],
+    "shoulderNear": [
+     4001,
+     2075
+    ],
+    "wristLower": [
+     3936,
+     2210
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "upperHandReach": 115.6,
+    "lowerArm": 25.7
+   },
+   "confidence": "medium",
+   "notes": ""
+  }
+ ],
+ "findings": [
+  "Timing: half a cycle takes about 1.05 s (11 intervals of 95 ms including the double one between frames 5 and 6), so a full ladder cycle is about 2.1 s, twice our human.climb (1.0 s). A vertical ladder is slow and deliberate; our 1.0 s suits a scramble, not a ladder.",
+  "Hands do not let go in the frames shown: the upper hand stays at y 2000-2015 (frames 2-11) and the lower hand at y 2180-2210 while the near shoulder rises from y 2140 (frame 2) to 2075 (frame 11), about 65 px in 0.95 s. Hands grip and the body is pushed up past them by the legs. Frame 1's upper hand reads 25-40 px lower than frames 2-11; whether it moved up between frames 1 and 2 could not be decided.",
+  "Arm reach: the upper hand sits 116-131 deg from straight down (about 25-40 deg above horizontal, reaching forward-up), and the lower arm goes from 68 deg (frame 1, hand ahead at chest height) to 26 deg (frame 11, hand nearly below the shoulder) as the body rises past it. Our climb.armReach 150 is a higher reach than this ladder grip (about 116-131 deg).",
+  "Not measured: feet and knees. The near foot is near the bottom of the ladder in frames 1-3 and about 60 px higher from frame 4 or 5, but rungs are hidden behind the near rail and the legs overlap and blur, so foot contacts, duty, knee lift and trunk lean could not be read with confidence. The rear row was not used."
+ ]
+}

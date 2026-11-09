@@ -1,0 +1,1079 @@
+{
+ "source": "muybridge-1887-pl001",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795t77n/full/full/0/default.jpg",
+ "imageSize": [
+  5028,
+  3964
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1-2.5x with a grid labelled in scan pixels (contrast raised), plus brightness-run profiles across the legs. A foot is 'down' when heel, sole or toe rests on the walkway board; a foot whose sole is within a few pixels of the board and could be either landing or lifting is left out. Legs are tracked by continuity from frame to frame. Only what could be identified with confidence is recorded. Near leg/arm = the sunlit side nearest the camera (the leading leg in frame 1); far leg = the other. Joint points (hip, knee, ankle, toe, heel; shoulder, elbow, wrist of the near arm) were placed on the 2x crops, drawn back onto the crops as dots and lines, checked by eye and corrected (frames 5-6 near knee moved 6 px; frame 7 near toe/heel dropped). The hip point is the estimated hip-joint centre at the level of the pubis, mid-depth of the pelvis (one point used for both legs); it carries about +/-8 px of uncertainty, i.e. +/-4-6 deg on thigh angles. Angles by atan2 from verified points only: thigh/upperArm = segment direction from straight down, + = forward (direction of travel); knee = thigh minus shank angle (flexion +); ankle = inner angle knee-ankle-toe (90 = foot square to shank); elbowFlex = forearm minus upper arm direction.",
+ "frameBoxes": [
+  [
+   955,
+   1150,
+   1195,
+   1600
+  ],
+  [
+   1211,
+   1150,
+   1455,
+   1600
+  ],
+  [
+   1470,
+   1150,
+   1720,
+   1600
+  ],
+  [
+   1736,
+   1150,
+   1976,
+   1600
+  ],
+  [
+   1996,
+   1150,
+   2242,
+   1600
+  ],
+  [
+   2259,
+   1150,
+   2517,
+   1600
+  ],
+  [
+   2527,
+   1150,
+   2774,
+   1600
+  ],
+  [
+   2786,
+   1150,
+   3036,
+   1600
+  ],
+  [
+   3049,
+   1150,
+   3305,
+   1600
+  ],
+  [
+   3315,
+   1150,
+   3557,
+   1600
+  ],
+  [
+   3574,
+   1150,
+   3824,
+   1600
+  ],
+  [
+   3840,
+   1150,
+   4080,
+   1600
+  ]
+ ],
+ "timing": {
+  "intervalMs": 69,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShownCatalogue": 0.625,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueCycleS": 1.21,
+  "catalogueComputed": "11 intervals x 69 ms / 0.625",
+  "observed": {
+   "nearHeelStrike": "frame 2 (+/-0.5)",
+   "farToeOff": "between frames 3 and 4",
+   "farHeelStrike": "frame 9 (+/-0.5)",
+   "nearToeOff": "frame 11-12",
+   "cycleIntervals": "14-15 (far swing about 5.5 intervals + near stance about 9.5)",
+   "cycleS": "0.97-1.04",
+   "framesPerCycle": "14-15 at 14.5 fps",
+   "cyclesShown": "about 0.75-0.8 (11 intervals)"
+  },
+  "computed": "half cycle = near heel strike (frame 2) to far heel strike (frame 9) = 7 intervals; cycle = 14-15 intervals x 69 ms"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1567,
+   "feet": {
+    "footFar": {
+     "down": true,
+     "toe": [
+      1035,
+      1570
+     ],
+     "confidence": "high",
+     "note": "toe only, heel raised (push-off)"
+    }
+   },
+   "points": {
+    "hip": [
+     1043,
+     1378
+    ],
+    "knee": [
+     1097,
+     1460
+    ],
+    "ankle": [
+     1100,
+     1545
+    ],
+    "toe": [
+     1147,
+     1562
+    ],
+    "heel": [
+     1088,
+     1567
+    ],
+    "farKnee": [
+     1013,
+     1464
+    ],
+    "farAnkle": [
+     991,
+     1546
+    ],
+    "farToe": [
+     1035,
+     1570
+    ],
+    "shoulder": [
+     1035,
+     1270
+    ],
+    "elbow": [
+     1035,
+     1347
+    ],
+    "wrist": [
+     1040,
+     1380
+    ]
+   },
+   "angles": {
+    "thighNear": 33.4,
+    "shankNear": 2,
+    "kneeNear": 31.4,
+    "ankleNear": 111.9,
+    "thighFar": -19.2,
+    "shankFar": -15,
+    "kneeFar": -4.2,
+    "ankleFar": 103.6,
+    "upperArm": 0,
+    "elbowFlex": 8.6
+   },
+   "pointsConfidence": "medium",
+   "notes": "Near foot level with the board, heel at about y 1567: just before or at heel strike; near-foot contact left open. The near knee is still bent (about 31 deg)."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1575,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      1447,
+      1548
+     ],
+     "confidence": "high",
+     "note": "heel down, toes raised (heel strike)"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      1263,
+      1574
+     ],
+     "confidence": "high",
+     "note": "toe only"
+    }
+   },
+   "points": {
+    "hip": [
+     1305,
+     1378
+    ],
+    "knee": [
+     1366,
+     1465
+    ],
+    "ankle": [
+     1394,
+     1548
+    ],
+    "toe": [
+     1447,
+     1548
+    ],
+    "heel": [
+     1393,
+     1575
+    ],
+    "farKnee": [
+     1268,
+     1470
+    ],
+    "farAnkle": [
+     1228,
+     1545
+    ],
+    "farToe": [
+     1263,
+     1574
+    ],
+    "shoulder": [
+     1300,
+     1270
+    ],
+    "elbow": [
+     1295,
+     1350
+    ],
+    "wrist": [
+     1294,
+     1382
+    ]
+   },
+   "angles": {
+    "thighNear": 35,
+    "shankNear": 18.6,
+    "kneeNear": 16.4,
+    "ankleNear": 108.6,
+    "thighFar": -21.9,
+    "shankFar": -28.1,
+    "kneeFar": 6.2,
+    "ankleFar": 101.6,
+    "upperArm": -3.6,
+    "elbowFlex": 1.8
+   },
+   "pointsConfidence": "medium",
+   "notes": "Double support: near heel strike, far push-off."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1590,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      1714,
+      1588
+     ],
+     "confidence": "high"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      1512,
+      1588
+     ],
+     "confidence": "medium",
+     "note": "toe tip only, leaving the ground"
+    }
+   },
+   "points": {
+    "hip": [
+     1590,
+     1378
+    ],
+    "knee": [
+     1650,
+     1472
+    ],
+    "ankle": [
+     1667,
+     1555
+    ],
+    "toe": [
+     1714,
+     1588
+    ],
+    "heel": [
+     1660,
+     1590
+    ],
+    "farToe": [
+     1512,
+     1588
+    ],
+    "shoulder": [
+     1577,
+     1270
+    ],
+    "elbow": [
+     1572,
+     1350
+    ],
+    "wrist": [
+     1570,
+     1400
+    ]
+   },
+   "angles": {
+    "thighNear": 32.6,
+    "shankNear": 11.6,
+    "kneeNear": 21,
+    "ankleNear": 136.6,
+    "upperArm": -3.6,
+    "elbowFlex": 1.3
+   },
+   "pointsConfidence": "medium",
+   "notes": "Double support ending: far toe-off between frames 3 and 4. Far knee and ankle hidden behind the near leg."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1590,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      1968,
+      1590
+     ],
+     "confidence": "high"
+    },
+    "footFar": {
+     "down": false,
+     "toe": [
+      1762,
+      1586
+     ],
+     "confidence": "medium",
+     "note": "toe just clear of the board"
+    }
+   },
+   "points": {
+    "hip": [
+     1880,
+     1378
+    ],
+    "knee": [
+     1928,
+     1472
+    ],
+    "ankle": [
+     1922,
+     1565
+    ],
+    "toe": [
+     1968,
+     1590
+    ],
+    "heel": [
+     1910,
+     1590
+    ],
+    "farKnee": [
+     1808,
+     1497
+    ],
+    "farAnkle": [
+     1765,
+     1537
+    ],
+    "farToe": [
+     1762,
+     1586
+    ],
+    "shoulder": [
+     1855,
+     1270
+    ],
+    "elbow": [
+     1850,
+     1345
+    ],
+    "wrist": [
+     1847,
+     1400
+    ]
+   },
+   "angles": {
+    "thighNear": 27.1,
+    "shankNear": -3.7,
+    "kneeNear": 30.8,
+    "ankleNear": 114.8,
+    "thighFar": -31.2,
+    "shankFar": -47.1,
+    "kneeFar": 15.9,
+    "ankleFar": 136.4,
+    "upperArm": -3.8,
+    "elbowFlex": 0.7
+   },
+   "pointsConfidence": "medium",
+   "notes": "Single support on the near foot."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1592,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      2203,
+      1590
+     ],
+     "confidence": "high"
+    },
+    "footFar": {
+     "down": false,
+     "toe": [
+      2048,
+      1582
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     2132,
+     1378
+    ],
+    "knee": [
+     2174,
+     1475
+    ],
+    "ankle": [
+     2163,
+     1565
+    ],
+    "toe": [
+     2203,
+     1590
+    ],
+    "heel": [
+     2150,
+     1592
+    ],
+    "farKnee": [
+     2120,
+     1482
+    ],
+    "farAnkle": [
+     2040,
+     1545
+    ],
+    "farToe": [
+     2048,
+     1582
+    ],
+    "shoulder": [
+     2117,
+     1275
+    ],
+    "elbow": [
+     2112,
+     1350
+    ],
+    "wrist": [
+     2110,
+     1390
+    ]
+   },
+   "angles": {
+    "thighNear": 23.4,
+    "shankNear": -7,
+    "kneeNear": 30.4,
+    "ankleNear": 115,
+    "thighFar": -6.6,
+    "shankFar": -51.8,
+    "kneeFar": 45.2,
+    "ankleFar": 116,
+    "upperArm": -3.8,
+    "elbowFlex": 1
+   },
+   "pointsConfidence": "medium",
+   "notes": "Single support; far leg in swing."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1592,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      2440,
+      1592
+     ],
+     "confidence": "high"
+    },
+    "footFar": {
+     "down": false,
+     "toe": [
+      2362,
+      1580
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     2395,
+     1378
+    ],
+    "knee": [
+     2425,
+     1480
+    ],
+    "ankle": [
+     2409,
+     1565
+    ],
+    "toe": [
+     2440,
+     1592
+    ],
+    "heel": [
+     2392,
+     1592
+    ],
+    "farKnee": [
+     2392,
+     1490
+    ],
+    "farAnkle": [
+     2335,
+     1540
+    ],
+    "farToe": [
+     2362,
+     1580
+    ],
+    "shoulder": [
+     2385,
+     1275
+    ],
+    "elbow": [
+     2385,
+     1350
+    ],
+    "wrist": [
+     2390,
+     1385
+    ]
+   },
+   "angles": {
+    "thighNear": 16.4,
+    "shankNear": -10.7,
+    "kneeNear": 27.1,
+    "ankleNear": 120.4,
+    "thighFar": -1.5,
+    "shankFar": -48.7,
+    "kneeFar": 47.2,
+    "ankleFar": 97.2,
+    "upperArm": 0,
+    "elbowFlex": 8.1
+   },
+   "pointsConfidence": "medium",
+   "notes": "Single support; far leg in swing."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 1576,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "confidence": "high",
+     "note": "sole on board about x 2613-2660; toe point not clear enough to record"
+    },
+    "footFar": {
+     "down": false,
+     "toe": [
+      2675,
+      1576
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "hip": [
+     2648,
+     1378
+    ],
+    "knee": [
+     2637,
+     1475
+    ],
+    "ankle": [
+     2639,
+     1555
+    ],
+    "farKnee": [
+     2702,
+     1465
+    ],
+    "farAnkle": [
+     2662,
+     1550
+    ],
+    "farToe": [
+     2675,
+     1576
+    ],
+    "shoulder": [
+     2643,
+     1275
+    ],
+    "elbow": [
+     2653,
+     1350
+    ],
+    "wrist": [
+     2670,
+     1382
+    ]
+   },
+   "angles": {
+    "thighNear": -6.5,
+    "shankNear": 1.4,
+    "kneeNear": -7.9,
+    "thighFar": 31.8,
+    "shankFar": -25.2,
+    "kneeFar": 57,
+    "ankleFar": 128.2,
+    "upperArm": 7.6,
+    "elbowFlex": 20.4
+   },
+   "pointsConfidence": "medium",
+   "notes": "Mid-swing of the far leg, which passes the near leg; far knee at its most bent (57 deg)."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 1577,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      2890,
+      1580
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     2903,
+     1378
+    ],
+    "knee": [
+     2883,
+     1480
+    ],
+    "ankle": [
+     2868,
+     1555
+    ],
+    "toe": [
+     2890,
+     1580
+    ],
+    "heel": [
+     2849,
+     1576
+    ],
+    "farKnee": [
+     2966,
+     1465
+    ],
+    "farAnkle": [
+     2951,
+     1555
+    ],
+    "farToe": [
+     2992,
+     1576
+    ],
+    "farHeel": [
+     2939,
+     1577
+    ],
+    "shoulder": [
+     2905,
+     1275
+    ],
+    "elbow": [
+     2919,
+     1340
+    ],
+    "wrist": [
+     2950,
+     1380
+    ]
+   },
+   "angles": {
+    "thighNear": -11.1,
+    "shankNear": -11.3,
+    "kneeNear": 0.2,
+    "ankleNear": 127.3,
+    "thighFar": 35.9,
+    "shankFar": -9.5,
+    "kneeFar": 45.4,
+    "ankleFar": 107.7,
+    "upperArm": 12.2,
+    "elbowFlex": 25.6
+   },
+   "pointsConfidence": "medium",
+   "notes": "Far foot flat just at the board (x 2939-2992, y about 1577): landing or landed, left open."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 1583,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      3134,
+      1580
+     ],
+     "confidence": "high",
+     "note": "heel raised, toes down"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      3292,
+      1560
+     ],
+     "confidence": "high",
+     "note": "heel down at [3245,1583], toes raised (heel strike)"
+    }
+   },
+   "points": {
+    "hip": [
+     3163,
+     1378
+    ],
+    "knee": [
+     3129,
+     1480
+    ],
+    "ankle": [
+     3094,
+     1555
+    ],
+    "toe": [
+     3134,
+     1580
+    ],
+    "heel": [
+     3081,
+     1570
+    ],
+    "farKnee": [
+     3221,
+     1475
+    ],
+    "farAnkle": [
+     3241,
+     1550
+    ],
+    "farToe": [
+     3292,
+     1560
+    ],
+    "farHeel": [
+     3245,
+     1583
+    ],
+    "shoulder": [
+     3163,
+     1275
+    ],
+    "elbow": [
+     3180,
+     1350
+    ],
+    "wrist": [
+     3220,
+     1385
+    ]
+   },
+   "angles": {
+    "thighNear": -18.4,
+    "shankNear": -25,
+    "kneeNear": 6.6,
+    "ankleNear": 97,
+    "thighFar": 30.9,
+    "shankFar": 14.9,
+    "kneeFar": 16,
+    "ankleFar": 116,
+    "upperArm": 12.8,
+    "elbowFlex": 36
+   },
+   "pointsConfidence": "medium",
+   "notes": "Double support: far heel strike, near push-off."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 1592,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      3335,
+      1592
+     ],
+     "confidence": "high",
+     "note": "toe only"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      3550,
+      1575
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     3426,
+     1378
+    ],
+    "knee": [
+     3370,
+     1495
+    ],
+    "ankle": [
+     3335,
+     1555
+    ],
+    "toe": [
+     3335,
+     1592
+    ],
+    "farKnee": [
+     3485,
+     1475
+    ],
+    "farAnkle": [
+     3505,
+     1560
+    ],
+    "farToe": [
+     3550,
+     1575
+    ],
+    "farHeel": [
+     3500,
+     1588
+    ],
+    "shoulder": [
+     3421,
+     1277
+    ],
+    "elbow": [
+     3438,
+     1350
+    ],
+    "wrist": [
+     3488,
+     1387
+    ]
+   },
+   "angles": {
+    "thighNear": -25.6,
+    "shankNear": -30.3,
+    "kneeNear": 4.7,
+    "ankleNear": 149.7,
+    "thighFar": 31.3,
+    "shankFar": 13.2,
+    "kneeFar": 18.1,
+    "ankleFar": 121.7,
+    "upperArm": 13.1,
+    "elbowFlex": 40.4
+   },
+   "pointsConfidence": "medium",
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 1590,
+   "feet": {
+    "footNear": {
+     "down": true,
+     "toe": [
+      3592,
+      1590
+     ],
+     "confidence": "medium",
+     "note": "toe tip only, about to leave"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      3815,
+      1592
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     3702,
+     1378
+    ],
+    "knee": [
+     3666,
+     1490
+    ],
+    "ankle": [
+     3599,
+     1550
+    ],
+    "toe": [
+     3592,
+     1590
+    ],
+    "farKnee": [
+     3774,
+     1475
+    ],
+    "farAnkle": [
+     3771,
+     1560
+    ],
+    "farToe": [
+     3815,
+     1592
+    ],
+    "farHeel": [
+     3760,
+     1590
+    ],
+    "shoulder": [
+     3702,
+     1280
+    ],
+    "elbow": [
+     3721,
+     1355
+    ],
+    "wrist": [
+     3766,
+     1397
+    ]
+   },
+   "angles": {
+    "thighNear": -17.8,
+    "shankNear": -48.2,
+    "kneeNear": 30.4,
+    "ankleNear": 141.8,
+    "thighFar": 36.6,
+    "shankFar": -2,
+    "kneeFar": 38.6,
+    "ankleFar": 124,
+    "upperArm": 14.2,
+    "elbowFlex": 32.8
+   },
+   "pointsConfidence": "medium",
+   "notes": "Near toe-off at or just after this frame."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 1590,
+   "feet": {
+    "footNear": {
+     "down": false,
+     "toe": [
+      3878,
+      1586
+     ],
+     "confidence": "medium",
+     "note": "toe at the board line but knee 60 deg flexed: early swing"
+    },
+    "footFar": {
+     "down": true,
+     "toe": [
+      4055,
+      1592
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "hip": [
+     3976,
+     1378
+    ],
+    "knee": [
+     3962,
+     1500
+    ],
+    "ankle": [
+     3872,
+     1540
+    ],
+    "toe": [
+     3878,
+     1586
+    ],
+    "farKnee": [
+     4030,
+     1475
+    ],
+    "farAnkle": [
+     4017,
+     1565
+    ],
+    "farToe": [
+     4055,
+     1592
+    ],
+    "farHeel": [
+     4005,
+     1590
+    ],
+    "shoulder": [
+     3971,
+     1280
+    ],
+    "elbow": [
+     3984,
+     1352
+    ],
+    "wrist": [
+     4029,
+     1400
+    ]
+   },
+   "angles": {
+    "thighNear": -6.5,
+    "shankNear": -66,
+    "kneeNear": 59.5,
+    "ankleNear": 106.5,
+    "thighFar": 29.1,
+    "shankFar": -8.2,
+    "kneeFar": 37.3,
+    "ankleFar": 117.2,
+    "upperArm": 10.2,
+    "elbowFlex": 32.9
+   },
+   "pointsConfidence": "medium",
+   "notes": "Single support on the far foot; near knee at its most bent (59.5 deg)."
+  }
+ ],
+ "findings": [
+  "Observed cycle 0.97-1.04 s (14-15 intervals of 69 ms): opposite heel strikes are 7 intervals apart (frames 2 and 9). The plate shows about 0.75-0.8 of a cycle, not the catalogue's 5/8; the catalogue-based 1.21 s in motion-references.md 2.5 is too long. Our human.walk cycle is 8 frames / 8 fps = 1.0 s: agrees.",
+  "Duty factor about 0.62-0.66 (far leg swing about 5-5.5 of 14-15 intervals; near stance about 9.5 intervals). Double support around frames 2-3 and 9-11. Our human.walk duty 0.6: agrees, perhaps slightly low.",
+  "Thigh angle from vertical (not hip flexion relative to the pelvis): near leg +35 (frame 2) to -25.6 (frame 10); far leg +36.6 (frame 11) to -31.2 (frame 4). Ours: -14.7 to +36.9. Forward reach agrees; our rear thigh extends 11-16 deg less than the model's at push-off.",
+  "Swing knee flexion peaks at 57 (far, frame 7) and 59.5 deg (near, frame 12). Ours peaks at 59.6: agrees. Stance knee on the plate ranges 0-31 deg (bent about 30 deg in frames 4-6, straight to slightly over-straight in frames 7-10, but these carry the hip-point uncertainty); ours is a constant 11.5 in stance.",
+  "Ankle inner angle (knee-ankle-toe) on the plate 97-150 deg across stance and push-off; ours 80-144. Treat as rough: the toe point is the toe tip, not the ball of the foot.",
+  "Near arm: upper arm swings only -3.8 (back, frames 2-5) to +14.2 deg (forward, frame 11), an 18 deg range, in antiphase with the near leg; elbow nearly straight (1-9 deg) when back and bent 33-40 deg when forward. Ours: upper arm -23.8 to +16.2 (40 deg range), elbow 23-33. Our arm swings back about 20 deg further than this model's.",
+  "Not measured: far arm (hidden), far-leg hip (taken as the same point as near), far knee/ankle in frame 3 (hidden), trunk lean (the shoulder point is on the back of the shoulder, not the joint), stride length (camera position differs per frame), the front and rear rows (not lateral)."
+ ]
+}

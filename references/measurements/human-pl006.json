@@ -1,0 +1,365 @@
+{
+ "source": "muybridge-1887-pl006",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795t85b/full/full/0/default.jpg",
+ "imageSize": [
+  5020,
+  3956
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1-2.5x with a grid labelled in scan pixels (contrast raised), plus brightness-run profiles across the legs. A foot is 'down' when heel, sole or toe rests on the walkway board; a foot whose sole is within a few pixels of the board and could be either landing or lifting is left out. Legs are tracked by continuity from frame to frame. Only what could be identified with confidence is recorded. Leg A = the trailing leg in frame 1, leg B = the leading one; which of them is the near (camera-side) leg was not settled with confidence, so they are not called near/far. Ground = top of the walkway board, read per row.",
+ "frameBoxes": [
+  [
+   1094,
+   1022,
+   1553,
+   1804
+  ],
+  [
+   1571,
+   1022,
+   2033,
+   1804
+  ],
+  [
+   2051,
+   1022,
+   2510,
+   1804
+  ],
+  [
+   2528,
+   1022,
+   2990,
+   1804
+  ],
+  [
+   3008,
+   1022,
+   3467,
+   1804
+  ],
+  [
+   3485,
+   1022,
+   3934,
+   1804
+  ],
+  [
+   1094,
+   1882,
+   1553,
+   2682
+  ],
+  [
+   1571,
+   1882,
+   2033,
+   2682
+  ],
+  [
+   2051,
+   1882,
+   2510,
+   2682
+  ],
+  [
+   2528,
+   1882,
+   2990,
+   2682
+  ],
+  [
+   3008,
+   1882,
+   3467,
+   2682
+  ],
+  [
+   3485,
+   1882,
+   3934,
+   2682
+  ]
+ ],
+ "timing": {
+  "intervalMs": 75,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShownCatalogue": 0.625,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueCycleS": 1.32,
+  "catalogueComputed": "11 intervals x 75 ms / 0.625",
+  "observed": {
+   "legBHeelStrike": "frame 1",
+   "legAToeOff": "frame 3.5-4",
+   "legAHeelStrike": "frame 8",
+   "legBToeOff": "frame 9.5-10",
+   "cycleIntervals": "13-14",
+   "cycleS": "0.98-1.05",
+   "framesPerCycle": "13-14 at 13.3 fps",
+   "cyclesShown": "about 0.8 (11 intervals)"
+  },
+  "computed": "half cycle = B heel strike (frame 1) to A heel strike (frame 8) = 7 intervals; cycle 13-14 intervals x 75 ms"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1762,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      1257,
+      1760
+     ],
+     "confidence": "high",
+     "note": "sole flat"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      1486,
+      1722
+     ],
+     "confidence": "high",
+     "note": "heel down, toes raised (heel strike)"
+    }
+   },
+   "notes": "Double support; leg B heel strike."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1762,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      1674,
+      1768
+     ],
+     "confidence": "high",
+     "note": "heel raised, toes down"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      1991,
+      1734
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1762,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      2139,
+      1763
+     ],
+     "confidence": "medium",
+     "note": "toe only"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      2464,
+      1755
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A about to leave the ground."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1762,
+   "feet": {
+    "legB": {
+     "down": true,
+     "toe": [
+      2898,
+      1759
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A toe at the board line, knee bent: lifting or just lifted, left open."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1762,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      3125,
+      1742
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      3333,
+      1759
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Single support on B."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1762,
+   "feet": {
+    "legA": {
+     "down": false,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      3741,
+      1759
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A swings past B; its foot is hidden behind B."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 2625,
+   "feet": {
+    "legB": {
+     "down": true,
+     "toe": [
+      1279,
+      2619
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A foot flat just at the board in front: landing or landed, left open."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 2625,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      1978,
+      2573
+     ],
+     "confidence": "high",
+     "note": "heel down, toes raised (heel strike)"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      1691,
+      2627
+     ],
+     "confidence": "high",
+     "note": "heel raised"
+    }
+   },
+   "notes": "Double support; leg A heel strike."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 2625,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      2456,
+      2607
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      2156,
+      2632
+     ],
+     "confidence": "medium",
+     "note": "toe only"
+    }
+   },
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 2625,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      2898,
+      2627
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg B toe at the board line with the knee bent: lifting or just lifted, left open."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 2625,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      3333,
+      2623
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      3125,
+      2602
+     ],
+     "confidence": "high"
+    }
+   },
+   "notes": "Single support on A."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 2625,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      3720,
+      2627
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg B swings past A."
+  }
+ ],
+ "findings": [
+  "Observed cycle about 0.98-1.05 s (opposite heel strikes 7 intervals apart, frames 1 and 8). The plate shows about 0.8 of a cycle, not 5/8; the catalogue-based 1.32 s is too long. Our human.walk 1.0 s: agrees.",
+  "Duty factor about 0.63-0.70 (leg A swing 4-4.5 intervals; leg B stance about 8.75 intervals of a 13-14 interval cycle). Our human.walk duty 0.6: ours is at or slightly below the low end.",
+  "Same heel-strike pattern as plate 1: one frame shows the leading foot flat just at the board, the next shows heel down with toes raised; heel-strike times are therefore +/-0.5 frame.",
+  "Not measured: joint angles. The hanging arm overlaps the pelvis in most frames and the hip-joint centre could not be placed within about 40 px (a first set of points put it 30-50 px too low and too far back), which would move thigh angles by 10-20 deg, so all joint points were dropped. Also not measured: near/far identity of the legs, stride length."
+ ]
+}

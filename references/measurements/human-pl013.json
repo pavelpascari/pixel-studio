@@ -1,0 +1,283 @@
+{
+ "source": "muybridge-1887-pl013",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795x35r/full/full/0/default.jpg",
+ "imageSize": [
+  5004,
+  3988
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1-2.5x with a grid labelled in scan pixels (contrast raised), plus brightness-run profiles across the legs. A foot is 'down' when heel, sole or toe rests on the walkway board; a foot whose sole is within a few pixels of the board and could be either landing or lifting is left out. Legs are tracked by continuity from frame to frame. Only what could be identified with confidence is recorded. Lateral row only (top row; the middle row is the front view, the bottom row the rear view). Leg A = the trailing leg in frame 1, leg B = the leading one; near/far not settled. Frames numbered 1-12 left to right (numbers bottom left, legible on 1, 2, 4, 10). Ground and toe coordinates were not recorded: the figure is small (legs about 230 px) and the contact calls were made from the crops by eye.",
+ "frameBoxes": [
+  [
+   964,
+   1085,
+   1214,
+   1580
+  ],
+  [
+   1226,
+   1085,
+   1475,
+   1580
+  ],
+  [
+   1487,
+   1085,
+   1736,
+   1580
+  ],
+  [
+   1748,
+   1085,
+   1998,
+   1580
+  ],
+  [
+   2010,
+   1085,
+   2260,
+   1580
+  ],
+  [
+   2272,
+   1085,
+   2521,
+   1580
+  ],
+  [
+   2533,
+   1085,
+   2782,
+   1580
+  ],
+  [
+   2794,
+   1085,
+   3044,
+   1580
+  ],
+  [
+   3056,
+   1085,
+   3306,
+   1580
+  ],
+  [
+   3318,
+   1085,
+   3567,
+   1580
+  ],
+  [
+   3579,
+   1085,
+   3828,
+   1580
+  ],
+  [
+   3840,
+   1085,
+   4090,
+   1580
+  ]
+ ],
+ "timing": {
+  "intervalMs": 95,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShownCatalogue": 1,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueCycleS": 1.05,
+  "catalogueComputed": "11 intervals x 95 ms / 1",
+  "observed": {
+   "legAToeOff": "frame 1-2 and again frame 12-13",
+   "legAHeelStrike": "frame 4 (+/-0.5)",
+   "legBToeOff": "frame 6.5",
+   "legBHeelStrike": "frame 9.5-10",
+   "cycleIntervals": "about 11",
+   "cycleS": "about 1.05",
+   "framesPerCycle": "about 11 at 10.5 fps",
+   "cyclesShown": "about 1"
+  },
+  "computed": "frame 12 repeats the phase of frame 1 (A at push-off, B flat): cycle about 11 intervals x 95 ms"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "medium",
+     "note": "toe tip at the board about x 1017, heel raised"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high",
+     "note": "sole flat about x 1110-1160"
+    }
+   },
+   "notes": "Double support; A at push-off."
+  },
+  {
+   "sourceFrame": 2,
+   "feet": {
+    "legB": {
+     "down": true,
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A foot hangs behind with the toe at the board line: leaving or just left, left open."
+  },
+  {
+   "sourceFrame": 3,
+   "feet": {
+    "legA": {
+     "down": false,
+     "confidence": "medium",
+     "note": "knee forward and bent, swinging"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high"
+    }
+   },
+   "notes": "Single support on B."
+  },
+  {
+   "sourceFrame": 4,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "medium",
+     "note": "heel down about x 1925, toes raised (heel strike)"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high",
+     "note": "sole still flat"
+    }
+   },
+   "notes": "Double support begins."
+  },
+  {
+   "sourceFrame": 5,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high",
+     "note": "heel raised, toes down"
+    }
+   },
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 6,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "medium",
+     "note": "toe only"
+    }
+   },
+   "notes": "Leg B about to leave."
+  },
+  {
+   "sourceFrame": 7,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "confidence": "high"
+    }
+   },
+   "notes": "Single support on A."
+  },
+  {
+   "sourceFrame": 8,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg B swings past A."
+  },
+  {
+   "sourceFrame": 9,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg B in front with toes raised and heel near the board: landing or just landed, left open."
+  },
+  {
+   "sourceFrame": 10,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "medium",
+     "note": "heel down, toes raised"
+    }
+   },
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 11,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "high",
+     "note": "heel raised"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high"
+    }
+   },
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 12,
+   "feet": {
+    "legA": {
+     "down": true,
+     "confidence": "medium",
+     "note": "toe only"
+    },
+    "legB": {
+     "down": true,
+     "confidence": "high"
+    }
+   },
+   "notes": "Leg A at push-off: same phase as frame 1."
+  }
+ ],
+ "findings": [
+  "Observed cycle about 1.05 s: frame 12 repeats frame 1, so the plate shows one full cycle as catalogued. Our human.walk 1.0 s: agrees.",
+  "Duty factor about 0.68-0.75 (swing about 2.7-3.5 of 11 intervals per leg; double support around frames 4-6 and 10-12). Higher than our human.walk duty 0.6 and than plates 1 and 6; this slow, careful walk would need duty about 0.7.",
+  "Not measured: joint angles (the hanging arm covers the hip in every frame and the figure is small, so the hip-joint centre could not be placed with confidence), toe coordinates and ground line, near/far identity of the legs, stride length, the front and rear rows."
+ ]
+}

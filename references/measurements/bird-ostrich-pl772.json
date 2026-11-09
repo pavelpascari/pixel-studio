@@ -1,0 +1,503 @@
+{
+ "source": "muybridge-1887-pl772",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796c218/full/full/0/default.jpg",
+ "imageSize": [
+  4947,
+  3940
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "bird-ostrich",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1.1-1.6x with a grid labelled in scan pixels and raised contrast; leg strips and head strips at 1.3x and 1.6x. Feet are labelled A and B by continuity through the swing (which leg is near and which far could not be told with confidence: both shanks look alike at this size). A foot is 'down' when it rests on the floor strip and stays at the same place relative to the body as in the frames around it; toe = front tip of the foot, verified by drawing the points back onto the strips. Head motion: the background markers shift between cameras, so instead the head is judged against the planted toe of the stance foot, which is fixed in the world and lies in about the same depth plane as the bird. beak x minus stance-toe x is computed per frame; if the head held still in the world this difference would stay constant for at least one interval per step.",
+ "frameBoxes": [
+  [
+   1343,
+   833,
+   1693,
+   1273
+  ],
+  [
+   1720,
+   833,
+   2093,
+   1273
+  ],
+  [
+   2120,
+   833,
+   2490,
+   1273
+  ],
+  [
+   2517,
+   833,
+   2887,
+   1273
+  ],
+  [
+   2910,
+   833,
+   3290,
+   1273
+  ],
+  [
+   3310,
+   833,
+   3683,
+   1273
+  ],
+  [
+   1343,
+   1310,
+   1693,
+   1740
+  ],
+  [
+   1720,
+   1310,
+   2093,
+   1740
+  ],
+  [
+   2120,
+   1310,
+   2490,
+   1740
+  ],
+  [
+   2517,
+   1310,
+   2887,
+   1740
+  ],
+  [
+   2910,
+   1310,
+   3290,
+   1740
+  ],
+  [
+   3310,
+   1310,
+   3683,
+   1740
+  ]
+ ],
+ "frameBoxesNote": "Approximate to about 10 px.",
+ "timing": {
+  "intervalMs": 91,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueCycleS": 1.0,
+  "catalogueComputed": "11 intervals x 91 ms / 1 cycle",
+  "framesPerCycleObserved": 8,
+  "cycleS": 0.728,
+  "observedComputed": "foot A lands at frame 5 and again would at 13; the leg poses repeat 8 frames apart (2~10, 3~11, 4~12) and double support recurs every 4 frames (1, 5, 9): 8 x 91 ms = 0.73 s, about 1.4 cycles on the plate (not 1)."
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      1448,
+      1259
+     ],
+     "confidence": "medium"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      1621,
+      1263
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     1610,
+     870
+    ]
+   },
+   "notes": "Double support: A on its toes behind, B just landed in front."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      1876,
+      1208
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      1961,
+      1263
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     2013,
+     874
+    ]
+   },
+   "notes": "A lifted behind (toe-off done); single support on B."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      2328,
+      1212
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      2324,
+      1259
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     2415,
+     874
+    ]
+   },
+   "notes": "A swinging past the stance leg B."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      2802,
+      1243
+     ],
+     "confidence": "medium"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      2668,
+      1262
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     2815,
+     876
+    ]
+   },
+   "notes": "A reaching forward, toes pointing down, about 15-20 px above where it lands in frame 5; single support on B."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      3224,
+      1250
+     ],
+     "confidence": "medium"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      3062,
+      1262
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "beak": [
+     3208,
+     873
+    ]
+   },
+   "notes": "Double support: A planted flat in front, B on its toes behind. A contact is medium (foot just down)."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1260,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      3568,
+      1258
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      3433,
+      1231
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     3602,
+     871
+    ]
+   },
+   "notes": "B lifted behind; single support on A."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 1728,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      1525,
+      1721
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      1517,
+      1659
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     1599,
+     1347
+    ]
+   },
+   "notes": "B swinging past A."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 1728,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      1888,
+      1721
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      1957,
+      1675
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     1990,
+     1349
+    ]
+   },
+   "notes": "B reaching forward; single support on A."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 1728,
+   "feet": {
+    "footA": {
+     "down": true,
+     "toe": [
+      2255,
+      1721
+     ],
+     "confidence": "medium"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      2416,
+      1721
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "beak": [
+     2387,
+     1346
+    ]
+   },
+   "notes": "Double support: A behind, B landed in front (medium: B could be just before contact)."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 1728,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      2637,
+      1685
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      2768,
+      1732
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     2782,
+     1347
+    ]
+   },
+   "notes": "A lifted behind; single support on B."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 1728,
+   "feet": {
+    "footB": {
+     "down": true,
+     "toe": [
+      3109,
+      1732
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     3178,
+     1347
+    ]
+   },
+   "notes": "A swinging past B (A foot overlaps the stance leg, not located)."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 1728,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      3541,
+      1709
+     ],
+     "confidence": "medium"
+    },
+    "footB": {
+     "down": true,
+     "toe": [
+      3464,
+      1740
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "beak": [
+     3570,
+     1346
+    ]
+   },
+   "notes": "A reaching forward, clearly lifted; single support on B."
+  }
+ ],
+ "derived": {
+  "cycleS": 0.728,
+  "dutyFactor": {
+   "value": 0.625,
+   "range": [
+    0.5,
+    0.75
+   ],
+   "computed": "each foot is down in 5 of the 8 sampled frames of a cycle (A: 5-9, B: 1-5 and from 9); with 91 ms sampling the true stance is 4-6 intervals"
+  },
+  "doubleSupport": "one sampled frame in every 4 (frames 1, 5, 9): a walk with short double support",
+  "stepLengthPx": {
+   "value": 162,
+   "computed": "frame 5, between the two planted toes (3224 - 3062)",
+   "confidence": "medium"
+  },
+  "headVsStanceToePx": {
+   "stepB_frames1to5": [
+    -11,
+    52,
+    91,
+    147,
+    146
+   ],
+   "stepA_frames5to9": [
+    -16,
+    34,
+    74,
+    102,
+    132
+   ],
+   "stepB_frames9to12": [
+    -29,
+    14,
+    69,
+    106
+   ],
+   "incrementsPerInterval": [
+    63,
+    39,
+    56,
+    -1,
+    50,
+    40,
+    28,
+    30,
+    43,
+    55,
+    37
+   ],
+   "meanPerInterval": 40,
+   "readingErrorPx": "about +/-8 per point, +/-11 per difference"
+  },
+  "headHold": "no regular hold: the head advances 28-63 px per 91 ms in 10 of 11 intervals; only frame 4 -> 5 (end of the first step, at touchdown) shows no forward motion. A hold of 38% of a step (about 140 ms here) would show up as a near-zero interval in every step; it does not in the 2nd and 3rd steps.",
+  "headHeight": "beak height steady within +/-3 px inside each row (no vertical head bob visible)"
+ },
+ "findings": [
+  "Cycle 0.73 s (8 frames of 91 ms by pose repetition), not the 1.0 s implied by the catalogue fraction \"1\": the plate shows about 1.4 cycles.",
+  "Walk with duty factor about 0.63 (0.5-0.75 at this sampling) and brief double support at frames 1, 5 and 9. Compared with goose.walk: duty 0.7 (from Han et al. 2023 mallard 0.74) and cycle 0.8 s (8 frames at 10 fps). The ostrich agrees on cycle time within 10% and is a little lower on duty; both are walks with double support.",
+  "Head-bob: judged against the planted toe (the backdrop cannot be used, the cameras shift), this ostrich does not show the hold-and-thrust head motion that goose.walk uses (hold 0.38, from Wang et al. 2025 on geese). Its head moves forward in 10 of 11 intervals; one interval at a touchdown is a possible brief hold. This is a fact about the ostrich, not evidence against the goose value.",
+  "Not measured: near vs far leg identity; joint angles (hip and knee hidden by plumage); stride length across frames (camera shifts); rear views; frame 11 swing foot (overlaps the stance leg)."
+ ]
+}

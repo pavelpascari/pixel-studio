@@ -21,9 +21,9 @@ figure. For the rest of the spec format see [SPEC.md](SPEC.md); for how expansio
 
 | figure | view | bones | motions |
 |---|---|---|---|
-| `goose` | side, facing right | body tail legNear/shinNear/footNear legFar/shinFar/footFar neck neckUp head jaw wing | idle walk run rush sneak · jump fall sit duck peek climb · flap honk |
-| `human` | side, facing right | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ `Far` copies) | idle walk run · jump fall sit duck peek climb |
-| `dog` | side, facing right | body tail tail2 neck head jaw ear, thigh/shin/hock/paw `HindNear`·`HindFar`, arm/forearm/pastern/paw `ForeNear`·`ForeFar` | idle walk trot · jump fall duck peek |
+| `goose` | side, facing right | body tail legNear/shinNear/footNear legFar/shinFar/footFar neck neckUp head jaw wing | idle walk run rush sneak · jump fall sit duck peek climb · flap honk fly |
+| `human` | side, facing right | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ `Far` copies) | idle walk run sprint · jump fall sit duck peek climb · sitDown standUp |
+| `dog` | side, facing right | body tail tail2 neck head jaw ear, thigh/shin/hock/paw `HindNear`·`HindFar`, arm/forearm/pastern/paw `ForeNear`·`ForeFar` | idle walk trot gallop · jump fall duck peek |
 | `goose-front` | front (dress it the other way round for the back) | body tail shinL/footL shinR/footR neck neckUp head jaw wingL wingR | idle walk run · jump fall sit duck peek · flap honk |
 | `chibi` | front | body legL footL legR footR armL armR head | idle walk run · jump fall sit duck peek |
 | `blob` | any (no limbs) | shadow body top | idle hop travel · fall peek |

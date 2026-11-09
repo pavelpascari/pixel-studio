@@ -74,6 +74,7 @@
     "idle": {"motion": "idle", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1]}}},
     "walk": {"motion": "walk"},
     "trot": {"motion": "trot"},
+    "gallop": {"motion": "gallop"},
     "jump": {"motion": "jump"},
     "fall": {"motion": "fall"},
     "duck": {"motion": "duck"},

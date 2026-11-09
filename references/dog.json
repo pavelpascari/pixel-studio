@@ -99,6 +99,69 @@
    "method": "confirmed; unchanged",
    "by": "Claude (agent)",
    "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.frames",
+   "value": 6,
+   "source": "muybridge-1887-pl710",
+   "location": "references/measurements/dog-pl710.json timing: every phase repeats 5 frames later at 49 ms = 0.245 s (also pl708 0.26 s, pl709 0.27 s)",
+   "method": "6 frames at 24 fps = 0.25 s",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.fps",
+   "value": 24,
+   "source": "muybridge-1887-pl710",
+   "location": "dog-pl710.json timing (0.245 s cycle)",
+   "method": "computed: 6 frames / 0.25 s",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.duty",
+   "value": 0.22,
+   "source": "muybridge-1887-pl710",
+   "location": "dog-pl710.json findings: duty about 0.2 per foot (pl708 0.17, pl709 0.15-0.3)",
+   "method": "mean of the three hound plates, rounded",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.phases.thighHindNear",
+   "value": 0.12,
+   "source": "muybridge-1887-pl709",
+   "location": "dog-pl708..710 findings: second hind lands 0.1-0.15 of a cycle after the first",
+   "method": "midpoint; which side leads could not be seen (near/far legs not distinguishable)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.phases.armForeNear",
+   "value": 0.5,
+   "source": "muybridge-1887-pl710",
+   "location": "dog-pl708..710 findings: first fore lands at 0.45-0.6 of the cycle",
+   "method": "midpoint; rotary order (fore on the side opposite the leading hind) assumed, not verified",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.phases.armForeFar",
+   "value": 0.62,
+   "source": "muybridge-1887-pl710",
+   "location": "dog-pl708..710 findings: second fore lands at 0.6-0.75",
+   "method": "lower end, keeping the fores' overlap brief as on the plates",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.gallop.stride",
+   "value": 28,
+   "source": "maes-2008",
+   "location": "Appendix 1: L = 0.489 + 0.297·u m, at u = 6.5 m/s gives 2.42 m = 129 units (withers scale 1 unit = 1.88 cm); the plates give no distances",
+   "method": "sweep = 129 × duty 0.22 ≈ 28 (within leg reach)",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
   }
  ]
 }

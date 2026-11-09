@@ -1,0 +1,460 @@
+{
+ "source": "muybridge-1887-pl757",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796b91r/full/full/0/default.jpg",
+ "imageSize": [
+  4937,
+  3905
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "bird-pigeon",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Same conventions as bird-pigeon-pl755.json, mirrored because this pigeon faces right. Each lateral frame cropped at 1.5-1.6x with a 25 px grid and raised contrast; points picked by eye, drawn back onto the crops and corrected. head = eye; shoulder = where the near wing's leading edge leaves the body; wingTip = most distal primary of the near wing; tailTip = point of the tail farthest from the head. bodyPitchDeg: tail->head line above the horizontal (nose up positive). wingElevationDeg: shoulder->wingTip from the rearward body axis, positive toward the back (dorsal): 0 = folded back along the body, +90 = straight up, beyond +/-90 = pointing forward, -90 = straight down (computed in a frame mirrored to face left, so the sign convention matches plate 755). Stroke top/bottom = frames where the near wing tip is highest/lowest relative to the tail tip. Period from tops and from silhouette repetition. Bob: eye height measured from the thick backdrop line (1190-1196 px in row 1, 1680-1686 px in row 2; the eye's height above it runs on smoothly from frame 6 to 7, so it is the same physical line), quadratic climb trend removed.",
+ "frameBoxes": [
+  [
+   1240,
+   873,
+   1650,
+   1310
+  ],
+  [
+   1660,
+   873,
+   2063,
+   1310
+  ],
+  [
+   2077,
+   873,
+   2483,
+   1310
+  ],
+  [
+   2497,
+   873,
+   2900,
+   1310
+  ],
+  [
+   2910,
+   873,
+   3313,
+   1310
+  ],
+  [
+   3323,
+   873,
+   3727,
+   1310
+  ],
+  [
+   1240,
+   1360,
+   1650,
+   1800
+  ],
+  [
+   1660,
+   1360,
+   2063,
+   1800
+  ],
+  [
+   2077,
+   1360,
+   2483,
+   1800
+  ],
+  [
+   2497,
+   1360,
+   2900,
+   1800
+  ],
+  [
+   2910,
+   1360,
+   3313,
+   1800
+  ],
+  [
+   3323,
+   1360,
+   3727,
+   1800
+  ]
+ ],
+ "frameBoxesNote": "Listed in time order, approximate to about 10 px. Frames 1-6 are row 1 and 7-12 row 2, numbered left to right.",
+ "timing": {
+  "intervalMs": 20,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1.5,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a cycle shown on the plate)",
+  "catalogueCycleS": 0.147,
+  "catalogueComputed": "11 intervals x 20 ms / 1.5 cycles",
+  "framesPerBeatObserved": 6,
+  "beatPeriodS": 0.12,
+  "wingbeatHz": 8.3,
+  "observedComputed": "the silhouette repeats exactly 6 frames later (1~7, 2~8, 3~9, 4~10, 5~11, 6~12) and the tops are at frames 6 and 12: 6 x 20 ms = 120 ms; +/-0.5 frame gives 7.7-9.1 Hz. The plate shows 11/6 = 1.8 cycles, not the catalogue's 1 1/2 (which would give 6.8 Hz)."
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "points": {
+    "head": [
+     1456,
+     1219
+    ],
+    "tailTip": [
+     1312,
+     1272
+    ],
+    "shoulder": [
+     1399,
+     1228
+    ],
+    "wingTip": [
+     1318,
+     1142
+    ]
+   },
+   "bodyPitchDeg": 20.2,
+   "wingProjectedLengthPx": 118,
+   "wingElevationDeg": 66.9,
+   "phase": "early downstroke: near wing raised, tip up and behind the shoulder; far wing blurred above the head",
+   "confidence": "medium",
+   "notes": "Blur of the far wing shows it moving fast."
+  },
+  {
+   "sourceFrame": 2,
+   "points": {
+    "head": [
+     1872,
+     1208
+    ],
+    "tailTip": [
+     1730,
+     1259
+    ],
+    "shoulder": [
+     1829,
+     1231
+    ],
+    "wingTip": [
+     1960,
+     1250
+    ]
+   },
+   "bodyPitchDeg": 19.8,
+   "wingProjectedLengthPx": 132,
+   "wingElevationDeg": -152.0,
+   "phase": "mid/late downstroke: near wing swept forward at about body level, tip ahead of the beak",
+   "confidence": "medium",
+   "notes": "Tail fanned; tail tip = rear edge of the fan."
+  },
+  {
+   "sourceFrame": 3,
+   "points": {
+    "head": [
+     2283,
+     1194
+    ],
+    "tailTip": [
+     2143,
+     1248
+    ],
+    "shoulder": [
+     2249,
+     1210
+    ],
+    "wingTip": [
+     2386,
+     1269
+    ]
+   },
+   "bodyPitchDeg": 21.1,
+   "wingProjectedLengthPx": 149,
+   "wingElevationDeg": -135.6,
+   "phase": "bottom of stroke: near wing (lit underside) below and ahead of the shoulder",
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 4,
+   "points": {
+    "head": [
+     2703,
+     1179
+    ],
+    "tailTip": [
+     2559,
+     1232
+    ],
+    "shoulder": [
+     2660,
+     1197
+    ],
+    "wingTip": [
+     2766,
+     1235
+    ]
+   },
+   "bodyPitchDeg": 20.2,
+   "wingProjectedLengthPx": 113,
+   "wingElevationDeg": -140.1,
+   "phase": "bottom / start of upstroke: wing below and ahead, tail spread",
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 5,
+   "points": {
+    "head": [
+     3122,
+     1154
+    ],
+    "tailTip": [
+     2976,
+     1220
+    ],
+    "shoulder": [
+     3079,
+     1167
+    ],
+    "wingTip": [
+     2988,
+     1089
+    ]
+   },
+   "bodyPitchDeg": 24.3,
+   "wingProjectedLengthPx": 120,
+   "wingElevationDeg": 64.9,
+   "phase": "upstroke: near wing raised, tip up and behind the shoulder; far wing tip up beside the head",
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 6,
+   "points": {
+    "head": [
+     3535,
+     1139
+    ],
+    "tailTip": [
+     3392,
+     1214
+    ],
+    "shoulder": [
+     3485,
+     1164
+    ],
+    "wingTip": [
+     3448,
+     1011
+    ]
+   },
+   "bodyPitchDeg": 27.7,
+   "wingProjectedLengthPx": 157,
+   "wingElevationDeg": 104.1,
+   "phase": "top of stroke: wing near vertical over the back",
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 7,
+   "points": {
+    "head": [
+     1459,
+     1607
+    ],
+    "tailTip": [
+     1328,
+     1691
+    ],
+    "shoulder": [
+     1399,
+     1635
+    ],
+    "wingTip": [
+     1312,
+     1554
+    ]
+   },
+   "bodyPitchDeg": 32.7,
+   "wingProjectedLengthPx": 119,
+   "wingElevationDeg": 75.6,
+   "phase": "early downstroke: near wing up and behind, far wing blurred above; legs lowered",
+   "confidence": "medium",
+   "notes": "Feet hang below the body."
+  },
+  {
+   "sourceFrame": 8,
+   "points": {
+    "head": [
+     1879,
+     1582
+    ],
+    "tailTip": [
+     1738,
+     1666
+    ],
+    "shoulder": [
+     1832,
+     1613
+    ],
+    "wingTip": [
+     1960,
+     1624
+    ]
+   },
+   "bodyPitchDeg": 30.8,
+   "wingProjectedLengthPx": 128,
+   "wingElevationDeg": -144.3,
+   "phase": "mid/late downstroke: near wing swept forward at body level",
+   "confidence": "medium",
+   "notes": "Tail closed (narrow streak); feet hanging."
+  },
+  {
+   "sourceFrame": 9,
+   "points": {
+    "head": [
+     2296,
+     1567
+    ],
+    "tailTip": [
+     2147,
+     1623
+    ],
+    "shoulder": [
+     2252,
+     1595
+    ],
+    "wingTip": [
+     2393,
+     1617
+    ]
+   },
+   "bodyPitchDeg": 20.6,
+   "wingProjectedLengthPx": 143,
+   "wingElevationDeg": -150.5,
+   "phase": "bottom of stroke: wing below and ahead of the shoulder",
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 10,
+   "notedPoints": {
+    "tailTip": [
+     2563,
+     1607
+    ],
+    "wingTip": [
+     2759,
+     1589
+    ]
+   },
+   "phase": "bottom / start of upstroke: wings low and forward, blurred",
+   "confidence": "low",
+   "notes": "Head covered by the wing, so no body axis and no angles; tail tip at [2563,1607] and wing tip at about [2759,1589] noted only."
+  },
+  {
+   "sourceFrame": 11,
+   "points": {
+    "head": [
+     3126,
+     1527
+    ],
+    "tailTip": [
+     2984,
+     1605
+    ],
+    "shoulder": [
+     3076,
+     1555
+    ],
+    "wingTip": [
+     2970,
+     1435
+    ]
+   },
+   "bodyPitchDeg": 28.8,
+   "wingProjectedLengthPx": 160,
+   "wingElevationDeg": 77.3,
+   "phase": "upstroke: near wing raised, tip up and behind",
+   "confidence": "medium",
+   "notes": "Feet hanging."
+  },
+  {
+   "sourceFrame": 12,
+   "points": {
+    "head": [
+     3535,
+     1505
+    ],
+    "tailTip": [
+     3398,
+     1596
+    ],
+    "shoulder": [
+     3473,
+     1549
+    ],
+    "wingTip": [
+     3387,
+     1397
+    ]
+   },
+   "bodyPitchDeg": 33.6,
+   "wingProjectedLengthPx": 175,
+   "wingElevationDeg": 94.1,
+   "phase": "top of stroke: wing near vertical over the back",
+   "confidence": "medium",
+   "notes": "Wing tip close to the top of the frame's sky area."
+  }
+ ],
+ "derived": {
+  "wingbeatHz": 8.3,
+  "downstrokeShare": {
+   "value": 0.55,
+   "range": [
+    0.45,
+    0.65
+   ],
+   "computed": "tip highest relative to the tail at frames 6 and 12 (203, 199 px), falling through 7 (137), 8 (42) to 9 (6), lowest at 3 (-21) / 4 (-3) in the first beat; frame 10 unmeasured. Top 6 -> bottom 9-10 = 3-4 intervals, bottom -> top 12 = 2-3 intervals of a 6-interval beat."
+  },
+  "wingElevationDeg": {
+   "top": [
+    94.1,
+    104.1
+   ],
+   "bottom": [
+    -152.0,
+    -135.6
+   ],
+   "raisedTipBehind": [
+    64.9,
+    77.3
+   ],
+   "computed": "top = frames 6, 12; bottom/forward = frames 2, 3, 4, 8, 9; frames 1, 5, 7, 11 have the wing raised with the tip behind the shoulder. Frame 10 not measured."
+  },
+  "projectedSweepDeg": "about 115-130 between the top (+94..+104) and the forward sweep (-136..-152, i.e. ahead of the shoulder and 30-45 deg below the forward body axis); the wing never goes straight down in side view",
+  "bodyPitchDeg": [
+   19.8,
+   33.6
+  ],
+  "climb": "eye rises 206 px over 11 intervals relative to the backdrop line (11 px per interval at the start, 22 at the end); body pitch increases with it, from about 20 deg (frames 1-4) to 29-34 deg (frames 7, 8, 11, 12)",
+  "bodyBob": {
+   "value": "none detectable",
+   "computed": "after a quadratic trend the eye heights leave residuals within +/-5 px (frames 1-9, 11, 12), about 3% of the eye-to-tail length (about 157 px), with no pattern repeating at the 6-frame beat"
+  }
+ },
+ "findings": [
+  "Wingbeat 8.3 Hz (silhouettes repeat every 6 frames at 20 ms = 120 ms). The catalogue fraction (1 1/2 cycles) undercounts: the plate shows 1.8 cycles. Plates 755, 756 and 757 together put pigeon flapping at 8.3-8.8 Hz.",
+  "A shallower climb than plates 755/756: body pitch starts at about 20 deg and rises to 34 deg as the climb steepens.",
+  "Here the downstroke is the longer half, about 55% (45-65%), unlike the steep climbs on plates 755 (42%) and 756 (30%). The stroke is also flatter in side view: the near wing goes from near vertical (+94..+104 deg) forward to just below the body line ahead of the shoulder (-136..-152 deg); it never points straight down, where it reached -111..-134 on plates 755/756.",
+  "Wing raised with the tip behind the shoulder (+65..+77 deg) both in late upstroke (frames 5, 11) and at the start of the downstroke (frames 1, 7, where the far wing is blurred above the head).",
+  "Legs: the feet hang below the body in frames 7, 8 and 11 (not measured).",
+  "Compared with figures/goose.json: goose flap/rush beat at 6/7 Hz with the wing swinging +26..+76 / +24..+82 deg from the rearward body axis and equal up and down time. This pigeon's top (+94..+104) is slightly above the goose top; its forward-down sweep to -136..-152 has no counterpart in the goose. The 55/45 down/up split here is close to Meir 2019's bar-headed goose (116/86 ms = 57%), which the goose motions do not show.",
+  "Not measured: frame 10 (head hidden); the 12 rear views (rows 3-4); the far wing; forward speed (each frame is a different camera)."
+ ]
+}

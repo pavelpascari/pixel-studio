@@ -1,0 +1,597 @@
+{
+ "source": "muybridge-1887-pl774",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796c25c/full/full/0/default.jpg",
+ "imageSize": [
+  4949,
+  3959
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "bird-adjutant",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 0.6-0.75x (whole bird), 1.2x (legs, 25 px grid) and 2.2-2.6x (feet, eye, bill tip, 10 px grid), with raised contrast. Feet are tracked by continuity as footA and footB (near/far could not be assigned with confidence: both legs are lit in most frames). A foot is 'down' when its toes lie on the ground line of that frame (the planted foot's level); heel = the joint at the base of the toes (distal end of the tarsus). Head: billTip (sharp in every frame) and eye (readable in frames 1, 2, 6-12). Head motion relative to the planted foot: billTipAheadOfPlantedFootPx = billTip x - planted heel x in the same frame; since the planted foot is fixed on the ground, its change between frames is the head's ground speed, whatever the camera. Scale check across cameras: eye-to-bill-tip length 161-173 px (within +/-4%), and the bill angle (eye->tip) stays within 36-40 deg, so the bill tip stands in for the head. All points drawn back on the frames and checked. Adjutant faces right.",
+ "frameBoxes": [
+  [
+   1250,
+   850,
+   1843,
+   1457
+  ],
+  [
+   1857,
+   850,
+   2470,
+   1457
+  ],
+  [
+   2493,
+   850,
+   3093,
+   1457
+  ],
+  [
+   3110,
+   850,
+   3710,
+   1457
+  ],
+  [
+   1257,
+   1507,
+   1850,
+   2100
+  ],
+  [
+   1867,
+   1507,
+   2470,
+   2100
+  ],
+  [
+   2487,
+   1507,
+   3083,
+   2100
+  ],
+  [
+   3103,
+   1507,
+   3700,
+   2100
+  ],
+  [
+   1267,
+   2150,
+   1850,
+   2753
+  ],
+  [
+   1870,
+   2150,
+   2470,
+   2753
+  ],
+  [
+   2490,
+   2150,
+   3083,
+   2753
+  ],
+  [
+   3100,
+   2150,
+   3700,
+   2753
+  ]
+ ],
+ "frameBoxesNote": "Listed in time order, approximate to about 10 px. 3 rows of 4, numbered 1-12 left to right, top to bottom (handwritten numbers bottom left).",
+ "timing": {
+  "intervalMs": null,
+  "intervalSource": "muybridge-1887-catalogue (no interval recorded)",
+  "cyclesShown": 0.625,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueFramesPerCycle": 17.6,
+  "catalogueComputed": "11 intervals / (5/8 cycle)",
+  "framesPerCycleObserved": "14-16",
+  "observedComputed": "footB lands between frames 3 and 4 and footA between 10 and 11: a step of 7 frames, so 14 frames per stride if both steps are equal; footA swings for 7 frames (up in 4-10) while footB stays down for at least 9 (4-12), which needs a stride of at least 16 frames if both feet swing equally long. Either way the plate shows 0.7-0.8 of a stride, more than the catalogue's 5/8. No time in seconds: the catalogue gives no interval for this plate."
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1400,
+   "feet": {
+    "footA": {
+     "down": true,
+     "heel": [
+      1464,
+      1393
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      1653,
+      1387
+     ],
+     "confidence": "low",
+     "note": "reaching forward, toes about 13 px above the ground"
+    }
+   },
+   "points": {
+    "eye": [
+     1633,
+     945
+    ],
+    "billTip": [
+     1763,
+     1048
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 299,
+   "billTipAbovePlantedFootPx": 345,
+   "plantedFootUsed": "footA",
+   "eyeToBillTipPx": 166,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1395,
+   "feet": {
+    "footA": {
+     "down": true,
+     "heel": [
+      2059,
+      1380
+     ],
+     "confidence": "medium",
+     "note": "foot faint"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      2318,
+      1365
+     ],
+     "confidence": "medium",
+     "note": "toes about 30 px above the ground"
+    }
+   },
+   "points": {
+    "eye": [
+     2256,
+     943
+    ],
+    "billTip": [
+     2384,
+     1041
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 325,
+   "billTipAbovePlantedFootPx": 339,
+   "plantedFootUsed": "footA",
+   "eyeToBillTipPx": 161,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1395,
+   "feet": {
+    "footA": {
+     "down": true,
+     "heel": [
+      2645,
+      1385
+     ],
+     "confidence": "low",
+     "note": "leg and foot faint/blurred, probably about to lift"
+    },
+    "footB": {
+     "down": false,
+     "toe": [
+      2945,
+      1374
+     ],
+     "confidence": "medium",
+     "note": "toes about 20-25 px above the ground"
+    }
+   },
+   "points": {
+    "billTip": [
+     3008,
+     1044
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 363,
+   "billTipAbovePlantedFootPx": 341,
+   "plantedFootUsed": "footA",
+   "confidence": "low",
+   "notes": "Head soft (eye not readable)."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1397,
+   "feet": {
+    "footA": {
+     "down": false,
+     "confidence": "medium",
+     "note": "leg ends, blurred, at about [3240,1320], some 75 px above the ground"
+    },
+    "footB": {
+     "down": true,
+     "foot": [
+      3526,
+      1397
+     ],
+     "confidence": "medium",
+     "note": "just landed; toes not separable"
+    }
+   },
+   "points": {
+    "billTip": [
+     3656,
+     1052
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 130,
+   "billTipAbovePlantedFootPx": 345,
+   "plantedFootUsed": "footB",
+   "confidence": "low",
+   "notes": "Head and footA blurred; footB position from the end of the leg."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 2050,
+   "feet": {
+    "footA": {
+     "down": false,
+     "confidence": "medium",
+     "note": "behind the body, lifted"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      1588,
+      2042
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "billTip": [
+     1812,
+     1698
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 224,
+   "billTipAbovePlantedFootPx": 344,
+   "plantedFootUsed": "footB",
+   "confidence": "medium",
+   "notes": "Head blurred (eye not readable)."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 2050,
+   "feet": {
+    "footA": {
+     "down": false,
+     "confidence": "medium",
+     "note": "behind, lifted"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      2162,
+      2040
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "eye": [
+     2323,
+     1587
+    ],
+    "billTip": [
+     2458,
+     1695
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 296,
+   "billTipAbovePlantedFootPx": 345,
+   "plantedFootUsed": "footB",
+   "eyeToBillTipPx": 173,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 2052,
+   "feet": {
+    "footA": {
+     "down": false,
+     "foot": [
+      2595,
+      1975
+     ],
+     "confidence": "medium",
+     "note": "swinging forward, about 75 px up"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      2746,
+      2047
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "eye": [
+     2923,
+     1601
+    ],
+    "billTip": [
+     3051,
+     1707
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 305,
+   "billTipAbovePlantedFootPx": 340,
+   "plantedFootUsed": "footB",
+   "eyeToBillTipPx": 166,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 2058,
+   "feet": {
+    "footA": {
+     "down": false,
+     "foot": [
+      3358,
+      1962
+     ],
+     "confidence": "medium",
+     "note": "passing the stance leg, about 95 px up"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      3351,
+      2053
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "eye": [
+     3525,
+     1604
+    ],
+    "billTip": [
+     3653,
+     1709
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 302,
+   "billTipAbovePlantedFootPx": 344,
+   "plantedFootUsed": "footB",
+   "eyeToBillTipPx": 166,
+   "confidence": "medium",
+   "notes": "Swinging foot crosses behind the stance leg."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 2692,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      1686,
+      2625
+     ],
+     "confidence": "medium",
+     "note": "reaching forward, about 65 px up"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      1464,
+      2686
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "eye": [
+     1621,
+     2236
+    ],
+    "billTip": [
+     1751,
+     2337
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 287,
+   "billTipAbovePlantedFootPx": 349,
+   "plantedFootUsed": "footB",
+   "eyeToBillTipPx": 165,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 2688,
+   "feet": {
+    "footA": {
+     "down": false,
+     "toe": [
+      2354,
+      2668
+     ],
+     "confidence": "medium",
+     "note": "reaching forward, toes about 20-25 px up"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      2043,
+      2680
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "eye": [
+     2258,
+     2231
+    ],
+    "billTip": [
+     2388,
+     2331
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 345,
+   "billTipAbovePlantedFootPx": 349,
+   "plantedFootUsed": "footB",
+   "eyeToBillTipPx": 164,
+   "confidence": "medium",
+   "notes": ""
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 2690,
+   "feet": {
+    "footA": {
+     "down": true,
+     "heel": [
+      2904,
+      2666
+     ],
+     "toe": [
+      2940,
+      2687
+     ],
+     "confidence": "medium",
+     "note": "landing: toes on the ground, heel still raised"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      2582,
+      2671
+     ],
+     "confidence": "high",
+     "note": "toes down, heel raised (push-off)"
+    }
+   },
+   "points": {
+    "eye": [
+     2887,
+     2231
+    ],
+    "billTip": [
+     3018,
+     2325
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 436,
+   "billTipAbovePlantedFootPx": 346,
+   "plantedFootUsed": "footB",
+   "billTipAheadOfFootAPx": 114,
+   "eyeToBillTipPx": 161,
+   "confidence": "medium",
+   "notes": "Double support."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 2700,
+   "feet": {
+    "footA": {
+     "down": true,
+     "heel": [
+      3440,
+      2672
+     ],
+     "toe": [
+      3467,
+      2690
+     ],
+     "confidence": "high"
+    },
+    "footB": {
+     "down": true,
+     "heel": [
+      3129,
+      2671
+     ],
+     "confidence": "medium",
+     "note": "toes on the ground at the frame's left edge, heel raised (push-off)"
+    }
+   },
+   "points": {
+    "eye": [
+     3543,
+     2229
+    ],
+    "billTip": [
+     3669,
+     2329
+    ]
+   },
+   "billTipAheadOfPlantedFootPx": 540,
+   "billTipAbovePlantedFootPx": 342,
+   "plantedFootUsed": "footB",
+   "billTipAheadOfFootAPx": 229,
+   "eyeToBillTipPx": 161,
+   "confidence": "medium",
+   "notes": "Double support. A stick lies on the ground ahead of footA (not a toe)."
+  }
+ ],
+ "derived": {
+  "stepFrames": 7,
+  "strideFrames": "14-16",
+  "duty": {
+   "value": 0.55,
+   "range": [
+    0.5,
+    0.62
+   ],
+   "computed": "footA: swing 7 frames (4-10) of a 14-16 frame stride -> 0.50-0.56; footB: down for at least 9 frames (4-12) -> at least 0.56-0.64 (its lift-off is after the plate)"
+  },
+  "doubleSupport": "none seen at footB's landing (footA is already lifted in frame 4 and blurred in frame 3); at least 2 frames (11-12) at footA's landing, with footB's heel raised",
+  "headMotion": {
+   "billTipAheadOfPlantedFootPx": {
+    "1": 299,
+    "2": 325,
+    "3": 363,
+    "4": 130,
+    "5": 224,
+    "6": 296,
+    "7": 305,
+    "8": 302,
+    "9": 287,
+    "10": 345,
+    "11": 436,
+    "12": 540
+   },
+   "computed": "footB stance: +94 (4->5), +72 (5->6), +9, -3, -15 (6->9: held still within the +/-12 px camera-scale noise), +58, +91, +104 (9->12); relative to footA after it lands: +115 (11->12). footA stance at the start: +26, +38 (1->3). Frame 4 uses the end of the blurred leg instead of the heel, so the 4->5 step is uncertain by about 25 px",
+   "hold": {
+    "value": 0.43,
+    "computed": "head still for 3 of the 7 intervals of a step (frames 6-9), then thrust forward over the next 3-4 intervals at 60-115 px per interval (roughly half to two-thirds of a bill length)"
+   },
+   "vertical": "bill tip 339-349 px above the planted heel in every frame: no vertical head bob beyond +/-5 px (about 1.5% of head height)"
+  }
+ },
+ "findings": [
+  "Walking stride about 14-16 frames; one step = 7 frames (landing to landing). The catalogue's 5/8 cycle (17.6 frames per stride) undercounts slightly: the plate shows 0.7-0.8 of a stride. No timing in seconds (no interval recorded).",
+  "Duty factor about 0.55 (0.50-0.62): footA's swing lasts 7 frames; footB is down in all of frames 4-12. Double support is brief or absent at one landing (frame 3->4) and at least 2 frames at the next (11-12): the walk is not quite symmetric on this plate, or the bird is slowing.",
+  "Clear hold-and-thrust head motion relative to the ground: during footB's stance the bill tip holds its ground position for 3 intervals (frames 6-9, while footA swings past), then thrusts forward 60-115 px per interval through footA's landing (frames 9-12); it also moved fast just after footB landed (frames 4-6, where the head is motion-blurred). The hold covers about 43% of each step. Head height above the foot stays constant (+/-5 px): the bob is horizontal only.",
+  "Compared with figures/goose.json walk (8 frames at 10 fps, duty 0.7, head hold 0.38, bob 1.2): the hold fraction (0.38) matches the adjutant (about 0.43). The goose's duty (0.7) is higher than the adjutant's 0.5-0.6, which is longer-legged with longer swings; the goose's vertical bob (1.2) has no counterpart in the adjutant's head, which stays level. Cycle length in time cannot be compared (no interval for this plate).",
+  "Not measured: near/far identity of the legs; leg joint angles (the intertarsal joints are partly hidden by the body and the feathered tibia); the toes of footB in frame 4; time in seconds; body bob (no clear body landmark)."
+ ]
+}

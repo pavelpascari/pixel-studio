@@ -45,6 +45,51 @@
    "method": "chosen in the recommended 0.55–0.6 range; was 0.42",
    "by": "Claude (agent)",
    "date": "2026-11-09"
+  },
+  {
+   "param": "motions.fly.fps",
+   "value": 20,
+   "source": "meir-2019",
+   "location": "bar-headed goose wingbeat 4.97 Hz in level flight",
+   "method": "4 frames per beat at 20 fps = 5 Hz; 8 frames = 2 beats",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.fly.tracks.wing.rot",
+   "value": [
+    60,
+    10,
+    -70,
+    -20,
+    60,
+    10,
+    -70,
+    -20
+   ],
+   "source": "muybridge-1887-pl765",
+   "location": "references/measurements/bird-vulture-pl765.json: elevation +69..+88° at the top, −112..−136° at the bottom, downstroke ≈ 52% (pl755 pigeon +83..+91 / −118..−134)",
+   "method": "elevation = rot + 16 for this wing: top +76°; bottom +−54° (shallower than the plates so the one-bone wing does not cover the chest at sprite size); 2 of 4 frames downstroke",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
+  },
+  {
+   "param": "motions.fly.tracks.wing.sx",
+   "value": [
+    1,
+    1,
+    1,
+    0.65,
+    1,
+    1,
+    1,
+    0.65
+   ],
+   "source": "muybridge-1887-pl765",
+   "location": "bird-vulture-pl765.json findings: on the upstroke the wing comes back folded, about half its length mid-stroke",
+   "method": "upstroke frame shortened to 0.65",
+   "by": "Claude (agent)",
+   "date": "2026-11-09"
   }
  ]
 }

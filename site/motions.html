@@ -17,9 +17,9 @@
   <h2 id="figures">The figures</h2>
   <table>
     <tr><th>figure</th><th>view</th><th>motions</th><th>dressed as</th></tr>
-    <tr><td><code>goose</code></td><td>side</td><td>idle walk run sneak · jump fall sit duck peek climb</td><td>the four geese</td></tr>
-    <tr><td><code>human</code></td><td>side</td><td>idle walk run · jump fall sit duck peek climb</td><td></td></tr>
-    <tr><td><code>dog</code></td><td>side</td><td>idle walk trot · jump fall duck peek</td><td>Ember the fox</td></tr>
+    <tr><td><code>goose</code></td><td>side</td><td>idle walk run rush sneak · jump fall sit duck peek climb · flap honk <b>fly</b></td><td>the five geese</td></tr>
+    <tr><td><code>human</code></td><td>side</td><td>idle walk run <b>sprint</b> · jump fall sit duck peek climb · <b>sitDown standUp</b></td><td></td></tr>
+    <tr><td><code>dog</code></td><td>side</td><td>idle walk trot <b>gallop</b> · jump fall duck peek</td><td>Ember the fox</td></tr>
     <tr><td><code>chibi</code></td><td>front</td><td>idle walk run · jump fall sit duck peek</td><td>Pip, Bolt</td></tr>
     <tr><td><code>blob</code></td><td>any</td><td>idle hop travel · fall peek</td><td>the slime</td></tr>
   </table>
@@ -29,7 +29,7 @@
     <template>
       <div id="gal" style="width:100%"></div>
       <script type="module">
-        const chars = ['goose-root', 'pip', 'fox', 'slime', 'robot', 'clawd'];
+        const chars = ['goose-root', 'goose-greylag', 'pip', 'fox', 'slime', 'robot', 'clawd'];
         const root = document.getElementById('gal');
         for (const name of chars) {
           const bundle = await (await fetch(`../demo/assets/${name}.bundle.json`)).json();
@@ -54,6 +54,60 @@
     </template>
   </div>
   <p>One-shots (jump, honk, wave) play once and hold; hover a card's sprite or reload to see them again.</p>
+
+  <h2 id="measured">Measured from photographs</h2>
+  <p>These motions come from Eadweard Muybridge's <i>Animal Locomotion</i> (1887, public domain, scans from the Boston
+    Public Library) and published measurements. Every value, and every frame of the sit-down and stand-up, is logged
+    with the plate frame or table it came from in <a href="../references/README.md"><code>references/</code></a>
+    (raw measurements, one file per plate, in <code>references/measurements/</code>).</p>
+  <table>
+    <tr><th>motion</th><th>from</th><th>what the source sets</th></tr>
+    <tr><td><code>dog.gallop</code></td><td>plates 708–710 (racing hounds)</td><td>0.25 s cycle, each paw down 22% of it, hind–hind–fore–fore footfalls, two flight phases</td></tr>
+    <tr><td><code>human.sprint</code></td><td>plates 60, 62, 64 (running full speed)</td><td>0.5 s cycle, feet down 29%, elbows bent about 90°, big arm swing</td></tr>
+    <tr><td><code>human.sitDown</code></td><td>plate 236, frames 6–12</td><td>hip height and trunk lean of every frame; 183 ms between frames</td></tr>
+    <tr><td><code>human.standUp</code></td><td>plate 249, frames 1–10</td><td>lean forward to 34° with the hips still down, then rise; 92 ms between frames</td></tr>
+    <tr><td><code>goose.fly</code></td><td>Meir et al. 2019; plates 755, 765 (pigeon, vulture)</td><td>5 wingbeats a second; the wing sweeps from high above the back to below the body, and comes up folded</td></tr>
+  </table>
+
+  <div class="playground" data-title="Dog skeleton: trot and gallop" data-anim="gallop" data-res="64">
+    <script type="application/json">
+{
+  "figure": "dog",
+  "animations": {
+    "gallop": {"motion": "gallop"},
+    "trot": {"motion": "trot"}
+  }
+}
+    </script>
+  </div>
+
+  <div class="playground" data-title="Human skeleton: sprint, sit down, stand up" data-anim="sprint" data-res="64">
+    <script type="application/json">
+{
+  "figure": "human",
+  "animations": {
+    "sprint": {"motion": "sprint"},
+    "sitDown": {"motion": "sitDown"},
+    "standUp": {"motion": "standUp"},
+    "run": {"motion": "run"}
+  }
+}
+    </script>
+  </div>
+
+  <div class="playground" data-title="Goose skeleton: fly" data-anim="fly" data-res="64">
+    <script type="application/json">
+{
+  "figure": "goose",
+  "animations": {
+    "fly": {"motion": "fly"},
+    "flap": {"motion": "flap"}
+  }
+}
+    </script>
+  </div>
+  <p>Sit-down and stand-up play once; pick them again to replay. The goose's <code>flap</code> is take-off flapping (6 Hz),
+    <code>fly</code> level flight (5 Hz).</p>
 
   <h2 id="tune">Tune a motion</h2>
   <p>A bare figure (no <code>parts</code>) is drawn as its skeleton. Change a motion's parameters and watch the feet: in a

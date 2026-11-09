@@ -87,7 +87,8 @@
     "duck": {"motion": "duck"},
     "peek": {"motion": "peek", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]}}},
     "climb": {"motion": "climb"},
-    "flap": {"motion": "flap"}
+    "flap": {"motion": "flap"},
+    "fly": {"motion": "fly"}
   },
   "style": {"outline": "selective", "light": -45}
 }

@@ -24,6 +24,20 @@ Until 1.0, minor versions may change the spec format.
   and back versions where they show.
 - Fixed: a prop hidden by default (root's server rack) appeared during turns.
 
+### New motions measured from photographs
+
+- All 26 relevant Muybridge plates (1887, public domain, full-resolution BPL scans) measured into
+  `references/measurements/` — dogs 706–710, human walks, runs, stairs, ladders, jumps, sitting and rising, and pigeon,
+  cockatoo, vulture, ostrich and adjutant — with per-frame contacts, verified joint points, timing, and what could not be
+  measured and why. All 28 plates are in the registry (ids zero-padded: `muybridge-1887-pl001`); the references check now
+  also validates measurement files.
+- New figure motions: `dog.gallop` (hound plates: 0.25 s, duty 0.22, hind–hind–fore–fore), `human.sprint` (full-speed
+  runs: 0.5 s, duty 0.29), `human.sitDown` and `human.standUp` (one frame per plate frame of plates 236 and 249, hip
+  height and trunk lean as measured), `goose.fly` (level flight at 5 Hz, Meir et al. 2019, with the full wingstroke the
+  bird plates show). Each value — and each frame of the sit-down and stand-up — is logged in `references/`.
+- The fox gallops and every goose flies (`fly` in goose-base and the greylag). The figure library and the motions page
+  show them; the motions page has a "Measured from photographs" section with playgrounds.
+
 ### Motion re-timed from real animals (every change cited in `references/`)
 
 - **Dog** (fox and anything on `figures/dog.json`), from Maes et al. 2008: `walk` takes real dog-sized steps

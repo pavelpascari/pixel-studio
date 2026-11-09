@@ -1,0 +1,695 @@
+{
+ "source": "muybridge-1887-pl162",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796419s/full/full/0/default.jpg",
+ "imageSize": [
+  5045,
+  3995
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Lateral row only. Each frame cropped from the full scan at 1.5x with a 25 px grid labelled in scan pixels, contrast 1.15-1.2. Joint points (shoulder, wrist, hip = greater trochanter, knee, ankle, toe) were read off the grid, drawn back on the crop as dots and lines, checked by eye and corrected (pl162/f*-v1.png in the scratch folder). In a standing jump the two legs move together and overlap, so one leg (the visible outline, mostly the near one) is recorded for both. A foot is 'down' when its sole rests on the floor line (frames 1-8, y about 1745) or on the landing mat (frames 9-12, y about 1725). Derived angles: knee = interior angle hip-knee-ankle (180 = straight); thigh and shin = angle from straight down, + = forward (toward the jump); trunkLean = hip-to-shoulder from vertical, + = forward; arm = shoulder-to-wrist from straight down, + = forward, so 180/-180 = straight overhead. Hip height is normalised by the same frame's leg length (hip-knee + knee-ankle) because the figure's scale differs between frames. Point accuracy about +-8 px (5% of leg length); angles about +-6 deg.",
+ "derivedKey": "derived: leg (px, hip-knee + knee-ankle), knee (deg, interior), thigh/shin (deg from straight down, + forward), trunkLean (deg from vertical, + forward), arm (deg from straight down, + forward), ankleAngle (deg, interior knee-ankle-toe)",
+ "frameBoxes": [
+  [
+   700,
+   1288,
+   1011,
+   1760
+  ],
+  [
+   1016,
+   1288,
+   1324,
+   1760
+  ],
+  [
+   1333,
+   1288,
+   1603,
+   1760
+  ],
+  [
+   1613,
+   1288,
+   1867,
+   1760
+  ],
+  [
+   1876,
+   1288,
+   2117,
+   1760
+  ],
+  [
+   2129,
+   1288,
+   2527,
+   1760
+  ],
+  [
+   2540,
+   1288,
+   2940,
+   1760
+  ],
+  [
+   2949,
+   1288,
+   3193,
+   1760
+  ],
+  [
+   3203,
+   1288,
+   3457,
+   1760
+  ],
+  [
+   3465,
+   1288,
+   3737,
+   1760
+  ],
+  [
+   3747,
+   1288,
+   4047,
+   1760
+  ],
+  [
+   4057,
+   1288,
+   4400,
+   1760
+  ]
+ ],
+ "frameBoxNumbering": "frameBoxes[i] is lateral frame i+1",
+ "timing": {
+  "intervalMs": 156,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a cycle shown on the plate)",
+  "cycleS": 1.716,
+  "computed": "11 intervals x 156 ms between frame 1 and frame 12 (the whole jump, one action, so 'cycle' = the action shown)",
+  "frameTimesS": "frame n at (n - 1) x 0.156 s"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      845,
+      1745
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     826,
+     1438
+    ],
+    "wrist": [
+     808,
+     1305
+    ],
+    "hip": [
+     816,
+     1568
+    ],
+    "knee": [
+     803,
+     1655
+    ],
+    "ankle": [
+     800,
+     1730
+    ],
+    "toe": [
+     845,
+     1745
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": -8.5,
+    "shin": -2.3,
+    "knee": 173.8,
+    "leg": 163.0,
+    "ankleAngle": 106.1,
+    "trunkLean": 4.4,
+    "arm": -172.3
+   },
+   "confidence": "high",
+   "notes": "Standing upright, both arms straight overhead (start of the arm swing). Hip height above the sole line 177 px = 1.09 leg lengths (standing reference). Wrist cut by the frame top; the point is the highest visible."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      1130,
+      1745
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1125,
+     1432
+    ],
+    "wrist": [
+     1255,
+     1365
+    ],
+    "hip": [
+     1100,
+     1562
+    ],
+    "knee": [
+     1095,
+     1650
+    ],
+    "ankle": [
+     1088,
+     1730
+    ],
+    "toe": [
+     1130,
+     1745
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": -3.3,
+    "shin": -5.0,
+    "knee": 178.3,
+    "leg": 168.4,
+    "ankleAngle": 104.7,
+    "trunkLean": 10.9,
+    "arm": 117.3
+   },
+   "confidence": "high",
+   "notes": "Upright, legs straight; arms swinging down, now forward and about 27 deg above horizontal."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      1460,
+      1745
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1490,
+     1478
+    ],
+    "hip": [
+     1415,
+     1565
+    ],
+    "knee": [
+     1455,
+     1640
+    ],
+    "ankle": [
+     1420,
+     1728
+    ],
+    "toe": [
+     1460,
+     1745
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 28.1,
+    "shin": -21.7,
+    "knee": 130.2,
+    "leg": 179.7,
+    "ankleAngle": 91.3,
+    "trunkLean": 40.8
+   },
+   "confidence": "medium",
+   "notes": "Bending: trunk 41 deg forward, knees 130 deg, arms hanging down by the knees (wrist not separable from the thigh, not recorded)."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      1713,
+      1736
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1776,
+     1555
+    ],
+    "wrist": [
+     1660,
+     1458
+    ],
+    "hip": [
+     1685,
+     1590
+    ],
+    "knee": [
+     1730,
+     1651
+    ],
+    "ankle": [
+     1680,
+     1725
+    ],
+    "toe": [
+     1713,
+     1736
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 36.4,
+    "shin": -34.0,
+    "knee": 109.5,
+    "leg": 165.1,
+    "ankleAngle": 74.4,
+    "trunkLean": 69.0,
+    "arm": -129.9
+   },
+   "confidence": "high",
+   "notes": "Deepest pre-jump crouch: trunk 69 deg forward, knees 110 deg, arms swung back and up behind the body (arm -130 deg). Hip height 0.94 leg lengths, i.e. a drop of 0.15 leg lengths from standing: the crouch is mostly a forward fold at the hip, not a squat."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      1899,
+      1738
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2043,
+     1538
+    ],
+    "hip": [
+     1946,
+     1581
+    ],
+    "knee": [
+     1993,
+     1641
+    ],
+    "ankle": [
+     1916,
+     1715
+    ],
+    "toe": [
+     1899,
+     1738
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 38.1,
+    "shin": -46.1,
+    "knee": 95.8,
+    "leg": 183.0,
+    "ankleAngle": 170.3,
+    "trunkLean": 66.1
+   },
+   "confidence": "medium",
+   "notes": "Arms swinging forward-down (blurred, wrist not recorded); knees most bent before take-off (96 deg), shins sloping forward 46 deg over the feet, heels rising. Hip height 0.90 leg lengths (drop 0.19)."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": false,
+     "toe": [
+      2136,
+      1725
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2376,
+     1488
+    ],
+    "wrist": [
+     2502,
+     1431
+    ],
+    "hip": [
+     2262,
+     1578
+    ],
+    "knee": [
+     2216,
+     1651
+    ],
+    "ankle": [
+     2149,
+     1708
+    ],
+    "toe": [
+     2136,
+     1725
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": -32.2,
+    "shin": -49.6,
+    "knee": 162.6,
+    "leg": 174.3,
+    "ankleAngle": 167.8,
+    "trunkLean": 51.7,
+    "arm": 114.3
+   },
+   "confidence": "medium",
+   "notes": "Take-off just done: body nearly a straight line from toe to fingertips, inclined about 50 deg from vertical, knee 163 deg, ankle extended. The toe tip is about 20 px above the floor line but cut by the frame's left edge, so lift-off between frames 5 and 6 is likely, not certain."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": false,
+     "toe": [
+      2550,
+      1612
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2810,
+     1465
+    ],
+    "wrist": [
+     2913,
+     1368
+    ],
+    "hip": [
+     2717,
+     1551
+    ],
+    "knee": [
+     2683,
+     1638
+    ],
+    "ankle": [
+     2583,
+     1615
+    ],
+    "toe": [
+     2550,
+     1612
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": -21.3,
+    "shin": -103.0,
+    "knee": 98.4,
+    "leg": 196.0,
+    "ankleAngle": 172.2,
+    "trunkLean": 47.2,
+    "arm": 133.3
+   },
+   "confidence": "high",
+   "notes": "Airborne, highest point of the hips in the sequence (y 1551); arms straight forward-up, knees bent 98 deg with the shins trailing behind horizontally (feet pointed back), not tucked under."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 1745,
+   "feet": {
+    "feet": {
+     "down": false,
+     "toe": [
+      2992,
+      1695
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3096,
+     1488
+    ],
+    "wrist": [
+     3162,
+     1635
+    ],
+    "hip": [
+     2996,
+     1555
+    ],
+    "knee": [
+     3066,
+     1615
+    ],
+    "ankle": [
+     2986,
+     1661
+    ],
+    "toe": [
+     2992,
+     1695
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 49.4,
+    "shin": -60.1,
+    "knee": 70.5,
+    "leg": 184.5,
+    "ankleAngle": 109.9,
+    "trunkLean": 56.2,
+    "arm": 24.2
+   },
+   "confidence": "high",
+   "notes": "Airborne, descending: tuck - knees bent to 70 deg, thighs pulled up 49 deg forward, feet brought under and ahead of the hips for landing; arms swung down-forward (arm 24 deg). Hip-to-ankle height 106 px against 162 px standing: feet pulled up by 0.34 leg lengths."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 1727,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      3403,
+      1728
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3340,
+     1561
+    ],
+    "wrist": [
+     3283,
+     1688
+    ],
+    "hip": [
+     3253,
+     1601
+    ],
+    "knee": [
+     3353,
+     1635
+    ],
+    "ankle": [
+     3370,
+     1721
+    ],
+    "toe": [
+     3403,
+     1728
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 71.2,
+    "shin": 11.2,
+    "knee": 120.0,
+    "leg": 193.3,
+    "ankleAngle": 113.2,
+    "trunkLean": 65.3,
+    "arm": -24.2
+   },
+   "confidence": "medium",
+   "notes": "Touch-down on the mat: hip height 0.65 leg lengths (drop 0.44), trunk 65 deg forward, arms hanging down-back. Wrist point medium."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 1727,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      3552,
+      1731
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3608,
+     1595
+    ],
+    "wrist": [
+     3715,
+     1665
+    ],
+    "hip": [
+     3498,
+     1628
+    ],
+    "knee": [
+     3602,
+     1651
+    ],
+    "ankle": [
+     3538,
+     1721
+    ],
+    "toe": [
+     3552,
+     1731
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 77.5,
+    "shin": -42.4,
+    "knee": 60.0,
+    "leg": 201.4,
+    "ankleAngle": 83.1,
+    "trunkLean": 73.3,
+    "arm": 56.8
+   },
+   "confidence": "high",
+   "notes": "Deepest landing squat: knees 60 deg, hip height 0.49 leg lengths (drop 0.60), trunk 73 deg forward, arms reaching forward."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 1727,
+   "feet": {
+    "feet": {
+     "down": true,
+     "toe": [
+      3760,
+      1735
+     ],
+     "confidence": "medium"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3914,
+     1535
+    ],
+    "wrist": [
+     4020,
+     1611
+    ],
+    "hip": [
+     3810,
+     1581
+    ],
+    "knee": [
+     3870,
+     1661
+    ],
+    "ankle": [
+     3767,
+     1715
+    ],
+    "toe": [
+     3760,
+     1735
+    ]
+   },
+   "pointsConfidence": "medium",
+   "derived": {
+    "thigh": 36.9,
+    "shin": -62.3,
+    "knee": 80.8,
+    "leg": 216.3,
+    "ankleAngle": 137.0,
+    "trunkLean": 66.1,
+    "arm": 54.4
+   },
+   "confidence": "medium",
+   "notes": "Rising and pitching forward out of the squat: knee 81 deg, hip height 0.67 leg lengths (drop 0.42), arms forward."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 1727,
+   "feet": {
+    "rear": {
+     "down": true,
+     "toe": [
+      4087,
+      1717
+     ],
+     "confidence": "medium"
+    },
+    "front": {
+     "down": false,
+     "toe": [
+      4243,
+      1688
+     ],
+     "confidence": "medium"
+    }
+   },
+   "confidence": "medium",
+   "notes": "Recovery step: one foot steps forward off the mat while the trunk is still pitched forward. Joints blurred and overlapping; not recorded."
+  }
+ ],
+ "findings": [
+  "Timing (catalogue 156 ms, frames 1-12 = 1.72 s): arm swing and crouch take frames 1-5 (0.62 s), lift-off falls between frames 5 and 6 (t 0.62-0.78 s), the jumper is airborne in frames 6-8 and lands between frames 8 and 9 (t 1.09-1.25 s). Air time is therefore 0.31-0.62 s (best estimate about 0.47 s, 3 intervals); landing squat and recovery take frames 9-12 (>= 0.47 s). As fractions of the action: preparation about 0.40, air about 0.27, landing and recovery about 0.33.",
+  "Our human.jump (10 frames at 10 fps = 1.0 s; anticipate 0.3, air 0.42): our flight fraction (0.42) is larger and our preparation (0.30) shorter than the plate's (about 0.27 and 0.40). In absolute time our 0.42 s air is inside the plate's 0.31-0.62 s window, so the air time itself is fine; the real jump spends longer winding up (0.6-0.8 s with a full overhead-to-back arm swing) and longer absorbing the landing.",
+  "Crouch: before take-off the hips drop only 0.15-0.19 leg lengths (knee 96-110 deg) while the trunk folds 66-69 deg forward. Our dip 8 units = 0.22 of our 37-unit leg (thigh 20 + shin 17), so the pre-jump depth is about right but our lean 8 deg is far smaller than the plate's 66-69 deg trunk fold (a broad jump; a vertical or in-place game jump needs less).",
+  "Landing is much deeper than the take-off crouch: hip drop 0.44 leg lengths at touch-down and 0.60 at the deepest squat (knee 60 deg, frame 10). Our landing dip is dip x 0.8 = 6.4 units = 0.17 leg lengths, about a third of the plate's.",
+  "Tuck: in the air the knees go from 163 deg (take-off) to 98 deg with the feet trailing (frame 7) to 70 deg with the feet pulled under (frame 8); the feet rise 0.34 leg lengths toward the hips. Our tuck 8 units = 0.22 leg lengths: same shape, about two thirds of the plate's amount.",
+  "Arm swing: overhead (frame 1) -> forward (2) -> down (3) -> back and up behind (4, -130 deg) -> forward through take-off (6-7, 114-133 deg, in line with the body) -> down-forward to meet the landing (8-10). Our model's back-then-up swing (arm +50 in the crouch, -140 in the air) matches the order but not the full wind-up from overhead.",
+  "Not measured: horizontal jump distance and hip trajectory in world units (the frames come from separate cameras, have different widths and slightly different scales, so x positions are not comparable between frames); elbows (arms nearly straight throughout, elbow not distinguishable); the far leg separately (overlaps the near one); the rear-oblique row; frame 12 joints (blurred)."
+ ]
+}

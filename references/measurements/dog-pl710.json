@@ -1,0 +1,325 @@
+{
+ "source": "muybridge-1887-pl710",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70796949j/full/full/0/default.jpg",
+ "imageSize": [
+  4956,
+  3948
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "dog",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1.4x with a grid labelled in scan pixels, the legs zoomed at 2-3x with contrast, and a strip of the ground under every frame rendered at 1.3x with a 10/50 px grid to read toe positions. A paw is 'down' when it rests on the ground line (within about 8 px, usually with its shadow touching it) and 'not down' when it is clearly (15 px or more) above it. At these exposures the legs are blurred and the near (lit) and far (shadowed) legs cannot be told apart with confidence, so feet are identified only as fore or hind and, where the order is clear, as 'first' (the first of the pair to land, i.e. the trailing foot) or 'second' (the leading foot); 'side' is left unknown. Frame boxes were read off a 1500 px copy and are approximate (about +-10 px). Only frames and feet that could be identified with confidence are recorded; everything else is left out rather than guessed.",
+ "frameBoxes": [
+  [
+   730,
+   1279,
+   1312,
+   1569
+  ],
+  [
+   1335,
+   1279,
+   1910,
+   1569
+  ],
+  [
+   1933,
+   1279,
+   2508,
+   1569
+  ],
+  [
+   2531,
+   1279,
+   3106,
+   1569
+  ],
+  [
+   3126,
+   1279,
+   3700,
+   1569
+  ],
+  [
+   3720,
+   1279,
+   4295,
+   1569
+  ],
+  [
+   730,
+   1619,
+   1312,
+   1916
+  ],
+  [
+   1335,
+   1619,
+   1910,
+   1916
+  ],
+  [
+   1933,
+   1619,
+   2508,
+   1916
+  ],
+  [
+   2531,
+   1619,
+   3106,
+   1916
+  ],
+  [
+   3126,
+   1619,
+   3700,
+   1916
+  ],
+  [
+   3720,
+   1619,
+   4295,
+   1916
+  ]
+ ],
+ "timing": {
+  "intervalMs": 49,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 2,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "cycleS": 0.245,
+  "framesPerCycle": 5,
+  "computed": "measured: every phase recurs exactly 5 frames later (2 -> 7, 3 -> 8, 4 -> 9, 5 -> 10, 6 -> 11); 5 x 49 ms = 0.245 s",
+  "catalogueCycleS": 0.27,
+  "catalogueComputed": "(12 - 1) x 49 ms / 2 = 0.27 s (12 x 49 / 2 = 0.29 s with the dog-pl706 convention); agrees with the measured 0.245 s within one frame"
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1552,
+   "paws": {
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore, late stance",
+     "down": true,
+     "toe": [
+      1050,
+      1552
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "One fore down, near vertical; hinds faint (motion blur), in the air."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1552,
+   "paws": {
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore, just lifted",
+     "down": false,
+     "toe": [
+      1610,
+      1530
+     ],
+     "confidence": "medium"
+    }
+   },
+   "support": "none (gathered flight, start)",
+   "notes": "The fore has just left the ground (20 px up); hinds forward under the body, in the air."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1552,
+   "paws": {
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "down": true,
+     "toe": [
+      2050,
+      1550
+     ],
+     "confidence": "high"
+    },
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "down": true,
+     "toe": [
+      2180,
+      1550
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "both hinds",
+   "notes": "Both hinds down together; fores in the air. A white spot near 2200,1555 is debris on the track."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1552,
+   "paws": {
+    "hind": {
+     "limb": "hind",
+     "side": "unknown",
+     "role": "lowest hind toe",
+     "down": false,
+     "toe": [
+      2580,
+      1535
+     ],
+     "confidence": "medium"
+    },
+    "fore": {
+     "limb": "fore",
+     "side": "unknown",
+     "down": false,
+     "toe": [
+      3050,
+      1490
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "none (extended flight)",
+   "notes": "Extended flight; the lowest hind toe is about 15 px above the ground, so its lift-off was very recent."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1552,
+   "paws": {
+    "fore1": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "first (trailing) fore, touchdown",
+     "down": true,
+     "toe": [
+      3555,
+      1550
+     ],
+     "confidence": "high"
+    },
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore, reaching",
+     "down": false,
+     "toe": [
+      3690,
+      1490
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "Hinds stretched back in the air."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1552,
+   "paws": {
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore",
+     "down": true,
+     "toe": [
+      4060,
+      1555
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "Second fore down; another paw near 3900,1525 (25 px up) is in the air but could not be identified as fore or hind."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 1888,
+   "paws": {
+    "hind1": {
+     "limb": "hind",
+     "side": "unknown",
+     "down": true,
+     "toe": [
+      1400,
+      1888
+     ],
+     "confidence": "high"
+    },
+    "hind2": {
+     "limb": "hind",
+     "side": "unknown",
+     "down": true,
+     "toe": [
+      1555,
+      1888
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "both hinds",
+   "notes": "Same phase as frame 3."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 1888,
+   "paws": {},
+   "support": "none (extended flight)",
+   "notes": "Extended flight: hind toe about 1960,1845, fore toe about 2440,1825. Same phase as frame 4."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 1888,
+   "paws": {
+    "fore1": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "first (trailing) fore",
+     "down": true,
+     "toe": [
+      2990,
+      1885
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "Same phase as frame 5."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 1888,
+   "paws": {
+    "fore2": {
+     "limb": "fore",
+     "side": "unknown",
+     "role": "second (leading) fore",
+     "down": true,
+     "toe": [
+      3510,
+      1890
+     ],
+     "confidence": "high"
+    }
+   },
+   "support": "single fore",
+   "notes": "Same phase as frame 6."
+  }
+ ],
+ "findings": [
+  "The cleanest of the three hound plates: a gallop with a 5-frame cycle (0.245 s) that repeats exactly across the two rows. Per cycle: both hinds down (3, 8), extended flight (4, 9), first fore (5, 10), second fore (6, 11), fore lifts into gathered flight (2, 7).",
+  "Duty: each foot is down in exactly 1 of the 5 frames of a cycle, so duty per foot is about 0.2 (between roughly 0.1 and 0.4 given 49 ms sampling). Both hinds are down together in one frame; the fores are never seen down together.",
+  "Lags (touchdown, fraction of the cycle): hinds within one frame of each other (0-0.2); first fore 2 frames after the hinds (about 0.4-0.5); second fore 1 frame later (about 0.6-0.7). Extended flight about 1 frame (0.2), gathered flight about 1 frame (0.2).",
+  "Comparison with dog.trot (8 frames at 16 fps = 0.50 s, duty 0.46, diagonal pairs in phase: thighHindNear/armForeFar 0, thighHindFar/armForeNear 0.5): cycle 0.245 vs 0.50 s; duty about 0.2 vs 0.46; two flights vs none; the hinds land together and the fores land one frame apart about half a cycle later, instead of diagonal pairs at 0 and 0.5.",
+  "Suggested future dog.gallop (from plates 708-710 together): cycle about 0.25-0.27 s (e.g. 6 frames at 24 fps = 0.25 s); duty about 0.2-0.25 per foot; touchdown order first hind 0, second hind about 0.1-0.15, first fore about 0.45-0.6, second fore about 0.6-0.75 of the cycle; two flight phases per cycle, an extended one (legs stretched, after the hinds and before the fores, about 0.15-0.3 of the cycle) and a gathered one (legs under the body, after the fores and before the hinds, about 0.15-0.2). Whether it is a rotary gallop (first fore on the same side as the second hind: phases thighHindFar 0, thighHindNear 0.1, armForeNear 0.5, armForeFar 0.6) or transverse (armForeFar 0.5, armForeNear 0.6) is NOT settled by the lateral rows; racing hounds are usually described as rotary gallopers, but that is not verified here. The rear-view row on the same plate, exposed at the same instants, is where to check it.",
+  "Not measured: near vs far side (rotary vs transverse unknown, see above); frame 7 (a fore paw at about 1010,1880 is at the ground line but may be at toe-off, could not be decided) and frame 12 (a paw at about 3925,1888 looks down but could not be identified as fore or hind); joint angles and stride length."
+ ]
+}

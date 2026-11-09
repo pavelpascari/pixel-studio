@@ -1,0 +1,1183 @@
+{
+ "source": "muybridge-1887-pl062",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795v032/full/full/0/default.jpg",
+ "imageSize": [
+  5004,
+  3956
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1.5-2x with a grid labelled in scan pixels; feet zoomed at 3-5x with contrast to judge contact. A foot is 'down' when its sole or toe meets the ground line / its own shadow. Legs are tracked by continuity (the stance foot's position steps back frame by frame within the frame box) and named legA/legB. Joint points (shoulder, hip, knee, ankle, toe tip, elbow, wrist) were read off the grid, drawn back onto the crop as dots and segments, inspected, and corrected or dropped; only kept points are listed. Hip = centre of the upper thigh at greater-trochanter level, shoulder = centre of the humeral head: these two are estimates of hidden landmarks, about +/-15 px, i.e. about +/-5 deg on thigh angles and +/-7 deg on trunk lean in a single frame. Knee, ankle, toe, elbow, wrist about +/-5 px. Hip and shoulder are taken as one point for both sides (side view). Angles computed by atan2 from the kept points only. Timing: catalogue interval; the cycle was checked against observed contacts. Plate frames come from different cameras, so stride length and speed were not measured.",
+ "legs": {
+  "legA": "far leg (medium confidence); lands between frames 2 and 3, stance 3-5",
+  "legB": "near leg (its swinging thigh covers the stance knee in frame 4; its stance thigh is in front in frame 10); lands between frames 8 and 9, stance 9-11(12)",
+  "arms": "'Fwd'/'Back' = whichever arm is ahead of / behind the shoulder in that frame"
+ },
+ "angleDefinitions": {
+  "thigh": "knee relative to hip, degrees from vertical, + = knee ahead of the hip (runner faces +x)",
+  "hipFlex": "thigh + trunkLean: thigh relative to the trunk line, + = flexion",
+  "kneeFlex": "180 - angle(hip, knee, ankle); 0 = straight",
+  "ankle": "unsigned angle knee-ankle-toe tip (larger = more plantarflexed; our figure's standing rest is 116)",
+  "trunkLean": "hip -> shoulder line from vertical, + = forward",
+  "upperArm": "shoulder -> elbow from vertical, + = forward",
+  "elbowFlex": "180 - angle(shoulder, elbow, wrist); 0 = straight"
+ },
+ "frameBoxes": [
+  [
+   1163,
+   972,
+   1592,
+   1544
+  ],
+  [
+   1613,
+   972,
+   2042,
+   1544
+  ],
+  [
+   2061,
+   972,
+   2491,
+   1544
+  ],
+  [
+   2512,
+   972,
+   2930,
+   1544
+  ],
+  [
+   2950,
+   972,
+   3379,
+   1544
+  ],
+  [
+   3396,
+   972,
+   3821,
+   1544
+  ],
+  [
+   1163,
+   1577,
+   1592,
+   2143
+  ],
+  [
+   1613,
+   1577,
+   2042,
+   2143
+  ],
+  [
+   2061,
+   1577,
+   2491,
+   2143
+  ],
+  [
+   2512,
+   1577,
+   2930,
+   2143
+  ],
+  [
+   2950,
+   1577,
+   3379,
+   2143
+  ],
+  [
+   3396,
+   1577,
+   3821,
+   2143
+  ]
+ ],
+ "timing": {
+  "intervalMs": 41,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1,
+  "cyclesSource": "muybridge-1887-catalogue (fraction of a stride shown on the plate)",
+  "catalogueCycleS": 0.451,
+  "catalogueComputed": "(12-1) x 41 ms / 1",
+  "observedCycleS": 0.49,
+  "observedRangeS": [
+   0.41,
+   0.57
+  ],
+  "observedFramesPerCycle": 12,
+  "observed": "Each foot lands once: legA between frames 2-3, legB between frames 8-9 (same descending-foot pattern in 1-2 and 7-8), a half cycle of 6 intervals (5-7), so about 12 intervals = 0.49 s assuming symmetry. Frame 12 matches frame 6 with legs swapped, and frame 1 would follow frame 12. This agrees with the catalogue's one full cycle (0.45-0.49 s) to within 10%."
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      1543,
+      1427
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      1198,
+      1452
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1398,
+     1104
+    ],
+    "hip": [
+     1385,
+     1252
+    ],
+    "kneeA": [
+     1513,
+     1297
+    ],
+    "ankleA": [
+     1493,
+     1417
+    ],
+    "toeA": [
+     1543,
+     1427
+    ],
+    "kneeB": [
+     1323,
+     1357
+    ],
+    "ankleB": [
+     1203,
+     1404
+    ],
+    "toeB": [
+     1198,
+     1452
+    ],
+    "elbowBackArm": [
+     1335,
+     1094
+    ],
+    "wristBackArm": [
+     1353,
+     1167
+    ],
+    "elbowFwdArm": [
+     1445,
+     1194
+    ],
+    "wristFwdArm": [
+     1500,
+     1134
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 5.0,
+    "thighB": -30.6,
+    "hipFlexB": -25.6,
+    "kneeFlexB": 38.1,
+    "ankleB": 117.3,
+    "thighA": 70.6,
+    "hipFlexA": 75.6,
+    "kneeFlexA": 80.1,
+    "ankleA": 91.8,
+    "upperArmFwd": 27.6,
+    "elbowFlexFwd": 109.9,
+    "upperArmBack": -99.0,
+    "elbowFlexBack": 112.9
+   },
+   "notes": "Flight: front foot about 40 px above the ground; rear foot hangs toe-down."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      1985,
+      1440
+     ],
+     "confidence": "medium"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      1640,
+      1352
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1848,
+     1107
+    ],
+    "hip": [
+     1818,
+     1252
+    ],
+    "kneeA": [
+     1925,
+     1314
+    ],
+    "ankleA": [
+     1933,
+     1437
+    ],
+    "toeA": [
+     1985,
+     1440
+    ],
+    "kneeB": [
+     1793,
+     1362
+    ],
+    "ankleB": [
+     1660,
+     1330
+    ],
+    "toeB": [
+     1640,
+     1352
+    ],
+    "elbowBackArm": [
+     1778,
+     1120
+    ],
+    "wristBackArm": [
+     1803,
+     1182
+    ],
+    "elbowFwdArm": [
+     1848,
+     1177
+    ],
+    "wristFwdArm": [
+     1923,
+     1157
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 11.7,
+    "thighB": -12.8,
+    "hipFlexB": -1.1,
+    "kneeFlexB": 90.7,
+    "ankleB": 118.7,
+    "thighA": 59.9,
+    "hipFlexA": 71.6,
+    "kneeFlexA": 56.2,
+    "ankleA": 97.0,
+    "upperArmFwd": 0.0,
+    "elbowFlexFwd": 104.9,
+    "upperArmBack": -79.5,
+    "elbowFlexBack": 101.4
+   },
+   "notes": "Front heel about 18 px above the ground line: about to land."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      2381,
+      1472
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      2121,
+      1332
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2291,
+     1102
+    ],
+    "hip": [
+     2261,
+     1252
+    ],
+    "kneeA": [
+     2343,
+     1334
+    ],
+    "ankleA": [
+     2326,
+     1459
+    ],
+    "toeA": [
+     2381,
+     1472
+    ],
+    "kneeB": [
+     2271,
+     1367
+    ],
+    "ankleB": [
+     2148,
+     1304
+    ],
+    "toeB": [
+     2121,
+     1332
+    ],
+    "elbowBackArm": [
+     2238,
+     1150
+    ],
+    "wristBackArm": [
+     2251,
+     1197
+    ],
+    "elbowFwdArm": [
+     2276,
+     1182
+    ],
+    "wristFwdArm": [
+     2341,
+     1222
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 11.3,
+    "thighB": 5.0,
+    "hipFlexB": 16.3,
+    "kneeFlexB": 122.1,
+    "ankleB": 106.8,
+    "thighA": 45.0,
+    "hipFlexA": 56.3,
+    "kneeFlexA": 52.7,
+    "ankleA": 95.6,
+    "upperArmFwd": -10.6,
+    "elbowFlexFwd": 69.0,
+    "upperArmBack": -47.8,
+    "elbowFlexBack": 63.3
+   },
+   "notes": "legA just landed."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      2727,
+      1484
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      2624,
+      1367
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2732,
+     1112
+    ],
+    "hip": [
+     2697,
+     1252
+    ],
+    "kneeB": [
+     2777,
+     1342
+    ],
+    "ankleB": [
+     2642,
+     1322
+    ],
+    "toeB": [
+     2624,
+     1367
+    ],
+    "ankleA": [
+     2677,
+     1469
+    ],
+    "toeA": [
+     2727,
+     1484
+    ],
+    "elbowBackArm": [
+     2657,
+     1167
+    ],
+    "wristBackArm": [
+     2687,
+     1232
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 14.0,
+    "thighB": 41.6,
+    "hipFlexB": 55.6,
+    "kneeFlexB": 140.1,
+    "ankleB": 103.4,
+    "upperArmBack": -53.7,
+    "elbowFlexBack": 78.5
+   },
+   "notes": "Mid-stance; legA's knee hidden behind legB's thigh."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": true,
+     "toe": [
+      3070,
+      1479
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      3147,
+      1404
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3175,
+     1107
+    ],
+    "hip": [
+     3142,
+     1252
+    ],
+    "kneeB": [
+     3260,
+     1304
+    ],
+    "ankleB": [
+     3130,
+     1362
+    ],
+    "toeB": [
+     3147,
+     1404
+    ],
+    "kneeA": [
+     3100,
+     1352
+    ],
+    "ankleA": [
+     3050,
+     1452
+    ],
+    "toeA": [
+     3070,
+     1479
+    ],
+    "elbowBackArm": [
+     3080,
+     1132
+    ],
+    "wristBackArm": [
+     3095,
+     1222
+    ],
+    "elbowFwdArm": [
+     3185,
+     1192
+    ],
+    "wristFwdArm": [
+     3260,
+     1192
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 12.8,
+    "thighB": 66.2,
+    "hipFlexB": 79.0,
+    "kneeFlexB": 132.2,
+    "ankleB": 92.0,
+    "thighA": -22.8,
+    "hipFlexA": -10.0,
+    "kneeFlexA": 3.8,
+    "ankleA": 116.9,
+    "upperArmFwd": 6.7,
+    "elbowFlexFwd": 83.3,
+    "upperArmBack": -75.3,
+    "elbowFlexBack": 84.7
+   },
+   "notes": "Late stance, on the toes; legA's knee nearly straight (4 deg)."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 1477,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      3461,
+      1467
+     ],
+     "confidence": "medium"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      3741,
+      1424
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3631,
+     1102
+    ],
+    "hip": [
+     3616,
+     1242
+    ],
+    "kneeB": [
+     3741,
+     1292
+    ],
+    "ankleB": [
+     3691,
+     1407
+    ],
+    "toeB": [
+     3741,
+     1424
+    ],
+    "kneeA": [
+     3546,
+     1337
+    ],
+    "ankleA": [
+     3446,
+     1417
+    ],
+    "toeA": [
+     3461,
+     1467
+    ],
+    "elbowBackArm": [
+     3541,
+     1092
+    ],
+    "wristBackArm": [
+     3546,
+     1182
+    ],
+    "elbowFwdArm": [
+     3676,
+     1177
+    ],
+    "wristFwdArm": [
+     3721,
+     1122
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 6.1,
+    "thighB": 68.2,
+    "hipFlexB": 74.3,
+    "kneeFlexB": 91.7,
+    "ankleB": 85.3,
+    "thighA": -36.4,
+    "hipFlexA": -30.3,
+    "kneeFlexA": 15.0,
+    "ankleA": 112.0,
+    "upperArmFwd": 31.0,
+    "elbowFlexFwd": 109.7,
+    "upperArmBack": -96.3,
+    "elbowFlexBack": 99.5
+   },
+   "notes": "legA's toe about 10 px above the ground: just after toe-off."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      1183,
+      2032
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      1550,
+      2042
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1398,
+     1702
+    ],
+    "hip": [
+     1378,
+     1857
+    ],
+    "kneeB": [
+     1495,
+     1917
+    ],
+    "ankleB": [
+     1493,
+     2037
+    ],
+    "toeB": [
+     1550,
+     2042
+    ],
+    "kneeA": [
+     1328,
+     1957
+    ],
+    "ankleA": [
+     1193,
+     1977
+    ],
+    "toeA": [
+     1183,
+     2032
+    ],
+    "elbowBackArm": [
+     1298,
+     1692
+    ],
+    "wristBackArm": [
+     1308,
+     1782
+    ],
+    "elbowFwdArm": [
+     1433,
+     1777
+    ],
+    "wristFwdArm": [
+     1463,
+     1722
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 7.4,
+    "thighB": 62.9,
+    "hipFlexB": 70.3,
+    "kneeFlexB": 63.8,
+    "ankleB": 94.1,
+    "thighA": -26.6,
+    "hipFlexA": -19.2,
+    "kneeFlexA": 55.0,
+    "ankleA": 108.7,
+    "upperArmFwd": 25.0,
+    "elbowFlexFwd": 126.4,
+    "upperArmBack": -95.7,
+    "elbowFlexBack": 102.1
+   },
+   "notes": "Flight."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      1648,
+      1932
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": false,
+     "toe": [
+      1980,
+      2060
+     ],
+     "confidence": "low"
+    }
+   },
+   "points": {
+    "shoulder": [
+     1843,
+     1707
+    ],
+    "hip": [
+     1823,
+     1857
+    ],
+    "kneeB": [
+     1915,
+     1937
+    ],
+    "ankleB": [
+     1933,
+     2057
+    ],
+    "toeB": [
+     1980,
+     2060
+    ],
+    "kneeA": [
+     1793,
+     1972
+    ],
+    "ankleA": [
+     1678,
+     1902
+    ],
+    "toeA": [
+     1648,
+     1932
+    ],
+    "elbowBackArm": [
+     1755,
+     1717
+    ],
+    "wristBackArm": [
+     1785,
+     1802
+    ],
+    "elbowFwdArm": [
+     1868,
+     1782
+    ],
+    "wristFwdArm": [
+     1908,
+     1770
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 7.6,
+    "thighB": 49.0,
+    "hipFlexB": 56.6,
+    "kneeFlexB": 40.5,
+    "ankleB": 102.2,
+    "thighA": -14.6,
+    "hipFlexA": -7.0,
+    "kneeFlexA": 106.7,
+    "ankleA": 103.7,
+    "upperArmFwd": 18.4,
+    "elbowFlexFwd": 88.3,
+    "upperArmBack": -83.5,
+    "elbowFlexBack": 103.0
+   },
+   "notes": "Front heel about 10 px above the ground: landing imminent; contact not certain."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      2153,
+      1917
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      2361,
+      2089
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2291,
+     1712
+    ],
+    "hip": [
+     2268,
+     1857
+    ],
+    "kneeB": [
+     2333,
+     1952
+    ],
+    "ankleB": [
+     2316,
+     2064
+    ],
+    "toeB": [
+     2361,
+     2089
+    ],
+    "kneeA": [
+     2281,
+     1967
+    ],
+    "ankleA": [
+     2181,
+     1887
+    ],
+    "toeA": [
+     2153,
+     1917
+    ],
+    "elbowBackArm": [
+     2221,
+     1757
+    ],
+    "wristBackArm": [
+     2276,
+     1827
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 9.0,
+    "thighB": 34.4,
+    "hipFlexB": 43.4,
+    "kneeFlexB": 43.0,
+    "ankleB": 110.4,
+    "thighA": 6.7,
+    "hipFlexA": 15.7,
+    "kneeFlexA": 135.4,
+    "ankleA": 94.4,
+    "upperArmBack": -57.3,
+    "elbowFlexBack": 95.4
+   },
+   "notes": "legB just landed; no arm points (forward arm hidden)."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      2619,
+      1957
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      2697,
+      2089
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     2712,
+     1712
+    ],
+    "hip": [
+     2682,
+     1857
+    ],
+    "kneeB": [
+     2707,
+     1957
+    ],
+    "ankleB": [
+     2657,
+     2069
+    ],
+    "toeB": [
+     2697,
+     2089
+    ],
+    "kneeA": [
+     2767,
+     1949
+    ],
+    "ankleA": [
+     2637,
+     1917
+    ],
+    "toeA": [
+     2619,
+     1957
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 11.7,
+    "thighB": 14.0,
+    "hipFlexB": 25.7,
+    "kneeFlexB": 38.1,
+    "ankleB": 92.5,
+    "thighA": 42.7,
+    "hipFlexA": 54.4,
+    "kneeFlexA": 146.6,
+    "ankleA": 100.4
+   },
+   "notes": "Mid-stance; arms overlap the trunk, not measured."
+  },
+  {
+   "sourceFrame": 11,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      3170,
+      2009
+     ],
+     "confidence": "high"
+    },
+    "legB": {
+     "down": true,
+     "toe": [
+      3045,
+      2084
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3170,
+     1707
+    ],
+    "hip": [
+     3150,
+     1857
+    ],
+    "kneeA": [
+     3270,
+     1912
+    ],
+    "ankleA": [
+     3147,
+     1967
+    ],
+    "toeA": [
+     3170,
+     2009
+    ],
+    "ankleB": [
+     3025,
+     2057
+    ],
+    "toeB": [
+     3045,
+     2084
+    ],
+    "elbowBackArm": [
+     3085,
+     1742
+    ],
+    "wristBackArm": [
+     3125,
+     1802
+    ],
+    "elbowFwdArm": [
+     3190,
+     1792
+    ],
+    "wristFwdArm": [
+     3265,
+     1762
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 7.6,
+    "thighA": 65.4,
+    "hipFlexA": 73.0,
+    "kneeFlexA": 131.3,
+    "ankleA": 85.4,
+    "upperArmFwd": 13.2,
+    "elbowFlexFwd": 98.6,
+    "upperArmBack": -67.6,
+    "elbowFlexBack": 101.3
+   },
+   "notes": "Late stance; legB's knee not clear (blurred), no knee point."
+  },
+  {
+   "sourceFrame": 12,
+   "ground": 2089,
+   "feet": {
+    "legA": {
+     "down": false,
+     "toe": [
+      3741,
+      2034
+     ],
+     "confidence": "high"
+    }
+   },
+   "points": {
+    "shoulder": [
+     3631,
+     1707
+    ],
+    "hip": [
+     3618,
+     1857
+    ],
+    "kneeA": [
+     3746,
+     1897
+    ],
+    "ankleA": [
+     3696,
+     2017
+    ],
+    "toeA": [
+     3741,
+     2034
+    ],
+    "kneeB": [
+     3561,
+     1947
+    ],
+    "ankleB": [
+     3441,
+     2022
+    ],
+    "toeB": [
+     3441,
+     2069
+    ],
+    "elbowBackArm": [
+     3543,
+     1715
+    ],
+    "wristBackArm": [
+     3596,
+     1782
+    ],
+    "elbowFwdArm": [
+     3676,
+     1787
+    ],
+    "wristFwdArm": [
+     3716,
+     1727
+    ]
+   },
+   "pointsConfidence": "medium",
+   "angles": {
+    "trunkLean": 5.0,
+    "thighB": -32.3,
+    "hipFlexB": -27.3,
+    "kneeFlexB": 25.6,
+    "ankleB": 122.0,
+    "thighA": 72.6,
+    "hipFlexA": 77.6,
+    "kneeFlexA": 95.3,
+    "ankleA": 88.1,
+    "upperArmFwd": 29.4,
+    "elbowFlexFwd": 117.0,
+    "upperArmBack": -84.8,
+    "elbowFlexBack": 123.2
+   },
+   "notes": "legB's toe is blurred and ends 0-20 px above the ground: contact not decided, left out."
+  }
+ ],
+ "derived": {
+  "stanceS": 0.14,
+  "stanceRangeS": [
+   0.08,
+   0.2
+  ],
+  "stanceFrom": "legA: touchdown (2,3], toe-off [5,6) -> 3 intervals (2-4); legB: (8,9] to [11,13) -> about 4",
+  "duty": 0.29,
+  "dutyRange": [
+   0.17,
+   0.42
+  ],
+  "flightS": 0.123,
+  "flightFrom": "legA toe-off [5,6) to legB touchdown (8,9]: 3 intervals (2-4); frames 1,2,6,7,8 have both feet off",
+  "flightFractionPerStep": 0.25,
+  "supportPattern": "single support alternating with long flight: a sprint",
+  "jointRanges": {
+   "thigh": [
+    -36.4,
+    72.6
+   ],
+   "hipFlex": [
+    -30.3,
+    79.0
+   ],
+   "kneeFlexStanceMin": 3.8,
+   "kneeFlexSwingMax": 146.6,
+   "ankle": [
+    85.3,
+    122.0
+   ],
+   "trunkLean": [
+    5.0,
+    14.0
+   ],
+   "trunkLeanMean": 9.1,
+   "upperArm": [
+    -99.0,
+    31.0
+   ],
+   "elbowFlex": [
+    63.3,
+    126.4
+   ]
+  }
+ },
+ "comparison": [
+  "Cycle: plate about 0.49 s (catalogue 0.45 s) vs ours 0.727 s: a full-speed sprint is about 1.5x faster in cadence than our run.",
+  "Duty: plate 0.29 (0.17-0.42) vs ours 0.35: ours is a little higher, as expected for a slower run. Flight per step 0.25 of the cycle vs ours 0.15.",
+  "Thigh: plate -36 to +73 deg vs ours -6.5 to +57: same gap as plate 60 (no backward extension, less knee lift).",
+  "Knee: swing maximum 147 deg vs ours 109; stance minimum 4 deg (nearly straight at toe-off) vs ours 28.",
+  "Ankle: plate 85-122 deg vs ours 50-130: ours dorsiflexes far beyond anything seen (about 35 deg).",
+  "Trunk lean: plate 5-14 deg (mean 9) vs ours 11.7: agrees.",
+  "Arms: plate upper arm -99 to +31 deg (the back elbow rises to shoulder height) vs ours -45 to +19; elbow 63-126 deg vs ours 88-104. A sprint swings the arms twice as far as ours, with the elbow bent about 90-120.",
+  "Our human.run values: {\"motion\": \"human.run\", \"frames\": 8, \"fps\": 11, \"cycleS\": 0.727, \"duty\": 0.35, \"flightPerStep\": 0.15, \"lean\": 9, \"armSwing\": 32, \"elbow\": 75, \"sampled\": \"engine output sampled at 64 points per cycle (generateMotion via resolveSpec/compile/samplePoseAt), same angle definitions as the plate\", \"thigh\": [-6.5, 56.6], \"hipFlex\": [5.2, 68.3], \"kneeFlex\": [28.2, 109.0], \"ankle\": [49.8, 130.4], \"ankleRest\": 116.0, \"trunkLean\": [11.7, 11.7], \"upperArm\": [-44.8, 19.2], \"elbowFlex\": [88.3, 104.3]}"
+ ],
+ "findings": [
+  "Running full speed (nude): flight in frames 1-2 and 6-8, single support in 3-5 and 9-11. Duty about 0.29, flight per step about 0.25 of the cycle.",
+  "Observed cycle about 0.49 s (12 intervals at 41 ms), consistent with the catalogue's one full cycle (0.45 s). Successive same-foot contacts are not on the plate; the cycle rests on two opposite-foot touchdowns 6 intervals apart.",
+  "Not measured: stride length and speed (different cameras); the rear-view row; knees hidden behind the other thigh (legA in 4, 11; legB's knee in 11), legB in 12 (blurred), arms in 9-10. Hip and shoulder are estimated landmarks (+/-15 px)."
+ ]
+}

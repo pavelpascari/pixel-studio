@@ -1,0 +1,556 @@
+{
+ "source": "muybridge-1887-pl249",
+ "image": "https://iiif.digitalcommonwealth.org/iiif/2/commonwealth:70795v652/full/full/0/default.jpg",
+ "imageSize": [
+  4976,
+  3940
+ ],
+ "coordinates": "pixels in the full scan above, origin top left",
+ "figure": "human",
+ "by": "Claude (agent)",
+ "date": "2026-11-09",
+ "method": "Each lateral frame cropped from the full scan at 1.5-2x (hip region at 3-4x) with a grid labelled in scan pixels and raised contrast. Joint points are estimated joint centres, not skin landmarks: shoulder = centre of the humeral head under the deltoid; hip = greater trochanter, taken about 25-35 px in from the rear contour of the buttock at the level of the thigh's midline (the least certain point, about +-10 px); knee = centre of the knee between its front and back contours; ankle = centre of the malleolus; toe = tip of the foot; heel = back of the heel; head = top of the skull (crown). Every point set was drawn back onto its crop (dots + segments) and corrected until it sat on the joint; only points that passed are kept. Angles are computed by atan2 from these points; with a +-10 px hip, segment angles carry about +-5 deg. Heights are 'ground y minus point y' in scan pixels, with each frame's own ground (the sole line of the planted feet), because every frame comes from a different camera and the floor line differs by a few pixels between frames. The man faces RIGHT (forward = +x). Only the near leg is measured: the far leg is hidden behind it except for the far toes. 'hipRiseFromSeatedPx' is relative to 185 px, the mean seated hip height of frames 1-6. A standing hip height cannot be measured on this plate (he never stands laterally: by frames 9-10 he has turned and walks away from the camera), so lengths are not normalised to L; see findings for the conversion via plate 236.",
+ "frameBoxes": [
+  [
+   839,
+   1795,
+   1173,
+   2452
+  ],
+  [
+   1173,
+   1795,
+   1507,
+   2452
+  ],
+  [
+   1507,
+   1795,
+   1841,
+   2452
+  ],
+  [
+   1841,
+   1795,
+   2172,
+   2452
+  ],
+  [
+   2172,
+   1795,
+   2502,
+   2452
+  ],
+  [
+   2502,
+   1795,
+   2836,
+   2452
+  ],
+  [
+   2836,
+   1795,
+   3167,
+   2452
+  ],
+  [
+   3167,
+   1795,
+   3501,
+   2452
+  ],
+  [
+   3501,
+   1795,
+   3835,
+   2452
+  ],
+  [
+   3835,
+   1795,
+   4165,
+   2452
+  ]
+ ],
+ "frameBoxesNote": "lateral (bottom) row only, listed by source frame 1-10, numbered 1-10 left to right (handwritten numbers bottom left of each frame). The top row is the front view. Edges +-10 px.",
+ "timing": {
+  "intervalMs": 92,
+  "intervalSource": "muybridge-1887-catalogue",
+  "cyclesShown": 1,
+  "cyclesSource": "muybridge-1887-catalogue (fraction shown: 1, the whole action)",
+  "plateS": 0.83,
+  "computed": "9 intervals x 92 ms = 0.83 s for the whole plate",
+  "phases": {
+   "seatedStill": "frames 1-2 (0-0.09 s)",
+   "leanForward": "frames 3-7 (0.18-0.55 s)",
+   "seatOff": "between frames 7 and 8 (about 0.55-0.64 s)",
+   "riseAndStepAway": "frames 8-10 (0.64-0.83 s)"
+  }
+ },
+ "frames": [
+  {
+   "sourceFrame": 1,
+   "ground": 2403,
+   "points": {
+    "head": [
+     944,
+     1965
+    ],
+    "shoulder": [
+     920,
+     2068
+    ],
+    "hip": [
+     942,
+     2215
+    ],
+    "kneeNear": [
+     1110,
+     2238
+    ],
+    "ankleNear": [
+     1094,
+     2388
+    ],
+    "toeNear": [
+     1160,
+     2403
+    ],
+    "heelNear": [
+     1079,
+     2399
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 188,
+    "hipRiseFromSeatedPx": 3,
+    "crownHeightPx": 438,
+    "kneeDeg": 92,
+    "thighBelowHorizontalDeg": 7.8,
+    "shankForwardTiltDeg": 6.1,
+    "ankleAheadOfHipPx": 152,
+    "trunkLeanDeg": -8.5,
+    "hipDeg": 106
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Seated, leaning back against the chair back, hands resting on the thighs."
+  },
+  {
+   "sourceFrame": 2,
+   "ground": 2399,
+   "points": {
+    "head": [
+     1290,
+     1972
+    ],
+    "shoulder": [
+     1258,
+     2070
+    ],
+    "hip": [
+     1272,
+     2218
+    ],
+    "kneeNear": [
+     1440,
+     2242
+    ],
+    "ankleNear": [
+     1421,
+     2380
+    ],
+    "toeNear": [
+     1490,
+     2399
+    ],
+    "heelNear": [
+     1409,
+     2395
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 181,
+    "hipRiseFromSeatedPx": -4,
+    "crownHeightPx": 427,
+    "kneeDeg": 90,
+    "thighBelowHorizontalDeg": 8.1,
+    "shankForwardTiltDeg": 7.8,
+    "ankleAheadOfHipPx": 149,
+    "trunkLeanDeg": -5.4,
+    "hipDeg": 104
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Seated, as frame 1 (no visible change beyond measuring error)."
+  },
+  {
+   "sourceFrame": 3,
+   "ground": 2395,
+   "points": {
+    "head": [
+     1647,
+     1972
+    ],
+    "shoulder": [
+     1608,
+     2061
+    ],
+    "hip": [
+     1602,
+     2218
+    ],
+    "kneeNear": [
+     1770,
+     2242
+    ],
+    "ankleNear": [
+     1747,
+     2380
+    ],
+    "toeNear": [
+     1820,
+     2395
+    ],
+    "heelNear": [
+     1735,
+     2395
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 177,
+    "hipRiseFromSeatedPx": -8,
+    "crownHeightPx": 423,
+    "kneeDeg": 89,
+    "thighBelowHorizontalDeg": 8.1,
+    "shankForwardTiltDeg": 9.5,
+    "ankleAheadOfHipPx": 145,
+    "trunkLeanDeg": 2.2,
+    "hipDeg": 96
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Trunk comes upright off the chair back; head moves forward."
+  },
+  {
+   "sourceFrame": 4,
+   "ground": 2395,
+   "points": {
+    "head": [
+     2004,
+     1965
+    ],
+    "shoulder": [
+     1955,
+     2065
+    ],
+    "hip": [
+     1938,
+     2212
+    ],
+    "kneeNear": [
+     2097,
+     2240
+    ],
+    "ankleNear": [
+     2077,
+     2372
+    ],
+    "toeNear": [
+     2146,
+     2395
+    ],
+    "heelNear": [
+     2062,
+     2392
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 183,
+    "hipRiseFromSeatedPx": -2,
+    "crownHeightPx": 430,
+    "kneeDeg": 91,
+    "thighBelowHorizontalDeg": 10.0,
+    "shankForwardTiltDeg": 8.6,
+    "ankleAheadOfHipPx": 139,
+    "trunkLeanDeg": 6.6,
+    "hipDeg": 93
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Trunk leans forward past vertical, forearms forward over the knees."
+  },
+  {
+   "sourceFrame": 5,
+   "ground": 2399,
+   "points": {
+    "head": [
+     2362,
+     1965
+    ],
+    "shoulder": [
+     2322,
+     2058
+    ],
+    "hip": [
+     2280,
+     2212
+    ],
+    "kneeNear": [
+     2427,
+     2242
+    ],
+    "ankleNear": [
+     2397,
+     2372
+    ],
+    "toeNear": [
+     2466,
+     2399
+    ],
+    "heelNear": [
+     2385,
+     2395
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 187,
+    "hipRiseFromSeatedPx": 2,
+    "crownHeightPx": 434,
+    "kneeDeg": 89,
+    "thighBelowHorizontalDeg": 11.5,
+    "shankForwardTiltDeg": 13.0,
+    "ankleAheadOfHipPx": 117,
+    "trunkLeanDeg": 15.3,
+    "hipDeg": 86
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Leaning further forward; the shank starts tilting forward (knee moving over the toes)."
+  },
+  {
+   "sourceFrame": 6,
+   "ground": 2391,
+   "points": {
+    "head": [
+     2715,
+     1949
+    ],
+    "shoulder": [
+     2665,
+     2050
+    ],
+    "hip": [
+     2605,
+     2200
+    ],
+    "kneeNear": [
+     2742,
+     2240
+    ],
+    "ankleNear": [
+     2715,
+     2372
+    ],
+    "toeNear": [
+     2780,
+     2391
+    ],
+    "heelNear": [
+     2696,
+     2391
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 191,
+    "hipRiseFromSeatedPx": 6,
+    "crownHeightPx": 442,
+    "kneeDeg": 95,
+    "thighBelowHorizontalDeg": 16.3,
+    "shankForwardTiltDeg": 11.6,
+    "ankleAheadOfHipPx": 110,
+    "trunkLeanDeg": 21.8,
+    "hipDeg": 84
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Leaning forward about 22 deg; hips still on the seat (hip height unchanged within error)."
+  },
+  {
+   "sourceFrame": 7,
+   "ground": 2391,
+   "points": {
+    "head": [
+     3057,
+     1930
+    ],
+    "shoulder": [
+     3035,
+     2040
+    ],
+    "hip": [
+     2935,
+     2190
+    ],
+    "kneeNear": [
+     3080,
+     2234
+    ],
+    "ankleNear": [
+     3038,
+     2372
+    ],
+    "toeNear": [
+     3103,
+     2391
+    ],
+    "heelNear": [
+     3018,
+     2391
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 201,
+    "hipRiseFromSeatedPx": 16,
+    "crownHeightPx": 461,
+    "kneeDeg": 90,
+    "thighBelowHorizontalDeg": 16.9,
+    "shankForwardTiltDeg": 16.9,
+    "ankleAheadOfHipPx": 103,
+    "trunkLeanDeg": 33.7,
+    "hipDeg": 73
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "medium",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Largest lean (about 34 deg); hips begin to rise (+16 px, just above the +-10 px error), so seat-off is here or just after. The trunk also starts to turn away from the camera (more of the back visible)."
+  },
+  {
+   "sourceFrame": 8,
+   "ground": 2395,
+   "points": {
+    "head": [
+     3403,
+     1926
+    ],
+    "hip": [
+     3275,
+     2175
+    ],
+    "kneeNear": [
+     3411,
+     2234
+    ],
+    "ankleNear": [
+     3365,
+     2372
+    ],
+    "toeNear": [
+     3434,
+     2395
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 220,
+    "hipRiseFromSeatedPx": 35,
+    "crownHeightPx": 469,
+    "kneeDeg": 95,
+    "thighBelowHorizontalDeg": 23.5,
+    "shankForwardTiltDeg": 18.4,
+    "ankleAheadOfHipPx": 90
+   },
+   "confidence": {
+    "head": "high",
+    "shoulder": "not placed",
+    "hip": "medium (+-10 px)",
+    "knee/ankle/toe/heel": "high"
+   },
+   "notes": "Buttocks just above the seat (dark gap between buttock and seat); hips +35 px above the seated height. Knee still about 95 deg interior. Body turning: shoulder not placed."
+  },
+  {
+   "sourceFrame": 9,
+   "ground": 2395,
+   "points": {
+    "head": [
+     3705,
+     1873
+    ],
+    "hip": [
+     3625,
+     2125
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 270,
+    "hipRiseFromSeatedPx": 85,
+    "crownHeightPx": 522
+   },
+   "confidence": {
+    "head": "high",
+    "hip": "medium-low (rear-oblique view)"
+   },
+   "notes": "Rising and turning away; mostly a rear-oblique view. Only crown and hip (buttock, medium-low) recorded; legs not identifiable with confidence."
+  },
+  {
+   "sourceFrame": 10,
+   "ground": 2395,
+   "points": {
+    "head": [
+     4030,
+     1850
+    ],
+    "hip": [
+     3960,
+     2100
+    ]
+   },
+   "derived": {
+    "hipHeightPx": 295,
+    "hipRiseFromSeatedPx": 110,
+    "crownHeightPx": 545
+   },
+   "confidence": {
+    "head": "high",
+    "hip": "medium-low (rear-oblique view)"
+   },
+   "notes": "Nearly upright and walking away from the camera (near foot on its toes behind). Rear-oblique; only crown and hip recorded. The figure is farther from the camera than in frames 1-8, so its pixel heights are smaller than they would be laterally."
+  }
+ ],
+ "findings": [
+  "Numbering checked on the full scan: the lateral row is the BOTTOM row, numbered 1-10 left to right; the man faces right. He rises and, from frame 7 on, turns away from the camera and walks off, so frames 9-10 are rear-oblique and he is moving away from the lens.",
+  "Timing: the whole plate is 0.83 s. Forward lean starts at frame 3 (0.18 s); the hips stay on the seat (hip height 177-191 px, constant within error) until frame 6-7; seat-off falls between frames 7 and 8 (0.55-0.64 s), at the moment of largest trunk lean; by frame 10 (0.83 s) he is nearly upright and stepping. The lean-forward preparation takes about 0.4 s, the lift to near-upright about 0.2-0.3 s.",
+  "Trunk lean (hip-shoulder line from vertical, + forward): -8.5 (leaning back on the chair) at frame 1, then 2, 7, 15, 22 and 34 deg at frames 3-7. Hip (trunk-thigh) interior angle closes from 106 to 73 deg. The peak lean coincides with seat-off.",
+  "Knees: about 90 deg interior (89-95) from frame 1 to frame 8: the knee does not extend until the hips leave the seat. Meanwhile the shank tilts forward from 6 to 18 deg (the knee travels forward over the planted foot) and the hip slides forward so the ankle is 152 px ahead of the hip at frame 1 and 90 px at frame 8: the feet are effectively drawn back under the body before the lift.",
+  "Feet stay planted and flat through frames 1-8 (toe and heel on the ground line in every frame). Seated thigh 8 deg below horizontal (knee slightly lower than the hip), rising to about 17-24 deg below horizontal at seat-off as the hips go up.",
+  "Comparison with figures/human.json motions.sit (looping seated idle on an edge, 2.0 s, lower 19, legsForward 20, legsUp 23, kick 2): our sit has no rise, so this plate is the reference for a separate one-shot 'stand up'. Our seated knee (about 81 deg interior) is close to the plate's 89-92 deg; our thigh points 15 deg ABOVE horizontal (legsUp) where the plate's is 8 deg below; our trunk keeps its 6 deg rest lean where the plate's sitter leans back 5-9 deg against the chair. Our feet hang 4 units above the foot line and swing; the plate's are planted flat.",
+  "A one-shot 'stand up' transition, from this plate: about 0.8 s in total (8 frames at 10 fps, or 6 at 8 fps). Phase 1 (about half the time): hips stay put, trunk pitches forward from upright to about 30-35 deg, knees stay at about 90 deg while the shins tilt forward about 12 deg (knees over toes), arms reach forward. Phase 2 (seat-off at the peak lean): hips rise and the trunk straightens together, knees extend; most of the height is gained in the last 2-3 frames. Feet planted throughout; the turn and step away in frames 9-10 are this sitter's exit, not part of the rise.",
+  "Not measured: the far leg (hidden); shoulder in frames 8-10 and leg joints in frames 9-10 (body turned, rear-oblique view); a normalised standing hip height (he never stands laterally; at frame 10 he is farther from the lens, so his 295 px hip height understates it); seat height; hand positions. Scale differs from plate 236 (seated shank here 133-151 px vs 106-111 px), so pixel values must not be mixed between the two plates; use ratios and angles."
+ ]
+}

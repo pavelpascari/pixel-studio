@@ -184,7 +184,8 @@
     "duck": {"motion": "duck"},
     "peek": {"motion": "peek", "tracks": {"eye": {"show": [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1]}}},
     "climb": {"motion": "climb"},
-    "flap": {"motion": "flap"}
+    "flap": {"motion": "flap"},
+    "fly": {"motion": "fly", "tracks": {"neck": {"rot": [32, 32, 32, 32, 32, 32, 32, 32]}, "neckUp": {"rot": [16, 16, 16, 16, 16, 16, 16, 16]}, "head": {"rot": [-44, -44, -44, -44, -44, -44, -44, -44]}, "tail": {"rot": [12, 12, 12, 12, 12, 12, 12, 12]}, "wing": {"rot": [60, 10, -58, -20, 60, 10, -58, -20]}}}
   },
   "mixes": {"idle>waddle": {"frames": 3}, "waddle>idle": {"frames": 3}, "run>idle": {"frames": 3}},
   "style": {"outline": "selective", "light": -35, "elevation": 50, "ambient": 0.1, "curvature": 0.55, "tones": 6, "texture": 0.65, "dither": false, "innerLines": true, "contactShadow": true, "hueShift": 0.25}
