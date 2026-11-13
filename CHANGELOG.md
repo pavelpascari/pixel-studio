@@ -22,6 +22,11 @@ Until 1.0, minor versions may change the spec format.
   (peck, sit, honk). After a quiet spell it portals to an annotation in view (at most every 45 s). Click it and it honks;
   four clicks in 3 s and it puffs up, rushes at the cursor, honks, dives, and comes out on the far side from the cursor.
 - Ambient life: when scrolling stops, the goose paces a few steps (leaving prints), turns, pecks, or sits where it is.
+- Talking: a field-note tag over the goose's head (beside it where there is no room) says a line as things happen: a
+  greeting by time of day on arrival, "Ooh, a letter." when taking a subscription and "Signed for." back at the form
+  after delivering it, a word per poke ("Honk?", "Honk.", "Oi.", then "RIGHT."), "Watch it! Honk!" out of the angry
+  portal, a remark when it pops up at an annotation. Left alone on the logo for 7 s it sits down and snores ("z… zzz",
+  dashed tag) until anything moves. Decorative and aria-hidden, like the goose; off under reduced motion.
 
 ### Views: front, back and a three-quarter look
 - Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":

@@ -114,6 +114,16 @@
   #letter { position: fixed; left: 0; top: 0; z-index: 6; width: 22px; height: 15px; pointer-events: none; display: none; }
   #letter svg { display: block; width: 100%; height: 100%; }
   h3.sub { font-size: 20px; margin: 0 0 14px; }
+  /* what the goose says: a field-note tag with a tail pointing at the beak */
+  #say { position: fixed; left: 0; top: 0; z-index: 7; pointer-events: none; display: none; white-space: nowrap;
+    font: 500 13px/1.25 var(--mono); color: var(--ink); background: var(--paper); padding: 6px 9px;
+    border: 1.5px solid var(--ink); border-radius: 2px; box-shadow: 2px 2px 0 var(--ink); }
+  #say.on { display: block; }
+  #say::after { content: ''; position: absolute; width: 8px; height: 8px; background: var(--paper);
+    border: solid var(--ink); border-width: 0 1.5px 1.5px 0; left: var(--tail, 12px); bottom: -5.5px; transform: rotate(45deg); }
+  #say.side::after { left: -5.5px; bottom: auto; top: calc(50% - 4px); transform: rotate(135deg); }
+  #say.side.l::after { left: auto; right: -5.5px; transform: rotate(-45deg); }
+  #say.zz { box-shadow: none; border-style: dashed; color: var(--graphite); }
 
   /* footer */
   footer { margin-top: 120px; padding-bottom: 56px; }
@@ -314,6 +324,7 @@
   </div>
 </details>
 
+<span id="say" aria-hidden="true"></span>
 <span id="letter" aria-hidden="true"><svg viewBox="0 0 22 15"><rect x="0.75" y="0.75" width="20.5" height="13.5" fill="#fff" stroke="#171714" stroke-width="1.5"/><path d="M1 1l10 7.5L21 1" fill="none" stroke="#171714" stroke-width="1.5"/><circle cx="11" cy="9" r="2.6" fill="#D94B32"/></svg></span>
 <pixel-sprite id="goose" anim="idle" states="off" alt="" aria-hidden="true"></pixel-sprite>
 
@@ -493,7 +504,40 @@
     const beak = G.carry && goose.point('beak');
     letter.style.display = beak ? 'block' : 'none';
     if (beak) letter.style.transform = `translate(${Math.round(beak.x - 11 + G.face * 4)}px, ${Math.round(beak.y - 2)}px) rotate(${G.face * 8}deg)`;
+    placeSay();
   });
+
+  // ── Talking. say(text, ms) puts a field-note tag over the goose's head for a moment; sleep() keeps a "z… zz…
+  // zzz" going until woken. The tag sits above the head, or beside it where there is no room (on the logo).
+  // It is aria-hidden like the goose: nothing it says matters to reading the page.
+  const bubble = document.getElementById('say');
+  const S = { text: '', until: 0, zz: false };
+  function say(text, ms = 1800) {
+    if (reduce.matches) return;
+    S.zz = false; S.text = Array.isArray(text) ? text[Math.floor(Math.random() * text.length)] : text;
+    S.until = performance.now() + ms; bubble.textContent = S.text;
+  }
+  const hush = () => { S.text = ''; S.zz = false; };
+  function placeSay() {
+    const now = performance.now();
+    if (S.text && !S.zz && now >= S.until) S.text = '';
+    const gy = G.y - scrollY;
+    const show = S.text && goose.style.visibility !== 'hidden' && G.sink === 0 && gy > 0 && gy < innerHeight + size();
+    bubble.classList.toggle('on', !!show);
+    if (!show) return;
+    if (S.zz) { const z = 'z'.repeat(1 + (Math.floor(now / 650) % 3)); if (bubble.textContent !== z) bubble.textContent = z; }
+    const w = bubble.offsetWidth, h = bubble.offsetHeight;
+    const head = G.y - scrollY - (goose.groundOffset ?? size() * 0.9) + size() * 0.12;   // client y of the head's top
+    const b = goose.point?.('beak') ?? { x: G.x - scrollX + G.face * size() * 0.3, y: head + size() * 0.2 };
+    const side = head - h - 10 < 6;
+    let x, y;
+    if (!side) { x = b.x - (G.face > 0 ? 14 : w - 14); y = head - h - 10; }
+    else { x = G.face > 0 ? b.x + 12 : b.x - w - 12; y = b.y - h / 2 - 4; }
+    x = Math.max(6, Math.min(innerWidth - w - 6, x));
+    bubble.className = `on${side ? ` side${G.face < 0 ? ' l' : ''}` : ''}${S.zz ? ' zz' : ''}`;
+    bubble.style.setProperty('--tail', `${Math.max(6, Math.min(w - 16, b.x - x - 4))}px`);
+    bubble.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+  }
 
   // footprints: each landing (and each step of a short waddle) stamps prints; only the last 7 stay,
   // so scrolling leaves a short trail of where the goose has been, never a progress bar
@@ -522,7 +566,13 @@
   goose.addEventListener('ready', () => {
     if (reduce.matches) { const s = spot(home); G.x = s.x; G.y = s.y; face(1); place(); return; }
     const o = offRight(-0.1).at(); G.x = o.x; G.y = o.y; G.mode = 'away'; G.target = offRight(-0.1); place();
-    scene(async () => { await wait(700); await fly(scrollPerch(), 1.4); });
+    scene(async () => {
+      await wait(700);
+      if (await fly(scrollPerch(), 1.4)) {
+        const h = new Date().getHours();
+        say(h < 5 ? 'Up late?' : h < 12 ? 'Morning.' : h < 18 ? 'Afternoon.' : 'Evening.', 1600);
+      }
+    });
   }, { once: true });
 
   // ── Scene: in-page navigation. The page scrolls a little slower than a jump, and the goose sets off with it
@@ -590,6 +640,7 @@
     if (reduce.matches) return;
     scene(async (stale) => {
       if (!(await fly(subSpot)) || stale()) return;
+      say(['Post? I’ll take it.', 'Ooh, a letter.', 'Leave it with me.'], 1500);
       await honk(); if (stale()) return;
       G.carry = true;
       await wait(350);
@@ -600,8 +651,12 @@
       await wait(1800);                                // delivering
       const back = offLeft(0.25).at(); G.x = back.x; G.y = back.y;
       goose.style.visibility = '';
-      if (!stale()) await fly(scrollPerch(), 1.3);
-    });
+      // back to the form, where the reader is, to report
+      if (!stale() && await fly(subSpot, 1.3) && !stale()) {
+        say(['Delivered. Honk!', 'Signed for.', 'Done. No tip, I see.'], 2400);
+        await honk();
+      }
+    }, { stay: true });
   });
   email.addEventListener('input', () => email.removeAttribute('aria-invalid'));
 
@@ -611,7 +666,9 @@
   stampBtn.addEventListener('click', () => {
     stampBtn.classList.add('thump'); setTimeout(() => stampBtn.classList.remove('thump'), 140);
     if (reduce.matches) return;
-    scene(async (stale) => { if ((await fly(footPerch)) && !stale()) await honk(); });
+    scene(async (stale) => {
+      if ((await fly(footPerch)) && !stale()) { say(['Approved. HONK.', 'Stamped it myself.', 'Official goose business.'], 1800); await honk(); }
+    });
   });
   goose.addEventListener('spriteend', (e) => { if (e.detail.anim === 'honk' && G.mode === 'perched') goose.play(poseOf(G.target)); });
 
@@ -649,7 +706,12 @@
     honk: () => honk(),
     async sit() { goose.play('sit'); await wait(600); },
   };
-  async function emerge(t, act) {
+  const EMERGE = {
+    peck: ['What’s this?', 'Hm. Footnote.', 'Found a crumb.'],
+    sit: ['Nice spot.', 'I’ll read from here.'],
+    honk: ['Honk!', 'Read this bit.'],
+  };
+  async function emerge(t, act, words) {
     const at = spot(t);
     G.target = t; G.mode = 'portal'; G.x = at.x; G.y = at.y; G.sink = depth(); place();
     const hole = openPortal(at.x, at.y + 1);
@@ -663,6 +725,7 @@
     hole.close();
     settle(t);
     const name = act ?? (isPoint(t) ? t.act : t.dataset.do);
+    say(words ?? EMERGE[name] ?? 'Ta-da.', 2000);
     if (ACTS[name]) { await ACTS[name](); if (G.target === t) goose.play(poseOf(t)); }
   }
 
@@ -722,9 +785,25 @@
     }
   }
 
+  // ── Asleep on the logo. Left alone at the top of the page for a while, it sits down and snores in a tag;
+  // any scroll, key or pointer movement wakes it.
+  let asleep = false;
+  function wake() {
+    if (!asleep) return;
+    asleep = false; hush();
+    if (G.mode === 'perched') goose.play(poseOf(G.target));
+    say('Hm? Oh. Hello.', 1300);
+  }
+  for (const ev of ['scroll', 'pointermove', 'keydown', 'touchstart', 'pointerdown']) addEventListener(ev, wake, { passive: true });
+
   setInterval(() => {
     const now = performance.now();
-    if (reduce.matches || G.hold || G.mode !== 'perched' || now - lastScroll < 1300) return;
+    if (reduce.matches || G.hold || G.mode !== 'perched' || now - lastScroll < 1300 || asleep) return;
+    if (G.target === home && now - lastInput > 7000) {
+      asleep = true; goose.play('sit');
+      S.zz = true; S.text = 'z';
+      return;
+    }
 
     // ── Scene: idle portal. After a longer quiet spell (no input for 9 s), now and then (at most every 45 s)
     // the goose dives into a portal and pops up at an annotation in view to peck at it, sit by it or honk.
@@ -758,7 +837,10 @@
     cursor = { x: e.clientX, y: e.clientY };
     const now = performance.now();
     pokes = pokes.filter((t) => now - t < 3000).concat(now);
-    if (pokes.length < 4) { if (G.mode === 'perched' && !G.hold) honk(); return; }
+    if (pokes.length < 4) {
+      if (G.mode === 'perched' && !G.hold) { say(['Honk?', 'Honk.', 'Oi.'][pokes.length - 1], 1100); honk(); }
+      return;
+    }
     pokes = []; angry = true;
     scene(async () => {
       try {
@@ -767,6 +849,7 @@
         if (G.mode === 'perched') {
           face(Math.sign(cursor.x + scrollX - G.x) || G.face);
           goose.play('flap');
+          say('RIGHT.', 900);
           await wait(450);
           const cx = cursor.x + scrollX, dir = Math.sign(cx - G.x) || G.face;
           const r = lineOf(G.target)?.getBoundingClientRect?.();
@@ -792,7 +875,7 @@
         const y0 = G.y;
         const t = best ? pin(best.e, fx, { face: toward }) : { land: true, pose: 'idle', face: toward, at: () => ({ x: fx, y: y0 }) };
         await wait(450);
-        await emerge(t, 'honk');
+        await emerge(t, 'honk', ['Watch it! Honk!', 'Watch it. HONK.']);
       } finally { angry = false; goose.rate = 1; G.sink = 0; goose.style.visibility = ''; }
     }, { stay: true });
   });
@@ -804,7 +887,7 @@
     face(G.face); place();
   });
   addEventListener('resize', place);
-  window.pp = { G, goTo, scrollPerch, scene, dive, emerge };   // for tests
+  window.pp = { G, goTo, scrollPerch, scene, dive, emerge, say, S, isAsleep: () => asleep };   // for tests
 </script>
 </body>
 </html>
