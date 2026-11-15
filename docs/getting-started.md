@@ -7,11 +7,11 @@ browser. Every command below was run as written.
 
 ```bash
 mkdir my-site && cd my-site && npm init -y
-npm i github:pavelpascari/pixel-studio
+npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0
 ```
 
-Pixel Studio has no dependencies, so this installs one package. (It is not on npm yet; when it is, this becomes
-`npm i pixel-studio@alpha`.) The package brings the engine, the `pixel` command, the web components, the figure
+Pixel Studio has no dependencies, so this installs one package. The `#v0.2.0-alpha.0` pins the alpha release; leave
+it off to follow `main`. (It is not on npm yet.) The package brings the engine, the `pixel` command, the web components, the figure
 library and the example characters in `node_modules/pixel-studio/examples/`.
 
 ## 2. Describe a character

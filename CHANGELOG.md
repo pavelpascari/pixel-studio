@@ -6,6 +6,11 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.0] - 2026-11-15
+
+The first alpha. Install from GitHub: `npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0`.
+Old event names, the `state` attribute and `actor.state` still work in this alpha and go away after it.
+
 ### Breaking: event names, load status, exports
 - **One event naming scheme.** Every event the runtime fires is now `pixel-<name>`, and every one bubbles and is
   composed (it crosses shadow roots). The details are unchanged. The old names still fire, with their old options, for

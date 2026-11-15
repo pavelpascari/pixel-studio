@@ -11,13 +11,13 @@ agent ──JSON rig──▶ engine (SDF raster + pixel-art shader) ──▶ b
 Zero dependencies. Plain ES modules, no build step. Node ≥ 20 for the CLI; any current browser for the runtime.
 MIT licensed.
 
-> **Status: alpha.** The engine, CLI and web components work and are tested, and every page here runs on them. The
+> **Status: alpha (`0.2.0-alpha.0`).** The engine, CLI and web components work and are tested, and every page here runs on them. The
 > spec and bundle formats may still change before 1.0; each change is listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Five minutes to a goose on your page
 
 ```bash
-npm i github:pavelpascari/pixel-studio          # one package, no dependencies (npm release to follow)
+npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0   # one package, no dependencies
 ```
 
 Make a character by changing an example (`my-goose.json`):
