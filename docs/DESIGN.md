@@ -7,7 +7,7 @@ A character animation that lives on a web page has to be:
 | Need on the page | Consequence for the system |
 |---|---|
 | Crisp at any CSS size, no blur | Integer-scaled pixels, `image-rendering: pixelated`, canvas sized to the sprite's native resolution |
-| Tiny and fast (hero, buttons, 404 pages, docs) | Bake to a sprite sheet (PNG) + a few hundred bytes of metadata; a ~2 KB runtime; no framework |
+| Tiny and fast (hero, buttons, 404 pages, docs) | Bake to a sprite sheet (PNG) + a few hundred bytes of metadata; one small runtime file (`pixel-sprite.js`, about 15 KB gzipped); no framework |
 | Drop-in embed | One custom element: `<pixel-sprite src="fox.bundle.json" anim="idle">` |
 | Interactive | Named animations + `hover-anim` / `click-anim`, a `play()` API, `spriteend` events |
 | Responsive | Several resolutions per character (like `srcset`): the runtime picks the one that fits the rendered size |
@@ -85,7 +85,8 @@ Pixel-art craft baked in, so agents don't need to know it:
 
 An agent needs to *see* what it drew. The PoC gives three loops:
 
-1. **CLI (any coding agent, e.g. Claude Code)** — `node bin/pixel.mjs validate|render|preview|ascii|bundle`.
+1. **CLI (any coding agent, e.g. Claude Code)** — `node bin/pixel.mjs validate|preview|ascii|render|export|bundle|resolve|where|figures|brief`
+   (see [cli.md](cli.md)).
    `preview` writes a contact sheet PNG (all animations × LOD tiers) the agent can look at;
    `ascii` prints a frame as text for agents without vision. Validation errors carry JSON paths.
 2. **Studio UI (human + agent)** — live JSON editor, animated preview, LOD strip, sprite sheet,
@@ -99,13 +100,19 @@ An agent needs to *see* what it drew. The PoC gives three loops:
 
 - Frame-by-frame hand editing / pixel painting tools (a later "touch-up layer" could store per-frame
   pixel overrides on top of the rig).
-- Mesh deformation, palette-swap skins, tweened easing curves editor. (Skeletal IK was on this list; it now exists as `reach` constraints and the figure motion models, see [figures.md](figures.md).)
+- Mesh deformation, tweened easing curves editor. (Skeletal IK and palette-swap skins were on this list; IK now exists
+  as `reach` constraints and the figure motion models, see [figures.md](figures.md), and skins as patches of
+  materials and parts stored as recolours in the bundle, see [SPEC.md](SPEC.md#skins).)
 - Server, accounts, storage. Everything is static files + Node with zero dependencies.
 
 ## 6. Open questions for after the PoC
 
-- Is the rig expressive enough for non-humanoids (wings, tails, tentacles) — add chains/bones?
+- ~~Is the rig expressive enough for non-humanoids (wings, tails, tentacles) — add chains/bones?~~ Resolved: figures
+  are bone chains with `wings`, `tail` and four-legged roles, `follow` springs for trailing parts, and plug-in motion
+  models ([figures.md](figures.md)).
 - Should agents get a **touch-up pass** (pixel overrides per LOD tier) for faces, where geometry
   rasterization is weakest at 16px?
 - Palette constraints per site (brand palettes, limited global palette across characters)?
-- Export targets beyond the web component: GIF/APNG, CSS `steps()` sprite, Lottie-like JSON.
+- ~~Export targets beyond the web component~~ Partly resolved: `pixel export` writes a sheet PNG with Aseprite JSON
+  (Phaser, PixiJS) and `pixel render` a plain sheet with metadata. GIF/APNG, a CSS `steps()` sprite and Lottie-like JSON
+  remain open.

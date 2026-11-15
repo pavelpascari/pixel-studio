@@ -1,12 +1,15 @@
 # JavaScript API reference
 
 This is the reference for the Pixel Studio engine's JavaScript API: every export of
-`src/core/index.js`, plus `encodePNG` from `src/node/png.js`.
+`src/core/index.js`, plus `encodePNG` from `src/node/png.js`. The web runtimes (`pixel-studio/runtime`,
+`pixel-studio/stage`) are documented in [runtime.md](runtime.md) and [stage.md](stage.md).
 
 - The engine is plain ES modules with zero dependencies. The same code runs in Node (≥ 20, per
   `package.json` `engines`) and in modern browsers.
 - Import it by path, or by package name when it is installed (`package.json` has an `exports` map:
-  `pixel-studio`, `pixel-studio/runtime`, `pixel-studio/node/png`). It is not published to npm yet.
+  `pixel-studio`, `pixel-studio/runtime`, `pixel-studio/stage`, `pixel-studio/node/png`). It is not
+  published to npm yet; install it from GitHub with `npm i github:pavelpascari/pixel-studio` (see
+  [getting-started.md](getting-started.md)).
 
   ```js
   import { validate, compile, renderSheet } from './src/core/index.js';  // engine (browser + Node)
@@ -55,7 +58,7 @@ Units and conventions used throughout:
 - [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`
 - [Game-engine export](#game-engine-export): `exportSheet`
 - [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `TEXTURES`, `SHAPE_TYPES`
-- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes`
+- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes` and `paletteOf`
 - [Internal helpers](#internal-helpers)
 
 ## Typical pipeline
@@ -307,7 +310,7 @@ Returned by [`renderSheet`](#rendersheet). Note `width`/`height` here versus `w`
 ```
 
 `AnimationMeta` is what [`animationMeta`](#animationmeta) returns: `frames`, `fps`, `loop`, and the
-optional `speed`, `speedY`, `wall`, `events` and `durations`.
+optional `speed`, `speedY`, `wall`, `events`, `durations` and `mix`.
 
 ### Bundle
 
@@ -319,11 +322,12 @@ Returned by [`buildBundle`](#buildbundle); consumed by `<pixel-sprite>` ([runtim
   name: string,
   size: [w, h],                       // the spec canvas in units (speed → px/s)
   ground: number,                     // y of the foot line in units
-  animations: { [name]: { row, frames, fps, loop, speed?, speedY?, wall?, events?, durations? } },  // sheet meta.animations
+  animations: { [name]: { row, frames, fps, loop, speed?, speedY?, wall?, events?, durations?, mix? } },  // sheet meta.animations
   skins?: string[],                   // skin names, when the spec has skins
   states?: object,                    // the state machine, when the spec has one
   points?: { [point]: { [anim]: [x, y, rotDeg][] } },  // per frame, in units (see bakePoints)
-  variants: [ { res, lod, frameW, frameH, image: string, skin?: string } ],
+  skinPoints?: { [skin]: { [point]: { [anim]: [x, y, rotDeg][] } } },  // only skins whose points differ
+  variants: [ { res, lod, frameW, frameH, image?: string, skin?: string, recolor?, overlay? } ],  // image is always set on default-look variants
 }
 ```
 
@@ -362,7 +366,7 @@ What it reports, from `src/core/spec.js`:
   `parts`, missing or duplicate ids, bad `pivot`/`z`/`tip`/`follow`, unknown or cyclic `parent`; parts
   without shapes (except figure bones, which have a `tip`); unknown shape types, missing required
   shape fields, polygons with fewer than 3 points, bad `op`/`profile`, missing or unknown `material`;
-  `frames` not an integer 1..64, `fps` not in (0, 60], non-numeric `speed`, `speedY` or `wall`; events
+  `frames` not an integer 1..64, `fps` not in 1..60, non-numeric `speed`, `speedY` or `wall`; events
   that are not `{frame, name}` with `frame` inside the animation; `holds` keys that are not frame
   indices or values not in (0, 16]; tracks on unknown parts, unknown track properties, malformed track
   values; malformed `reach` constraints; unknown `style.outline`.
@@ -370,9 +374,14 @@ What it reports, from `src/core/spec.js`:
   `"pivot"` or `"tip"` (`"tip"` only on bones); `ground` outside `0..size[1]`; `skins` that are not
   objects, that change anything but `parts`, `materials`, `materialMap` and `style`, or whose patched
   spec does not validate (its errors are reported under `$.skins.<name>`); a `states` machine with no
-  `nodes`, nodes playing unknown animations, `then` naming an unknown node, unknown `initial`,
-  transition `from`/`to` nodes, `when` conditions that cannot be read or name unknown inputs, and
-  interactions whose `on` is not `click`/`enter`/`leave` or that `fire`/`set` unknown inputs.
+  `nodes`, nodes playing unknown animations, a node `rate` that is neither a speed in (0, 4] nor an
+  input name, `random` fidgets that are not an array or name unknown animations, `then` naming an
+  unknown node, unknown `initial`, transition `from`/`to` nodes, a transition `at` that is not a
+  string, `when` conditions that cannot be read or name unknown inputs, and interactions whose `on` is
+  not `click`/`enter`/`leave`/`burst`/`calm` or that `fire`/`set` unknown inputs.
+- **Errors for `mixes`**: `mixes` not an object; a key that is not `"from>to"`, names an unknown
+  animation, or names the same animation twice; a value that is not an object; `frames` not a whole
+  number 1..8; `ease` not `linear`/`smooth`; `fps` not in 1..60.
 - **Warnings**: unknown keys at any level (with a did-you-mean suggestion when one is close),
   materials no shape uses, and shapes lying entirely outside the canvas at rest (checked only while
   there are no errors yet).
@@ -475,7 +484,7 @@ const spec = await resolveSpec({ figure: 'goose' }, {     // no parts: the bare 
   loadFigure: (name) => readJSON(`figures/${name}.json`),
   warn: (path, message) => notes.push(`${path}: ${message}`),
 });
-console.log(spec.name, Object.keys(spec.animations));     // goose skeleton [ 'idle', 'walk', 'run', 'sneak', 'jump', 'fall', 'sit', 'duck', 'peek', 'climb' ]
+console.log(spec.name, Object.keys(spec.animations));     // goose skeleton [ 'idle', 'walk', 'run', 'sneak', 'jump', 'fall', 'sit', 'duck', 'peek', 'climb', 'rush', 'flap', 'honk', 'fly' ]
 console.log(compile(spec).animations.walk.speed);         // 23.21 (units per second)
 
 try {
@@ -607,6 +616,24 @@ Expands a spec's `figure` into a plain spec with [`expandFigure`](#expandfigure)
 | `{ "use": "goose", "bones": {...}, "scale": n, "offset": [dx, dy], "origin": [x, y] }` | Load by name and fit it (see `expandFigure`'s `fit`). |
 | An object with a `bones` array | An inline figure. It is used as is; fitting keys on it are not applied. |
 
+**Views.** A spec may also have `views`: the same character seen from other angles, each dressing its
+own figure, for example `{ "front": { "figure": "goose-front", "parts": [...], "animations": {...},
+"look": { "part": "head", "replaces": "head" } } }` (see `examples/goose-root.json`). A view name is a
+word such as `front` or `back` (not `side`, the main view). Each view's figure is expanded like the main
+one with the main `size`; its parts join the spec with the view name in front (`front.body`) and are
+hidden except in that view's animations. `resolveFigure` adds, per view:
+
+- `<animation>@<view>` for each of the view's animations (`idle@front`; without `animations`, one per
+  motion of the view's figure);
+- `turn@<view>`, a 4-frame one-shot at 12 fps from the side to the view, and `unturn@<view>`, the same
+  turn reversed;
+- with `look`, `look@<view>`: the side `idle` with the view's part (and its children) shown in place of
+  the side part `replaces`, a three-quarter view. The turns then pass through it.
+
+The figure's `points` on a view become `<point>@<view>`, which [`bakePoints`](#bakepoints) uses for that
+view's animations. The result has no `views` key. View errors (no `figure`, no `parts`, a bad `look`)
+are reported under `$.views.<name>`.
+
 **Returns** a promise of a plain spec.
 
 **Throws** (rejects with) an `Error` with `.errors`:
@@ -614,7 +641,8 @@ Expands a spec's `figure` into a plain spec with [`expandFigure`](#expandfigure)
 - `[{ path: '$.figure', message: 'cannot load figure "<name>": ...' }]` when `loadFigure` fails;
 - `[{ path: '$.figure', message: 'figure must be a name like "goose", ...' }]` when the figure is not
   a name, a `{use}` object or an object with `bones`;
-- any error from `expandFigure`.
+- any error from `expandFigure`;
+- errors in `views`, under `$.views`.
 
 ```js
 import { readFileSync } from 'node:fs';
@@ -622,10 +650,10 @@ import { resolveFigure } from './src/core/index.js';
 
 const loadFigure = (name) => JSON.parse(readFileSync(`figures/${name}.json`, 'utf8'));
 try {
-  await resolveFigure({ figure: 'goose', animations: { fly: { motion: 'fly' } } }, loadFigure);
+  await resolveFigure({ figure: 'goose', animations: { swim: { motion: 'swim' } } }, loadFigure);
 } catch (e) {
-  console.log(e.errors[0].path);   // $.animations.fly.motion
-  console.log(e.errors[0].message); // unknown motion "fly" (this figure has: idle, walk, run, sneak, jump, fall, sit, duck, peek, climb; models: gait, idle, pose, hop, jump, climb, fall, sit)
+  console.log(e.errors[0].path);   // $.animations.swim.motion
+  console.log(e.errors[0].message); // unknown motion "swim" (this figure has: idle, walk, run, sneak, jump, fall, sit, duck, peek, climb, rush, flap, honk, fly; models: gait, idle, pose, hop, jump, climb, fall, sit)
 }
 ```
 
@@ -699,7 +727,7 @@ const spec = expandFigure({
 
 const beak = spec.parts.find((p) => p.id === 'beak');
 console.log(beak.parent, beak.z);                       // head 6.5
-console.log(spec.animations.walk.frames, spec.animations.walk.speed); // 8 20.16
+console.log(spec.animations.walk.frames, spec.animations.walk.speed); // 8 17.86
 console.log(validate(spec).errors.length);              // 0
 console.log(spec.animations.walk.events);               // [ { frame: 0, name: 'footstep', data: { leg: 'legNear' } }, { frame: 4, ... legFar } ]
 console.log(spec.ground, Object.keys(spec.points));     // 91.45 [ 'beak', 'head', 'tail' ]   (from the figure, fitted)
@@ -760,8 +788,13 @@ in `compiled.style` or `overrides` are skipped, so you can pass optional CLI-sty
 | `overrides` | object | `{}` | Any [resolved style](#resolved-style) key, plus `lod`. |
 
 `lod` is `Number(overrides.lod) || lodForRes(res)`; a `lod` key in `compiled.style` is ignored.
-`overrides.lod` must be 1, 2 or 3: no other value is checked, and any other value makes later
-renders produce garbage.
+A falsy `overrides.lod` (`0`, `undefined`) means "not set".
+
+**Throws** `Error('lod must be 1, 2 or 3 (got <lod>)')` for any other `overrides.lod`. Other
+overrides follow the rules of a spec's `style` and throw a readable error when they do not, for
+example `tones must be a whole number 2..6 (got 0)`: `tones` a whole number 2..6; `light`,
+`elevation`, `ambient`, `curvature`, `texture` and `hueShift` finite numbers; `outline` `none`, `dark`
+or `selective`; `dither`, `innerLines`, `contactShadow`, `snap` and `flip` booleans.
 
 **Returns** a [resolved style](#resolved-style).
 
@@ -829,7 +862,8 @@ Renders every frame of one animation with one resolved style.
 
 **Returns** `{ anim, style, frames }`, with `frames.length === anim.frames`.
 
-**Throws** `Error('unknown animation "<name>" (have: a, b, ...)')`.
+**Throws** `Error('unknown animation "<name>" (have: a, b, ...)')`, `Error('res must be 1..512 pixels (got <res>)')`
+for a `res` outside 1..[`MAX_RES`](#constants), and the [`resolveStyle`](#resolvestyle) errors for bad overrides.
 
 ```js
 import { compile, renderAnimation } from './src/core/index.js';
@@ -1491,7 +1525,7 @@ described in [runtime.md](runtime.md).
 | `options.views` | string[] \| false | all | Which extra views to ship (`["front"]`); `[]` or `false` leaves only the main (side) view. Their animations (`idle@back`, `turn@back`, …) are dropped before rendering. Each view adds about a full set of animations to the sheets. |
 | `options.deltas` | boolean | `true` | Store a skin as a change to the default sheet (`recolor`, `overlay`) when that is smaller than its own sheet. See [Bundle](#bundle). |
 
-**Returns** a promise of a bundle. `animations` comes from the smallest resolution's sheet meta. `skins`, `states` and `points` are present only when the compiled spec has them.
+**Returns** a promise of a bundle. `animations` comes from the smallest resolution's sheet meta. `skins`, `states` and `points` are present only when the compiled spec has them. `skinPoints` holds the baked points of each skin whose table differs from the default one (a skin that moves the parts points ride on); it is absent when no skin does.
 
 **Errors**: a missing `encode` rejects immediately with `buildBundle needs an encode(w, h, rgba) function ...`.
 Rendering errors propagate.
@@ -1557,7 +1591,8 @@ console.log(JSON.stringify(bakePoints(c)));
 // {"hand":{"raise":[[70,50,0],[64.14,35.86,-45],[50,30,-90]]}}
 ```
 
-Points are baked from the default look only; skin variants share the same table.
+`buildBundle` also bakes each skin (`compiled.skins.<name>`) and stores the tables that differ from
+the default one under `bundle.skinPoints`.
 
 ## Game-engine export
 
@@ -1588,7 +1623,7 @@ and `json`:
 | `animations` | PixiJS: animation name → its frame keys in order. |
 | `meta.frameTags` | One tag per animation: `{ name, from, to, direction: "forward", color }`, plus `repeat: "1"` when the animation does not loop. Phaser ignores `repeat`. |
 | `meta.slices` | One per attachment point: `{ name, color, keys: [{ frame, bounds: { x, y, w: 1, h: 1 } }] }`, one key per frame, bounds in frame pixels (from [`bakePoints`](#bakepoints)). |
-| `meta.pixelStudio` | `{ name, res, lod, size, ground, animations: { [name]: { fps, loop, speed?, speedY?, wall?, events? } } }`. `ground` is `compiled.ground` (it can be `null`; there is no pixel-scan fallback here). |
+| `meta.pixelStudio` | `{ name, res, lod, size, ground, animations: { [name]: { fps, loop, speed?, speedY?, wall?, events? } } }`. `ground` is `compiled.ground`, or, when the spec has none, the bottom of the lowest opaque row of the first frame, in units (the same fallback as `buildBundle`). |
 | `meta` (other) | `app`, `version`, `image`, `format: "RGBA8888"`, `size: { w, h }`, `scale: "1"`, `layers: []`. |
 
 ```js
@@ -1673,6 +1708,7 @@ console.log(buildRamp('#c8692e', 5, { hueShift: 0 }).map(toHex)[2]); // #c8692e
 | `DETAIL_PRESETS` | see [above](#detail_presets) | Shader settings per detail level. |
 | `DETAIL_NAMES` | `{ 1: 'icon', 2: 'sprite', 3: 'portrait' }` | Detail level names. |
 | `BUNDLE_FORMAT` | `'pixel-sprite/1'` | Bundle format tag. |
+| `MAX_RES` | `512` | The largest frame height `renderAnimation` (and so `renderSheet`, `buildBundle`, `exportSheet`) renders. |
 
 These are plain arrays and objects; they are not frozen. Do not modify them: `validate` and the
 renderer read the same objects.
@@ -1731,6 +1767,27 @@ const png = await pngBytes(sheet.width, sheet.height, sheet.rgba, deflate);
 Sheets come out 35–45% smaller than with `canvas.toDataURL()` (which writes RGBA). The studio uses
 this for its bundles.
 
+### `paletteOf`
+
+```ts
+paletteOf(rgba: Uint8Array | Uint8ClampedArray): { colours: number[], idx: Uint8Array } | null
+```
+
+**Low-level.** The palette `pngBytes` uses for indexed PNGs. `colours` are the image's distinct colours
+as `0xRRGGBBAA` numbers, with every fully transparent pixel counted as one colour (`0`) and colours that
+are not fully opaque listed first; `idx` holds each pixel's index into `colours`. Returns `null` when
+the image has more than 256 colours.
+
+```js
+import { createImage, paletteOf } from './src/core/index.js';
+
+const img = createImage(3, 1, [255, 0, 0, 255]);
+img.rgba.set([0, 0, 0, 0], 4);                 // middle pixel transparent
+const { colours, idx } = paletteOf(img.rgba);
+console.log(colours.map((c) => c.toString(16).padStart(8, '0')), idx);
+// [ '00000000', 'ff0000ff' ] Uint8Array(3) [ 1, 0, 1 ]
+```
+
 ## Internal helpers
 
 The source modules export more than `src/core/index.js` re-exports. These are internal: they are not
@@ -1744,6 +1801,8 @@ part of the public API and may change or disappear without notice.
 | `color.js` | `rgbToHsl`, `hslToRgb`, `rgbToHsv`, `hsvToRgb`, `baseIndex`, `darken` |
 | `image.js` | `checker` |
 | `motion.js` | `OVERSAMPLE` (4 samples per frame in generated tracks) |
+| `shapes.js` (tables) | `SHAPE_REQUIRED` (required numeric keys per shape type) and `SHAPE_KEYS` (other allowed keys per type); plug-in shapes are added to both |
+| `bundle.js` | `keepViews(compiled, views)` (the compiled spec without the views not listed; `buildBundle`'s `views` option), `skinDelta(base, skin)` (a skin sheet as `recolor` + `overlay`, or `null`), `groundFromPixels(sheet, size)` (the fallback foot line used by `buildBundle` and `exportSheet`) |
 | `spec.js` | `skinSpec(spec, patch)`: the plain spec a skin produces (the spec without `skins` and `states`, merged with the patch by `mergeVariant`); `compile` and `validate` use it |
 
 ## Plug-ins

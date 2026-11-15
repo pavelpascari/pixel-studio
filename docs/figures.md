@@ -32,7 +32,7 @@ The motions after the dot are for characters that live on a web page ([stage.md]
 falling, sitting on an edge, ducking and peeking behind things, climbing a card's side.
 
 Each figure also defines **attachment points** (`points`: goose `beak` `head` `tail`; human `head` `handNear` `handFar`;
-dog `nose` `head` `tail`; chibi `head` `handL` `handR`; blob `top`), baked per frame into bundles, and its **foot line**
+dog `nose` `head` `tail`; goose-front `beak` `head`; chibi `head` `handL` `handR`; blob `top`), baked per frame into bundles, and its **foot line**
 (`ground`: the lowest toe, or the shadow's line), so pages can stand a character exactly on an element.
 
 ```bash
@@ -45,8 +45,9 @@ The figure viewer (`studio/figures.html`) plays each motion smoothly between fra
 the motion's speed, leaves trails where the feet touch down (a planted foot leaves a dotted line that moves
 away with the ground at exactly the ground's speed), and can overlay every frame (onion skin).
 
-Every example in `examples/` is built on a figure: the geese on `goose`, `fox` on `dog`, `pip` and `robot` on
-`chibi`, `slime` on `blob`.
+Every example in `examples/` is built on a figure: the geese on `goose` (with `goose-front` for their front and back
+views; `goose-greylag` fitted to its own proportions), `fox` on `dog`, `pip` and `robot` on `chibi`, `slime` on
+`blob`, and `clawd` on an inline figure of its own.
 
 ## Using a figure
 
@@ -110,7 +111,8 @@ library gives them a lower `z`, so they read as behind the body.
 
 `{"motion": "<name>"}` uses one of the figure's motions. Any key next to it overrides that motion's
 parameters (`frames`, `fps`, `stride`, `crouch`, `head`, …). `"motion"` can also be a model name
-(`"gait"`, `"idle"`, `"pose"`, `"hop"`) with all parameters given inline. With **no `animations`** the
+(`"gait"`, `"idle"`, `"pose"`, `"hop"`, `"jump"`, `"climb"`, `"fall"`, `"sit"`; see [Motions](#motions)) with all
+parameters given inline. With **no `animations`** the
 character gets every motion of its figure.
 
 Animations without `motion` are ordinary hand-keyed animations and are left alone.
@@ -194,7 +196,7 @@ in-place motions have no speed.
 
 ## Motions
 
-The figure's motions are presets for eight models.
+The figure's motions are presets for these models (plug-ins can add more with `registerMotion`).
 
 | model | what it makes | events |
 |---|---|---|
@@ -220,17 +222,17 @@ with `"events": false`.
 | `speed` | gait, hop | | alternative to `stride`: gait stride = speed × duty × cycle time |
 | `duty` | gait, hop | 0.6 (hop 0.4) | fraction of the cycle a foot (or the body) is on the ground. Walk 0.6–0.65, trot 0.45, run 0.35–0.4 |
 | `lift` | gait | 3 | foot clearance during swing (units) |
-| `bob` | gait | 0 | hip rise and fall (units) |
+| `bob` | gait, fall | 0 (fall 0.6) | hip rise and fall (units); in `fall`, twice per cycle |
 | `bounce` | gait | `"vault"` | `"vault"`: highest at mid-stance (walking). `"spring"`: lowest at mid-stance, highest in flight (running, trotting) |
 | `crouch` | gait, idle | 0 | lower the hips (units) |
-| `lean` | gait, hop | 0 | gait: pitch forward (deg). hop: how far the body tips into the jump |
+| `lean` | all | 0 (jump 8) | pitch forward (deg; negative leans back, as in `climb`). hop: how far the body tips into the jump. jump: the tip into the crouch and launch |
 | `rock` | gait, idle | 0 | side view: body roll twice per cycle (the waddle). Front view: roll toward the standing foot |
 | `shift` | gait (front) | 0 | sideways weight shift over the standing foot (units) |
 | `toeOff` | gait | 0 | heel lift at the end of stance (deg) |
 | `toeCurl` | gait | 0 | toes/paws folding during swing (deg) |
 | `armSwing` | gait | 0 | arm swing amplitude (deg); front view: how much arms foreshorten |
-| `elbow` | gait | 0 | elbow bend (deg) |
-| `tail` | gait, idle | 0 | tail sway (deg), a travelling wave down the tail chain |
+| `elbow` | all | 0 | elbow bend (deg) |
+| `tail` | all | 0 | tail sway (deg), a travelling wave down the tail chain |
 | `phases` | gait | from the rig | per-leg timing, keyed by the first bone of the leg's chain: `{"thighHindNear": 0, "armForeFar": 0, ...}` |
 | `reach` | gait | 0.97 | how straight a planted leg may get, as a fraction of its length; the hips are lowered if needed |
 | `breathe` | idle | 0 | hip rise and fall (units) |
@@ -350,7 +352,8 @@ to `rot` when a frame is sampled (`samplePose`). Because it reacts to the actual
 works with hand-keyed animations as well as motions.
 
 Good uses: tails (`tail`, `tail2` with slightly different frequencies), ears, wings at rest, scarves,
-hoods, antennae, pompoms. In the library: goose tail and wing, dog tail, tail2 and ear, human hands, the blob's top.
+hoods, antennae, pompoms. In the library: goose tail and wing, goose-front tail and both wings, dog tail, tail2 and
+ear, the human's near hand, the blob's top.
 
 ## Writing a new figure
 

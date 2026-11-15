@@ -19,10 +19,10 @@ The full character format is [SPEC.md](SPEC.md).
 |---|---|---|
 | `c` | `goose-base` `goose-root` `goose-sudo` `goose-phreak` `goose-kiddie` `goose-greylag` `clawd` `fox` `pip` `robot` `slime` | `goose-base` |
 | `view` | `side`, and when the character has them `front`, `back`, `look` (¾ glance toward the reader) | `side` |
-| `anim` | an animation of that view; the page lists them (the geese: `idle waddle run rush honk jump fall sit duck peek climb flap`, and `hack` for root) | `idle` |
+| `anim` | an animation of that view; the page lists them (`playground.options().animations`). The geese side view: `idle waddle run rush honk jump fall sit duck peek climb flap fly` (`goose-kiddie` has no `climb`), plus `hack` for root, `headbang` for sudo, `sneak` for phreak; their front and back views have no `rush`, `climb` or `fly`. `walk` and `waddle` stand in for each other | `idle` |
 | `skin` | a skin of the character (`goose-root`: `party`, `redteam`) | none |
-| `res` | sprite height in pixels: 16–192 | `64` |
-| `lod` | detail level `1` icon, `2` sprite, `3` rich | from `res` |
+| `res` | sprite height in pixels, any positive number (the menu offers 16–192) | `64` |
+| `lod` | detail level `1` icon, `2` sprite, `3` portrait (the menu says "rich") | from `res` |
 | `frame` | show this frame (0-based), paused | plays |
 | `zoom` | screen pixels per sprite pixel | fits the page |
 | `bg` | background: a hex colour without `#` (`fff`, `1b1424`) or a CSS colour name | checkerboard |
@@ -116,7 +116,11 @@ await playground.set({ frame: 3 });           // pause on frame 3 (frame: null p
 playground.frame({ scale: 4 });               // the frame showing now as a PNG data URL
 await playground.link();                      // compressed link; link({readable: true}) for JSON
 playground.state;                             // the current setup
+playground.errors; playground.warnings;       // messages from the last build
+playground.docs;                              // {guide, schema, spec}: URLs of this page's docs
 ```
+
+`merge` merges `materials` per field and `style` per key, appends `parts`, and replaces any other key.
 
 `document.body.dataset.state` is `ready` or `error` after each build.
 

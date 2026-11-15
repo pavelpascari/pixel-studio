@@ -12,6 +12,9 @@ shading, texture, dithering and outlines according to the **detail level**. One 
   Feet on y ≈ 92 reads as "standing on the bottom".
 - At 16 px, 1 pixel ≈ 6 units; at 32 px ≈ 3 units; at 64 px ≈ 1.5 units. Features smaller than
   ~3 units only resolve at higher detail, so gate them with `minDetail` (see below).
+- Limits: `size` is at most 1000 units a side, shape coordinates stay within 4 canvas sizes of the origin, and
+  names (materials, parts, animations, points, skins, nodes, inputs) cannot be built-in object keys such as
+  `constructor` or `toString`.
 
 ## Top level
 
@@ -26,7 +29,8 @@ shading, texture, dithering and outlines according to the **detail level**. One 
 }
 ```
 
-Optional: `figure` (start from a skeleton), `points`, `ground`, `skins`, `states` (all below), `description`.
+Optional: `figure` (start from a skeleton), `points`, `ground`, `skins`, `mixes`, `states`, `views`, `extends` and
+`materialMap` (all below), `description`, `$schema` (ignored; for editors).
 
 ## Materials
 
@@ -45,7 +49,7 @@ Optional: `figure` (start from a skeleton), `points`, `ground`, `skins`, `states
 | `color` | base hex colour (required). The engine builds a hue-shifted ramp (cool shadows, warm highlights) around it. Pick mid-value, fairly saturated colours. |
 | `texture` | `noise` `fur` `scales` `stripes` `checker` `cloth` `bricks` `spots` `metal`. Shown at detail 2+ only. |
 | `textureStrength` | 0..1, default 0.35 |
-| `textureScale` | integer ≥ 1, feature size in pixels, default 1 |
+| `textureScale` | number ≥ 1, feature size in pixels, default 1 |
 | `shine` | 0..1 specular highlight (metal, glass, slime, eyes) |
 | `flat` | no lighting: always the exact colour (eyes, mouths, emissive bits) |
 | `outline` | `false` to skip outline/inner lines next to this material (glints, glows, blush) |
@@ -84,7 +88,7 @@ All shape coordinates are in canvas units **at rest**; transforms are applied on
 | `circle` | `cx cy r` |
 | `ellipse` | `cx cy rx ry` (+ `rot`) |
 | `rect` | `x y w h` (+ `r` corner radius, `rot`) |
-| `capsule` | `x1 y1 x2 y2 r` (+ `r2` for a tapered end) — limbs, tails, ears, mouths, brows |
+| `capsule` | `x1 y1 x2 y2 r` (or `w`, its width; + `r2` for a tapered end) — limbs, tails, ears, mouths, brows |
 | `polygon` | `points: [[x,y], ...]` (+ `r` to round it) — hair, capes, spikes, beaks |
 
 Common shape fields:
@@ -159,8 +163,9 @@ Shapes thinner than a pixel are kept 1 pixel wide automatically, so eyes never v
 ```
 
 A skin is a patch like a variant (`parts`, `materials`, `materialMap`, `style`; see Variants below) that every animation
-shares. The bundle carries each skin; a page picks one with `<pixel-sprite skin="party">`. Each skin adds about as much
-to the bundle as the default look. Preview one with `pixel preview spec.json --skin party`.
+shares. The bundle carries each skin; a page picks one with `<pixel-sprite skin="party">`. A skin is stored as a
+change to the default sheet (colours swapped, plus the pixels that still differ) when that is smaller, so a recolour
+costs little. Preview one with `pixel preview spec.json --skin party`.
 
 ### Transition clips
 
@@ -179,8 +184,8 @@ waddle's first frame (where a loop ends) or after a one-shot finished. `frames` 
 [runtime.md](runtime.md#state-machines) for the full format. In short: `inputs` with starting values (or `"trigger"`),
 `nodes` naming an `anim` (with `then` for one-shots, `random` fidgets, and a `rate` that may follow an input), `transitions` with
 `when` conditions (`speed > 60 && !tired`) and `at` (`now`, `end`, `sync` to keep the stride, or an event name like
-`footstep` to stop with the feet together), and `interactions` (`click`, `enter`, `leave`, `burst` for rage clicks, `calm` → `fire` or `set`; `"$rate"` passes a burst's
-speed-up into an input).
+`footstep` to stop with the feet together), and `interactions` (`click`, `enter`, `leave`, `burst` for rage clicks, `calm` → `fire` or `set`; `"$count"` and `"$rate"` pass a
+burst's click count and speed-up into an input).
 Validation checks every node, animation, input and condition.
 
 ### Reach: put a point exactly where it needs to be
@@ -222,17 +227,18 @@ rigging and keyframing by hand.
 
 | figure | bones (dress these ids) | motions |
 |---|---|---|
-| `goose` | body tail legNear/shinNear/footNear legFar/… neck neckUp head jaw wing | idle walk run sneak jump fall sit duck peek climb |
-| `human` | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ Far) | idle walk run jump fall sit duck peek climb |
-| `dog` | body tail tail2 neck head jaw ear, thigh/shin/hock/paw HindNear·HindFar, arm/forearm/pastern/paw ForeNear·ForeFar | idle walk trot jump fall duck peek |
-| `chibi` | **front-facing** big-head biped: body legL/footL legR/footR armL armR head | idle walk run jump fall sit duck peek |
-| `blob` | soft body (slime, jelly, ghost): shadow body top (`top` jiggles) | idle hop travel fall peek |
+| `goose` | body tail legNear/shinNear/footNear legFar/… neck neckUp head jaw wing | idle walk run rush sneak · jump fall sit duck peek climb · flap honk fly |
+| `human` | hips spine neck head armNear/forearmNear/handNear thighNear/shinNear/footNear (+ Far) | idle walk run sprint · jump fall sit duck peek climb · sitDown standUp |
+| `dog` | body tail tail2 neck head jaw ear, thigh/shin/hock/paw HindNear·HindFar, arm/forearm/pastern/paw ForeNear·ForeFar | idle walk trot gallop · jump fall duck peek |
+| `goose-front` | the goose **head-on** (dress it the other way round for the back; used in `views`): body tail shinL/footL shinR/footR neck neckUp head jaw wingL wingR | idle walk run · jump fall sit duck peek · flap honk |
+| `chibi` | **front-facing** big-head biped: body legL/footL legR/footR armL armR head | idle walk run · jump fall sit duck peek |
+| `blob` | soft body (slime, jelly, ghost): shadow body top (`top` jiggles) | idle hop travel · fall peek |
 
-The motions after `walk`/`run` exist so characters can live on a web page (`<pixel-stage>`, see
+The motions after the first dot exist so characters can live on a web page (`<pixel-stage>`, see
 [stage.md](stage.md)): list the ones you want in your animations (`"jump": {"motion": "jump"}`).
 
-Examples dressed on figures: `goose-*` (goose), `fox` (dog, fitted), `pip` and `robot` (chibi, robot fitted with
-`bones`), `slime` (blob).
+Examples dressed on figures: `goose-*` (goose; `goose-greylag` fitted with its own proportions), `fox` (dog, fitted),
+`pip` and `robot` (chibi, robot fitted with `bones`), `slime` (blob), `clawd` (an inline figure of its own).
 
 Every bone has a joint (`from`, its pivot) and a `to` point. Coordinates are in the figure's 100×100 canvas.
 
@@ -330,6 +336,24 @@ spring hanging from its pivot. It lags behind, overshoots and settles as its par
 straps, pompoms and antennae. Lower `freq` gives a heavier, slower swing; lower `damping` gives more wobble. It works
 with any animation, not only motions.
 
+### Views: front, back, three-quarter
+
+A side-view character can also be drawn from other angles. Each view dresses its own figure with the same materials:
+
+```json
+"views": {
+  "front": { "figure": "goose-front", "look": {"part": "head", "replaces": "head"},
+    "parts": [ {"id": "body", "shapes": [ ... ]}, {"id": "head", "shapes": [ ... ]} ],
+    "animations": { "idle": {"motion": "idle"}, "waddle": {"motion": "walk"} } }
+}
+```
+
+- The view's animations are named `<animation>@<view>` (`idle@front`); name them like the side ones. No
+  `animations` gives every motion of the view's figure. `turn@front` and `unturn@front` (side ↔ view) are generated.
+- `look` (optional) puts the view's head on the side body: `look@front`, a three-quarter glance.
+- For a back view, dress `goose-front` the other way round. Variants patch views like the main spec (`"back": null`
+  drops one). `examples/goose-base.json` has front and back. Details: [figures.md](figures.md#views-the-same-character-from-other-angles).
+
 ## Variants: `extends`
 
 A family of characters (a flock, a team, outfits, enemy tiers) should share one rig. A variant names its base
@@ -383,6 +407,7 @@ Make the base a plain, accessory-free character with the shared animations; put 
 | `contactShadow` | bool | 1-px shadow cast by front parts onto back parts |
 | `hueShift` | 0..2 | strength of cool-shadow / warm-highlight hue drift (default 1) |
 | `snap` | bool | pixel-snap part motion (default true) |
+| `flip` | bool | mirror the character left–right (default false) |
 
 The detail presets set `tones`, `texture`, `dither`, `outline`, `innerLines` and `contactShadow`; a key in
 `style` overrides the preset at **every** detail level. Unknown keys anywhere in the spec produce a warning.

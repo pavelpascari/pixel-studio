@@ -20,7 +20,7 @@ From a checkout:
 node bin/pixel.mjs <command> [args]
 ```
 
-`package.json` declares a `pixel` bin, so after installing the package (or `npm link` in the checkout) the same commands run as `pixel <command>`. The examples below use `node bin/pixel.mjs` and are run from the repository root. Output file paths are shortened to `$OUT/` (a scratch directory).
+`package.json` declares a `pixel` bin, so after installing the package (`npm i github:pavelpascari/pixel-studio`; it is not on npm yet, see [getting-started.md](getting-started.md)) or running `npm link` in the checkout, the same commands run as `pixel <command>` (or `npx pixel <command>`). The examples below use `node bin/pixel.mjs` and are run from the repository root. Output file paths are shortened to `$OUT/` (a scratch directory).
 
 ## Arguments and flags
 
@@ -37,7 +37,7 @@ node bin/pixel.mjs <command> [args]
 | Exit code | Meaning |
 |---|---|
 | `0` | Success, or no command given (prints help). |
-| `1` | Usage error, unreadable or invalid JSON file, spec validation errors, `extends`/figure resolution errors, unknown animation (`--anim` of `preview`, `ascii`, `where`) or part (`where`), unknown `--skin`, an `export --format` other than `aseprite`, or an unknown command (prints help). Uncaught exceptions also exit with 1 and a Node stack trace (see [ascii](#ascii)). |
+| `1` | Usage error, unreadable or invalid JSON file, spec validation errors, `extends`/figure resolution errors, unknown animation (`--anim` of `preview`, `ascii`, `where`) or part (`where`), unknown `--skin`, an `export --format` other than `aseprite`, or an unknown command (prints help). Any other error (for example a bad style flag value) also exits with 1 and prints one line, `error: <message>`; set `PIXEL_DEBUG=1` to also print the stack trace. |
 
 Fatal errors are printed to stderr as `error: <message>`:
 
@@ -62,11 +62,13 @@ Exit code: 0 if there are no errors (warnings allowed), 1 otherwise.
 
 ```
 $ node bin/pixel.mjs validate examples/fox.json
-ok: "Ember the fox" 24 parts, 6 materials, animations: idle(12f@8fps) walk(8f@8fps) trot(8f@12fps) jump(10f@10fps) fall(6f@10fps) duck(8f@6fps) peek(12f@6fps)
+ok: "Ember the fox" 24 parts, 6 materials, animations: idle(12f@8fps) walk(8f@10fps) trot(8f@16fps) gallop(6f@24fps) leap(8f@12fps) jump(10f@10fps) fall(6f@10fps) duck(8f@6fps) peek(12f@6fps)
 
 $ node bin/pixel.mjs validate examples/goose-root.json
-ok: "root (hacker goose)" 18 parts, 13 materials, animations: idle(8f@6fps) waddle(8f@10fps) run(6f@12fps) honk(10f@10fps) jump(10f@10fps) fall(6f@10fps) sit(12f@6fps) duck(8f@6fps) peek(12f@6fps) climb(8f@12fps) hack(8f@10fps)
+ok: "root (hacker goose)" 48 parts, 13 materials, animations: idle(8f@6fps) waddle(8f@10fps) run(6f@12fps) rush(6f@14fps) honk(10f@10fps) jump(10f@10fps) fall(6f@10fps) sit(12f@6fps) duck(8f@6fps) peek(12f@6fps) climb(8f@12fps) flap(8f@12fps) fly(8f@20fps) hack(8f@10fps) idle@front(8f@6fps) waddle@front(8f@10fps) run@front(6f@12fps) honk@front(10f@10fps) jump@front(10f@10fps) fall@front(6f@10fps) sit@front(12f@6fps) duck@front(8f@6fps) peek@front(12f@6fps) flap@front(8f@12fps) turn@front(4f@12fps) unturn@front(4f@12fps) look@front(8f@6fps) idle@back(8f@6fps) waddle@back(8f@10fps) run@back(6f@12fps) honk@back(10f@10fps) jump@back(10f@10fps) fall@back(6f@10fps) sit@back(12f@6fps) duck@back(8f@6fps) peek@back(12f@6fps) flap@back(8f@12fps) turn@back(4f@12fps) unturn@back(4f@12fps) waddle>idle(3f@6fps) run>idle(3f@6fps) idle>waddle(2f@10fps)
 ```
+
+`goose-root` has a front and a back view (`idle@front`, `turn@back`, ...) and transition clips (`waddle>idle`); see [SPEC.md](SPEC.md).
 
 A spec with mistakes (typos in keys, a misspelt material, a circle without a centre):
 
@@ -101,7 +103,7 @@ Writes a contact sheet PNG: one block per resolution (top to bottom), one row pe
 | Flag | Default | Description |
 |---|---|---|
 | `--out` | `<spec name>.preview.png` in the current directory | Output PNG. Parent directories are created. |
-| `--res` | `16,32,64` | Comma-separated resolutions (frame heights in pixels), one block each. Non-positive or non-numeric entries are dropped. |
+| `--res` | `16,32,64` | Comma-separated resolutions (frame heights in pixels), one block each. Every entry must be a whole number from 1 to 512; anything else is an error (see below). |
 | `--cell` | `128` | Target cell height in pixels. Each block is zoomed by `max(1, floor(cell / res))`. |
 | `--anim` | every animation | Comma-separated animation names: only these rows, in this order. An unknown name exits with 1 and lists the available animations. |
 | `--skin` | default look | Preview one of the spec's skins (see [Arguments and flags](#arguments-and-flags)). |
@@ -111,22 +113,23 @@ Prints the output path and size, the resolution and detail tier of each block, a
 
 ```
 $ node bin/pixel.mjs preview examples/fox.json
-wrote fox.preview.png (1640x2912)
+wrote fox.preview.png (1640x3728)
 blocks top→bottom: 16px [icon], 32px [sprite], 64px [portrait]
-rows per block: idle, walk, trot, jump, fall, duck, peek
+rows per block: idle, walk, trot, gallop, leap, jump, fall, duck, peek
 
 $ node bin/pixel.mjs preview examples/fox.json --res 32 --cell 384 --out $OUT/fox-32.png
-wrote $OUT/fox-32.png (4712x2768)
+wrote $OUT/fox-32.png (4712x3552)
 blocks top→bottom: 32px [sprite]
-rows per block: idle, walk, trot, jump, fall, duck, peek
+rows per block: idle, walk, trot, gallop, leap, jump, fall, duck, peek
 
 $ node bin/pixel.mjs preview examples/fox.json --anim walk,idle --res 32 --out $OUT/fox-walk.png
 wrote $OUT/fox-walk.png (1640x296)
 blocks top→bottom: 32px [sprite]
-rows per block: idle, walk, trot, jump, fall, duck, peek
-```
+rows per block: walk, idle
 
-With `--anim`, the image holds only the named rows (here `walk`, then `idle`), but the `rows per block` line still lists every animation of the spec.
+$ node bin/pixel.mjs preview examples/fox.json --res 16,abc
+error: --res must be whole numbers 1..512, e.g. 16,32,64 (got "16,abc")
+```
 
 ## ascii
 
@@ -139,7 +142,7 @@ Renders one frame (or every frame) as text, for agents that cannot see images. E
 | Flag | Default | Description |
 |---|---|---|
 | `--res` | `24` | Frame height in pixels (one character per pixel). |
-| `--anim` | first animation | Animation to render. Must exist (see the issue below). |
+| `--anim` | first animation | Animation to render. Must exist. |
 | `--frame` | `0` | Frame index, or `all` for every frame of the animation. Indices past the end wrap around. |
 | `--skin` | default look | Render one of the spec's skins. |
 | style flags | | See [Style override flags](#style-override-flags). |
@@ -150,21 +153,21 @@ Each frame is printed as a header line with the legend, the grid, and a blank li
 $ node bin/pixel.mjs ascii examples/fox.json --res 16 --anim walk --frame 3
 walk frame 3 @16px  legend: f=fur c=cream s=sock e=eye n=nose g=glint #=outline .=empty
 ................
-...........#....
-.........##f#...
-..##....#f#f#...
+................
+..#......###....
+.#c#....#fff#...
 .#cc#...#fff#...
-.#cff#..#ffff#..
+.#fcf#..#ffff#..
 .#fff#.#fffef#..
-.#fff###fffef#..
-..#ff#ff#ccccn#.
+.#ffff##fffefn#.
+..#ffffffccccn#.
 ...#fffffcccc#..
-...#ffffffc##...
+...#fffffff##...
 ....#fffff#.....
-....#sf#ff#.....
+....#sfssf#.....
 ....#ssssss#....
-....#sssssss#...
-.....#######....
+....#ssss#ss#...
+.....####.##....
 ```
 
 The legend lists every material in the spec, even ones not visible in the frame (`g=glint` above).
@@ -191,7 +194,7 @@ Renders the sprite sheet for **one** resolution and writes two files into `--out
 
 ```
 $ node bin/pixel.mjs render examples/fox.json --out $OUT/render
-wrote $OUT/render/fox.32.png (384x224) + .json
+wrote $OUT/render/fox.32.png (384x288) + .json
 
 $ cat $OUT/render/fox.32.json
 {
@@ -203,10 +206,10 @@ $ cat $OUT/render/fox.32.json
   "frameH": 32,
   "animations": {
     "idle": { "row": 0, "frames": 12, "fps": 8, "loop": true },
-    "walk": { "row": 1, "frames": 8, "fps": 8, "loop": true, "speed": 23.08,
+    "walk": { "row": 1, "frames": 8, "fps": 10, "loop": true, "speed": 51.92,
               "events": [{ "frame": 0, "name": "footstep", "data": { "leg": "thighHindNear" } }, ...] },
     ...
-    "jump": { "row": 3, "frames": 10, "fps": 10, "loop": false,
+    "jump": { "row": 5, "frames": 10, "fps": 10, "loop": false,
               "events": [{ "frame": 3, "name": "launch" }, { "frame": 7, "name": "land" }] },
     ...
   }
@@ -247,10 +250,10 @@ Prints the output path, the sheet size, and the number of frames, tags and slice
 
 ```
 $ node bin/pixel.mjs export examples/fox.json --out $OUT/export
-wrote $OUT/export/fox.32.png (384x224) + .json (64 frames, 7 tags, 3 slices)
+wrote $OUT/export/fox.32.png (384x288) + .json (78 frames, 9 tags, 3 slices)
 
 $ node bin/pixel.mjs export examples/goose-root.json --skin party --out $OUT/export
-wrote $OUT/export/goose-root.party.32.png (384x352) + .json (96 frames, 11 tags, 3 slices)
+wrote $OUT/export/goose-root.party.32.png (384x1344) + .json (326 frames, 42 tags, 3 slices)
 ```
 
 An excerpt of `fox.32.json`:
@@ -265,16 +268,16 @@ An excerpt of `fox.32.json`:
   "animations": { "idle": ["0", "1", ..., "11"], "walk": ["12", ..., "19"], ... },
   "meta": {
     "app": "https://github.com/pavelpascari/pixel-studio", "version": "0.1.0", "image": "fox.32.png",
-    "format": "RGBA8888", "size": { "w": 384, "h": 224 }, "scale": "1", "layers": [],
+    "format": "RGBA8888", "size": { "w": 384, "h": 288 }, "scale": "1", "layers": [],
     "frameTags": [
       { "name": "idle", "from": 0, "to": 11, "direction": "forward", "color": "#000000ff" },
       ...
-      { "name": "jump", "from": 28, "to": 37, "direction": "forward", "color": "#000000ff", "repeat": "1" },
+      { "name": "jump", "from": 42, "to": 51, "direction": "forward", "color": "#000000ff", "repeat": "1" },
       ...
     ],
     "slices": [{ "name": "nose", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": { "x": 28, "y": 17, "w": 1, "h": 1 } }, ...] }, ...],
     "pixelStudio": { "name": "Ember the fox", "res": 32, "lod": 2, "size": [100, 100], "ground": 90.5,
-                     "animations": { "walk": { "fps": 8, "loop": true, "speed": 23.08, "events": [...] }, ... } }
+                     "animations": { "walk": { "fps": 10, "loop": true, "speed": 51.92, "events": [...] }, ... } }
   }
 }
 ```
@@ -299,22 +302,22 @@ Prints the output path, the size of the JSON in KB, and the resolution of every 
 
 ```
 $ node bin/pixel.mjs bundle examples/fox.json --out $OUT/fox.bundle.json
-wrote $OUT/fox.bundle.json (46.7 KB, variants: 16, 32, 64)
+wrote $OUT/fox.bundle.json (60.3 KB, variants: 16, 32, 64)
 
 $ node bin/pixel.mjs bundle examples/goose-root.json --res 48,24 --out $OUT/root.bundle.json
-wrote $OUT/root.bundle.json (97.6 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
+wrote $OUT/root.bundle.json (100.4 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
 
 $ node bin/pixel.mjs bundle examples/goose-root.json --views none --res 32 --external --out $OUT/web/root.bundle.json
-wrote $OUT/web/root.bundle.json (9.7 KB, variants: 32, 32 (party), 32 (redteam))
+wrote $OUT/web/root.bundle.json (10.2 KB, variants: 32, 32 (party), 32 (redteam))
 $ ls $OUT/web
 root.32.party.overlay.png  root.32.png  root.32.redteam.overlay.png  root.bundle.json
 ```
 
-`--res` must be positive whole numbers; anything else is an error:
+`--res` must be whole numbers from 1 to 512; anything else is an error:
 
 ```
 $ node bin/pixel.mjs bundle examples/fox.json --res abc
-error: --res must be positive whole numbers, e.g. 16,32,64 (got "abc")
+error: --res must be whole numbers 1..512, e.g. 16,32,64 (got "abc")
 ```
 
 ## resolve
@@ -348,7 +351,7 @@ $ node bin/pixel.mjs resolve examples/goose-sudo.json --out $OUT/sudo.full.json
 wrote $OUT/sudo.full.json
 ```
 
-The full output for `goose-sudo.json` is about 5,000 lines, because the figure's motions are expanded into per-frame tracks.
+The full output for `goose-sudo.json` is about 15,000 lines, because the figure's motions are expanded into per-frame tracks.
 
 ## where
 
@@ -366,7 +369,7 @@ Prints where parts are in canvas units for one frame of one animation, after all
 | `--point` | the part's pivot | With `--part`: a point `x,y` in the part's rest (canvas) coordinates to transform instead of the pivot. |
 | `--skin` | default look | Use one of the spec's skins (it may add, remove or move parts). |
 
-Without `--part`, one line per part: id, rest pivot, world pivot, rotation, and `(hidden)` if the part is hidden in that frame:
+Without `--part`, one line per part: id, rest pivot, world pivot, rotation, and `(hidden)` if the part is hidden in that frame (here the parts of goose-root's front and back views, which show only in their own animations):
 
 ```
 $ node bin/pixel.mjs where examples/goose-root.json --anim hack
@@ -381,13 +384,15 @@ jaw          pivot [70,29] → [67.9,38.9]  rot 0.0°
 ledsA        pivot [86,70] → [86,70]  rot 0.0°
 ledsB        pivot [86,70] → [86,70]  rot 0.0°  (hidden)
 laptop       pivot [86,50] → [86,50]  rot 0.0°
+front.body   pivot [50,78] → [50,78]  rot 0.0°  (hidden)
+...
 
 $ node bin/pixel.mjs where examples/goose-root.json --anim hack --frame 3 --part head --point 90,20
 hack frame 3 (canvas 100x100 units)
 head [90,20] (rest) → [92.3,41.9]  rot 2.0°
 
 $ node bin/pixel.mjs where examples/goose-root.json --anim nope
-error: no animation "nope" (have: idle, waddle, run, honk, jump, fall, sit, duck, peek, climb, hack)
+error: no animation "nope" (have: idle, waddle, run, rush, honk, jump, fall, sit, duck, peek, climb, flap, fly, hack, idle@front, waddle@front, run@front, honk@front, jump@front, fall@front, sit@front, duck@front, peek@front, flap@front, turn@front, unturn@front, look@front, idle@back, waddle@back, run@back, honk@back, jump@back, fall@back, sit@back, duck@back, peek@back, flap@back, turn@back, unturn@back, waddle>idle, run>idle, idle>waddle)
 ```
 
 `where` does not take style flags.
@@ -407,12 +412,14 @@ blob     3 bones   motions: idle(idle) hop(hop) travel(hop) fall(fall) peek(idle
          bones: shadow body top
 chibi    8 bones   motions: idle(idle) walk(gait) run(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle)
          ...
-dog      23 bones   motions: idle(idle) walk(gait) trot(gait) jump(jump) fall(fall) duck(idle) peek(idle)
+dog      23 bones   motions: idle(idle) walk(gait) trot(gait) jump(jump) fall(fall) duck(idle) peek(idle) gallop(gait)
          ...
-goose    13 bones   motions: idle(idle) walk(gait) run(gait) sneak(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle) climb(climb)
+goose-front 12 bones   motions: idle(idle) walk(gait) run(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle) flap(pose) honk(pose)
+         ...
+goose    13 bones   motions: idle(idle) walk(gait) run(gait) sneak(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle) climb(climb) rush(gait) flap(pose) honk(pose) fly(fall)
          Waterfowl, side view facing right. Short legs that bend backward at the ankle, webbed feet, a long two-part neck, a gaze that stays level while the body rocks.
          bones: body tail legFar shinFar footFar legNear shinNear footNear neck neckUp head jaw wing
-human    16 bones   motions: idle(idle) walk(gait) run(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle) climb(climb)
+human    16 bones   motions: idle(idle) walk(gait) run(gait) jump(jump) fall(fall) sit(sit) duck(idle) peek(idle) climb(climb) sprint(gait) sitDown(pose) standUp(pose)
          ...
 ```
 
@@ -437,12 +444,12 @@ Any command that takes a spec path also accepts the name of a figure in `figures
 
 ```
 $ node bin/pixel.mjs preview goose --out $OUT/goose.png
-wrote $OUT/goose.png (1640x4136)
+wrote $OUT/goose.png (1640x5768)
 blocks top→bottom: 16px [icon], 32px [sprite], 64px [portrait]
-rows per block: idle, walk, run, sneak, jump, fall, sit, duck, peek, climb
+rows per block: idle, walk, run, sneak, jump, fall, sit, duck, peek, climb, rush, flap, honk, fly
 
 $ node bin/pixel.mjs validate dog
-ok: "dog skeleton" 23 parts, 2 materials, animations: idle(12f@8fps) walk(8f@8fps) trot(8f@12fps) jump(10f@10fps) fall(6f@10fps) duck(8f@6fps) peek(12f@6fps)
+ok: "dog skeleton" 23 parts, 2 materials, animations: idle(12f@8fps) walk(8f@10fps) trot(8f@16fps) jump(10f@10fps) fall(6f@10fps) duck(8f@6fps) peek(12f@6fps) gallop(6f@24fps)
 
 $ node bin/pixel.mjs ascii blob --res 12
 idle frame 0 @12px  legend: b=bone j=joint #=outline .=empty
@@ -464,10 +471,11 @@ idle frame 0 @12px  legend: b=bone j=joint #=outline .=empty
 
 ## Help
 
-`node bin/pixel.mjs` with no command prints the usage summary (the comment block at the top of `bin/pixel.mjs`) and exits with 0. An unknown command prints the same text and exits with 1.
+`pixel help` (also `--help`, `-h`, or no command at all) prints the usage summary and exits with 0. An unknown
+command prints the same text and exits with 1. The summary is the comment block at the top of `bin/pixel.mjs`.
 
 ```
-$ node bin/pixel.mjs
+$ node bin/pixel.mjs help
 Pixel Studio CLI — the agent's hands and eyes.
 
   pixel validate <spec.json>                       check a spec, print errors with JSON paths
@@ -492,6 +500,10 @@ Pixel Studio CLI — the agent's hands and eyes.
   style flags (preview, ascii, render, export, bundle): --lod 1|2|3 --tones n --texture 0..1 --dither true|false
                                                         --outline dark|selective|none --light deg --flip
   pixel brief                                      print the agent brief (spec format docs)
+  pixel help                                       this text
+
+  --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures and motion models first
+  errors print as one line and exit 1; PIXEL_DEBUG=1 adds the stack trace
 ```
 
 ## Style override flags
@@ -501,18 +513,18 @@ Pixel Studio CLI — the agent's hands and eyes.
 | Flag | Value | Effect |
 |---|---|---|
 | `--lod` | `1`, `2` or `3` | Force the detail tier (icon, sprite, portrait) instead of choosing it from the resolution (≤ 20 px → 1, 21–40 → 2, > 40 → 3). |
-| `--tones` | integer | Number of tones in each colour ramp. |
+| `--tones` | `2`..`6` | Number of tones in each colour ramp. |
 | `--texture` | `0`..`1` | Texture strength. `--texture 0` turns texture off. |
 | `--dither` | `true` / `false` | Ordered dithering. Any value other than `false` (including the bare flag) turns it on. |
 | `--outline` | `none`, `dark`, `selective` | Silhouette outline mode. Required value. |
 | `--light` | degrees | Light azimuth: 0 = from above, negative = from the left (default -45). |
 | `--flip` | switch | Render mirrored horizontally (`--flip=false` turns it off). For web pages, prefer the `flip` attribute of `<pixel-sprite>`. |
 
-`--lod 0` and `--tones 0` are treated as "not set".
+`--lod 0` is treated as "not set". Other bad values stop the command with exit code 1: `--lod 4` prints `error: lod must be 1, 2 or 3 (got 4)`, `--tones 0` prints `error: tones must be a whole number 2..6 (got 0)`, and a non-numeric `--texture` or `--light` prints `error: <flag> must be a number (got null)`.
 
 ```
 $ node bin/pixel.mjs render examples/fox.json --res 64 --lod 1 --tones 2 --texture 0 --dither false --outline dark --light 45 --flip --out $OUT/render
-wrote $OUT/render/fox.64.png (768x448) + .json
+wrote $OUT/render/fox.64.png (768x576) + .json
 ```
 
 ## npm scripts
@@ -521,9 +533,9 @@ Defined in `package.json`:
 
 | Script | Command | What it does |
 |---|---|---|
-| `npm run studio` | `node scripts/serve.mjs` | Starts the static server (see below). Studio at `http://localhost:5173/studio/`, demo pages at `http://localhost:5173/demo/`. |
-| `npm test` | `node --test test/*.test.mjs` | Runs the engine, figure, rig and runtime tests with Node's built-in test runner (54 tests at the time of writing). |
-| `npm run build:demo` | `node scripts/build-demo.mjs` | Copies `src/runtime/pixel-sprite.js` and `src/runtime/pixel-stage.js` to `demo/assets/`, and builds `demo/assets/<name>.bundle.json` (16, 32 and 64 px) for every `examples/*.json`. Prints one line per bundle: path, size in KB, animation names. Writes into the repository. |
+| `npm run studio` | `node scripts/serve.mjs` | Starts the static server (see below). Studio at `http://localhost:5173/studio/`, docs site at `http://localhost:5173/site/`, demo pages at `http://localhost:5173/demo/`. |
+| `npm test` | `node --test test/*.test.mjs` | Runs the test suite (engine, figure, rig, runtime, plug-in and reference-registry tests) with Node's built-in test runner. |
+| `npm run build:demo` | `node scripts/build-demo.mjs` | Copies `src/runtime/pixel-sprite.js` and `src/runtime/pixel-stage.js` to `demo/assets/`, and builds `demo/assets/<name>.bundle.json` (16, 32 and 64 px) and `demo/assets/<name>.poster.png` (the first frame at 64 px, a fallback image for `<pixel-sprite>`) for every `examples/*.json`, plus a 32 px game-engine sheet for `goose-root` (`demo/assets/goose-root.32.png` and `.32.json`, as [`export`](#export) writes). Prints one line per bundle: path, size in KB, animation names. Writes into the repository. |
 | `npm run previews` | `node scripts/build-demo.mjs --previews` | Everything `build:demo` does, plus a contact sheet per example in `previews/<name>.png` (16/32/64 px blocks, 96 px cells). |
 
 `build-demo.mjs` resolves `extends` and figures the same way as the CLI, but it does not validate the specs or print bounds warnings, and it does not take style flags.
@@ -531,12 +543,12 @@ Defined in `package.json`:
 `package.json` also declares:
 
 - `"bin": { "pixel": "bin/pixel.mjs" }`: the `pixel` command described on this page.
-- `"exports"`: `"."` → `src/core/index.js` (the engine API, see [api.md](api.md)), `"./runtime"` → `src/runtime/pixel-sprite.js` (the web component, see [runtime.md](runtime.md)), `"./node/png"` → `src/node/png.js` (the Node PNG encoder the CLI uses), and `"./package.json"`.
+- `"exports"`: `"."` → `src/core/index.js` (the engine API, see [api.md](api.md)), `"./runtime"` → `src/runtime/pixel-sprite.js` (the web component, see [runtime.md](runtime.md)), `"./stage"` → `src/runtime/pixel-stage.js` (the page runtime, see [stage.md](stage.md)), `"./node/png"` → `src/node/png.js` (the Node PNG encoder the CLI uses), and `"./package.json"`.
 - `"engines": { "node": ">=20" }`.
 
 ## scripts/serve.mjs
 
-A zero-dependency static file server for the studio and demo pages. It serves the repository root.
+A zero-dependency static file server for the studio, the docs site (`site/`) and the demo pages. It serves the repository root.
 
 | Environment variable | Default | Description |
 |---|---|---|
@@ -553,6 +565,7 @@ On start it prints:
 
 ```
 Pixel Studio  → http://localhost:5173/studio/
+Docs site     → http://localhost:5173/site/
 Demo website  → http://localhost:5173/demo/
 ```
 

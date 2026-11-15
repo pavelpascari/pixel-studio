@@ -85,32 +85,34 @@ into a whole compiled character of its own, so the renderer still sees only plai
 |---|---|---|
 | `index.js` | Public API barrel. Hosts should import from here. | everything below that is public |
 | `extend.js` | Variants: merge a spec onto its `extends` base (points and skins by name), then call `resolveFigure`. | `resolveExtends`, `mergeVariant`, `resolveSpec` |
-| `figure.js` | Expand `figure`: bones become parts, motions become tracks (author tracks layered on top), model events become frame numbers, and the figure's foot line (`ground`) and attachment `points` are fitted. | `resolveFigure`, `expandFigure` |
+| `figure.js` | Expand `figure`: bones become parts, motions become tracks (author tracks layered on top), model events become frame numbers, and the figure's foot line (`ground`) and attachment `points` are fitted. `views` add the same character seen from other angles (`idle@front`, `turn@front`, ...). | `resolveFigure`, `expandFigure` |
 | `motion.js` | Motion models (`gait`, `idle`, `pose`, `hop`, `jump`, `climb`, `fall`, `sit`) that generate per-sample track arrays with planted feet, plus `speed`/`speedY`/`wall` and timed events. | `generateMotion`, `MOTION_MODELS`, `LEGGED_MODELS`, `OVERSAMPLE` |
 | `spec.js` | Structural validation (JSON paths, did-you-mean; `validateStates` for the state machine) and compilation into the renderer's structure, skins included. | `validate`, `compile`, `TRACK_PROPS`, `skinSpec` (not re-exported from `index.js`) |
 | `shapes.js` | Signed distance functions and `compileShape` (sdf, thickness `R`, bbox). | `SHAPE_TYPES`, `compileShape`, `sdEllipse`, `sdRoundRect`, `sdCapsule`, `sdPolygon` |
 | `animate.js` | Track sampling, pose composition, follow-through springs. | `sampleValue`, `frameTime`, `samplePose`, `samplePoseAt`, `followOffsets` |
 | `rig.js` | 2D affine maths, world matrices, CCD reach solver, bounds sampling. | `worldMatrices`, `solveReach`, `ccd`, `overflowForPose`, `invert`, `apply`, `angleOf`, `localMatrix`, `mul` |
 | `lint.js` | Checks that need poses: parts leaving the canvas, reach targets missed. | `checkBounds` |
-| `render.js` | Style resolution, rasterizer, pixel-art shader, animation and sheet rendering, per-animation playback metadata. | `renderFrame`, `renderAnimation`, `renderSheet`, `animationMeta`, `resolveStyle`, `lodForRes`, `DETAIL_PRESETS`, `DETAIL_NAMES` |
+| `render.js` | Style resolution, rasterizer, pixel-art shader, animation and sheet rendering, per-animation playback metadata. | `renderFrame`, `renderAnimation`, `renderSheet`, `animationMeta`, `resolveStyle`, `lodForRes`, `DETAIL_PRESETS`, `DETAIL_NAMES`, `MAX_RES` |
 | `color.js` | Hex parsing, HSV/HSL conversion, hue-shifted ramps, `darken`. | `buildRamp`, `baseIndex`, `parseHex`, `toHex`, `darken` |
 | `textures.js` | Procedural textures sampled in part-local pixel space. | `TEXTURES`, `sampleTexture`, `hash2` |
 | `image.js` | RGBA image helpers and the contact sheet used by `preview`. | `contactSheet`, `createImage`, `blit`, `checker` (not re-exported from `index.js`) |
 | `ascii.js` | A frame as text (one letter per material, `#` outline, `.` empty). | `frameToAscii` |
 | `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
 | `export.js` | One sheet plus Aseprite "hash" JSON for game engines (Phaser, PixiJS): frames, tags, slices for points, Pixel Studio extras. | `exportSheet` |
+| `mix.js` | Transition clips (`mixes`): a few frames that interpolate the pose from the end of one animation to the start of another, added to the compiled animations as `"from>to"`. | `buildMixes` |
+| `plugins.js` | Extension points: register shapes, textures and motion models; they join the built-in tables so validation and `pixel brief` treat them like built-ins. | `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin` |
+| `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. | `pngBytes`, `paletteOf` |
 
 ### Everything else
 
 | File | Responsibility | Main exports / entry |
 |---|---|---|
-| `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. | `pngBytes`, `paletteOf` |
 | `src/node/png.js` | `pngBytes` with `node:zlib` deflate level 9. Node-only. | `encodePNG(w, h, rgba) → Buffer` |
-| `src/runtime/pixel-sprite.js` | `<pixel-sprite>` web component: loads a bundle, picks a variant (and skin), plays frames from the sheet, fires baked events, runs the bundle's state machine, and exports the shared frame clock. Does not import the engine. | `PixelSprite`, `clock`, `pickVariant`, `deviceScale`, `checkBundle`, `StateMachine`, `parseCondition`, `BUNDLE_FORMAT` |
-| `src/runtime/pixel-stage.js` | `<pixel-stage>` and `<pixel-actor>`: characters that roam a page, standing on, jumping between, climbing and hiding behind opted-in elements. Imports only `clock` from `pixel-sprite.js`. | `PixelStage`, `PixelActor`, `World`, `jumpArc`, `cells` |
+| `src/runtime/pixel-sprite.js` | `<pixel-sprite>` web component: loads a bundle, picks a variant (and skin), plays frames from the sheet, fires baked events, runs the bundle's state machine, and exports the shared frame clock. Does not import the engine. | `PixelSprite`, `clock`, `pickVariant`, `deviceScale`, `checkBundle`, `StateMachine`, `parseCondition`, `BurstDetector`, `BUNDLE_FORMAT` |
+| `src/runtime/pixel-stage.js` | `<pixel-stage>` and `<pixel-actor>`: characters that roam a page, standing on, jumping between, climbing and hiding behind opted-in elements. Imports only `clock` from `pixel-sprite.js`. | `PixelStage`, `PixelActor`, `World`, `checkScene`, `runScene`, `jumpArc`, `cells` |
 | `bin/pixel.mjs` | CLI: `validate`, `preview`, `ascii`, `render`, `export`, `bundle`, `resolve`, `where`, `figures`, `brief`. Loads files, calls `resolveSpec`, then the core. | `pixel` bin (see `package.json`) |
-| `scripts/build-demo.mjs` | Builds `demo/assets/*.bundle.json` from `examples/*.json` at 16/32/64 px, copies both runtimes (`pixel-sprite.js`, `pixel-stage.js`), and with `--previews` writes `previews/*.png`. | `npm run build:demo`, `npm run previews` |
-| `demo/index.html`, `demo/flock.html`, `demo/stage.html` | Demo pages: sprites on a site (including a state machine and skins section), the goose flock, and `<pixel-stage>` characters roaming a page. | pages |
+| `scripts/build-demo.mjs` | Builds `demo/assets/*.bundle.json` from `examples/*.json` at 16/32/64 px, writes a 64 px poster of each (`demo/assets/*.poster.png`) and a 32 px `exportSheet` sheet for `goose-root`, copies both runtimes (`pixel-sprite.js`, `pixel-stage.js`), and with `--previews` writes `previews/*.png`. | `npm run build:demo`, `npm run previews` |
+| `demo/index.html`, `demo/flock.html`, `demo/stage.html`, `demo/runner.html`, `demo/pp.html` | Demo pages: sprites on a site (including a state machine and skins section), the goose flock, `<pixel-stage>` characters roaming a page, a tiny runner game played by the fox, and a studio website sketch with a goose that follows the scroll. | pages |
 | `scripts/serve.mjs` | Zero-dependency static server for the repo root (studio and demo), port `PORT` or 5173. | `npm run studio` |
 | `studio/app.js` | Studio UI: editor → `resolveSpec` → `validate` → `compile` → `checkBounds` → render (current view, LOD strip at 16/24/32/48/64 px, sheet), rig overlay, export with a canvas PNG encoder. | browser module |
 | `studio/agent.js` | Agent tab: calls the Anthropic SDK from the browser (loaded lazily from esm.sh), validation-repair loop, contact-sheet critique. | `initAgent`, `extractSpec` |
@@ -211,7 +213,7 @@ strings built while walking the spec, for example `$.parts[3].shapes[0].material
   - per-type required shape fields (`SHAPE_REQUIRED`), and polygons with at least 3 points;
   - `op` must be `add` or `cut`; cuts need no material;
   - `profile` in `dome|flat|none`;
-  - `frames` is an integer 1..64, and `fps` is in (0, 60];
+  - `frames` is an integer 1..64, and `fps` is in 1..60;
   - track values must be a number, a non-empty number array, `{keys}` or `{wave}` (`isTrackValue`);
   - `style.outline` in `none|dark|selective`.
 - **Bones without shapes.** A part with a `tip` may have `shapes: []`.
@@ -233,7 +235,12 @@ strings built while walking the spec, for example `$.parts[3].shapes[0].material
   or `"previous"`; `random` fidgets name existing animations; `initial` and transition `from`/`to` are
   nodes (`from` may be `"*"`); `when` conditions parse (`name`, `!name`, `name op literal`, joined by
   `&&` or `and`) and name declared inputs; inputs start as a number, boolean, word or `"trigger"`;
-  interactions use `on: click|enter|leave` and `fire`/`set` declared inputs. Unknown `states` keys warn.
+  a node's `rate` is a speed in (0, 4] or the name of an input; a transition's `at` is a string
+  (`"now"`, `"end"`, `"sync"` or an event name); interactions use
+  `on: click|enter|leave|burst|calm` and `fire`/`set` declared inputs. Unknown `states` keys warn.
+- **Mixes:** `mixes` is an object; each key is `"from>to"` naming two different existing animations;
+  each value is an object with `frames` a whole number 1..8, `ease` `linear` or `smooth`, and `fps`
+  in 1..60.
 
 `ease` names, wave `shape` names, and the types of `style` values and of `material.tones` /
 `textureScale` / `textureStrength` are validated too. Not validated: event `data` (any JSON value),
@@ -414,6 +421,10 @@ defaults { light: −45, elevation: 50, outlineColor: '#1b1424', snap: true, hue
 lod = overrides.lod || lodForRes(res)
 ```
 
+`resolveStyle` throws a readable error for a `lod` other than 1, 2 or 3 and for overrides that break
+the `style` rules (for example `tones` outside 2..6). `renderAnimation` refuses a `res` outside
+1..`MAX_RES` (512).
+
 ### Detail tiers
 
 `lodForRes(res)` returns 1 for `res ≤ 20`, 2 for `res ≤ 40`, and 3 otherwise.
@@ -580,8 +591,8 @@ Both passes run after shading.
   frame. Width is the maximum frame count, and unused cells stay transparent. It returns
   `meta = {res, lod, frameW, frameH, animations: {name: {row, ...animationMeta(anim)}}}`.
 - **`animationMeta(anim)`** (`render.js`) is the playback description shared by sheets, bundles and
-  the CLI's `render` JSON: `frames`, `fps`, `loop`, plus `speed`, `speedY`, `wall` and `events` when
-  set, and `durations` (ms per frame, `1000/fps × hold`) only when the animation has `holds`.
+  the CLI's `render` JSON: `frames`, `fps`, `loop`, plus `speed`, `speedY`, `wall`, `mix`
+  (`{from, to}`, on transition clips) and `events` when set, and `durations` (ms per frame, `1000/fps × hold`) only when the animation has `holds`.
 - **`buildBundle(compiled, {resolutions = [16, 32, 64], overrides, encode, views, deltas = true})`**
   (`bundle.js`) first drops the views not listed in `views` (**`keepViews`**: animations named
   `x@view`), then sorts the resolutions ascending and renders a sheet per resolution. It encodes each
@@ -591,17 +602,20 @@ Both passes run after shading.
   `recolor` (each default colour → the skin colour it most often becomes) plus an `overlay` of the
   pixels still different; it gives up (null) if the skin makes an opaque pixel transparent. The delta
   is used when its encoded size is below the full sheet's. It returns
-  `{format: 'pixel-sprite/1', name, size, ground, animations, skins?, states?, points?, variants: [{res, lod, frameW, frameH, image, skin?}]}`.
+  `{format: 'pixel-sprite/1', name, size, ground, animations, skins?, states?, points?, skinPoints?, variants: [{res, lod, frameW, frameH, image, skin?}]}`.
   `ground` is `compiled.ground`, or `groundFromPixels`: the bottom of the lowest opaque row of the
   first frame of the largest sheet, in units. `points` comes from **`bakePoints(compiled)`**, which
   poses every frame with `samplePose` + `worldMatrices` and records `[x, y, rotDeg]` per point, animation
-  and frame, in units (so one table serves every variant). It is baked from the default look only.
+  and frame, in units (so one table serves every variant). Each skin's points are baked too; a skin
+  whose table differs from the default one (it moves the parts points ride on) gets it under
+  `skinPoints.<skin>`.
 - **`exportSheet(compiled, res, {image, overrides})`** (`export.js`) renders one sheet and writes
   Aseprite "hash" JSON: frames keyed by running index (`"0"`, `"1"`, ...; what Phaser's
   `createFromAseprite` expects) with per-frame `duration`, `meta.frameTags` per animation
   (`repeat: "1"` on non-looping ones), a PixiJS `animations` map, one 1×1 slice per point with a key
   per frame (from `bakePoints`, converted to frame pixels), and `meta.pixelStudio` with `size`,
-  `ground` and per-animation `fps`, `loop`, `speed`, `speedY`, `wall`, `events`. It returns
+  `ground` (falling back to `groundFromPixels`, like `buildBundle`) and per-animation `fps`, `loop`,
+  `speed`, `speedY`, `wall`, `events`. It returns
   `{width, height, rgba, json}`; the CLI's `export` command encodes and writes the two files.
 - **`<pixel-sprite>`** (`src/runtime/pixel-sprite.js`) does not import the engine; it reads only
   the bundle. Full reference: [runtime.md](runtime.md).
@@ -696,13 +710,6 @@ wave phases, unvalidated style/material/track values, CLI argument handling, `re
   the wrong directory.
 - **Inline figures are not fitted.** `resolveFigure` ignores `scale`, `offset` and `bones` patches when
   `figure` is an inline object rather than a name.
-- **`preview --anim` summary line.** With `--anim`, the image holds only the named rows, but the
-  printed `rows per block:` line still lists every animation (`bin/pixel.mjs`, `preview` case).
-- **`exportSheet` ground can be `null`.** `meta.pixelStudio.ground` is `compiled.ground`, which is
-  `null` for a spec with no figure and no `ground`; `buildBundle` falls back to `groundFromPixels` in
-  that case, `exportSheet` does not.
-- **Skins share the base points.** `buildBundle` bakes `points` from the default look only, so a skin
-  that moves the part a point rides on still gets the default positions.
 
 ## 9. How to extend
 
@@ -820,8 +827,8 @@ command and bare-name preview also read the directory. `studio/figures.html` has
 npm test            # node --test test/*.test.mjs  (Node ≥ 20, no dependencies)
 ```
 
-All 54 tests pass at the time of writing. They use `node:test` and `node:assert/strict`, import from
-`src/core/index.js`, and build small specs inline. `blob()` in `engine.test.mjs` and `arm()` in
+The test suite uses `node:test` and `node:assert/strict`. The engine tests import from
+`src/core/index.js` and build small specs inline. `blob()` in `engine.test.mjs` and `arm()` in
 `rig.test.mjs` are the helpers.
 
 | File | Covers |
@@ -830,6 +837,8 @@ All 54 tests pass at the time of writing. They use `node:test` and `node:assert/
 | `test/rig.test.mjs` | Reach: the tip hits a per-frame target, `aim` fixes the end orientation, limits are respected, validation messages. Bounds warnings with frames and edges. `extends`: material merge, part patch/add/remove with descendants, animation merge, `materialMap`, chained `resolveExtends`. |
 | `test/figure.test.mjs` | Every figure expands cleanly: no errors, no warnings, no motion notes, no bounds warnings. Gait feet move backward at exactly `speed`. `pose` keeps feet planted. Dressing and `bone` layers ride their bones, and tracks layer on the motion. Figure errors point at paths. Follow-through lags during the gait and stays still at rest. Every example resolves and validates. Front view: planted feet, foreshortening. Hop: gravity arc, volume-preserving squash, shadow shrink. Events: footsteps at touchdowns, hop takeoff/land, jump launch/land, author events. Climb: feet planted on the wall at `speedY`. Ground line from the figure, fitted and overridable. Points baked per frame, with validation messages. Holds become `durations`; bundles carry ground, size, events, points, `speedY`. Variants merge points by name. States validated against animations and inputs; skins compile as patched characters. `exportSheet`: Aseprite frames and tags, PixiJS map, slices, extras. |
 | `test/runtime.test.mjs` | `pickVariant`: integer scale ≥ 2, most detail within 20%, closest fit otherwise. The shared clock (a throwing subscriber cannot stop it; dt clamp and reset), `checkBundle` errors, `deviceScale` at fractional DPRs. `jumpArc` lands on time at the apex height; `cells` splits overlapping cut-outs into disjoint cells. `parseCondition` and `StateMachine` (inputs, `sync`, waiting for `footstep`, triggers, `then: "previous"`, random fidgets). |
+| `test/plugins.test.mjs` | Plug-ins, in their own file because registrations are process-wide: a registered shape, texture and motion validate, render and animate like built-ins; registration errors are clear. |
+| `test/references.test.mjs` | The reference registry (`references/`, checked by `scripts/references.mjs`): every source is cited and every logged value matches, `references/CREDITS.md` is up to date with `sources.json`, and the checks catch bad licences, drifted values, unknown sources and measurement files that do not say who, when and how. |
 | `test/browser/runtime.html` | 24 in-browser checks of `<pixel-sprite>` (open it on real devices; passes in Chromium and the iOS 18.1 Safari simulator): single load on upgrade, reserved box, errors and `reload()`, races, shared sheets, device-pixel scaling, decorative `alt`, touch and mouse input, one-shots, the clock, footstep events, holds, `point()` with `flip`, `groundOffset`, `hitTest()`, the state machine, skins, transition clips, rage clicks. Run in Firefox and WebKit with `scripts/browser-check.mjs`. |
 
 Not covered by tests: the CLI, the studio, the `<pixel-stage>` / `<pixel-actor>` elements beyond

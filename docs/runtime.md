@@ -11,6 +11,7 @@ This page covers the element and the bundle format. For the character spec that 
 - [Loading, errors and fallbacks](#loading-errors-and-fallbacks)
 - [Animation playback](#animation-playback)
 - [Events, attachment points and the foot line](#events-attachment-points-and-the-foot-line)
+- [Bursts (rage clicks)](#bursts-rage-clicks)
 - [State machines](#state-machines)
 - [Skins](#skins)
 - [How the resolution variant is chosen](#how-the-resolution-variant-is-chosen)
@@ -20,13 +21,14 @@ This page covers the element and the bundle format. For the character spec that 
 - [Styling](#styling)
 - [Accessibility](#accessibility)
 - [Moving a walking sprite across the page](#moving-a-walking-sprite-across-the-page)
+- [Games](#games)
 - [Testing on devices](#testing-on-devices)
 - [Examples](#examples)
 - [Bundle format `pixel-sprite/1`](#bundle-format-pixel-sprite1)
 
 ## Installation
 
-The runtime is a single ES module. Copy `src/runtime/pixel-sprite.js` next to your page and load it with a module script. Loading it registers the element as `pixel-sprite` (unless that name is already defined).
+The runtime is a single ES module with no imports. Copy `src/runtime/pixel-sprite.js` next to your page and load it with a module script. Loading it registers the element as `pixel-sprite` (unless that name is already defined).
 
 ```html
 <script type="module" src="pixel-sprite.js"></script>
@@ -35,12 +37,21 @@ The runtime is a single ES module. Copy `src/runtime/pixel-sprite.js` next to yo
 
 `npm run build:demo` copies this file to `demo/assets/pixel-sprite.js`, which is what the demo pages load.
 
-If you install the package (from a git checkout or path; it is not on npm yet), the module is also exported as `pixel-studio/runtime`:
+The package is not on npm yet. Install it from GitHub:
+
+```sh
+npm i github:pavelpascari/pixel-studio
+```
+
+The module is then `pixel-studio/runtime`, and [`<pixel-stage>`](stage.md) is `pixel-studio/stage` (it imports `./pixel-sprite.js`, so loading it registers `<pixel-sprite>` too; to copy it by hand, copy both files into the same folder):
 
 ```js
 import 'pixel-studio/runtime';                         // registers <pixel-sprite>
 import { PixelSprite, clock, pickVariant } from 'pixel-studio/runtime';
+import 'pixel-studio/stage';                           // registers <pixel-stage> and <pixel-actor>
 ```
+
+For a first page from scratch, see [getting-started.md](getting-started.md).
 
 The module exports:
 
@@ -51,6 +62,9 @@ The module exports:
 | `pickVariant(variants, size)` | The variant chooser ([below](#how-the-resolution-variant-is-chosen)). |
 | `deviceScale(frameW, frameH, size, dpr)` | Device pixels per sprite pixel ([below](#device-pixels-and-scaling)). |
 | `checkBundle(bundle, where?)` | Throws a clear error unless the object is a valid `pixel-sprite/1` bundle; returns it. |
+| `BurstDetector` | The rapid-click counter ([Bursts](#bursts-rage-clicks)): `new BurstDetector({min = 3, gap = 450})`, `hit(t)` → `{count, rate, burst}`, `calm(t)` → `true` once a burst is over. Pure: pass the time in ms. |
+| `StateMachine` | The bundle state machine ([State machines](#state-machines)), without a DOM: `new StateMachine(states, animations, host)`. |
+| `parseCondition(when)` | Parses a transition's `when` into a function `(inputs, triggers) → boolean`; throws on bad syntax. |
 | `BUNDLE_FORMAT` | `"pixel-sprite/1"`. |
 
 It can be imported in Node: without `HTMLElement`, the class extends an empty class and the element is not registered. The tests use this for the helpers and the clock.
@@ -72,10 +86,10 @@ If both are present, `src` wins. The inline JSON is read once, when the element 
 | Attribute | Default | Observed | Description |
 |---|---|---|---|
 | `src` | none | yes | URL of a bundle JSON file, resolved against `document.baseURI`. Changing it loads the new bundle; if several changes overlap, the last one wins. Fetches are cached per absolute URL, so sprites sharing a bundle fetch it once and share its decoded sheets. Failed fetches are not cached. |
-| `anim` | first animation in the bundle | yes | Base animation. If the name is not in the bundle, the first animation is used. Changing the attribute plays the new animation (an unknown name is ignored). |
+| `anim` | first animation in the bundle | yes | Base animation. If the name is not in the bundle, the first animation is used. Changing the attribute plays the new animation (an unknown name is ignored). With a [state machine](#state-machines) running, `anim` is read once at load as the starting node (if it names a node) and changes are ignored. |
 | `size` | `128` | yes | Target display height in CSS pixels. Used to reserve the box before load, to choose a resolution variant, and to choose the scale. The displayed size can differ from `size` (see [below](#how-the-resolution-variant-is-chosen)). |
 | `res` | none | yes | Force a variant by its `res` (e.g. `res="16"` for a chunky look at a large size). If the bundle has no variant with that `res`, the automatic choice is used. |
-| `fps` | the animation's `fps` | yes | Overrides the frame rate of every animation. |
+| `fps` | the animation's `fps` | yes | Overrides the frame rate of every animation. Capped at 60. |
 | `hover-anim` | none | read on event | Ignored when the bundle has a [state machine](#state-machines) (its interactions take over). Animation to play while a mouse or pen is over the element. On leave the base animation resumes, unless a one-shot is still running. On touch screens a tap plays it once (see [Touch screens](#touch-screens)). |
 | `click-anim` | none | read on event | Animation to play once on `click` (or tap). When it finishes, the element fires `spriteend` and returns to `hover-anim` (if a mouse is still over it) or to the base animation. |
 | `paused` | absent | yes | Boolean. While present, playback stops on the current frame. `pause()` and `resume()` set and remove it. |
@@ -149,6 +163,8 @@ Because `spriteend` bubbles, one listener can watch every sprite on a page (from
 - **Before the script runs** the element is an unknown inline element. To reserve its space even then, add a rule such as `pixel-sprite:not(:defined) { display: inline-block; width: 128px; height: 128px }`.
 - **Races.** Each load carries a token; a load that is overtaken by a newer `src` is dropped. A new bundle, its variant and its sheet are committed together, so no frame ever sees a bundle with an animation from another one.
 - **Shared work.** Bundles are fetched once per URL and each variant sheet is decoded once (into an `ImageBitmap` where supported) and shared by every sprite that uses it.
+- **Not JSON.** A server that answers a missing bundle with an HTML page (a common single-page-app fallback) gets an `error` naming the URL and saying it got HTML, rather than a bare JSON parse error.
+- **Sheets on another origin.** Sheets that are not data URLs (`pixel bundle --external`) are loaded with `crossOrigin="anonymous"`. If they live on another origin (a CDN), it must send `Access-Control-Allow-Origin`; otherwise skins stored as deltas, `hitTest` and `topAt` cannot read the pixels.
 - **Content Security Policy.** Bundles with data-URL sheets (the default) need `img-src data:`; fetched bundles need `connect-src` for their URL. For a strict CSP, build bundles whose `image` fields point at separate PNG files.
 
 ## Animation playback
@@ -191,7 +207,9 @@ frame for its own duration. The `fps` attribute scales them.
 
 **Attachment points.** `points` lists named points (`beak`, `head`, `handNear`, …) per animation and frame, in spec units.
 `el.point('beak')` converts the current one to page coordinates: for speech bubbles, a held item drawn as another sprite,
-particles, or a cursor the goose pecks at.
+particles, or a cursor the goose pecks at. A spec point named `beak@front` says where `beak` is in the front view's
+animations (`idle@front`, …); the bundle has no separate `beak@front` table, only `beak` with an entry for every
+animation, so `el.point('beak')` works in any view. Turns (`turn@…`, `unturn@…`, `look@…`) use the side point.
 
 **The foot line.** `ground` is where the character's feet are (y in units). `el.groundOffset` gives it in CSS px for the
 displayed size, so a sprite can stand exactly on an element's top edge: `top = element.top − groundOffset`.
@@ -221,16 +239,19 @@ does the choreography. From `examples/goose-root.json`:
 ```json
 "states": {
   "initial": "idle",
-  "inputs": {"speed": 0, "honk": "trigger", "hovered": false},
+  "inputs": {"speed": 0, "honk": "trigger", "hovered": false, "fury": 1},
   "nodes": {
-    "idle": {"anim": "idle", "random": [{"anim": "hack", "every": [6, 12]}]},
-    "walk": {"anim": "waddle"},
-    "run":  {"anim": "run"},
-    "honk": {"anim": "honk", "then": "previous"},
-    "hack": {"anim": "hack"}
+    "idle":  {"anim": "idle", "random": [{"anim": "hack", "every": [6, 12]}]},
+    "walk":  {"anim": "waddle"},
+    "run":   {"anim": "run"},
+    "honk":  {"anim": "honk", "then": "previous", "rate": "fury"},
+    "panic": {"anim": "run", "rate": "fury"},
+    "hack":  {"anim": "hack"}
   },
   "transitions": [
-    {"from": "*", "to": "honk", "when": "honk"},
+    {"from": ["idle", "walk", "run", "hack", "honk"], "to": "panic", "when": "fury >= 2"},
+    {"from": "panic", "to": "idle", "when": "fury < 2", "at": "footstep"},
+    {"from": ["idle", "walk", "run", "hack"], "to": "honk", "when": "honk"},
     {"from": ["idle", "hack"], "to": "walk", "when": "speed > 0 && speed <= 60"},
     {"from": ["idle", "hack", "walk"], "to": "run", "when": "speed > 60", "at": "sync"},
     {"from": "run", "to": "walk", "when": "speed > 0 && speed <= 60", "at": "sync"},
@@ -238,7 +259,13 @@ does the choreography. From `examples/goose-root.json`:
     {"from": "idle", "to": "hack", "when": "hovered"},
     {"from": "hack", "to": "idle", "when": "!hovered"}
   ],
-  "interactions": [{"on": "click", "fire": "honk"}, {"on": "enter", "set": {"hovered": true}}, {"on": "leave", "set": {"hovered": false}}]
+  "interactions": [
+    {"on": "click", "fire": "honk"},
+    {"on": "burst", "set": {"fury": "$rate"}},
+    {"on": "calm", "set": {"fury": 1}},
+    {"on": "enter", "set": {"hovered": true}},
+    {"on": "leave", "set": {"hovered": false}}
+  ]
 }
 ```
 
@@ -252,24 +279,27 @@ goose.addEventListener('statechange', (e) => console.log(e.detail.from, '→', e
 
 | part | meaning |
 |---|---|
+| `initial` | The starting node (default: the first node). An `anim` attribute that names a node overrides it. |
 | `inputs` | Starting values: numbers, booleans, words, or `"trigger"` (true only while it is being fired). |
 | `nodes.<name>.anim` | The animation the node plays (looping, or once if the animation does not loop). |
 | `nodes.<name>.then` | Play once, then go to this node, or `"previous"`. |
 | `nodes.<name>.rate` | Playback speed for the node: a number (0..4) or the name of an input whose value is used (clamped to 0.25..4). |
 | `nodes.<name>.random` | Idle fidgets: `[{"anim", "every": [min, max] seconds, "weight"}]`, each played once, then back. |
 | `transitions[].from` / `to` | A node, a list of nodes, or `"*"`. The first matching transition wins. |
-| `transitions[].when` | `name`, `!name`, or `name op value` (`== != > < >= <=`), joined with `&&`. |
+| `transitions[].when` | `name`, `!name`, or `name op value` (`== != > < >= <=`), joined with `&&` or `and`. A value is a number, `true`, `false`, or a word, quoted or not (`mood == happy`, `mood == 'happy'`). No `when`: always true. |
 | `transitions[].at` | When to switch: `now` (default), `end` (when the animation finishes or loops), `sync` (keep the cycle's phase: walk → run without a hitch), or an event name such as `footstep`. A waiting switch is dropped if its condition stops being true. |
 | `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
 
-`play()` still works and overrides the machine until its next transition. `states="off"` turns the machine off. The
-machine is a plain class, exported as `StateMachine` (with `parseCondition`), and runs without a DOM.
+`play()` still works and overrides the machine until its next transition. While the machine runs, changes to the
+`anim` attribute are ignored. `states="off"` turns the machine off. The machine is a plain class, exported as
+`StateMachine` (with `parseCondition`), and runs without a DOM.
 
 ## Skins
 
 A spec's `skins` are named patches (parts, materials, material remapping, style) such as a party hat or a team colour.
-The bundle bakes every skin as extra variants tagged with `skin`, usually as a colour swap and an overlay of the
-default sheet (a few KB) rather than a sheet of its own. The `skin` attribute picks one and can change at any
+The bundle bakes every skin as extra variants tagged with `skin`, usually as a colour swap (`recolor`) and an overlay
+of the pixels that still differ, applied to the default sheet of the same resolution, rather than a sheet of its own.
+A skin variant gets its own `image` only when that is smaller. The `skin` attribute picks one and can change at any
 time; the sheet is swapped without restarting the animation.
 
 ```html
@@ -277,8 +307,8 @@ time; the sheet is swapped without restarting the animation.
 ```
 
 A skin that moves the parts attachment points ride on gets its own table (`skinPoints`); the foot line is shared.
-Each skin adds a full set of sheets, so it adds about as much as the default look to the bundle (`goose-root`: 73 KB
-with no skins, 212 KB with two).
+Skins stored this way are cheap: `goose-root`'s two skins (a party hat; a red team recolour) take about 14 KB of its
+161 KB bundle.
 
 ## How the resolution variant is chosen
 
@@ -503,7 +533,7 @@ sprite.play('honk', { once: true });   // returns to idle (or hover-anim) when d
 
 ## Bundle format `pixel-sprite/1`
 
-A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json --res 48,24`, images shortened):
+A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json`, 161 KB; abridged, images shortened):
 
 ```json
 {
@@ -516,35 +546,57 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
     "waddle": { "row": 1, "frames": 8,  "fps": 10, "loop": true, "speed": 23.21,
                 "events": [{ "frame": 0, "name": "footstep", "data": { "leg": "legNear" } },
                            { "frame": 4, "name": "footstep", "data": { "leg": "legFar" } }] },
-    "honk":   { "row": 3, "frames": 10, "fps": 10, "loop": false, "events": [{ "frame": 3, "name": "honk" }],
+    "run":    { "row": 2, "frames": 6,  "fps": 12, "loop": true, "speed": 55.17, "events": [ ... ] },
+    "rush":   { "row": 3, "frames": 6,  "fps": 14, "loop": true, "speed": 72.41, "events": [ ... ] },
+    "honk":   { "row": 4, "frames": 10, "fps": 10, "loop": false, "events": [{ "frame": 3, "name": "honk" }],
                 "durations": [100, 100, 100, 200, 100, 100, 100, 100, 100, 100] },
-    "jump":   { "row": 4, "frames": 10, "fps": 10, "loop": false,
+    "jump":   { "row": 5, "frames": 10, "fps": 10, "loop": false,
                 "events": [{ "frame": 3, "name": "launch" }, { "frame": 7, "name": "land" }] },
-    "climb":  { "row": 9, "frames": 8,  "fps": 12, "loop": true, "speedY": 24.55, "wall": 58, "events": [ ... ] },
+    "climb":  { "row": 10, "frames": 8, "fps": 12, "loop": true, "speedY": 24.55, "wall": 58, "events": [ ... ] },
     ...
+    "idle@front":  { "row": 14, "frames": 8, "fps": 6,  "loop": true },
+    "turn@front":  { "row": 24, "frames": 4, "fps": 12, "loop": false },
+    "look@front":  { "row": 26, "frames": 8, "fps": 6,  "loop": true },
+    "idle@back":   { "row": 27, "frames": 8, "fps": 6,  "loop": true },
+    ...
+    "waddle>idle": { "row": 39, "frames": 3, "fps": 6,  "loop": false, "mix": { "from": "waddle", "to": "idle" } },
+    "run>idle":    { "row": 40, "frames": 3, "fps": 6,  "loop": false, "mix": { "from": "run", "to": "idle" } },
+    "idle>waddle": { "row": 41, "frames": 2, "fps": 10, "loop": false, "mix": { "from": "idle", "to": "waddle" } }
   },
   "skins": ["party", "redteam"],
   "states": { ... },
-  "points": { "beak": { "idle": [[85.5, 26.17, 0], ...], "waddle": [ ... ], ... }, "head": { ... }, "tail": { ... } },
+  "points": { "beak": { "idle": [[85.5, 26.17, 0], ...], "waddle": [ ... ], "idle@front": [ ... ], ... },
+              "head": { ... }, "tail": { ... } },
   "variants": [
-    { "res": 24, "lod": 2, "frameW": 24, "frameH": 24, "image": "data:image/png;base64,iVBORw0K..." },
-    { "res": 48, "lod": 3, "frameW": 48, "frameH": 48, "image": "data:image/png;base64,iVBORw0K..." },
-    { "res": 24, "lod": 2, "frameW": 24, "frameH": 24, "skin": "party", "image": "..." },
+    { "res": 16, "lod": 1, "frameW": 16, "frameH": 16, "image": "data:image/png;base64,iVBORw0K..." },
+    { "res": 32, "lod": 2, "frameW": 32, "frameH": 32, "image": "data:image/png;base64,iVBORw0K..." },
+    { "res": 64, "lod": 3, "frameW": 64, "frameH": 64, "image": "data:image/png;base64,iVBORw0K..." },
+    { "res": 16, "lod": 1, "frameW": 16, "frameH": 16, "skin": "party", "overlay": "data:image/png;base64,iVBORw0K..." },
+    ...
+    { "res": 16, "lod": 1, "frameW": 16, "frameH": 16, "skin": "redteam",
+      "recolor": [["46ff7aff", "ff4d5eff"], ...], "overlay": "data:image/png;base64,iVBORw0K..." },
     ...
   ]
 }
 ```
 
+**Views.** A spec with `views` adds animations named `<animation>@<view>` (`idle@front`, `waddle@back`), plus
+`turn@<view>` and `unturn@<view>` (one-shots from the side to that view and back) and, for views with a `look`,
+`look@<view>` (the side idle with the head turned). They are ordinary animations to the element: `play('idle@front')`.
+[`<pixel-stage>`](stage.md) uses them for `actor.face('viewer')`. Each view adds about a full set of rows to the
+sheets; `pixel bundle --views front` (or `--views none`) ships fewer. See
+[figures.md](figures.md#views-the-same-character-from-other-angles).
+
 ### Top level
 
 | Field | Type | Description |
 |---|---|---|
-| `format` | string | Always `"pixel-sprite/1"` (exported as `BUNDLE_FORMAT`). The runtime rejects other values with an `error` event. |
+| `format` | string | `"pixel-sprite/1"` (exported as `BUNDLE_FORMAT`). The runtime plays any `pixel-sprite/1.x` (later minor versions only add things it can ignore) and rejects other values with an `error` event. |
 | `name` | string | The spec's `name` (`"character"` if the spec has none). Used as the fallback `aria-label`. |
 | `size` | [w, h] | The spec canvas in units. Optional (absent in bundles built with 0.1.0, where 100 × 100 is assumed). Used to convert `speed` to px/s. |
 | `ground` | number | The foot line: y in units where the feet stand. From the figure (lowest toe, or the shadow line), the spec's `ground`, or the lowest opaque pixel of the first frame. |
-| `animations` | object | Animation name → playback metadata. Key order is the spec's animation order; the first key is the default animation. Shared by all variants. |
-| `points` | object, optional | Attachment points: `{name: {anim: [[x, y, rotDeg], …one per frame]}}` in units. |
+| `animations` | object | Animation name → playback metadata. Key order is the spec's animation order, then view animations (`name@view`), then transition clips (`from>to`); the first key is the default animation. Shared by all variants. |
+| `points` | object, optional | Attachment points: `{name: {anim: [[x, y, rotDeg], …one per frame]}}` in units, with an entry for every animation (view animations included; a spec's `name@view` point is baked into `name`'s entries for that view). |
 | `skins` | array, optional | Names of the skins baked as extra variants. |
 | `skinPoints` | object, optional | `{skin: points}` for skins whose points differ from the default look's. |
 | `states` | object, optional | The state machine (see [State machines](#state-machines)). |
@@ -555,15 +607,15 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 | Field | Type | Description |
 |---|---|---|
 | `row` | integer | Row of the sprite sheet holding this animation (0-based, same in every variant). |
-| `frames` | integer | Number of frames (1–64 in the spec). Frame `i` is in column `i`. |
-| `fps` | number | Frames per second (spec default 8). The element's `fps` attribute overrides it. |
+| `frames` | integer | Number of frames (1–64 in the spec; `checkBundle` accepts 1–256). Frame `i` is in column `i`. |
+| `fps` | number | Frames per second (spec default 8; `checkBundle` accepts above 0 up to 60). The element's `fps` attribute overrides it. |
 | `loop` | boolean | `true` to repeat. `false` stops on the last frame and fires `spriteend` (see [Animation playback](#animation-playback)). |
 | `speed` | number, optional | Travel speed in spec units per second for gait animations. Present only when non-zero. See [Moving a walking sprite](#moving-a-walking-sprite-across-the-page). |
 | `speedY` | number, optional | Climbing speed, units per second upward. |
 | `wall` | number, optional | Climbing: the x (units) of the wall the feet hold, to line the sprite up with an element's side. |
 | `events` | array, optional | `[{frame, name, data?}]`, fired as `spriteevent`. |
 | `durations` | array, optional | Milliseconds per frame, present when the spec has `holds`. |
-| `mix` | object, optional | `{from, to}` on transition clips, which are animations named `"from>to"`. |
+| `mix` | object, optional | `{from, to}` on transition clips, which are animations named `"from>to"` (from the spec's `mixes`, see [SPEC.md](SPEC.md#animations)). `play()` uses them on its own (see [Properties and methods](#properties-and-methods)). |
 
 ### `variants[i]`
 

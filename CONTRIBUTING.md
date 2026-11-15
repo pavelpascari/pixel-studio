@@ -24,6 +24,8 @@ JSON spec to pixels. The other references:
 | [docs/api.md](docs/api.md) | the JavaScript API |
 | [docs/cli.md](docs/cli.md) | the `pixel` CLI |
 | [docs/runtime.md](docs/runtime.md) | the `<pixel-sprite>` element and the bundle format |
+| [docs/stage.md](docs/stage.md) | `<pixel-stage>`: characters living on a page |
+| [docs/playground.md](docs/playground.md) | the URL-driven playground page |
 | [docs/DESIGN.md](docs/DESIGN.md) | why the format looks the way it does |
 
 ## Rules the code keeps

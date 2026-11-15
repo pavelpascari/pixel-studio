@@ -8,39 +8,41 @@ agent ──JSON rig──▶ engine (SDF raster + pixel-art shader) ──▶ b
           └──────────── preview PNG / ASCII / validation errors ◀──┘
 ```
 
-Zero dependencies. Plain ES modules. Node ≥ 20 for the CLI. MIT licensed. Early (0.1): the spec format may still change.
+Zero dependencies. Plain ES modules, no build step. Node ≥ 20 for the CLI; any current browser for the runtime.
+MIT licensed.
 
-## Try it
+> **Status: alpha.** The engine, CLI and web components work and are tested, and every page here runs on them. The
+> spec and bundle formats may still change before 1.0; each change is listed in [CHANGELOG.md](CHANGELOG.md).
 
-```bash
-npm run studio            # → http://localhost:5173/studio/  (/site/ for the docs with live examples, /demo/ for the example website)
-npm test                  # engine + runtime tests (browser checks: /test/browser/runtime.html)
-npm run build:demo        # rebuild demo/assets/*.bundle.json from examples/
-```
-
-CLI (the agent's hands and eyes):
+## Five minutes to a goose on your page
 
 ```bash
-node bin/pixel.mjs validate examples/fox.json
-node bin/pixel.mjs preview  examples/fox.json --out fox.png        # every animation × 16/32/64 px
-node bin/pixel.mjs ascii    examples/fox.json --res 24 --anim walk # text view for non-vision agents
-node bin/pixel.mjs where    examples/goose-root.json --anim hack     # world positions of pivots, per frame
-node bin/pixel.mjs resolve  examples/goose-sudo.json                 # a variant merged with its base
-node bin/pixel.mjs bundle   examples/fox.json --out site/fox.bundle.json
-node bin/pixel.mjs export   examples/fox.json --res 32 --out game/    # PNG + Aseprite JSON (Phaser, PixiJS)
-node bin/pixel.mjs figures                                         # the skeleton library
-node bin/pixel.mjs brief                                           # the agent brief / system prompt
+npm i github:pavelpascari/pixel-studio          # one package, no dependencies (npm release to follow)
 ```
 
-On a website:
+Make a character by changing an example (`my-goose.json`):
+
+```json
+{ "extends": "./node_modules/pixel-studio/examples/goose-base.json",
+  "name": "Marigold",
+  "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }
+```
+
+```bash
+npx pixel validate my-goose.json                          # errors with JSON paths and did-you-mean
+npx pixel preview  my-goose.json --out my-goose.png       # every animation at 16, 32 and 64 px
+npx pixel bundle   my-goose.json --out my-goose.bundle.json
+```
 
 ```html
-<script type="module" src="pixel-sprite.js"></script>
-<pixel-sprite src="fox.bundle.json" anim="idle" size="128" hover-anim="walk" click-anim="wave"></pixel-sprite>
+<script type="module" src="node_modules/pixel-studio/src/runtime/pixel-sprite.js"></script>
+<pixel-sprite src="my-goose.bundle.json" anim="idle" size="128" hover-anim="waddle" click-anim="honk"></pixel-sprite>
 ```
 
+The full walk-through is [docs/getting-started.md](docs/getting-started.md).
+
 Characters can also live on the page itself: walk along cards, jump between them, climb their sides, sit on edges
-and hide behind things ([docs/stage.md](docs/stage.md), demo at `/demo/stage.html`):
+and hide behind things ([docs/stage.md](docs/stage.md)):
 
 ```html
 <script type="module" src="pixel-stage.js"></script>
@@ -48,19 +50,47 @@ and hide behind things ([docs/stage.md](docs/stage.md), demo at `/demo/stage.htm
 <pixel-stage><pixel-actor src="goose.bundle.json" size="64"></pixel-actor></pixel-stage>
 ```
 
+## The CLI: the agent's hands and eyes
+
+```bash
+npx pixel validate examples/fox.json
+npx pixel preview  examples/fox.json --out fox.png          # every animation × 16/32/64 px
+npx pixel ascii    examples/fox.json --res 24 --anim walk   # text view for agents without vision
+npx pixel where    examples/goose-root.json --anim honk     # world positions of pivots, per frame
+npx pixel resolve  examples/goose-sudo.json                 # a variant merged with its base
+npx pixel bundle   examples/fox.json --out fox.bundle.json
+npx pixel export   examples/fox.json --res 32 --out game/   # PNG + Aseprite JSON (Phaser, PixiJS)
+npx pixel figures                                           # the skeleton library
+npx pixel brief                                             # the agent brief (system prompt)
+```
+
+(In a clone of this repository, use `node bin/pixel.mjs` instead of `npx pixel`, and the example paths work as
+written.)
+
+## Working in this repository
+
+```bash
+npm run studio            # http://localhost:5173/studio/ ; /site/ is the docs site with live examples; /demo/ the demos
+npm test                  # engine, figures, plug-ins, provenance and runtime tests (node:test)
+npm run build:demo        # rebuild demo/assets/*.bundle.json from examples/
+```
+
 ## Documentation
 
-The **docs site** (`site/`, open `http://localhost:5173/site/` after `npm run studio`) shows every feature as a live
-example next to its code, with spec playgrounds that render as you type. The reference docs:
+Start with [docs/getting-started.md](docs/getting-started.md). The **docs site** (`site/`, at
+`http://localhost:5173/site/` after `npm run studio`) shows every feature as a live example next to its code, with
+spec playgrounds that render as you type. The reference docs:
 
 | doc | covers |
 |---|---|
+| [docs/getting-started.md](docs/getting-started.md) | Install, write a character, preview, bundle, put it on a page. |
 | [docs/SPEC.md](docs/SPEC.md) | The character spec. It doubles as the agent brief. |
 | [docs/figures.md](docs/figures.md) | Figures, motion models, follow-through, writing a new figure. |
 | [docs/runtime.md](docs/runtime.md) | `<pixel-sprite>`, the bundle format, events, attachment points, state machines, skins, moving sprites on a page. |
 | [docs/stage.md](docs/stage.md) | `<pixel-stage>`: characters that walk, jump, climb, sit and hide on a real page. |
 | [docs/cli.md](docs/cli.md) | Every CLI command and flag. |
 | [docs/api.md](docs/api.md) | The JavaScript API. |
+| [docs/playground.md](docs/playground.md) | The playground page: a character set up entirely by its URL, for people and browser agents. |
 | [docs/architecture.md](docs/architecture.md) | How the engine works inside, and how to extend it. |
 | [docs/DESIGN.md](docs/DESIGN.md) | Why it is designed this way. |
 
@@ -68,20 +98,17 @@ example next to its code, with spec playgrounds that render as you type. The ref
 
 | Path | What |
 |---|---|
-| `docs/` | Documentation (see above); `docs/research/` holds research notes for upcoming work. |
-| `figures/` | The **figure library**: goose, human, dog, chibi (front-facing), blob (soft body), with motion presets (idle, walk, run, trot, sneak, hop). |
-| `src/core/figure.js`, `motion.js` | Figures → bones, motion models (gait / idle / pose with planted feet, hop with squash and stretch, front-view walking), layered author tracks. **Follow-through** springs live in `animate.js`. |
-| `src/core/rig.js`, `lint.js`, `extend.js` | Rig maths and **reach** constraints (IK), **bounds/reach warnings**, **variants** (`extends`). |
-| `src/core/` | Isomorphic engine: spec validation (JSON paths + did-you-mean), SDF shapes, animation tracks, rasterizer + shader (hue-shifted ramps, lighting, textures, dither, outlines, inner lines, contact shadows), sheets, bundles, ASCII. |
-| `src/runtime/pixel-sprite.js` | The web component. Picks the resolution variant like `srcset`, scales in whole device pixels (crisp on phones), reserves its box and shows a poster until loaded, `ready`/`error`/`spriteend`/`spriteevent` events, attachment points and hit testing, a state machine and skins from the bundle, hover for mouse and tap for touch, reduced motion, off-screen pause, and a shared frame clock for moving sprites across a page. One failing sprite cannot stop the others. |
-| `src/runtime/pixel-stage.js` | `<pixel-stage>`: characters living on a page. Reads `data-pixel-*` elements as platforms, walls and hiding spots, plans routes (walk, drop, jump, climb), cuts occluders out with `clip-path`, tap to shoo, a pause button, and plays scenes (scripted moments as JSON). |
-| `bin/pixel.mjs` | CLI for agents. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
-| `studio/figures.html` | Figure viewer: each skeleton as dots and lines, with moving ground, foot trails and onion skin. |
-| `studio/goose.html` | Goose workbench: the goose large (up to 192 px, with skeleton and pixel grid), every part and shape switchable, realistic features from `studio/goose-features.json` to try on any goose, and the result as a spec. |
-| `studio/play.html` | Playground: one character with its setup in the URL (character, view, animation, skin, size, and a payload of colour, texture, style and part changes), so a look can be shared as a link. Made for agents too: see [docs/playground.md](docs/playground.md) and `studio/play.schema.json`. |
-| `studio/` | Studio: live JSON editor, animated stage (grid, onion skin, scrubbing), a strip showing all detail levels at once, shader knobs, sprite sheet, a live `<pixel-sprite>` preview, export, and the **Agent** tab. |
-| `examples/` | `goose-base` + four variants (`goose-root`, `-sudo`, `-phreak`, `-kiddie`); `pip` (written by me); `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` + the CLI); `clawd` (a pixel critter after the Claude Code mascot, generated on a 16-cell grid by `scripts/gen-clawd.mjs`). |
-| `demo/` | `index.html`: a fake landing page using the bundles, with a goose driven by its state machine and skins. `flock.html`: the unruly hacker geese roaming a lawn. `stage.html`: characters climbing, jumping, sitting on and hiding behind the page's cards. |
+| `src/core/` | The isomorphic engine: spec validation (JSON paths + did-you-mean), figures and motion models, rig maths and IK, variants, SDF shapes, the rasterizer and pixel-art shader (hue-shifted ramps, lighting, textures, dither, outlines, inner lines, contact shadows), sheets, bundles, export, ASCII, plug-ins. |
+| `src/runtime/pixel-sprite.js` | The `<pixel-sprite>` web component: one file, no imports. Picks the resolution variant like `srcset`, scales in whole device pixels, shows a poster until loaded, `ready`/`error`/`spriteend`/`spriteevent` events, attachment points and hit testing, state machines, skins, hover for mouse and tap for touch, reduced motion, off-screen pause, and a shared frame clock for moving sprites across a page. |
+| `src/runtime/pixel-stage.js` | `<pixel-stage>`: characters living on a page. Reads `data-pixel-*` elements as platforms, walls and hiding spots, plans routes (walk, drop, jump, climb), cuts occluders out with `clip-path`, tap to shoo, a pause button, and scenes (scripted moments as JSON). |
+| `bin/pixel.mjs` | The CLI. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
+| `figures/` | The **figure library**: `goose` (and `goose-front` for its front and back views), `human`, `dog`, `chibi` (front-facing), `blob` (soft body). |
+| `examples/` | Characters: `goose-base` and its variants `goose-root`, `-sudo`, `-phreak`, `-kiddie`, `-greylag`; `pip`; `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` and the CLI); `clawd`. |
+| `references/` | Where motion data comes from: every source cited, every measured value and frame logged ([references/README.md](references/README.md), credits in [references/CREDITS.md](references/CREDITS.md)). |
+| `studio/` | The studio (live JSON editor, animated stage with onion skin and scrubbing, all detail levels at once, shader knobs, sheet, export, an **Agent** tab), the figure viewer, the goose workbench and the playground. |
+| `site/` | The docs site with live examples. |
+| `demo/` | Example pages: `index.html` (a landing page with a goose driven by its state machine), `flock.html` (unruly geese roaming a lawn), `stage.html` (characters climbing, jumping on and hiding behind cards), `runner.html` (Fox Trail, a tiny runner game), `pp.html` (a studio website whose goose follows you down the page). |
+| `docs/` | Documentation; `docs/research/` holds research notes for upcoming work. |
 
 ## Levels of detail and texture
 
@@ -106,7 +133,8 @@ To check the premise, I gave a fresh agent only `docs/SPEC.md` and the CLI and a
 - The icon tier was too dark. Fixed: it gets an ambient boost.
 - The brief was missing several things: a style-key table, pivot = scale origin, pixel-grid alignment for tiny features, and no small head rotations.
 
-Still open (see DESIGN.md §6): tiny features are at the mercy of the pixel grid. At 16 px, the fox's four legs merge. There is no alpha or glow.
+Still open: tiny features are at the mercy of the pixel grid (at 16 px the fox's four legs merge), and there is no
+alpha or glow.
 
 ## Authoring helpers (added while building the goose flock)
 
@@ -153,11 +181,18 @@ Describe a character, then **Generate**: Claude writes the spec, the studio vali
 - The SDK loads from esm.sh on first use, so the rest of the studio works offline.
 - **This path has not been run end-to-end yet; it needs your key.** The extraction and validation-repair logic is exercised; the live API call isn't.
 
-## Out of scope for now
+## Known limitations and out of scope
 
-Pixel-level touch-up layers, mesh deformation (parts are rigid), palette constraints across characters, GIF/APNG export, hosting and accounts. See `docs/DESIGN.md` and `docs/research/`.
+- The spec and bundle formats are not frozen until 1.0.
+- Parts are rigid: no mesh deformation, no pixel-level touch-up layers, no palette constraints across characters.
+- No GIF/APNG export; PNG sheets, Aseprite JSON and bundles only.
+- The studio's Agent tab is a local prototype (see above).
+
+See `docs/DESIGN.md` and `docs/research/`.
 
 ## Contributing and license
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Pixel Studio is released under the [MIT License](LICENSE).
+Motion data comes only from public-domain and openly licensed sources (Muybridge's plates, published measurements);
+each is credited in [references/CREDITS.md](references/CREDITS.md).
 The studio's optional Agent tab loads the Anthropic SDK (MIT) from esm.sh at runtime; nothing third-party is bundled.

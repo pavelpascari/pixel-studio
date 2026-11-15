@@ -12,6 +12,7 @@ Demo: `npm run studio` and open `http://localhost:5173/demo/stage.html`. The des
 - [Marking up the page](#marking-up-the-page)
 - [Elements and attributes](#elements-and-attributes)
 - [JavaScript API](#javascript-api)
+  - [Styling](#styling)
 - [Scenes](#scenes)
   - [Triggers](#triggers)
 - [What the characters do](#what-the-characters-do)
@@ -32,6 +33,11 @@ Demo: `npm run studio` and open `http://localhost:5173/demo/stage.html`. The des
   <pixel-actor src="goose.bundle.json" size="64" alt="a goose" start=".card"></pixel-actor>
 </pixel-stage>
 ```
+
+`pixel-stage.js` imports `./pixel-sprite.js`, so copy both files from `src/runtime/` into the same folder. With the
+package installed (`npm i github:pavelpascari/pixel-studio`; it is not on npm yet), `import 'pixel-studio/stage'`
+registers `<pixel-stage>`, `<pixel-actor>` and `<pixel-sprite>`. See [getting-started.md](getting-started.md) for a
+first page.
 
 Put `<pixel-stage>` anywhere in `<body>` (the end is a good place). It is a 0 × 0 layer; its characters are positioned in
 document coordinates, so they scroll with the page.
@@ -63,7 +69,7 @@ Layout tips, learned building the demo:
 | attribute | default | |
 |---|---|---|
 | `controls` | `bottom-right` | Where the pause button sits: `bottom-right`, `bottom-left`, `top-right`, `top-left`, or `none` (then provide your own control and call `pause()`). |
-| `label` | `characters` | The word on the button: "Pause characters" / "Play characters". |
+| `label` | `character` or `characters` | The word on the button: "Pause characters" / "Play characters". Without it, the button says `character` when the stage has one actor. |
 | `floor` | `document` | `none`: no floor at the bottom of the page. |
 | `roam` | `viewport` | `page`: wander anywhere, not just near what is on screen. |
 
@@ -77,8 +83,10 @@ Layout tips, learned building the demo:
 | `behaviours` | `wander sit hide climb jump gaze` | What it may choose to do on its own. Behaviours the bundle cannot do (no `climb` animation, …) are skipped. `gaze`: now and then look at the reader (turn its head, or turn round), for characters with a front view. |
 | `anims` | automatic | Map roles to animation names when the defaults don't find them: `anims="walk=waddle run=gallop"`. |
 
-Animation roles and the names looked up for each, in order: idle `idle`; walk `walk waddle trot travel`; run `run trot travel walk`;
-jump `jump`; fall `fall`; sit `sit`; duck `duck sneak`; peek `peek`; climb `climb`; react `honk wave hop`.
+Animation roles and the names looked up for each, in order (an `anims` entry is tried first): idle `idle`; walk
+`walk waddle trot travel`; run `run trot travel walk waddle`; rush `rush`; jump `jump`; fall `fall`; sit `sit`; duck
+`duck sneak`; peek `peek`; climb `climb`; react `honk wave hop`. A character without a run uses its walk to run, and
+without an `idle` the bundle's first animation. `rush` is optional: the run used in a hurry (see `hurry()`).
 
 ## JavaScript API
 
@@ -98,7 +106,7 @@ stage.world.invalidate();                                          // after movi
 
 | member | |
 |---|---|
-| `actor.goTo(element \| {x, y}, {then})` | Plan a route and go. `then`: `'idle'` (default) or `'sit'`. Returns false if there is no route. Orders given mid-jump, mid-climb or mid-fall wait until the character lands. |
+| `actor.goTo(element \| {x, y}, {then})` | Plan a route and go. `then`: `'idle'` (default), `'sit'`, or `'hide'` (only when the element is a `data-pixel-hide` spot: same as `hideBehind`). Returns false if there is no route. Orders given mid-jump, mid-climb or mid-fall wait until the character lands. |
 | `actor.hideBehind(element)` | Go behind a `data-pixel-hide` element. |
 | `actor.perform(name, {ms})` | Play one of the bundle's own animations in place (a one-shot until it ends, a loop for `ms`, default 2400), then carry on. Waits if the character is in the air. Returns false for an unknown animation. |
 | `actor.say(text, ms)` | Show a speech bubble, placed with the bundle's `beak` or `head` attachment point. |
@@ -108,18 +116,18 @@ stage.world.invalidate();                                          // after movi
 | `actor.say(text, ms)` → Promise | Resolves when the bubble goes away. |
 | `actor.face('left' \| 'right' \| actor \| element)` | Turn to face a side or something on the page. |
 | `actor.face('viewer' \| 'away' \| 'side')` | For characters with views (a spec with `views`, see [figures.md](figures.md#views-the-same-character-from-other-angles)): turn toward the reader, turn its back, or back to the side. Plays the turn and resolves when it is done (`false` without that view). While facing the reader it idles, talks, sits and performs in that view (`idle@front`, …); before walking anywhere it turns back to the side by itself. `actor.view` is the current view, `actor.views` the ones it has. |
-| `actor.hurry(rate)` | Hurry: animate and move `rate` times faster (feet planted), run instead of walk, with the `rush` gait if the figure has one. `hurry(1)` to stop. Scene steps' `speed` uses it. |
+| `actor.hurry(rate = 1.6)` | Hurry: animate and move `rate` times faster (up to 4; feet planted), run instead of walk, with the `rush` gait if the figure has one. `hurry(1)` to stop. Scene steps' `speed` uses it. |
 | `actor.pickUp(el)` | Walk to any element (a letter by a form, an icon) and pick it up: a copy, styled like it, rides at the `carry` point (else `beak`, `handR`, `head`, …); the original is hidden but keeps its space. `actor.carrying` is that element. |
 | `actor.drop('here' \| 'back')` | Put it down at its feet (the copy stays on the stage) or send it back to where it came from (the original reappears). |
 | `actor.exit('left' \| 'right' \| 'auto')` | Leave the screen by that edge: along a surface that reaches it, or with a leap from the end of one. Off screen it is hidden (`offstage` attribute); anything carried is delivered (`deliver` event; the original stays hidden). Undirected characters come back on their own after 5–9 s. |
 | `actor.enter('left' \| 'right' \| 'top' \| 'auto' \| element)` | Come back: walk in from a side along a visible surface that reaches it, or drop in from the top (onto the element's surface if given). |
 | `actor.directed` | `directed` attribute: the character does nothing on its own between orders and stays seated or hidden until told otherwise. Scenes set it on their cast while they play. |
-| `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`. |
+| `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`, `performing`, `picking up`, `leaving`, `offstage`. |
 | `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
-| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup`, `tap` (tapped or clicked), `pickup` / `drop` / `deliver` `{prop}`, `exit`, `enter`. |
+| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup` `{from: {x, y}}` (where it was), `tap` `{count}` (tapped or clicked; `count` counts quick taps), `pickup` / `deliver` `{prop}`, `drop` `{prop, how}`, `exit`, `enter`. |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
 | `stage.scrollSpeed` | How fast the page is scrolling, px/s (+ down), smoothed. |
-| `stage.playScene(scene, {trigger}?)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`; `trigger` is the element steps can call `"$trigger"`. Returns `{name, finished, stop()}`; `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
+| `stage.playScene(scene, {trigger}?)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`; `trigger` is the element steps can call `"$trigger"`. Returns `{name, source, trigger, finished, stop()}` (`source` is the parsed scene object); `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
 | `stage.scene` | The scene playing now, or null. |
 | `stage.arm(scene)` | Arm a scene that has a `trigger`: it plays when that happens. Returns `{disarm()}`. Scenes in `<script type="application/json" data-pixel-scene>` are armed for you. See [Triggers](#triggers). |
 | `scene` attribute | `<pixel-stage scene="#intro">` plays that scene once the page is parsed. |
@@ -128,6 +136,24 @@ stage.world.invalidate();                                          // after movi
 
 The module also exports `World`, `PixelStage`, `PixelActor`, `checkScene(scene, castNames?)`, `runScene(scene, env)`,
 `jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
+
+### Styling
+
+The elements expose shadow parts:
+
+| part | element |
+|---|---|
+| `pixel-stage::part(control)` | The pause button. |
+| `pixel-actor::part(sprite)` | The inner `<pixel-sprite>`. |
+| `pixel-actor::part(bubble)` | The speech bubble (white, 2 px dark border, 12 px system font by default). |
+
+```css
+pixel-stage::part(control) { background: #222; color: #fff; }
+pixel-actor::part(bubble) { font-family: "Press Start 2P", monospace; border-radius: 0; }
+```
+
+While a character carries something, the copy is a child of the `<pixel-actor>` with `slot="carry"`
+(`pixel-actor > [slot=carry]`); it gets the original's computed styles inline. When it is dropped, it moves to the stage.
 
 ## Scenes
 
@@ -162,26 +188,31 @@ Steps run one after another. Each step does one thing:
 
 | step | does | extra keys |
 |---|---|---|
-| `{"actor": a, "goTo": target}` | walk there (dropping, jumping, climbing). `target`: a selector, a cast name (stand next to them), or `{"x", "y"}` | `then`: `idle` `sit` `hide`; `at`: 0–1, where along the element's top |
-| `{"actor": a, "hideBehind": selector}` | go behind a `data-pixel-hide` element | |
+| `{"actor": a, "goTo": target}` | walk there (dropping, jumping, climbing). `target`: a selector, a cast name (stand next to them), or `{"x", "y"}` | `then`: `idle` `sit` `hide` (`hide` only if the target is a `data-pixel-hide` element); `at`: 0–1, where along the element's top; `speed` |
+| `{"actor": a, "hideBehind": selector}` | go behind a `data-pixel-hide` element | `speed` |
 | `{"actor": a, "perform": name}` | play one of its animations in place | `ms` for a looping one (default 2400) |
 | `{"actor": a, "say": text}` | speech bubble | `ms` (default 1800) |
 | `{"actor": a, "face": dir}` | turn: `left`, `right`, a cast name or a selector; `viewer`, `away` or `side` for characters with views (waits for the turn) | |
 | `{"actor": a, "shoo": true}` | startle and run off (or `"shoo": what` to run from) | |
-| `{"actor": a, "pickUp": selector}` | walk to the element and carry it | |
+| `{"actor": a, "pickUp": selector}` | walk to the element and carry it | `speed` |
 | `{"actor": a, "drop": true}` | put it down (`true` or `"here"`), or `"back"` where it came from | |
-| `{"actor": a, "exit": side}` | leave the screen: `left`, `right` or `auto`; carried things are delivered | |
-| `{"actor": a, "enter": from}` | come back: `left`, `right`, `top`, `auto`, or a selector to drop onto | |
-
-Movement steps (`goTo`, `hideBehind`, `pickUp`, `exit`, `enter`) take `"speed"` (0.25–4): in a hurry the character runs, animating and moving that much faster with its feet still planted, using its `rush` gait if it has one (the geese flap and stretch their necks out).
+| `{"actor": a, "exit": side}` | leave the screen: `left`, `right` or `auto`; carried things are delivered | `speed` |
+| `{"actor": a, "enter": from}` | come back: `left`, `right`, `top`, `auto`, or a selector to drop onto | `speed` |
 | `{"wait": ms}` | pause | |
 | `{"together": [steps]}` | run steps at the same time; continue when all are done | |
 | `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … | `timeout` (ms) |
 | `{"emit": name}` | fire `sceneevent` on the stage for page code | `detail` |
 
+`speed` on a movement step puts the character in a hurry for that step (`actor.hurry(speed)`): it runs,
+animating and moving that much faster with its feet still planted, using its `rush` gait if it has one (the geese flap
+and stretch their necks out). The check accepts 0.25–4, but only values above 1 change anything: there is no slow
+motion.
+
 Any step can add `"async": true` (start it and move straight on) and `"note"` (a comment). Top level: `cast` maps names
 to selectors (default: the stage's actors by `id`), `loop` (`true` or a number of times), `directed` (default `true`),
-`trigger` (see below).
+`trigger` (see below). A scene that loops forever needs at least one step that takes time (`wait`, `waitFor`, or an
+actor doing something; `checkScene` rejects a loop of only `emit`s), and each pass takes at least 100 ms, so a pass
+whose steps all fail at once (every actor missing) cannot lock up the page.
 
 - **The cast is directed** while a scene plays: characters wait for their next step instead of wandering off, and stay
   seated or hidden until the scene moves them. Their own setting comes back when it ends.

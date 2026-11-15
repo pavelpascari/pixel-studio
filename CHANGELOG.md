@@ -6,6 +6,28 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Getting ready for the alpha
+- **Fixed:** a `<pixel-stage>` scene with `"loop": true` whose steps all finished at once (every actor missing, or only
+  `emit` steps) froze the tab. Each pass of a loop now takes at least 100 ms, `checkScene` rejects a forever-loop with
+  no step that takes time, and a long-running scene no longer piles up stop listeners.
+- **Validation is stricter**, so typos fail with a JSON path instead of rendering a blank or hanging:
+  - part `x`, `y`, `rot`, `shade` are numbers; `sx`/`sy` are within ±16; `show` is a boolean or a number;
+  - shape sizes are ≥ 0, `minDetail`/`maxDetail` are 1, 2 or 3, and coordinates stay within 4 canvas sizes;
+  - `size` is at most 1000 units a side, and renders are at most 512 px (`MAX_RES`);
+  - names that are built-in object keys (`toString`, `constructor`, …) are rejected for materials, points, skins,
+    state nodes and inputs, as they already were for parts and animations.
+- **Style overrides** (`resolveStyle`, and the CLI's `--tones`, `--light`, `--outline`, …) follow the same rules as a
+  spec's `style`, with a readable error.
+- **CLI:** errors print as one `error:` line with exit code 1 (`PIXEL_DEBUG=1` adds the stack); `pixel help`,
+  `--help` and `-h` print the usage and exit 0; `--frame -1` is the last frame; `--out=a=b.png` keeps its `=`;
+  closing the pipe early (`| head`) is not an error.
+- **Runtime:** `checkBundle` type-checks animations, loops, points, size, ground, states and frame sizes; it accepts
+  later minor versions of the format (`pixel-sprite/1.x`); name lookups cannot hit built-in keys; a bundle URL that
+  serves an HTML page gets an error that says so; sheets on another origin load with `crossOrigin="anonymous"`.
+- **Docs:** a new [getting-started guide](docs/getting-started.md); the README leads with install and a five-minute
+  path; every reference doc re-checked against the code (stale outputs re-run, fixed "known issues" removed, views
+  documented in the agent brief, skins described as the deltas they are).
+
 ### P/P site sketch: a goose that follows the scroll
 - `demo/pp.html`: a one-page studio site (field-guide direction: paper, ink, stamp red) where the greylag goose starts on
   the logo's baseline, takes off on the first scroll and flies between "perches" (any element with `data-perch`,
