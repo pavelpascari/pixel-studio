@@ -228,10 +228,10 @@ test('checkScene: face accepts the views', () => {
 });
 
 test('checkScene: accepts a valid scene and reports problems with JSON paths', () => {
-  const ok = { cast: { goose: '#goose', clawd: '#clawd' }, loop: 2, steps: [
+  const ok = { cast: { goose: '#goose', moss: '#moss' }, loop: 2, steps: [
     { actor: 'goose', goTo: '#bench', then: 'sit' },
-    { together: [{ actor: 'goose', say: 'honk?', ms: 900 }, { actor: 'clawd', perform: 'think', ms: 1200, async: true }] },
-    { wait: 300 }, { waitFor: 'tap', on: 'clawd', timeout: 5000 }, { emit: 'done' }, { actor: 'clawd', face: 'goose' },
+    { together: [{ actor: 'goose', say: 'honk?', ms: 900 }, { actor: 'moss', perform: 'think', ms: 1200, async: true }] },
+    { wait: 300 }, { waitFor: 'tap', on: 'moss', timeout: 5000 }, { emit: 'done' }, { actor: 'moss', face: 'goose' },
   ] };
   assert.deepEqual(checkScene(ok), []);
   const paths = (s, names) => checkScene(s, names).map((e) => e.path);
@@ -256,7 +256,7 @@ function fakeEnv({ fail = [], log = [] } = {}) {
     face: (dir) => { log.push(`${name}.face ${typeof dir === 'string' ? dir : dir.name}`); return true; },
     hurry: (rate) => log.push(`${name}.hurry ${rate}`),
   });
-  const cast = { goose: actor('goose'), clawd: actor('clawd') };
+  const cast = { goose: actor('goose'), moss: actor('moss') };
   return { log, stop, env: {
     actor: (n) => cast[n] ?? null, element: (sel) => ({ sel }), stopped,
     wait: (ms) => new Promise((r) => setTimeout(() => r(true), ms)),
@@ -269,18 +269,18 @@ test('runScene: steps run in order, "together" in parallel, async does not wait,
   const { env, log } = fakeEnv({ fail: ['hideBehind'] });
   const done = await runScene({ steps: [
     { actor: 'goose', goTo: '#bench' },
-    { together: [{ actor: 'goose', perform: 'honk' }, { actor: 'clawd', goTo: '#hill' }] },
-    { actor: 'clawd', hideBehind: '#crate' },          // fails: the scene carries on
+    { together: [{ actor: 'goose', perform: 'honk' }, { actor: 'moss', goTo: '#hill' }] },
+    { actor: 'moss', hideBehind: '#crate' },          // fails: the scene carries on
     { actor: 'goose', perform: 'idle', async: true },  // started, not awaited
-    { actor: 'clawd', face: 'goose' },
+    { actor: 'moss', face: 'goose' },
     { emit: 'end' },
   ] }, env);
   assert.equal(done, true);
   const ends = () => log.filter((l) => l === 'goose.perform:end').length;
   assert.equal(ends(), 1);   // the scene finished before its async step did
   await new Promise((r) => setTimeout(r, 40));
-  assert.deepEqual(log.slice(0, 6), ['goose.goTo:start', 'goose.goTo:end', 'goose.perform:start', 'clawd.goTo:start', 'goose.perform:end', 'clawd.goTo:end']);
-  assert.ok(log.indexOf('goose.perform:start', 3) < log.indexOf('clawd.face goose'));   // async step started before the next one
+  assert.deepEqual(log.slice(0, 6), ['goose.goTo:start', 'goose.goTo:end', 'goose.perform:start', 'moss.goTo:start', 'goose.perform:end', 'moss.goTo:end']);
+  assert.ok(log.indexOf('goose.perform:start', 3) < log.indexOf('moss.face goose'));   // async step started before the next one
   assert.equal(ends(), 2);   // …which still completes afterwards
   assert.ok(log.includes('emit end'));
 });

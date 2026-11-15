@@ -238,7 +238,7 @@ The motions after the first dot exist so characters can live on a web page (`<pi
 [stage.md](stage.md)): list the ones you want in your animations (`"jump": {"motion": "jump"}`).
 
 Examples dressed on figures: `goose-*` (goose; `goose-greylag` fitted with its own proportions), `fox` (dog, fitted),
-`pip` and `robot` (chibi, robot fitted with `bones`), `slime` (blob), `clawd` (an inline figure of its own).
+`pip` and `robot` (chibi, robot fitted with `bones`), `slime` (blob), `moss` (an inline figure of its own).
 
 Every bone has a joint (`from`, its pivot) and a `to` point. Coordinates are in the figure's 100×100 canvas.
 

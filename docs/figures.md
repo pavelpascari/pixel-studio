@@ -47,7 +47,7 @@ away with the ground at exactly the ground's speed), and can overlay every frame
 
 Every example in `examples/` is built on a figure: the geese on `goose` (with `goose-front` for their front and back
 views; `goose-greylag` fitted to its own proportions), `fox` on `dog`, `pip` and `robot` on `chibi`, `slime` on
-`blob`, and `clawd` on an inline figure of its own.
+`blob`, and `moss` on an inline figure of its own.
 
 ## Using a figure
 

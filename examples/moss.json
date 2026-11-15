@@ -1,6 +1,6 @@
 {
- "name": "Clawd",
- "description": "A blocky orange critter (after the Claude Code mascot): a wide body, two square eyes, stubby arms and four short legs. Drawn on a 16-cell grid (one cell = 6.25 units) so it stays crisp at 16, 32 and 64 px; every hand-keyed move is whole or half cells. It scuttles sideways like a crab.",
+ "name": "Moss",
+ "description": "A moss-green shield beetle: a domed shell with a dark band, a sand-coloured belly, two antennae with amber tips, round eyes, stubby front feet and four short legs. Drawn on a 16-cell grid (one cell = 6.25 units) so it stays crisp at 16, 32 and 64 px; every hand-keyed move is whole or half cells. It scuttles sideways.",
  "size": [
   100,
   100
@@ -173,20 +173,42 @@
   "motions": {}
  },
  "materials": {
-  "clay": {
-   "color": "#d97757",
+  "shell": {
+   "color": "#5b8a4f",
+   "flat": true
+  },
+  "band": {
+   "color": "#3d6338",
+   "flat": true,
+   "outline": false
+  },
+  "belly": {
+   "color": "#cdbf8a",
    "flat": true,
    "outline": false
   },
   "side": {
-   "color": "#b95b44",
+   "color": "#40683a",
    "flat": true,
    "outline": false
   },
+  "leg": {
+   "color": "#2a352d",
+   "flat": true
+  },
   "eye": {
-   "color": "#141413",
+   "color": "#f4efe4",
    "flat": true,
    "outline": false
+  },
+  "pupil": {
+   "color": "#171714",
+   "flat": true,
+   "outline": false
+  },
+  "tip": {
+   "color": "#e3a33b",
+   "flat": true
   }
  },
  "parts": [
@@ -195,11 +217,105 @@
    "shapes": [
     {
      "type": "rect",
+     "x": 37.5,
+     "y": 25,
+     "w": 25,
+     "h": 6.25,
+     "material": "shell",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 31.25,
+     "y": 31.25,
+     "w": 37.5,
+     "h": 6.25,
+     "material": "shell",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
      "x": 25,
      "y": 37.5,
      "w": 50,
      "h": 37.5,
-     "material": "clay",
+     "material": "shell",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 25,
+     "y": 56.25,
+     "w": 50,
+     "h": 6.25,
+     "material": "band",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 31.25,
+     "y": 68.75,
+     "w": 37.5,
+     "h": 6.25,
+     "material": "belly",
+     "profile": "none"
+    }
+   ]
+  },
+  {
+   "id": "antL",
+   "bone": "body",
+   "pivot": [
+    40.625,
+    25
+   ],
+   "z": 1.9,
+   "shapes": [
+    {
+     "type": "rect",
+     "x": 37.5,
+     "y": 15.625,
+     "w": 3.125,
+     "h": 9.375,
+     "material": "leg",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 34.375,
+     "y": 12.5,
+     "w": 6.25,
+     "h": 4.6875,
+     "material": "tip",
+     "profile": "none"
+    }
+   ]
+  },
+  {
+   "id": "antR",
+   "bone": "body",
+   "pivot": [
+    59.375,
+    25
+   ],
+   "z": 1.9,
+   "shapes": [
+    {
+     "type": "rect",
+     "x": 59.375,
+     "y": 15.625,
+     "w": 3.125,
+     "h": 9.375,
+     "material": "leg",
+     "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 59.375,
+     "y": 12.5,
+     "w": 6.25,
+     "h": 4.6875,
+     "material": "tip",
      "profile": "none"
     }
    ]
@@ -209,17 +325,17 @@
    "bone": "body",
    "pivot": [
     25,
-    56.25
+    62.5
    ],
    "z": 2.1,
    "shapes": [
     {
      "type": "rect",
-     "x": 12.5,
-     "y": 50,
-     "w": 12.5,
-     "h": 12.5,
-     "material": "clay",
+     "x": 15.625,
+     "y": 62.5,
+     "w": 9.375,
+     "h": 6.25,
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -229,17 +345,17 @@
    "bone": "body",
    "pivot": [
     75,
-    56.25
+    62.5
    ],
    "z": 2.1,
    "shapes": [
     {
      "type": "rect",
      "x": 75,
-     "y": 50,
-     "w": 12.5,
-     "h": 12.5,
-     "material": "clay",
+     "y": 62.5,
+     "w": 9.375,
+     "h": 6.25,
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -312,6 +428,26 @@
      "h": 6.25,
      "material": "eye",
      "profile": "none"
+    },
+    {
+     "type": "rect",
+     "x": 34.375,
+     "y": 46.875,
+     "w": 3.125,
+     "h": 3.125,
+     "material": "pupil",
+     "profile": "none",
+     "minDetail": 2
+    },
+    {
+     "type": "rect",
+     "x": 62.5,
+     "y": 46.875,
+     "w": 3.125,
+     "h": 3.125,
+     "material": "pupil",
+     "profile": "none",
+     "minDetail": 2
     }
    ]
   },
@@ -324,7 +460,7 @@
      "y": 73.75,
      "w": 6.25,
      "h": 8.125,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -338,7 +474,7 @@
      "y": 80.625,
      "w": 6.25,
      "h": 6.875,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -352,7 +488,7 @@
      "y": 73.75,
      "w": 6.25,
      "h": 8.125,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -366,7 +502,7 @@
      "y": 80.625,
      "w": 6.25,
      "h": 6.875,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -380,7 +516,7 @@
      "y": 73.75,
      "w": 6.25,
      "h": 8.125,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -394,7 +530,7 @@
      "y": 80.625,
      "w": 6.25,
      "h": 6.875,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -408,7 +544,7 @@
      "y": 73.75,
      "w": 6.25,
      "h": 8.125,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -422,7 +558,7 @@
      "y": 80.625,
      "w": 6.25,
      "h": 6.875,
-     "material": "clay",
+     "material": "leg",
      "profile": "none"
     }
    ]
@@ -507,6 +643,46 @@
       0,
       -3.125,
       -3.125,
+      0,
+      0
+     ]
+    },
+    "antL": {
+     "y": [
+      0,
+      0,
+      -3.125,
+      -3.125,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "antR": {
+     "y": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -3.125,
+      -3.125,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0
      ]
@@ -952,7 +1128,7 @@
    "loop": false,
    "dip": 0,
    "tuck": 3,
-   "height": 18,
+   "height": 13,
    "lean": 0,
    "tracks": {
     "eyes": {
@@ -1533,7 +1709,7 @@
   }
  },
  "style": {
-  "outline": "none",
+  "outline": "dark",
   "contactShadow": false
  }
 }

@@ -5,7 +5,7 @@
   "description": "The JSON in the playground's #spec=. Usually a change to the character picked with ?c= (a variant: list only what differs). With its own `figure` or `size` and no `extends` it is a whole character instead. Guide: ../docs/playground.md. Full format: ../docs/SPEC.md (Materials, Parts, Shapes, Variants, Style, Skins).",
   "type": "object",
   "properties": {
-    "extends": { "type": "string", "description": "Base character file, e.g. \"goose-root.json\". Set automatically from ?c= when absent (unless this is a whole character).", "examples": ["goose-base.json", "goose-root.json", "goose-sudo.json", "goose-phreak.json", "goose-kiddie.json", "goose-greylag.json", "clawd.json", "fox.json", "pip.json", "robot.json", "slime.json"] },
+    "extends": { "type": "string", "description": "Base character file, e.g. \"goose-root.json\". Set automatically from ?c= when absent (unless this is a whole character).", "examples": ["goose-base.json", "goose-root.json", "goose-sudo.json", "goose-phreak.json", "goose-kiddie.json", "goose-greylag.json", "moss.json", "fox.json", "pip.json", "robot.json", "slime.json"] },
     "name": { "type": "string" },
     "description": { "type": "string" },
     "materials": {

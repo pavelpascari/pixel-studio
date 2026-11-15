@@ -145,7 +145,7 @@
     <button id="pipgo">Pip: go to “Lakeside”</button>
     <button id="shoo">Shoo everyone</button>
     <button id="say">Goose: say something</button>
-    <button id="think">Clawd: think</button>
+    <button id="think">Moss: think</button>
     <button id="scene">Play a scene: “The plan”</button>
     <div id="log" aria-live="polite"></div>
   </section>
@@ -156,25 +156,25 @@
   <pixel-actor id="goose" src="assets/goose-root.bundle.json" size="80" alt="root, a goose in a hoodie" start="#card-b" keep-in-view></pixel-actor>
   <pixel-actor id="pip" src="assets/pip.bundle.json" size="72" alt="Pip" start="#card-c"></pixel-actor>
   <pixel-actor id="slime" src="assets/slime.bundle.json" size="56" alt="a slime" behaviours="wander hide" start="#card-d"></pixel-actor>
-  <pixel-actor id="clawd" src="assets/clawd.bundle.json" size="112" alt="Clawd, a blocky orange critter" start="#card-a"></pixel-actor>
+  <pixel-actor id="moss" src="assets/moss.bundle.json" size="112" alt="Moss, a small green beetle" start="#card-a"></pixel-actor>
 </pixel-stage>
 
 <!-- A scene is data: steps run in order, "together" runs steps at once, "async" starts one without waiting. -->
 <script type="application/json" id="the-plan">
 {
   "name": "the plan",
-  "cast": {"goose": "#goose", "clawd": "#clawd", "pip": "#pip"},
+  "cast": {"goose": "#goose", "moss": "#moss", "pip": "#pip"},
   "steps": [
     {"together": [
       {"actor": "goose", "goTo": "#card-b", "at": 0.2},
-      {"actor": "clawd", "goTo": "#card-b", "at": 0.85}
+      {"actor": "moss", "goTo": "#card-b", "at": 0.85}
     ]},
-    {"together": [{"actor": "goose", "face": "clawd"}, {"actor": "clawd", "face": "goose"}]},
+    {"together": [{"actor": "goose", "face": "moss"}, {"actor": "moss", "face": "goose"}]},
     {"actor": "goose", "say": "honk?", "ms": 1400},
-    {"actor": "clawd", "perform": "think", "ms": 2400, "async": true},
-    {"actor": "clawd", "say": "Let me think about that…", "ms": 2600},
-    {"actor": "clawd", "say": "Here's a plan!", "ms": 1200, "async": true},
-    {"actor": "clawd", "perform": "wave"},
+    {"actor": "moss", "perform": "think", "ms": 2400, "async": true},
+    {"actor": "moss", "say": "Let me think about that…", "ms": 2600},
+    {"actor": "moss", "say": "Here's a plan!", "ms": 1200, "async": true},
+    {"actor": "moss", "perform": "wave"},
     {"together": [
       {"actor": "goose", "perform": "honk"},
       {"actor": "pip", "goTo": "goose"}
@@ -182,7 +182,7 @@
     {"actor": "pip", "say": "what did I miss?", "ms": 1600},
     {"together": [
       {"actor": "goose", "goTo": "#card-d", "then": "sit"},
-      {"actor": "clawd", "goTo": "#card-a"},
+      {"actor": "moss", "goTo": "#card-a"},
       {"actor": "pip", "say": "wait up!", "ms": 1200}
     ]}
   ]
@@ -270,7 +270,7 @@
     if (goose.carrying) goose.drop('back');   // interrupted: put the letter back for another try
   });
   for (const ev of ['pickup', 'deliver', 'exit', 'enter']) goose.addEventListener(ev, () => log('goose', ev));
-  $('#think').onclick = () => { const c = $('#clawd'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
+  $('#think').onclick = () => { const c = $('#moss'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>
 </body>

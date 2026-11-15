@@ -1538,8 +1538,8 @@ function clampTo(p, x, margin) {
 //
 // { "cast": {"goose": "#goose"}, "loop": false, "steps": [
 //     {"actor": "goose", "goTo": "#bench", "then": "sit"},
-//     {"together": [{"actor": "goose", "say": "honk?"}, {"actor": "clawd", "perform": "think", "ms": 2000}]},
-//     {"wait": 500}, {"waitFor": "tap", "on": "clawd"}, {"emit": "chapter-2"} ] }
+//     {"together": [{"actor": "goose", "say": "honk?"}, {"actor": "moss", "perform": "think", "ms": 2000}]},
+//     {"wait": 500}, {"waitFor": "tap", "on": "moss"}, {"emit": "chapter-2"} ] }
 
 const SCENE_ACTIONS = ['goTo', 'hideBehind', 'perform', 'say', 'shoo', 'face', 'pickUp', 'drop', 'exit', 'enter'];
 const SCENE_FLOW = ['wait', 'together', 'waitFor', 'emit'];

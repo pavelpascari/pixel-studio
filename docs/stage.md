@@ -163,17 +163,17 @@ A scene is a scripted moment written as data: who goes where, says what, and whe
 <script type="application/json" id="the-plan">
 {
   "name": "the plan",
-  "cast": {"goose": "#goose", "clawd": "#clawd"},
+  "cast": {"goose": "#goose", "moss": "#moss"},
   "steps": [
     {"together": [
       {"actor": "goose", "goTo": "#lakeside", "at": 0.2},
-      {"actor": "clawd", "goTo": "#lakeside", "at": 0.85}
+      {"actor": "moss", "goTo": "#lakeside", "at": 0.85}
     ]},
-    {"actor": "goose", "face": "clawd"},
+    {"actor": "goose", "face": "moss"},
     {"actor": "goose", "say": "honk?", "ms": 1400},
-    {"actor": "clawd", "perform": "think", "ms": 2400, "async": true},
-    {"actor": "clawd", "say": "Let me think about that…", "ms": 2600},
-    {"waitFor": "tap", "on": "clawd", "timeout": 8000},
+    {"actor": "moss", "perform": "think", "ms": 2400, "async": true},
+    {"actor": "moss", "say": "Let me think about that…", "ms": 2600},
+    {"waitFor": "tap", "on": "moss", "timeout": 8000},
     {"actor": "goose", "goTo": "#summit", "then": "sit"}
   ]
 }

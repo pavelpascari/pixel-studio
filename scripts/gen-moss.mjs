@@ -1,4 +1,4 @@
-// Generates examples/clawd.json (node scripts/gen-clawd.mjs > examples/clawd.json). One grid cell = C units on the 100-unit canvas (16 cells).
+// Generates examples/moss.json (node scripts/gen-moss.mjs > examples/moss.json). One grid cell = C units on the 100-unit canvas (16 cells).
 const C = 6.25, r = (v) => Math.round(v * 10000) / 10000, g = (n) => r(n * C);
 const rect = (x, y, w, h, material) => ({ type: 'rect', x: g(x), y: g(y), w: g(w), h: g(h), material, profile: 'none' });
 const LEGX = [4, 6, 9, 11];                     // leg columns (cells); body is columns 4..11, rows 6..11
@@ -10,8 +10,8 @@ const legBones = LEGX.flatMap((x, i) => {
   ];
 });
 const legParts = LEGX.flatMap((x, i) => [
-  { id: `leg${i + 1}`, shapes: [{ ...rect(x, 11.8, 1, 1.3, 'clay') }] },
-  { id: `foot${i + 1}`, shapes: [{ ...rect(x, 12.9, 1, 1.1, 'clay') }] },
+  { id: `leg${i + 1}`, shapes: [{ ...rect(x, 11.8, 1, 1.3, 'leg') }] },
+  { id: `foot${i + 1}`, shapes: [{ ...rect(x, 12.9, 1, 1.1, 'leg') }] },
 ]);
 const rep = (v, n) => Array(n).fill(v);
 const shift = (a, k) => a.map((_, i) => a[(i - k + a.length) % a.length]);
@@ -27,8 +27,8 @@ const runY = [0, 0, 0, 0, -C, -C];
 const T = (o) => o;
 
 const spec = {
-  name: 'Clawd',
-  description: 'A blocky orange critter (after the Claude Code mascot): a wide body, two square eyes, stubby arms and four short legs. Drawn on a 16-cell grid (one cell = 6.25 units) so it stays crisp at 16, 32 and 64 px; every hand-keyed move is whole or half cells. It scuttles sideways like a crab.',
+  name: 'Moss',
+  description: 'A moss-green shield beetle: a domed shell with a dark band, a sand-coloured belly, two antennae with amber tips, round eyes, stubby front feet and four short legs. Drawn on a 16-cell grid (one cell = 6.25 units) so it stays crisp at 16, 32 and 64 px; every hand-keyed move is whole or half cells. It scuttles sideways.',
   size: [100, 100],
   figure: {
     bones: [{ id: 'body', from: [50, g(12)], to: [50, g(6)], z: 2 }, ...legBones],
@@ -37,17 +37,27 @@ const spec = {
     motions: {},
   },
   materials: {
-    clay: { color: '#d97757', flat: true, outline: false },
-    side: { color: '#b95b44', flat: true, outline: false },
-    eye: { color: '#141413', flat: true, outline: false },
+    shell: { color: '#5b8a4f', flat: true },
+    band: { color: '#3d6338', flat: true, outline: false },
+    belly: { color: '#cdbf8a', flat: true, outline: false },
+    side: { color: '#40683a', flat: true, outline: false },
+    leg: { color: '#2a352d', flat: true },
+    eye: { color: '#f4efe4', flat: true, outline: false },
+    pupil: { color: '#171714', flat: true, outline: false },
+    tip: { color: '#e3a33b', flat: true },
   },
   parts: [
-    { id: 'body', shapes: [rect(4, 6, 8, 6, 'clay')] },
-    { id: 'armL', bone: 'body', pivot: [g(4), g(9)], z: 2.1, shapes: [rect(2, 8, 2, 2, 'clay')] },
-    { id: 'armR', bone: 'body', pivot: [g(12), g(9)], z: 2.1, shapes: [rect(12, 8, 2, 2, 'clay')] },
+    // a domed shell: narrower rows on top, a dark band across it, the belly showing along the bottom
+    { id: 'body', shapes: [rect(6, 4, 4, 1, 'shell'), rect(5, 5, 6, 1, 'shell'), rect(4, 6, 8, 6, 'shell'),
+      rect(4, 9, 8, 1, 'band'), rect(5, 11, 6, 1, 'belly')] },
+    { id: 'antL', bone: 'body', pivot: [g(6.5), g(4)], z: 1.9, shapes: [rect(6, 2.5, 0.5, 1.5, 'leg'), rect(5.5, 2, 1, 0.75, 'tip')] },
+    { id: 'antR', bone: 'body', pivot: [g(9.5), g(4)], z: 1.9, shapes: [rect(9.5, 2.5, 0.5, 1.5, 'leg'), rect(9.5, 2, 1, 0.75, 'tip')] },
+    { id: 'armL', bone: 'body', pivot: [g(4), g(10)], z: 2.1, shapes: [rect(2.5, 10, 1.5, 1, 'leg')] },
+    { id: 'armR', bone: 'body', pivot: [g(12), g(10)], z: 2.1, shapes: [rect(12, 10, 1.5, 1, 'leg')] },
     { id: 'sideL', bone: 'body', pivot: [g(4.5), g(9)], z: 2.2, show: 0, shapes: [rect(4, 6, 1, 6, 'side')] },
     { id: 'sideR', bone: 'body', pivot: [g(11.5), g(9)], z: 2.2, show: 0, shapes: [rect(11, 6, 1, 6, 'side')] },
-    { id: 'eyes', bone: 'body', pivot: [50, g(7.5)], z: 3, shapes: [rect(5, 7, 1, 1, 'eye'), rect(10, 7, 1, 1, 'eye')] },
+    { id: 'eyes', bone: 'body', pivot: [50, g(7.5)], z: 3, shapes: [rect(5, 7, 1, 1, 'eye'), rect(10, 7, 1, 1, 'eye'),
+      { ...rect(5.5, 7.5, 0.5, 0.5, 'pupil'), minDetail: 2 }, { ...rect(10, 7.5, 0.5, 0.5, 'pupil'), minDetail: 2 }] },
     ...legParts,
   ],
   animations: {
@@ -55,6 +65,8 @@ const spec = {
       eyes: { sy: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 1, 1, 1], x: [0, 0, 0, 0, C, C, C, C, 0, 0, 0, 0, 0, 0, 0, 0].map(r) },
       armL: { y: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -h, -h, 0, 0].map(r) },
       armR: { y: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -h, -h, 0, 0].map(r) },
+      antL: { y: [0, 0, -h, -h, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].map(r) },
+      antR: { y: [0, 0, 0, 0, 0, 0, -h, -h, 0, 0, 0, 0, 0, 0, 0, 0].map(r) },
     } },
     // The "thinking" shuffle: leans to one side and turns (the darker side face shows), hops a little, then the other way.
     think: { frames: 16, fps: 10, tracks: {
@@ -70,7 +82,7 @@ const spec = {
     run: { frames: 6, fps: 20, speed: r(h * 2 / 3 * 20), events: [{ frame: 0, name: 'footstep', data: { leg: 'a' } }, { frame: 3, name: 'footstep', data: { leg: 'b' } }],
       tracks: { ...legs(runX, runY), sideL: { show: rep(1, 6) }, eyes: { x: rep(C, 6) },
         armL: { y: [0, -h, 0, 0, -h, 0].map(r) }, armR: { y: [0, -h, 0, 0, -h, 0].map(r) } } },
-    hop: { motion: 'jump', frames: 10, fps: 12, loop: false, dip: 0, tuck: 3, height: 18, lean: 0, tracks: { eyes: { sy: [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 1] } } },
+    hop: { motion: 'jump', frames: 10, fps: 12, loop: false, dip: 0, tuck: 3, height: 13, lean: 0, tracks: { eyes: { sy: [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 1] } } },
     wave: { frames: 8, fps: 10, loop: false, tracks: {
       armR: { y: [0, -C, -2 * C, -C, -2 * C, -C, -2 * C, 0].map(r) },
       eyes: { sy: [1, 1, 0.5, 0.5, 0.5, 0.5, 1, 1] },
@@ -104,6 +116,6 @@ const spec = {
       eyes: { x: [0, C, C, C, C, 0, 0, -C, -C, -C, -C, 0].map(r) },
     } },
   },
-  style: { outline: 'none', contactShadow: false },
+  style: { outline: 'dark', contactShadow: false },
 };
 process.stdout.write(JSON.stringify(spec, null, 1) + '\n');

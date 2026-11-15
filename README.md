@@ -103,7 +103,7 @@ spec playgrounds that render as you type. The reference docs:
 | `src/runtime/pixel-stage.js` | `<pixel-stage>`: characters living on a page. Reads `data-pixel-*` elements as platforms, walls and hiding spots, plans routes (walk, drop, jump, climb), cuts occluders out with `clip-path`, tap to shoo, a pause button, and scenes (scripted moments as JSON). |
 | `bin/pixel.mjs` | The CLI. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
 | `figures/` | The **figure library**: `goose` (and `goose-front` for its front and back views), `human`, `dog`, `chibi` (front-facing), `blob` (soft body). |
-| `examples/` | Characters: `goose-base` and its variants `goose-root`, `-sudo`, `-phreak`, `-kiddie`, `-greylag`; `pip`; `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` and the CLI); `clawd`. |
+| `examples/` | Characters: `goose-base` and its variants `goose-root`, `-sudo`, `-phreak`, `-kiddie`, `-greylag`; `pip`; `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` and the CLI); `moss`. |
 | `references/` | Where motion data comes from: every source cited, every measured value and frame logged ([references/README.md](references/README.md), credits in [references/CREDITS.md](references/CREDITS.md)). |
 | `studio/` | The studio (live JSON editor, animated stage with onion skin and scrubbing, all detail levels at once, shader knobs, sheet, export, an **Agent** tab), the figure viewer, the goose workbench and the playground. |
 | `site/` | The docs site with live examples. |

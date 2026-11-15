@@ -17,7 +17,7 @@ The full character format is [SPEC.md](SPEC.md).
 
 | option | values | default |
 |---|---|---|
-| `c` | `goose-base` `goose-root` `goose-sudo` `goose-phreak` `goose-kiddie` `goose-greylag` `clawd` `fox` `pip` `robot` `slime` | `goose-base` |
+| `c` | `goose-base` `goose-root` `goose-sudo` `goose-phreak` `goose-kiddie` `goose-greylag` `moss` `fox` `pip` `robot` `slime` | `goose-base` |
 | `view` | `side`, and when the character has them `front`, `back`, `look` (¾ glance toward the reader) | `side` |
 | `anim` | an animation of that view; the page lists them (`playground.options().animations`). The geese side view: `idle waddle run rush honk jump fall sit duck peek climb flap fly` (`goose-kiddie` has no `climb`), plus `hack` for root, `headbang` for sudo, `sneak` for phreak; their front and back views have no `rush`, `climb` or `fly`. `walk` and `waddle` stand in for each other | `idle` |
 | `skin` | a skin of the character (`goose-root`: `party`, `redteam`) | none |
