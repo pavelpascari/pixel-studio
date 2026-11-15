@@ -543,7 +543,7 @@ Defined in `package.json`:
 `package.json` also declares:
 
 - `"bin": { "pixel": "bin/pixel.mjs" }`: the `pixel` command described on this page.
-- `"exports"`: `"."` → `src/core/index.js` (the engine API, see [api.md](api.md)), `"./runtime"` → `src/runtime/pixel-sprite.js` (the web component, see [runtime.md](runtime.md)), `"./stage"` → `src/runtime/pixel-stage.js` (the page runtime, see [stage.md](stage.md)), `"./node/png"` → `src/node/png.js` (the Node PNG encoder the CLI uses), and `"./package.json"`.
+- `"exports"`: `"."` → `src/core/index.js` (the engine API, see [api.md](api.md)), `"./runtime"` → `src/runtime/pixel-sprite.js` (the web component, see [runtime.md](runtime.md)), `"./stage"` → `src/runtime/pixel-stage.js` (the page runtime, see [stage.md](stage.md)), `"./internal"` → `src/core/internal.js` (engine building blocks for tools, no compatibility promise; see [api.md](api.md#internal-helpers)), `"./node/png"` → `src/node/png.js` (the Node PNG encoder the CLI uses), and `"./package.json"`.
 - `"engines": { "node": ">=20" }`.
 
 ## scripts/serve.mjs

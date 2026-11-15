@@ -80,7 +80,8 @@
   </section>
 </main>
 <script type="module">
-import { resolveSpec, compile, samplePoseAt, followOffsets, worldMatrices } from '../src/core/index.js';
+import { resolveSpec, compile } from '../src/core/index.js';
+import { samplePoseAt, followOffsets, worldMatrices } from '../src/core/internal.js';
 
 const FIGURES = ['goose', 'goose-front', 'human', 'dog', 'chibi', 'blob'];
 const $ = (s) => document.querySelector(s);

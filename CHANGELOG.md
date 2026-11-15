@@ -6,6 +6,33 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Breaking: event names, load status, exports
+- **One event naming scheme.** Every event the runtime fires is now `pixel-<name>`, and every one bubbles and is
+  composed (it crosses shadow roots). The details are unchanged. The old names still fire, with their old options, for
+  one alpha release and will be removed after 0.2.0-alpha.
+  - `<pixel-sprite>`: `ready` → `pixel-ready`, `error` → `pixel-error`, `statechange` → `pixel-statechange`,
+    `spriteend` → `pixel-end`, `spriteevent` → `pixel-event`, `spriteburst` → `pixel-burst`, `spritecalm` → `pixel-calm`.
+  - `<pixel-actor>`: `tap`, `burst`, `calm`, `enter`, `exit`, `land`, `arrive`, `drop`, `pickup`, `deliver`, `catchup`
+    → `pixel-tap`, `pixel-burst`, …; `actorstate` → `pixel-activity`.
+  - `<pixel-stage>`: `sceneevent`, `scenestep`, `sceneend`, `scrollsettle`, `fastscroll` → `pixel-sceneevent`, ….
+  - An actor's inner `<pixel-sprite>` keeps its events inside the actor (and no longer counts clicks itself), so a
+    listener on an actor hears each burst once, from the actor.
+  - Scenes keep their short names (`"waitFor": "tap"`, `"trigger": {"event": "arrive"}`); on actors and the stage they
+    listen for the `pixel-` events. Because those bubble, `"on": "stage"` now hears every character's events.
+- **"State" means the state machine.** `<pixel-sprite>`'s load status is the `status` attribute and `el.status`
+  (`loading`, `ready`, `error`); `state` stays as an alias (both attributes are set) for one alpha. `<pixel-actor>`'s
+  behaviour is `actor.activity` (event `pixel-activity`); `actor.state` stays as an alias for one alpha.
+- **A smaller, safer engine API.** `pixel-studio` no longer exports internal building blocks or live registries:
+  - `createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`, `frameTime`, `followOffsets`,
+    `worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`, `expandFigure`, `paletteOf` and
+    `buildMixes` moved to `pixel-studio/internal` (`src/core/internal.js`), which carries no compatibility promise.
+    `pngBytes` stays public: it is how a browser makes the `encode` that `buildBundle` needs.
+  - `SHAPE_TYPES`, `TEXTURES`, `MOTION_MODELS` and `LEGGED_MODELS` are replaced by `shapeTypes()`, `textures()`,
+    `motionModels()` and `leggedModels()`, which return fresh frozen arrays (`SHAPE_TYPES.push('blob')` used to make
+    `validate` crash). `TRACK_PROPS`, `DETAIL_PRESETS` and `DETAIL_NAMES` are frozen.
+  - Registering the same plug-in definition again under its name is a no-op (a dev server re-running a plug-in's
+    setup); a different definition under a taken name still throws.
+
 ### Getting ready for the alpha
 - **Moss replaces Clawd.** Clawd was drawn after another company's mascot, which this project does not do. Moss is an
   original character on the same 16-cell rig and with the same twelve animations: a moss-green shield beetle with a

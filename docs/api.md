@@ -1,13 +1,14 @@
 # JavaScript API reference
 
 This is the reference for the Pixel Studio engine's JavaScript API: every export of
-`src/core/index.js`, plus `encodePNG` from `src/node/png.js`. The web runtimes (`pixel-studio/runtime`,
+`src/core/index.js` (`pixel-studio`), the building blocks in `src/core/internal.js` (`pixel-studio/internal`,
+marked **Internal** below), plus `encodePNG` from `src/node/png.js`. The web runtimes (`pixel-studio/runtime`,
 `pixel-studio/stage`) are documented in [runtime.md](runtime.md) and [stage.md](stage.md).
 
 - The engine is plain ES modules with zero dependencies. The same code runs in Node (≥ 20, per
   `package.json` `engines`) and in modern browsers.
 - Import it by path, or by package name when it is installed (`package.json` has an `exports` map:
-  `pixel-studio`, `pixel-studio/runtime`, `pixel-studio/stage`, `pixel-studio/node/png`). It is not
+  `pixel-studio`, `pixel-studio/internal`, `pixel-studio/runtime`, `pixel-studio/stage`, `pixel-studio/node/png`). It is not
   published to npm yet; install it from GitHub with `npm i github:pavelpascari/pixel-studio` (see
   [getting-started.md](getting-started.md)).
 
@@ -29,7 +30,13 @@ This is the reference for the Pixel Studio engine's JavaScript API: every export
 **Stability.** The project is at version 0.1.0. Nothing here carries a compatibility promise yet. The
 functions in the [typical pipeline](#typical-pipeline) are the intended entry points. Functions marked
 **low-level** expose engine internals (pose sampling, IK, motion generation) and are the most likely
-to change.
+to change. Functions marked **Internal** are not exported from `pixel-studio` at all: the pipeline calls them for
+you, and tools that need them import `pixel-studio/internal` (`src/core/internal.js`), which carries no promise.
+
+**Registries are read-only.** The lists of shape types, textures and motion models grow when plug-ins register; read them
+with [`shapeTypes()`, `textures()`, `motionModels()`, `leggedModels()`](#constants), which return fresh frozen arrays.
+`TRACK_PROPS`, `DETAIL_PRESETS` and `DETAIL_NAMES` never change and are frozen. Add entries with the
+[plug-in](#plug-ins) functions, never by changing an array.
 
 Units and conventions used throughout:
 
@@ -46,19 +53,19 @@ Units and conventions used throughout:
 - [Typical pipeline](#typical-pipeline)
 - [Data shapes](#data-shapes)
 - [Spec and compile](#spec-and-compile): `validate`, `compile`, `TRACK_PROPS`
-- [Resolution: extends and figures](#resolution-extends-and-figures): `resolveSpec`, `resolveExtends`, `mergeVariant`, `resolveFigure`, `expandFigure`
+- [Resolution: extends and figures](#resolution-extends-and-figures): `resolveSpec`, `resolveFigure`; internal: `resolveExtends`, `mergeVariant`, `expandFigure`
 - [Rendering and styles](#rendering-and-styles): `resolveStyle`, `lodForRes`, `DETAIL_PRESETS`, `DETAIL_NAMES`, `renderFrame`, `renderAnimation`, `renderSheet`, `animationMeta`
-- [Images and ASCII](#images-and-ascii): `createImage`, `blit`, `contactSheet`, `frameToAscii`
-- [Animation sampling](#animation-sampling): `sampleValue`, `frameTime`, `samplePose`, `samplePoseAt`, `followOffsets`
-- [Rig maths and IK](#rig-maths-and-ik): `worldMatrices`, `solveReach`, `overflowForPose`
+- [Images and ASCII](#images-and-ascii): `contactSheet`, `frameToAscii`; internal: `createImage`, `blit`
+- [Animation sampling](#animation-sampling) (internal): `sampleValue`, `frameTime`, `samplePose`, `samplePoseAt`, `followOffsets`
+- [Rig maths and IK](#rig-maths-and-ik) (internal): `worldMatrices`, `solveReach`, `overflowForPose`
 - [Lint](#lint): `checkBounds`
-- [Motion](#motion): `generateMotion`, `MOTION_MODELS`, `LEGGED_MODELS`
-- [Bundles](#bundles): `buildBundle`, `bakePoints`, `BUNDLE_FORMAT`
-- Transition clips: [`buildMixes`](#buildmixes)
+- [Motion](#motion): `generateMotion`, `motionModels()`, `leggedModels()`
+- [Bundles](#bundles): `buildBundle`, `BUNDLE_FORMAT`; internal: `bakePoints`
+- Transition clips (internal): [`buildMixes`](#buildmixes)
 - [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`
 - [Game-engine export](#game-engine-export): `exportSheet`
-- [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `TEXTURES`, `SHAPE_TYPES`
-- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes` and `paletteOf`
+- [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `shapeTypes()`, `textures()`
+- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes`; internal: `paletteOf`
 - [Internal helpers](#internal-helpers)
 
 ## Typical pipeline
@@ -439,10 +446,10 @@ try {
 ### `TRACK_PROPS`
 
 ```ts
-TRACK_PROPS: ['x', 'y', 'rot', 'sx', 'sy', 'show']
+TRACK_PROPS: readonly ['x', 'y', 'rot', 'sx', 'sy', 'show']
 ```
 
-The animatable part properties. Any other key under `animations.<name>.tracks.<part>` is a validation
+The animatable part properties (a frozen array). Any other key under `animations.<name>.tracks.<part>` is a validation
 error.
 
 ## Resolution: extends and figures
@@ -496,6 +503,8 @@ try {
 
 ### `resolveExtends`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 resolveExtends(spec: object, load: Function, options?: { from?, depth? }): Promise<object>
 ```
@@ -522,7 +531,7 @@ variant may also set or replace it); resolve it afterwards with `resolveFigure`.
 - `mergeVariant` throws.
 
 ```js
-import { resolveExtends } from './src/core/index.js';
+import { resolveExtends } from './src/core/internal.js';
 
 const files = {
   'base.json': { name: 'base', materials: { a: '#ff0000' },
@@ -537,6 +546,8 @@ console.log(out.name, 'extends' in out, seen);   // red variant false [ [ 'base.
 ```
 
 ### `mergeVariant`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 mergeVariant(base: object, variant: object): object
@@ -573,7 +584,7 @@ summary:
 but the base has no part with that id (`parts: cannot remove "<id>": the base has no such part`).
 
 ```js
-import { mergeVariant } from './src/core/index.js';
+import { mergeVariant } from './src/core/internal.js';
 
 const base = {
   materials: { fur: '#c8692e', eye: '#000000' },
@@ -659,6 +670,8 @@ try {
 
 ### `expandFigure`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 expandFigure(spec: object, figure: object, fit?: object, warn?: Function): object
 ```
@@ -687,7 +700,7 @@ What it produces:
   `bone` and `joint`, `style` defaults to `{ outline: "dark" }` and `name` to `"<figure name> skeleton"`.
 - **Animations**: without `spec.animations`, one animation per figure motion (`{ motion: <name> }`).
   An animation with `motion` is generated by [`generateMotion`](#generatemotion): `motion` names a
-  preset in `figure.motions` or a model in `MOTION_MODELS`; other fields override the preset.
+  preset in `figure.motions` or a model in [`motionModels()`](#motionmodels); other fields override the preset.
   Author `tracks` are layered on top (`x`/`y`/`rot` add, `sx`/`sy` multiply, `show` replaces); root
   `x`/`y`/`rot` tracks are applied inside the motion, before the feet are solved. The result is
   `{ frames, fps, tracks, loop?: false, speed?, speedY?, wall?, reach?, events?, holds? }` with tracks
@@ -708,11 +721,12 @@ What it produces:
 **Throws** an `Error` with `.errors` collecting every problem: unknown bone in `fit.bones`
 (`$.figure.bones.<id>`), unknown `bone` reference (`$.parts[i].bone`), unknown motion
 (`$.animations.<name>.motion`), unknown motion model, or a figure whose `rig` lacks `root` (or `legs`,
-for the models in [`LEGGED_MODELS`](#legged_models)).
+for the models in [`leggedModels()`](#leggedmodels)).
 
 ```js
 import { readFileSync } from 'node:fs';
-import { expandFigure, validate } from './src/core/index.js';
+import { validate } from './src/core/index.js';
+import { expandFigure } from './src/core/internal.js';
 
 const goose = JSON.parse(readFileSync('figures/goose.json', 'utf8'));
 const spec = expandFigure({
@@ -752,7 +766,7 @@ console.log([16, 20, 32, 40, 64].map((r) => DETAIL_NAMES[lodForRes(r)]).join(' '
 
 ### `DETAIL_PRESETS`
 
-Shader settings per detail level. [`resolveStyle`](#resolvestyle) layers `spec.style` and overrides on
+Shader settings per detail level (frozen). [`resolveStyle`](#resolvestyle) layers `spec.style` and overrides on
 top of these.
 
 | Key | 1 (icon) | 2 (sprite) | 3 (portrait) |
@@ -919,6 +933,8 @@ console.log(sheet.meta);
 
 ### `buildMixes`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 buildMixes(compiled: CompiledSpec, mixes: { [ "from>to" ]: { frames?, ease?, fps? } }): string[]
 ```
@@ -967,6 +983,8 @@ console.log(animationMeta(c.animations.jump));
 
 ### `createImage`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 createImage(w: number, h: number, fill?: [r, g, b, a] | null): Image
 ```
@@ -979,6 +997,8 @@ createImage(w: number, h: number, fill?: [r, g, b, a] | null): Image
 **Returns** `{ w, h, rgba: Uint8ClampedArray }`.
 
 ### `blit`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 blit(dst: Image, src: Image, dx: number, dy: number, k?: number): void
@@ -997,7 +1017,8 @@ Modifies `dst`.
 | `k` | number | `1` | Integer scale factor. |
 
 ```js
-import { compile, renderFrame, createImage, blit } from './src/core/index.js';
+import { compile, renderFrame } from './src/core/index.js';
+import { createImage, blit } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1101,6 +1122,8 @@ use them directly to inspect poses (as `pixel where` does) or to build tools.
 
 ### `sampleValue`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 sampleValue(v: TrackValue, t: number, loop: boolean, isStep: boolean, defaultOffset?: number): number
 ```
@@ -1128,7 +1151,7 @@ Evaluation, from `src/core/animate.js`:
 **Returns** a number.
 
 ```js
-import { sampleValue } from './src/core/index.js';
+import { sampleValue } from './src/core/internal.js';
 
 console.log(sampleValue([0, 10], 0.25, true, false));                    // 5   (0→10→0 over the loop)
 console.log(sampleValue([0, 10], 0.25, false, false));                   // 2.5 (0→10 once)
@@ -1139,6 +1162,8 @@ console.log(sampleValue({ wave: 1 }, 0.75, true, true));                 // 0   
 
 ### `frameTime`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 frameTime(anim: { frames: number, loop: boolean }, f: number): number
 ```
@@ -1148,11 +1173,13 @@ last frame stops one step short of 1, so the loop is seamless), `f / (frames −
 frame lands on 1).
 
 ```js
-import { frameTime } from './src/core/index.js';
+import { frameTime } from './src/core/internal.js';
 console.log(frameTime({ frames: 4, loop: true }, 3), frameTime({ frames: 4, loop: false }, 3)); // 0.75 1
 ```
 
 ### `samplePose(compiled, anim, f)`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 samplePose(compiled: CompiledSpec, anim: CompiledAnimation, f: number): Pose
@@ -1170,7 +1197,8 @@ then follow-through offsets (added to `rot`).
 **Returns** a [pose](#pose). A new Map on every call.
 
 ```js
-import { compile, samplePose } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { samplePose } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1183,6 +1211,8 @@ console.log(pose.reachMiss);    // []
 ```
 
 ### `samplePoseAt`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 samplePoseAt(compiled: CompiledSpec, anim: CompiledAnimation | null, t: number): Pose
@@ -1201,6 +1231,8 @@ Follow-through is a simulation over the whole animation and is only defined per 
 **Returns** a [pose](#pose).
 
 ### `followOffsets`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 followOffsets(compiled: CompiledSpec, anim: CompiledAnimation): Map<string, number[]> | null
@@ -1225,7 +1257,8 @@ animation object returns the cached value even if you pass a different compiled 
 mutated the animation. Compile again rather than mutating a compiled spec.
 
 ```js
-import { compile, followOffsets } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { followOffsets } from './src/core/internal.js';
 
 const c = compile({
   materials: { fur: '#c8692e' },
@@ -1250,6 +1283,8 @@ to posed canvas coordinates.
 
 ### `worldMatrices`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 worldMatrices(parts: CompiledPart[], pose: Pose, adjust?: (t) => void):
   { world: Map<string, number[]>, visible: Map<string, boolean> }
@@ -1265,7 +1300,8 @@ worldMatrices(parts: CompiledPart[], pose: Pose, adjust?: (t) => void):
 ancestors have `show` true.
 
 ```js
-import { compile, samplePose, worldMatrices } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { samplePose, worldMatrices } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1282,6 +1318,8 @@ console.log(at([70, 50]), visible.get('hand'));  // [ 50, 30 ] true   (the wrist
 ```
 
 ### `solveReach`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 solveReach(parts: CompiledPart[], pose: Pose, r: object, target: [x, y], aim?: number | null): number
@@ -1307,7 +1345,8 @@ by more than 0.05 units, retries from four perturbed starting rotations and keep
 **Returns** the remaining distance in units between tip and target.
 
 ```js
-import { compile, samplePoseAt, solveReach } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { samplePoseAt, solveReach } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1323,6 +1362,8 @@ console.log(Math.round(pose.get('upper').rot), Math.round(pose.get('lower').rot)
 ```
 
 ### `overflowForPose`
+
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
 
 ```ts
 overflowForPose(compiled: CompiledSpec, pose: Pose, margin?: number):
@@ -1342,7 +1383,8 @@ sampled just inside their outline (every 0.75 units); `cut` shapes and hidden pa
 **Returns** one entry per part and edge whose overflow exceeds `margin`; `amount` is in units.
 
 ```js
-import { compile, samplePoseAt, overflowForPose } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { samplePoseAt, overflowForPose } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1395,22 +1437,23 @@ for (const w of checkBounds(c)) console.log(w.path, w.frames, w.message);
 
 ## Motion
 
-### `MOTION_MODELS`
+### `motionModels`
 
 ```ts
-MOTION_MODELS: ['gait', 'idle', 'pose', 'hop', 'jump', 'climb', 'fall', 'sit']
+motionModels(): readonly string[]   // built-ins: ['gait', 'idle', 'pose', 'hop', 'jump', 'climb', 'fall', 'sit']
 ```
 
-The motion models a figure animation can use, by name or through a preset's `model`. See
-[SPEC.md, Motions](SPEC.md#motions) and [figures.md](figures.md).
+A fresh frozen array of the motion models a figure animation can use, by name or through a preset's `model`. See
+[SPEC.md, Motions](SPEC.md#motions) and [figures.md](figures.md). Plug-in models registered with `registerMotion` are
+included.
 
-### `LEGGED_MODELS`
+### `leggedModels`
 
 ```ts
-LEGGED_MODELS: ['gait', 'pose', 'jump', 'climb', 'sit']
+leggedModels(): readonly string[]   // built-ins: ['gait', 'pose', 'jump', 'climb', 'sit']
 ```
 
-The models that need `rig.legs`. `expandFigure` reports an error when a figure without legs uses one.
+A fresh frozen array of the models that need `rig.legs`. `expandFigure` reports an error when a figure without legs uses one.
 
 ### `generateMotion`
 
@@ -1435,7 +1478,7 @@ described in [SPEC.md, Motions](SPEC.md#motions); those not listed there are mar
 
 | Key | Default | Notes |
 |---|---|---|
-| `model` | `"gait"` | One of `MOTION_MODELS`. `pose` behaves like `idle` but never stabilises the head. |
+| `model` | `"gait"` | One of `motionModels()`. `pose` behaves like `idle` but never stabilises the head. |
 | `frames`, `fps`, `loop` | `8`, `8`, `true` | |
 | `input` | `{}` | Author tracks (`{ [partId]: { [prop]: TrackValue } }`). Root `x`/`y`/`rot` are applied before the feet are solved; any `rot` track on the neck or head turns off head stabilisation. |
 | `duty` | `0.6` (`hop`: `0.4`, `climb`: `0.7`) | |
@@ -1567,6 +1610,8 @@ const bundle = await buildBundle(compiled, { encode });
 
 ### `bakePoints`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 bakePoints(compiled: CompiledSpec): { [point]: { [anim]: [x, y, rotDeg][] } } | null
 ```
@@ -1579,7 +1624,8 @@ slices. Positions are in units, so one table serves every resolution; `<pixel-sp
 with `el.point(name)` ([runtime.md](runtime.md)).
 
 ```js
-import { compile, bakePoints } from './src/core/index.js';
+import { compile } from './src/core/index.js';
+import { bakePoints } from './src/core/internal.js';
 
 const c = compile({
   materials: { skin: '#f2b58c' },
@@ -1700,18 +1746,20 @@ console.log(buildRamp('#c8692e', 5, { hueShift: 0 }).map(toHex)[2]); // #c8692e
 
 | Export | Value | Meaning |
 |---|---|---|
-| `TEXTURES` | `['noise', 'fur', 'scales', 'stripes', 'checker', 'cloth', 'bricks', 'spots', 'metal']` | Valid material `texture` names. |
-| `SHAPE_TYPES` | `['rect', 'ellipse', 'circle', 'capsule', 'polygon']` | Valid shape `type` values. |
+| `textures()` | `['noise', 'fur', 'scales', 'stripes', 'checker', 'cloth', 'bricks', 'spots', 'metal']` + plug-ins | Valid material `texture` names. |
+| `shapeTypes()` | `['rect', 'ellipse', 'circle', 'capsule', 'polygon']` + plug-ins | Valid shape `type` values. |
 | `TRACK_PROPS` | `['x', 'y', 'rot', 'sx', 'sy', 'show']` | Animatable part properties. |
-| `MOTION_MODELS` | `['gait', 'idle', 'pose', 'hop', 'jump', 'climb', 'fall', 'sit']` | Motion models. |
-| `LEGGED_MODELS` | `['gait', 'pose', 'jump', 'climb', 'sit']` | Motion models that need `rig.legs`. |
+| `motionModels()` | `['gait', 'idle', 'pose', 'hop', 'jump', 'climb', 'fall', 'sit']` + plug-ins | Motion models. |
+| `leggedModels()` | `['gait', 'pose', 'jump', 'climb', 'sit']` + legged plug-ins | Motion models that need `rig.legs`. |
 | `DETAIL_PRESETS` | see [above](#detail_presets) | Shader settings per detail level. |
 | `DETAIL_NAMES` | `{ 1: 'icon', 2: 'sprite', 3: 'portrait' }` | Detail level names. |
 | `BUNDLE_FORMAT` | `'pixel-sprite/1'` | Bundle format tag. |
 | `MAX_RES` | `512` | The largest frame height `renderAnimation` (and so `renderSheet`, `buildBundle`, `exportSheet`) renders. |
 
-These are plain arrays and objects; they are not frozen. Do not modify them: `validate` and the
-renderer read the same objects.
+Everything here is read-only. The four functions return a fresh frozen array on every call (the registries
+themselves are private to the engine, so changing a copy cannot break `validate`); `TRACK_PROPS`,
+`DETAIL_PRESETS` (and each preset) and `DETAIL_NAMES` are frozen. Before 0.2.0-alpha the registries were exported
+as live arrays (`TEXTURES`, `SHAPE_TYPES`, `MOTION_MODELS`, `LEGGED_MODELS`).
 
 ## Node: PNG encoding
 
@@ -1737,7 +1785,7 @@ exported from `src/core/index.js`.
 
 ```js
 import { writeFileSync } from 'node:fs';
-import { createImage } from './src/core/index.js';
+import { createImage } from './src/core/internal.js';
 import { encodePNG } from './src/node/png.js';
 
 const img = createImage(4, 4, [255, 0, 0, 255]);
@@ -1769,6 +1817,8 @@ this for its bundles.
 
 ### `paletteOf`
 
+**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+
 ```ts
 paletteOf(rgba: Uint8Array | Uint8ClampedArray): { colours: number[], idx: Uint8Array } | null
 ```
@@ -1779,7 +1829,7 @@ are not fully opaque listed first; `idx` holds each pixel's index into `colours`
 the image has more than 256 colours.
 
 ```js
-import { createImage, paletteOf } from './src/core/index.js';
+import { createImage, paletteOf } from './src/core/internal.js';
 
 const img = createImage(3, 1, [255, 0, 0, 255]);
 img.rgba.set([0, 0, 0, 0], 4);                 // middle pixel transparent
@@ -1790,8 +1840,11 @@ console.log(colours.map((c) => c.toString(16).padStart(8, '0')), idx);
 
 ## Internal helpers
 
-The source modules export more than `src/core/index.js` re-exports. These are internal: they are not
-part of the public API and may change or disappear without notice.
+`src/core/internal.js` (`pixel-studio/internal`) re-exports the building blocks marked **Internal** above:
+`createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`, `frameTime`, `followOffsets`,
+`worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`, `expandFigure`, `paletteOf` and
+`buildMixes`. The CLI, the studio and the tests use them. The source modules export still more; these are internal
+too, not re-exported anywhere, and may change or disappear without notice.
 
 | Module | Internal exports |
 |---|---|
@@ -1827,7 +1880,9 @@ usePlugin(module: { default: (api) => void } | ((api) => void)): Promise<void>
   `rot` (added to the rest pose) and `sx`, `sy` (multiplied), each a number or an array of exactly `samples` values
   (`frames × 4` for loops, `(frames − 1) × 4 + 1` otherwise). Events use normalized time `u` (0..1) and become frame
   numbers like the built-in models' events. `legged: true` requires `rig.legs`.
-- Names start with a letter and use letters, digits, `_` or `-`; reusing a name throws.
+- Names start with a letter and use letters, digits, `_` or `-`. Registering the same definition again under its name
+  (the same function, or a function with the same source, and the same `required`/`keys`/`legged`) is a no-op, so a dev
+  server can re-run a plug-in's setup; a different definition under a taken name throws.
 
 ```js
 import { usePlugin, resolveSpec, compile } from 'pixel-studio';

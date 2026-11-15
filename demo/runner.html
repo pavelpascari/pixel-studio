@@ -206,7 +206,7 @@
   if (matchMedia('(prefers-reduced-motion: reduce)').matches)
     $('#note').textContent = 'Your system asks for reduced motion: the fox will hold still poses while the trail scrolls.';
 
-  fox.addEventListener('ready', () => { resize(); hud(); });
+  fox.addEventListener('pixel-ready', () => { resize(); hud(); });
   addEventListener('resize', resize);
   resize(); hud();
   window.foxTrail = { S, jump, start, hits };   // for testing

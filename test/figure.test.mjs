@@ -1,9 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import {
-  validate, compile, samplePose, worldMatrices, checkBounds, expandFigure, resolveSpec, followOffsets,
-} from '../src/core/index.js';
+import { validate, compile, checkBounds, resolveSpec } from '../src/core/index.js';
+import { samplePose, worldMatrices, expandFigure, followOffsets } from '../src/core/internal.js';
 
 const fig = (name) => JSON.parse(readFileSync(new URL(`../figures/${name}.json`, import.meta.url), 'utf8'));
 const FIGURES = readdirSync(new URL('../figures/', import.meta.url)).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
@@ -144,7 +143,8 @@ test('hop: a gravity arc with volume-preserving squash and stretch; the shadow s
 });
 
 // ---------- events, ground line, attachment points, holds (bundle metadata) ----------
-import { buildBundle, mergeVariant, renderSheet } from '../src/core/index.js';
+import { buildBundle, renderSheet } from '../src/core/index.js';
+import { mergeVariant } from '../src/core/internal.js';
 import { bakePoints } from '../src/core/bundle.js';
 
 test('events: footsteps at each touchdown; hop takeoff/land; jump launch/land; author events added', () => {

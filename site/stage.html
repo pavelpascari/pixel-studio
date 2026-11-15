@@ -63,15 +63,15 @@
         await customElements.whenDefined('pixel-actor');
         const goose = document.getElementById('st-goose'), out = document.getElementById('st-out');
         const say = (ok, what) => (out.textContent = ok ? what : 'no way there right now');
-        goose.addEventListener('actorstate', (e) => (out.textContent = `goose: ${e.detail.to}`));
+        goose.addEventListener('pixel-activity', (e) => (out.textContent = `goose: ${e.detail.to}`));
         document.getElementById('st-hide').onclick = () => say(goose.hideBehind(document.getElementById('st-crate')), 'heading for the crate');
         document.getElementById('st-sit').onclick = () => say(goose.goTo(document.getElementById('st-low'), { then: 'sit' }), 'going to sit');
         document.getElementById('st-climb').onclick = () => say(goose.goTo(document.getElementById('st-tall')), 'off to Ridge loop');
         document.getElementById('st-say').onclick = () => goose.say('honk?');
         const stage = document.querySelector('pixel-stage'), sceneBtn = document.getElementById('st-scene');
         sceneBtn.onclick = () => (stage.scene ? stage.scene.stop() : stage.playScene('#race'));
-        stage.addEventListener('scenestep', (e) => (out.textContent = `scene: ${e.detail.path}`));
-        stage.addEventListener('sceneend', (e) => (out.textContent = e.detail.completed ? 'scene: the end' : 'scene: stopped'));
+        stage.addEventListener('pixel-scenestep', (e) => (out.textContent = `scene: ${e.detail.path}`));
+        stage.addEventListener('pixel-sceneend', (e) => (out.textContent = e.detail.completed ? 'scene: the end' : 'scene: stopped'));
       </script>
     </template>
   </div>
@@ -86,9 +86,9 @@
   <pre class="snippet" data-lang="js">
     &lt;pixel-actor src="goose.bundle.json" size="64" keep-in-view&gt;&lt;/pixel-actor&gt;
 
-    stage.addEventListener('fastscroll', (e) => goose.say('wait for me!'));   // e.detail.speed in px/s
-    goose.addEventListener('catchup', () => console.log('coming back'));
-    goose.addEventListener('burst', (e) => console.log('rage taps', e.detail.count));   // tapping fast makes it panic
+    stage.addEventListener('pixel-fastscroll', (e) => goose.say('wait for me!'));   // e.detail.speed in px/s
+    goose.addEventListener('pixel-catchup', () => console.log('coming back'));
+    goose.addEventListener('pixel-burst', (e) => console.log('rage taps', e.detail.count));   // tapping fast makes it panic
   </pre>
 
   <h2 id="scenes">Scenes</h2>
@@ -113,7 +113,7 @@
   <pre class="snippet" data-lang="js">
     const run = stage.playScene('#race');      // an object, JSON text, or a &lt;script type="application/json"&gt;
     await run.finished;                        // true at the end, false if run.stop() was called
-    stage.addEventListener('sceneevent', (e) =&gt; console.log(e.detail.name));   // from {"emit": "…"} steps
+    stage.addEventListener('pixel-sceneevent', (e) =&gt; console.log(e.detail.name));   // from {"emit": "…"} steps
 
     // The same orders, awaitable from code: true when done, false if impossible or interrupted.
     if (await goose.run('goTo', summit, { then: 'sit' })) await goose.say('made it');
@@ -161,7 +161,7 @@
     goose.say('honk?');                                                // bubble at the beak
     goose.shoo();                                                      // startle and run
     moss.perform('think');                                            // any animation of its own, in place
-    goose.addEventListener('actorstate', (e) => console.log(e.detail.to));
+    goose.addEventListener('pixel-activity', (e) => console.log(e.detail.to));
 
     const stage = document.querySelector('pixel-stage');
     stage.pause();                // what the built-in button does; remembered

@@ -65,7 +65,7 @@
         document.getElementById('api-wave').onclick = () => pip.play('wave', { once: true });
         document.getElementById('api-flip').onclick = () => pip.toggleAttribute('flip');
         document.getElementById('api-pause').onclick = () => (pip.hasAttribute('paused') ? pip.resume() : pip.pause());
-        pip.addEventListener('spriteend', (e) => (out.textContent = `finished ${e.detail.anim}, back to ${pip.currentAnim}`));
+        pip.addEventListener('pixel-end', (e) => (out.textContent = `finished ${e.detail.anim}, back to ${pip.currentAnim}`));
       </script>
     </template>
   </div>
@@ -81,7 +81,7 @@
 
   <h2 id="fallback">Loading, errors and fallbacks</h2>
   <p>Children of the element show until the sprite is ready, and again if it fails: a poster image works even without JavaScript.
-    The <code>state</code> attribute (<code>loading</code>, <code>ready</code>, <code>error</code>) is there for CSS.</p>
+    The <code>status</code> attribute (<code>loading</code>, <code>ready</code>, <code>error</code>) is there for CSS.</p>
   <div class="demo" data-title="A broken link falls back to its poster">
     <template>
       <pixel-sprite id="fb" src="missing.bundle.json" size="96">
@@ -90,19 +90,19 @@
       <span class="readout" id="fb-out">loading…</span>
       <script type="module">
         const el = document.getElementById('fb'), out = document.getElementById('fb-out');
-        const report = () => (out.textContent = `state="${el.state}": the poster shows instead`);
-        el.addEventListener('error', report);
-        if (el.state === 'error') report();   // it may have failed before this script ran
+        const report = () => (out.textContent = `status="${el.status}": the poster shows instead`);
+        el.addEventListener('pixel-error', report);
+        if (el.status === 'error') report();   // it may have failed before this script ran
       </script>
     </template>
   </div>
 
   <h2 id="styling">Styling</h2>
-  <div class="demo" data-title="::part(canvas) and the state attribute">
+  <div class="demo" data-title="::part(canvas) and the status attribute">
     <template>
       <style>
         .halo::part(canvas) { filter: drop-shadow(0 6px 0 #0002); }
-        pixel-sprite[state=loading] { opacity: 0.4; }
+        pixel-sprite[status=loading] { opacity: 0.4; }
       </style>
       <pixel-sprite class="halo" src="../demo/assets/robot.bundle.json" anim="walk" size="128" alt="Bolt"></pixel-sprite>
     </template>

@@ -30,7 +30,7 @@
   addEventListener('unhandledrejection', (e) => window.__errors.push('rejection: ' + String(e.reason?.message || e.reason)));
   // Count events on the upgraded element before the runtime is defined.
   window.__readyCount = 0;
-  document.getElementById('upgraded').addEventListener('ready', () => window.__readyCount++);
+  document.getElementById('upgraded').addEventListener('pixel-ready', () => window.__readyCount++);
 </script>
 <script type="module">
 import { clock } from '../../src/runtime/pixel-sprite.js';
@@ -42,7 +42,7 @@ const out = document.getElementById('out');
 const results = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const once = (el, type) => new Promise((r) => el.addEventListener(type, r, { once: true }));
-const ready = (el) => (el.state === 'ready' ? Promise.resolve() : once(el, 'ready'));
+const ready = (el) => (el.status === 'ready' ? Promise.resolve() : once(el, 'pixel-ready'));
 // Ready and actually playing (on screen): some browsers report visibility a little after a scroll.
 const playing = async (el) => { await ready(el); el.scrollIntoView({ block: 'center' }); for (let i = 0; i < 60 && !el._running; i++) await sleep(50); };
 function sprite(attrs) {
@@ -75,15 +75,15 @@ await check('an upgraded element loads once', async () => {
 
 await check('the box is reserved from size before load and on error', async () => {
   const el = document.getElementById('reserved');
-  if (el.state !== 'error') await once(el, 'error');
+  if (el.status !== 'error') await once(el, 'pixel-error');
   const r = el.getBoundingClientRect();
-  return { ok: Math.round(r.width) === 24 && Math.round(r.height) === 24 && el.state === 'error', note: `${r.width}×${r.height}, state ${el.state}` };
+  return { ok: Math.round(r.width) === 24 && Math.round(r.height) === 24 && el.status === 'error', note: `${r.width}×${r.height}, status ${el.status}` };
 });
 
 await check('a failed load fires error, and reload() fetches again', async () => {
   const el = sprite({ src: 'missing.bundle.json', size: 32 });
-  const e1 = await once(el, 'error');
-  const second = once(el, 'error');
+  const e1 = await once(el, 'pixel-error');
+  const second = once(el, 'pixel-error');
   el.reload();
   const e2 = await second;
   return { ok: /HTTP 404/.test(e1.detail.error.message) && e2 !== e1, note: e1.detail.error.message };
@@ -93,8 +93,8 @@ await check('a wrong format fails with a clear error', async () => {
   const el = document.createElement('pixel-sprite');
   el.innerHTML = '<script type="application/json">{"format":"lottie"}<\/script>';
   stage.append(el);
-  const e = el.state === 'error' ? null : await once(el, 'error');
-  return { ok: el.state === 'error' && /expected "pixel-sprite\/1"/.test(e?.detail.error.message), note: e?.detail.error.message };
+  const e = el.status === 'error' ? null : await once(el, 'pixel-error');
+  return { ok: el.status === 'error' && /expected "pixel-sprite\/1"/.test(e?.detail.error.message), note: e?.detail.error.message };
 });
 
 await check('one throwing sprite does not freeze the others', async () => {
@@ -112,7 +112,7 @@ await check('one throwing sprite does not freeze the others', async () => {
   off();
   const f0 = 0, f1 = changes;
   console.error = orig;
-  return { ok: changes >= 3 && bad.state === 'error', note: `good advanced ${changes} frames, bad state ${bad.state}, good vis=${good._visible} run=${good._running} ticks=${ticks} dtsum=${dts.toFixed(0)} acc=${good._acc?.toFixed(0)} y=${Math.round(good.getBoundingClientRect().top)}/${innerHeight}` };
+  return { ok: changes >= 3 && bad.status === 'error', note: `good advanced ${changes} frames, bad status ${bad.status}, good vis=${good._visible} run=${good._running} ticks=${ticks} dtsum=${dts.toFixed(0)} acc=${good._acc?.toFixed(0)} y=${Math.round(good.getBoundingClientRect().top)}/${innerHeight}` };
 });
 
 await check('changing src mid-load: the last src wins', async () => {
@@ -183,7 +183,7 @@ await check('a one-shot fires spriteend and returns to the base animation', asyn
   const a = el.bundle.animations.honk;
   const t0 = performance.now();
   el.play('honk', { once: true });
-  const e = await once(el, 'spriteend');
+  const e = await once(el, 'pixel-end');
   const ms = performance.now() - t0, want = a.durations ? a.durations.reduce((s, d) => s + d, 0) : (a.frames * 1000) / a.fps;
   return { ok: e.detail.anim === 'honk' && el.currentAnim === 'idle' && Math.abs(ms - want) < 150, note: `${ms.toFixed(0)} ms (nominal ${want.toFixed(0)})` };
 });
@@ -199,7 +199,7 @@ await check('footstep events fire on the touchdown frames while walking', async 
   const el = sprite({ src: GOOSE, size: 64, anim: 'waddle' });
   await playing(el);
   const seen = [];
-  el.addEventListener('spriteevent', (e) => seen.push(`${e.detail.frame}:${e.detail.name}:${e.detail.data?.leg}`));
+  el.addEventListener('pixel-event', (e) => seen.push(`${e.detail.frame}:${e.detail.name}:${e.detail.data?.leg}`));
   await sleep(1700);
   const want = el.bundle.animations.waddle.events.map((e) => `${e.frame}:${e.name}:${e.data.leg}`);
   return { ok: seen.length >= 3 && seen.every((s) => want.includes(s)), note: seen.slice(0, 4).join(', ') };
@@ -212,8 +212,8 @@ await check('holds: a held frame stays up longer (durations)', async () => {
   const t0 = performance.now();
   el.play('honk', { once: true });
   let honkAt = 0;
-  el.addEventListener('spriteevent', (e) => { if (e.detail.name === 'honk') honkAt = performance.now() - t0; });
-  await once(el, 'spriteend');
+  el.addEventListener('pixel-event', (e) => { if (e.detail.name === 'honk') honkAt = performance.now() - t0; });
+  await once(el, 'pixel-end');
   const total = performance.now() - t0, want = a.durations.reduce((s, d) => s + d, 0);
   return { ok: Array.isArray(a.durations) && Math.abs(total - want) < 150 && honkAt > 250, note: `${total.toFixed(0)} ms (durations sum ${want}); honk event at ${honkAt.toFixed(0)} ms; vis=${el._visible} y=${Math.round(el.getBoundingClientRect().top)}/${innerHeight}` };
 });
@@ -248,14 +248,14 @@ await check('state machine: speed picks the gait, stops on a footstep, a click h
   const el = sprite({ src: GOOSE, size: 64, states: 'on' });
   await playing(el);
   const seen = [];
-  el.addEventListener('statechange', (e) => seen.push(`${e.detail.from}>${e.detail.to}`));
+  el.addEventListener('pixel-statechange', (e) => seen.push(`${e.detail.from}>${e.detail.to}`));
   el.set('speed', 30); await sleep(300);
   el.set('speed', 90); await sleep(300);
   el.set('speed', 0);
   for (let i = 0; i < 40 && el.stateNode !== 'idle'; i++) await sleep(25);
   el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   const honking = el.stateNode;
-  await once(el, 'spriteend'); await sleep(50);
+  await once(el, 'pixel-end'); await sleep(50);
   return { ok: seen.join(' ') === 'idle>walk walk>run run>idle idle>honk honk>idle' && honking === 'honk' && el.stateNode === 'idle', note: seen.join(' ') };
 });
 
@@ -291,9 +291,9 @@ await check('rage clicks: a burst speeds the honk up, then panics; calm brings i
   const el = sprite({ src: GOOSE, size: 64, states: 'on' });
   await playing(el);
   const bursts = [], nodes = [];
-  el.addEventListener('spriteburst', (e) => bursts.push(e.detail.count));
-  el.addEventListener('statechange', (e) => nodes.push(e.detail.to));
-  const calm = once(el, 'spritecalm');
+  el.addEventListener('pixel-burst', (e) => bursts.push(e.detail.count));
+  el.addEventListener('pixel-statechange', (e) => nodes.push(e.detail.to));
+  const calm = once(el, 'pixel-calm');
   let fastest = 1;
   for (let i = 0; i < 7; i++) {
     el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -312,8 +312,108 @@ await check('rage clicks without a state machine speed up the click animation', 
   await playing(el);
   const rates = [];
   for (let i = 0; i < 5; i++) { el.dispatchEvent(new MouseEvent('click', { bubbles: true })); rates.push(el.effectiveRate); await sleep(100); }
-  await once(el, 'spritecalm');
+  await once(el, 'pixel-calm');
   return { ok: rates[0] === 1 && rates[4] > 1.5 && el.effectiveRate === 1, note: rates.map((r) => r.toFixed(2)).join(' ') };
+});
+
+// ----- 0.2.0-alpha names: pixel-<name> events (bubbling, composed), the status attribute, legacy aliases -----
+
+await check('events are pixel-<name>, bubble and cross shadow roots; the old names still fire once', async () => {
+  // The sprite lives in a shadow root: composed events reach the host outside it.
+  const host = document.createElement('div');
+  stage.append(host);
+  const el = document.createElement('pixel-sprite');
+  for (const [k, v] of Object.entries({ src: PIP, size: 64, anim: 'idle', 'click-anim': 'wave' })) el.setAttribute(k, v);
+  const seen = [], old = [];
+  for (const n of ['ready', 'end', 'event', 'burst', 'calm']) host.addEventListener(`pixel-${n}`, (e) => seen.push(`${n}:${e.bubbles && e.composed}`));
+  for (const n of ['ready', 'spriteend', 'spriteburst', 'spritecalm']) el.addEventListener(n, (e) => old.push(`${n}:${e.bubbles}:${e.composed}`));
+  host.attachShadow({ mode: 'open' }).append(el);
+  host.scrollIntoView({ block: 'nearest' });
+  await once(el, 'pixel-ready');
+  const statusOk = el.status === 'ready' && el.state === 'ready' && el.getAttribute('status') === 'ready' && el.getAttribute('state') === 'ready';
+  await playing(el);
+  el.play('wave', { once: true });
+  await once(el, 'pixel-end');
+  for (let i = 0; i < 3; i++) { el.dispatchEvent(new MouseEvent('click', { bubbles: true })); await sleep(60); }
+  await once(el, 'pixel-calm');
+  host.remove();
+  const want = ['ready:true', 'end:true', 'burst:true', 'calm:true'];
+  const wantOld = ['ready:false:false', 'spriteend:true:false', 'spriteburst:true:false', 'spritecalm:true:false'];
+  const s = seen.filter((x) => !x.startsWith('event')), o = [...new Set(old)];
+  return { ok: statusOk && want.every((w) => s.includes(w)) && wantOld.every((w) => o.includes(w)) && s.filter((x) => x.startsWith('ready')).length === 1 && old.filter((x) => x.startsWith('ready')).length === 1,
+    note: `status ${el.status}/${el.state}; new ${[...new Set(s)].join(' ')}; old ${o.join(' ')}` };
+});
+
+await check('pixel-event and spriteevent carry the same baked events; pixel-statechange and statechange too', async () => {
+  const el = sprite({ src: GOOSE, size: 64, states: 'on' });
+  await playing(el);
+  const a = [], b = [], c = [], d = [];
+  el.addEventListener('pixel-event', (e) => a.push(e.detail.name));
+  el.addEventListener('spriteevent', (e) => b.push(e.detail.name));
+  el.addEventListener('pixel-statechange', (e) => c.push(e.detail.to));
+  el.addEventListener('statechange', (e) => d.push(e.detail.to));
+  el.set('speed', 30);
+  await sleep(1200);
+  el.set('speed', 0);
+  await sleep(200);
+  return { ok: a.length > 0 && a.join() === b.join() && c.length > 0 && c.join() === d.join(), note: `${a.length} events (${[...new Set(a)].join(', ')}), states ${c.join(' → ')}` };
+});
+
+await check('pixel-error bubbles; the state attribute mirrors status', async () => {
+  const wrap = document.createElement('div');
+  stage.append(wrap);
+  let bubbled = 0, legacy = 0;
+  wrap.addEventListener('pixel-error', () => bubbled++);
+  wrap.addEventListener('error', () => legacy++);   // the old 'error' did not bubble
+  const el = document.createElement('pixel-sprite');
+  el.setAttribute('src', 'does-not-exist.bundle.json');
+  el.addEventListener('error', () => legacy++);
+  wrap.append(el);
+  await once(el, 'pixel-error');
+  await sleep(20);
+  wrap.remove();
+  return { ok: bubbled === 1 && legacy === 1 && el.status === 'error' && el.getAttribute('state') === 'error', note: `bubbled ${bubbled}, legacy ${legacy}, status ${el.status}` };
+});
+
+await check('an actor: one pixel-burst per rage burst (the inner sprite\'s events stay inside); actor.activity and its state alias', async () => {
+  await import('../../src/runtime/pixel-stage.js');
+  const st = document.createElement('pixel-stage');
+  st.setAttribute('controls', 'none');
+  const actor = document.createElement('pixel-actor');
+  actor.setAttribute('src', GOOSE);
+  actor.setAttribute('behaviours', '');
+  const acts = [], legacyActs = [];
+  actor.addEventListener('pixel-activity', (e) => acts.push(e.detail.to));
+  actor.addEventListener('actorstate', (e) => legacyActs.push(e.detail.to));
+  st.append(actor);
+  document.body.append(st);
+  for (let i = 0; i < 200 && !actor._placed; i++) await sleep(50);
+  if (!actor._placed) { st.remove(); return { ok: false, note: 'the actor was never placed' }; }
+  const onActor = [], onDoc = [], legacy = [];
+  actor.addEventListener('pixel-burst', (e) => onActor.push(e.detail.count));
+  actor.addEventListener('burst', (e) => legacy.push(e.detail.count));
+  const docBurst = (e) => { if (e.composedPath().includes(actor)) onDoc.push(e.detail?.count); };
+  document.addEventListener('pixel-burst', docBurst);
+  // Clicks that land on the inner sprite and a stray composed event from it never become the actor's events.
+  for (let i = 0; i < 5; i++) actor.sprite.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+  actor.sprite.dispatchEvent(new CustomEvent('pixel-burst', { bubbles: true, composed: true, detail: { count: 99 } }));
+  const leaked = onActor.length + onDoc.length;
+  // Four quick taps on the actor's opaque pixels: bursts on the 3rd and 4th.
+  const r = actor.getBoundingClientRect();
+  let pt = null;
+  for (let y = r.top + 2; y < r.bottom && !pt; y += 2) for (let x = r.left + 2; x < r.right && !pt; x += 2) if (actor._hit(x, y, st.world)) pt = { x, y };
+  if (!pt) { document.removeEventListener('pixel-burst', docBurst); st.remove(); return { ok: false, note: 'no opaque pixel found to tap' }; }
+  for (let i = 0; i < 4; i++) {
+    const o = { bubbles: true, composed: true, clientX: pt.x, clientY: pt.y, pointerId: 7, pointerType: 'touch', button: 0, isPrimary: true };
+    document.body.dispatchEvent(new PointerEvent('pointerdown', o));
+    document.body.dispatchEvent(new PointerEvent('pointerup', o));
+  }
+  for (let i = 0; i < 100 && !acts.length; i++) await sleep(50);   // shooed: it runs off on a coming frame
+  const alias = actor.state === actor.activity;
+  document.removeEventListener('pixel-burst', docBurst);
+  st.remove();
+  return { ok: leaked === 0 && onActor.join() === '3,4' && onDoc.join() === '3,4' && legacy.join() === '3,4' && acts.length > 0 && acts.join() === legacyActs.join() && alias,
+    note: `leaked ${leaked}; actor ${onActor.join(',')}; document ${onDoc.join(',')}; legacy ${legacy.join(',')}; activity ${acts.join(' → ')}` };
 });
 
 const failed = results.filter((r) => !r.ok).length;

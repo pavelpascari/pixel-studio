@@ -136,7 +136,7 @@ Shapes thinner than a pixel are kept 1 pixel wide automatically, so eyes never v
 - `holds`: `{"3": 2}` shows frame 3 twice as long (a multiple of the frame time, > 0 and ≤ 16). Use it to hold a key
   pose: the contact frame of a punch, the top of a honk. Each frame keeps its own duration in the bundle.
 - `events`: `[{"frame": 3, "name": "honk", "data": {...}}]` marks moments a page can react to (a sound, a speech
-  bubble, a camera shake). Pages get them as `spriteevent`. Motion models add `footstep`, `land`, `launch` and
+  bubble, a camera shake). Pages get them as `pixel-event`. Motion models add `footstep`, `land`, `launch` and
   `takeoff` by themselves; `"events": false` on a motion turns those off.
 
 ### Attachment points and the foot line

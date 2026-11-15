@@ -11,6 +11,7 @@
     ".": "./src/core/index.js",
     "./runtime": "./src/runtime/pixel-sprite.js",
     "./stage": "./src/runtime/pixel-stage.js",
+    "./internal": "./src/core/internal.js",
     "./node/png": "./src/node/png.js",
     "./package.json": "./package.json"
   },

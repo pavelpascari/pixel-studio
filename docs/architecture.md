@@ -83,7 +83,8 @@ into a whole compiled character of its own, so the renderer still sees only plai
 
 | File | Responsibility | Main exports |
 |---|---|---|
-| `index.js` | Public API barrel. Hosts should import from here. | everything below that is public |
+| `index.js` | Public API barrel (`pixel-studio`). Hosts should import from here. It exports no live registries: `shapeTypes()`, `textures()`, `motionModels()`, `leggedModels()` return frozen copies. | the pipeline (`resolveSpec`, `validate`, `compile`, render, `buildBundle`, `exportSheet`, ...), plug-ins, constants |
+| `internal.js` | Building blocks for tools (`pixel-studio/internal`): the CLI, studio and tests import them; no compatibility promise. | `createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`, `frameTime`, `followOffsets`, `worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`, `expandFigure`, `paletteOf`, `buildMixes` |
 | `extend.js` | Variants: merge a spec onto its `extends` base (points and skins by name), then call `resolveFigure`. | `resolveExtends`, `mergeVariant`, `resolveSpec` |
 | `figure.js` | Expand `figure`: bones become parts, motions become tracks (author tracks layered on top), model events become frame numbers, and the figure's foot line (`ground`) and attachment `points` are fitted. `views` add the same character seen from other angles (`idle@front`, `turn@front`, ...). | `resolveFigure`, `expandFigure` |
 | `motion.js` | Motion models (`gait`, `idle`, `pose`, `hop`, `jump`, `climb`, `fall`, `sit`) that generate per-sample track arrays with planted feet, plus `speed`/`speedY`/`wall` and timed events. | `generateMotion`, `MOTION_MODELS`, `LEGGED_MODELS`, `OVERSAMPLE` |
@@ -100,7 +101,7 @@ into a whole compiled character of its own, so the renderer still sees only plai
 | `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
 | `export.js` | One sheet plus Aseprite "hash" JSON for game engines (Phaser, PixiJS): frames, tags, slices for points, Pixel Studio extras. | `exportSheet` |
 | `mix.js` | Transition clips (`mixes`): a few frames that interpolate the pose from the end of one animation to the start of another, added to the compiled animations as `"from>to"`. | `buildMixes` |
-| `plugins.js` | Extension points: register shapes, textures and motion models; they join the built-in tables so validation and `pixel brief` treat them like built-ins. | `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin` |
+| `plugins.js` | Extension points: register shapes, textures and motion models; they join the built-in tables so validation and `pixel brief` treat them like built-ins. Read-only snapshots of those tables. | `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`, `shapeTypes`, `textures`, `motionModels`, `leggedModels` |
 | `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. | `pngBytes`, `paletteOf` |
 
 ### Everything else
@@ -634,17 +635,17 @@ Both passes run after shading.
     race; the bundle, variant and sheet are committed together. Bundles are cached per URL (failures
     evicted), validated with `checkBundle`, and sheets are decoded once per variant (`ImageBitmap`).
     The host box is reserved from `size` before load; light-DOM children are the fallback until
-    `state="ready"`, and again on `error`.
+    `status="ready"` (mirrored to the legacy `state` attribute until 0.2.0-alpha), and again on `pixel-error`.
   - **Page observers.** One `IntersectionObserver` for all sprites, a live reduced-motion listener,
     and a device-pixel-ratio listener that re-lays-out every sprite.
   - **Playback.**
     - Each frame shows for `1000 / fps` ms, or for its entry in `durations` (scaled when the `fps`
       attribute overrides the rate).
     - Looping animations wrap.
-    - Non-looping animations stop on their last frame and fire `spriteend`.
-    - `play(name, {once: true})` (used by `click-anim`) fires `spriteend` and then returns to the
+    - Non-looping animations stop on their last frame and fire `pixel-end`.
+    - `play(name, {once: true})` (used by `click-anim`) fires `pixel-end` and then returns to the
       hover or base animation.
-    - **Events.** Entering a frame that has baked `events` fires a bubbling `spriteevent`
+    - **Events.** Entering a frame that has baked `events` fires `pixel-event`
       (`{anim, frame, name, data}`), also for frames skipped while catching up after a slow frame.
   - **Page geometry.** `el.point(name, {relative})` scales the baked `points` of the current frame to
     client (or box-relative) px, mirrored with `flip`; `el.groundOffset` is the foot line in CSS px
@@ -654,12 +655,14 @@ Both passes run after shading.
   - **State machine.** If the bundle has `states` (and the element does not have `states="off"`), a
     `StateMachine` (DOM-free, conditions parsed by `parseCondition`) picks the animations: inputs
     via `el.set(name, value)` and `el.fire(trigger)`, transitions `at` `now`, `end`, `sync` (keep the
-    phase) or an event name, `then` nodes and random fidgets; `el.stateNode` and a `statechange`
+    phase) or an event name, `then` nodes and random fidgets; `el.stateNode` and a `pixel-statechange`
     event report it. Its `interactions` (`click`, `enter`, `leave`) replace `hover-anim`/`click-anim`.
   - **Pausing.** Sprites pause while off-screen (`IntersectionObserver`), when `paused` is set, or
     under `prefers-reduced-motion`. Off-screen or under reduced motion, a one-shot or non-looping
-    animation still ends on time: a timer for its full duration fires `spriteend`, so code waiting for
+    animation still ends on time: a timer for its full duration fires `pixel-end`, so code waiting for
     it never hangs.
+  - **Events.** Every event goes through one `emit()` helper: `pixel-<name>`, bubbling and composed. Until
+    0.2.0-alpha is out it also fires the pre-0.2 name with its old options (`LEGACY_EVENTS`).
   - **Node.** A `Base` class guard lets Node import `pickVariant`, `StateMachine` and the other helpers for tests.
 - **`<pixel-stage>`** (`src/runtime/pixel-stage.js`) puts `<pixel-actor>` characters (each wraps a
   `<pixel-sprite>` with `states="off"`) on the page. Full reference: [stage.md](stage.md).
@@ -673,6 +676,10 @@ Both passes run after shading.
     `launch`→`land` events; climbs move at `pxPerSecondY`; feet stand on `groundOffset`.
   - **Occlusion.** Occluders and hiding spots are cut out of the actor with an even-odd `clip-path`;
     `cells` splits overlapping holes into disjoint rectangles first.
+  - **Events.** Actor and stage events go through the file's own `emit()` (`pixel-tap`, `pixel-activity`, …, plus
+    the legacy names for one alpha). The inner sprite runs with `burst="off"` and `states="off"`, and its events are
+    stopped at the actor's shadow root, so listeners on the actor hear each thing once. Scenes keep short names
+    (`"waitFor": "tap"`); `sceneEventName` maps them to the `pixel-` events on actors and the stage.
   - **Input and accessibility.** Tapping or clicking an actor's opaque pixels (`hitTest`) shoos it and
     swallows that click; a pause button (state kept in `localStorage`) stops all actors; under
     `prefers-reduced-motion` they stand still.
@@ -715,7 +722,7 @@ wave phases, unvalidated style/material/track values, CLI argument handling, `re
 
 **Without touching the engine: plug-ins.** `src/core/plugins.js` exposes `registerShape`, `registerTexture` and
 `registerMotion`. Registered names join `SHAPE_TYPES` / `SHAPE_REQUIRED` / `SHAPE_KEYS`, `TEXTURES`, and `MOTION_MODELS`
-(and `LEGGED_MODELS`), so validation, did-you-mean warnings and `pixel brief` treat them like built-ins; `compileShape`,
+(and `LEGGED_MODELS`), the engine's private tables (the public API only hands out frozen copies), so validation, did-you-mean warnings and `pixel brief` treat them like built-ins; `compileShape`,
 `sampleTexture` and `generateMotion` fall back to the registered functions (`customShapes`, `customTextures`,
 `customMotions`). Plug-in motions return per-sample tracks, normalized and checked by `pluginMotion` in `motion.js`. The CLI
 loads plug-in modules with `--plugin` (`usePlugin`); `examples/plugins/extras.mjs` is a working example, tested in
@@ -828,7 +835,7 @@ npm test            # node --test test/*.test.mjs  (Node ≥ 20, no dependencies
 ```
 
 The test suite uses `node:test` and `node:assert/strict`. The engine tests import from
-`src/core/index.js` and build small specs inline. `blob()` in `engine.test.mjs` and `arm()` in
+`src/core/index.js` (and `src/core/internal.js` for building blocks) and build small specs inline. `blob()` in `engine.test.mjs` and `arm()` in
 `rig.test.mjs` are the helpers.
 
 | File | Covers |

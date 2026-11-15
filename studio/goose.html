@@ -133,7 +133,8 @@
   </aside>
 </main>
 <script type="module">
-import { resolveSpec, compile, renderFrame, resolveStyle, samplePose, worldMatrices } from '../src/core/index.js';
+import { resolveSpec, compile, renderFrame, resolveStyle } from '../src/core/index.js';
+import { samplePose, worldMatrices } from '../src/core/internal.js';
 
 const BASES = { 'goose-base': 'plain goose', 'goose-root': 'root (hoodie)', 'goose-sudo': 'sudo', 'goose-phreak': 'phreak', 'goose-kiddie': 'kiddie', 'goose-greylag': 'greylag (wild)' };
 const RES = [32, 48, 64, 96, 128, 192];

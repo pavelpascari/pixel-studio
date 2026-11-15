@@ -35,8 +35,10 @@ for (const name of arg('browsers', 'firefox,webkit').split(',')) {
     });
     await pg.goto(`${BASE}/site/${p}.html`);
     await pg.waitForTimeout(['motions', 'authoring'].includes(p) ? 6000 : 3000);
+    // Pages with many sprites can still be loading on a busy machine: give them up to 15 s more.
+    await pg.waitForFunction(() => ![...document.querySelectorAll('pixel-sprite')].some((s) => s.status === 'loading'), null, { timeout: 15000 }).catch(() => {});
     const bad = await pg.evaluate(() => [
-      ...[...document.querySelectorAll('pixel-sprite')].filter((s) => s.state !== 'ready' && !/missing/.test(s.getAttribute('src'))).map((s) => `sprite ${s.getAttribute('src')}: ${s.state}`),
+      ...[...document.querySelectorAll('pixel-sprite')].filter((s) => s.status !== 'ready' && !/missing/.test(s.getAttribute('src'))).map((s) => `sprite ${s.getAttribute('src')}: ${s.status}`),
       ...[...document.querySelectorAll('.pg-status')].filter((s) => !s.classList.contains('ok')).map((s) => `playground: ${s.textContent.slice(0, 100)}`),
     ]);
     if (errs.length || bad.length) { failed = true; report.push(`site/${p}.html: ${[...errs, ...bad].join(' | ')}`); }

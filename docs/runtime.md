@@ -66,6 +66,7 @@ The module exports:
 | `StateMachine` | The bundle state machine ([State machines](#state-machines)), without a DOM: `new StateMachine(states, animations, host)`. |
 | `parseCondition(when)` | Parses a transition's `when` into a function `(inputs, triggers) → boolean`; throws on bad syntax. |
 | `BUNDLE_FORMAT` | `"pixel-sprite/1"`. |
+| `SPRITE_EVENTS` | The events the element fires, without the `pixel-` prefix: `ready`, `error`, `statechange`, `end`, `event`, `burst`, `calm` (frozen). |
 
 It can be imported in Node: without `HTMLElement`, the class extends an empty class and the element is not registered. The tests use this for the helpers and the clock.
 
@@ -91,7 +92,7 @@ If both are present, `src` wins. The inline JSON is read once, when the element 
 | `res` | none | yes | Force a variant by its `res` (e.g. `res="16"` for a chunky look at a large size). If the bundle has no variant with that `res`, the automatic choice is used. |
 | `fps` | the animation's `fps` | yes | Overrides the frame rate of every animation. Capped at 60. |
 | `hover-anim` | none | read on event | Ignored when the bundle has a [state machine](#state-machines) (its interactions take over). Animation to play while a mouse or pen is over the element. On leave the base animation resumes, unless a one-shot is still running. On touch screens a tap plays it once (see [Touch screens](#touch-screens)). |
-| `click-anim` | none | read on event | Animation to play once on `click` (or tap). When it finishes, the element fires `spriteend` and returns to `hover-anim` (if a mouse is still over it) or to the base animation. |
+| `click-anim` | none | read on event | Animation to play once on `click` (or tap). When it finishes, the element fires `pixel-end` and returns to `hover-anim` (if a mouse is still over it) or to the base animation. |
 | `paused` | absent | yes | Boolean. While present, playback stops on the current frame. `pause()` and `resume()` set and remove it. |
 | `flip` | absent | CSS | Boolean. Mirrors the sprite horizontally with CSS (`transform: scaleX(-1)` on the canvas). Characters drawn facing right face left. |
 | `rate` | `1` | yes | Playback speed multiplier, 0.25..4: `rate="2"` plays every animation twice as fast. Code moving the sprite should scale its speed by `el.effectiveRate` so the feet stay planted. |
@@ -99,7 +100,7 @@ If both are present, `src` wins. The inline JSON is read once, when the element 
 | `skin` | none | yes | A skin baked into the bundle (see [Skins](#skins)). Unknown names show the default look. |
 | `states` | on | at load | `states="off"` ignores the bundle's state machine (pages and `<pixel-stage>` that choose animations themselves set this). |
 | `alt` | none | yes | Text alternative, copied into `aria-label`. `alt=""` marks the sprite as decorative (see [Accessibility](#accessibility)). |
-| `state` | set by the element | — | `loading`, `ready` or `error`. Absent before the first load starts. Use it for CSS, e.g. `pixel-sprite[state=error] { display: none }`. |
+| `status` | set by the element | — | `loading`, `ready` or `error`. Absent before the first load starts. Use it for CSS, e.g. `pixel-sprite[status=error] { display: none }`. (Also mirrored to the legacy `state` attribute until 0.2.0-alpha is out; see [Renamed in 0.2.0-alpha](#renamed-in-020-alpha).) |
 
 Attribute changes made before the element is first connected (including the attribute callbacks of an upgrade) are folded into the single first load.
 
@@ -111,10 +112,10 @@ Attribute changes made before the element is first connected (including the attr
 | `el.animations` | Array of animation names in the bundle (`[]` before load). |
 | `el.currentAnim` | Name of the animation showing now (`null` before load). |
 | `el.frame` | Index of the frame showing now. |
-| `el.state` | `'idle'`, `'loading'`, `'ready'` or `'error'`. |
+| `el.status` | Load status: `'idle'` (nothing loaded yet), `'loading'`, `'ready'` or `'error'`. Not to be confused with the state machine (`el.stateNode`). |
 | `el.displaySize` | `{ width, height }` in CSS px as displayed, or `null` before load. |
 | `el.pxPerSecond(name = currentAnim)` | CSS px per second that animation should travel for its feet not to slide, at the displayed size; `null` if it has no `speed`. |
-| `el.play(name, { once = false, restart = once, mix = true } = {})` | Play `name`. If the bundle has a transition clip from the current animation to `name` (`waddle>idle`) and the switch happens at a boundary (the current animation is on its first frame, i.e. a loop's end, or a one-shot finished), the clip plays first; `mix: false` skips it. With `once: true` it plays to the end, fires `spriteend`, then returns to `hover-anim` (if a mouse is over it) or the base animation. If `name` is already playing (looping, not a one-shot) the call does nothing unless `restart: true`, so hovering in and out does not restart a walk cycle. Returns `false` for unknown names or before load. Does not change the `anim` attribute. |
+| `el.play(name, { once = false, restart = once, mix = true } = {})` | Play `name`. If the bundle has a transition clip from the current animation to `name` (`waddle>idle`) and the switch happens at a boundary (the current animation is on its first frame, i.e. a loop's end, or a one-shot finished), the clip plays first; `mix: false` skips it. With `once: true` it plays to the end, fires `pixel-end`, then returns to `hover-anim` (if a mouse is over it) or the base animation. If `name` is already playing (looping, not a one-shot) the call does nothing unless `restart: true`, so hovering in and out does not restart a walk cycle. Returns `false` for unknown names or before load. Does not change the `anim` attribute. |
 | `el.pxPerSecondY(name)` | The same for climbing animations (`speedY`): CSS px per second upward. |
 | `el.groundOffset` | CSS px from the top of the box down to the foot line (bundle `ground`): place the box at `feetY − groundOffset` to stand on something. |
 | `el.point(name, { relative = false })` | Where an attachment point (bundle `points`, e.g. `beak`) is in the frame showing now: `{ x, y, rot }` in client px, or relative to the box. Mirrored with `flip`. `null` if the bundle has no such point. |
@@ -128,25 +129,44 @@ Attribute changes made before the element is first connected (including the attr
 
 ## Events
 
-| Event | Bubbles | `detail` | When |
-|---|---|---|---|
-| `ready` | no | none | The bundle has loaded, the variant sheet has decoded, and the base animation has started. Fired again after each successful `src` change or `reload()`. Always asynchronous, so a listener added right after `append()` sees it. |
-| `error` | no | `{ error }` | Loading failed: HTTP error, invalid JSON, a bundle that fails `checkBundle`, an undecodable sheet, or an exception during playback. The element's `state` becomes `error` and fallback content shows (see below). The error is also logged with `console.error`. |
-| `spriteend` | yes | `{ anim }` | A one-shot animation (`play(name, { once: true })`, `click-anim`, or a tap) reached its end, or a non-looping animation (`loop: false`) played as a normal animation reached its last frame. Also fired under reduced motion and while off-screen, after the animation's duration, so code waiting for it never hangs. |
-| `spriteevent` | yes | `{ anim, frame, name, data }` | A frame with a baked event is shown: `footstep`, `land`, `launch`, an author's `honk` (see [Events](#events-attachment-points-and-the-foot-line)). |
-| `statechange` | yes | `{ from, to }` | The state machine moved to another node. |
-| `spriteburst` | yes | `{ count, rate }` | The third and every further click (or tap) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
-| `spritecalm` | yes | `{ count }` | The clicking stopped (450 ms after the last burst click). Any burst speed-up ends. |
+Every event bubbles and is composed (it crosses shadow roots, so a sprite inside your own component reaches
+listeners outside it). Names start with `pixel-`.
 
-Because `spriteend` bubbles, one listener can watch every sprite on a page (from `demo/index.html`):
+| Event | `detail` | When |
+|---|---|---|
+| `pixel-ready` | none | The bundle has loaded, the variant sheet has decoded, and the base animation has started. Fired again after each successful `src` change or `reload()`. Always asynchronous, so a listener added right after `append()` sees it. |
+| `pixel-error` | `{ error }` | Loading failed: HTTP error, invalid JSON, a bundle that fails `checkBundle`, an undecodable sheet, or an exception during playback. The element's `status` becomes `error` and fallback content shows (see below). The error is also logged with `console.error`. |
+| `pixel-end` | `{ anim }` | A one-shot animation (`play(name, { once: true })`, `click-anim`, or a tap) reached its end, or a non-looping animation (`loop: false`) played as a normal animation reached its last frame. Also fired under reduced motion and while off-screen, after the animation's duration, so code waiting for it never hangs. |
+| `pixel-event` | `{ anim, frame, name, data }` | A frame with a baked event is shown: `footstep`, `land`, `launch`, an author's `honk` (see [Events](#events-attachment-points-and-the-foot-line)). |
+| `pixel-statechange` | `{ from, to }` | The state machine moved to another node. |
+| `pixel-burst` | `{ count, rate }` | The third and every further click (or tap) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
+| `pixel-calm` | `{ count }` | The clicking stopped (450 ms after the last burst click). Any burst speed-up ends. |
+
+Because events bubble, one listener can watch every sprite on a page (from `demo/index.html`). The sprites
+inside `<pixel-actor>`s are the exception: the actor keeps its inner sprite's events to itself and fires its own
+(see [stage.md](stage.md#events)).
 
 ```html
 <script type="module">
-  document.addEventListener('spriteend', (e) => {
+  document.addEventListener('pixel-end', (e) => {
     if (e.target.localName === 'pixel-sprite') console.log('[pixel-sprite] finished', e.detail.anim);
   });
 </script>
 ```
+
+### Renamed in 0.2.0-alpha
+
+One naming scheme for every event, and "state" now means only the state machine. The old names still work for
+one alpha release (each event is fired under both names; the old one with its old options: `ready` and `error`
+did not bubble, and no old name is composed). They will be removed after 0.2.0-alpha.
+
+| Old | New |
+|---|---|
+| `ready`, `error` | `pixel-ready`, `pixel-error` |
+| `spriteend`, `spriteevent` | `pixel-end`, `pixel-event` |
+| `spriteburst`, `spritecalm` | `pixel-burst`, `pixel-calm` |
+| `statechange` | `pixel-statechange` |
+| `state` attribute, `el.state` (loading status) | `status` attribute, `el.status` |
 
 ## Loading, errors and fallbacks
 
@@ -163,7 +183,7 @@ Because `spriteend` bubbles, one listener can watch every sprite on a page (from
 - **Before the script runs** the element is an unknown inline element. To reserve its space even then, add a rule such as `pixel-sprite:not(:defined) { display: inline-block; width: 128px; height: 128px }`.
 - **Races.** Each load carries a token; a load that is overtaken by a newer `src` is dropped. A new bundle, its variant and its sheet are committed together, so no frame ever sees a bundle with an animation from another one.
 - **Shared work.** Bundles are fetched once per URL and each variant sheet is decoded once (into an `ImageBitmap` where supported) and shared by every sprite that uses it.
-- **Not JSON.** A server that answers a missing bundle with an HTML page (a common single-page-app fallback) gets an `error` naming the URL and saying it got HTML, rather than a bare JSON parse error.
+- **Not JSON.** A server that answers a missing bundle with an HTML page (a common single-page-app fallback) gets a `pixel-error` naming the URL and saying it got HTML, rather than a bare JSON parse error.
 - **Sheets on another origin.** Sheets that are not data URLs (`pixel bundle --external`) are loaded with `crossOrigin="anonymous"`. If they live on another origin (a CDN), it must send `Access-Control-Allow-Origin`; otherwise skins stored as deltas, `hitTest` and `topAt` cannot read the pixels.
 - **Content Security Policy.** Bundles with data-URL sheets (the default) need `img-src data:`; fetched bundles need `connect-src` for their URL. For a strict CSP, build bundles whose `image` fields point at separate PNG files.
 
@@ -178,8 +198,8 @@ There are three ways an animation can end:
 | How it was started | `loop` in bundle | At the last frame |
 |---|---|---|
 | `anim` attribute, `hover-anim`, or `play(name)` | `true` | Wraps to frame 0 and keeps playing. |
-| `anim` attribute, `hover-anim`, or `play(name)` | `false` | Stops on the last frame and fires `spriteend`. A later `play()` (or hover, click, `anim` change) starts again. |
-| `click-anim`, a tap, or `play(name, { once: true })` | either | Fires `spriteend`, then plays `hover-anim` if a mouse is over the element and it has one, otherwise the base animation. If a `spriteend` listener calls `play()`, that choice wins. |
+| `anim` attribute, `hover-anim`, or `play(name)` | `false` | Stops on the last frame and fires `pixel-end`. A later `play()` (or hover, click, `anim` change) starts again. |
+| `click-anim`, a tap, or `play(name, { once: true })` | either | Fires `pixel-end`, then plays `hover-anim` if a mouse is over the element and it has one, otherwise the base animation. If a `pixel-end` listener calls `play()`, that choice wins. |
 
 `loop` defaults to `true` in the spec; set `"loop": false` for actions like a honk or jump (see [SPEC.md](SPEC.md#animations)). In the example geese, `honk` is `loop: false`; the flock page plays it with `play('honk', { once: true })`.
 
@@ -191,12 +211,12 @@ The engine bakes timing and geometry into the bundle, so pages can react to what
 
 **Events.** Animations can carry `events: [{frame, name, data?}]`. Motion models add them automatically: `footstep`
 (with `data.leg`) when a foot touches down in a walk, run or climb, `takeoff` and `land` for hops, `launch` and `land`
-for jumps. Authors add their own (`"events": [{"frame": 3, "name": "honk"}]`). The element fires `spriteevent` when a frame
+for jumps. Authors add their own (`"events": [{"frame": 3, "name": "honk"}]`). The element fires `pixel-event` when a frame
 with events is shown, including frames skipped while catching up after a slow frame, and not while paused, off-screen or
 under reduced motion.
 
 ```js
-goose.addEventListener('spriteevent', (e) => {
+goose.addEventListener('pixel-event', (e) => {
   if (e.detail.name === 'footstep') playSound('pat');
   if (e.detail.name === 'honk') showBubble(goose.point('beak'));
 });
@@ -217,18 +237,18 @@ displayed size, so a sprite can stand exactly on an element's top edge: `top = e
 ## Bursts (rage clicks)
 
 Several quick clicks on a sprite are a **burst**. From the third click that comes within 450 ms of the previous one, the
-element fires `spriteburst` with the click count and a suggested speed-up, and `spritecalm` once the clicking stops.
+element fires `pixel-burst` with the click count and a suggested speed-up, and `pixel-calm` once the clicking stops.
 
 - Without a state machine, a burst on a playing `click-anim` speeds it up (by the suggested rate) instead of
   restarting it on every click; calm brings it back to normal speed.
 - With a state machine, interactions `{"on": "burst", "set": {"fury": "$rate"}}` and `{"on": "calm", ...}` turn bursts into
   inputs (`"$count"` and `"$rate"` are replaced by the burst's values), and a node's `rate` can follow an input. The goose
   honks faster with each quick click and panics from the fifth (see the example under [State machines](#state-machines)).
-- Pages can hook their own reactions: `el.addEventListener('spriteburst', (e) => …)`.
+- Pages can hook their own reactions: `el.addEventListener('pixel-burst', (e) => …)`.
 - `burst="off"` turns detection off. `BurstDetector` is exported for pages that want the same logic elsewhere.
 
 ```js
-goose.addEventListener('spriteburst', (e) => { if (e.detail.count === 10) unlockSecret(); });
+goose.addEventListener('pixel-burst', (e) => { if (e.detail.count === 10) unlockSecret(); });
 ```
 
 ## State machines
@@ -274,7 +294,7 @@ goose.set('speed', 40);   // walks
 goose.set('speed', 90);   // runs, without restarting the stride
 goose.set('speed', 0);    // stops on the next footstep, feet together
 goose.fire('honk');       // honks, then goes back to what it was doing
-goose.addEventListener('statechange', (e) => console.log(e.detail.from, '→', e.detail.to));
+goose.addEventListener('pixel-statechange', (e) => console.log(e.detail.from, '→', e.detail.to));
 ```
 
 | part | meaning |
@@ -358,8 +378,8 @@ To keep the pixels aligned when you move a sprite, round positions to device pix
 
 ## Reduced motion and off-screen pausing
 
-- **Reduced motion.** While `prefers-reduced-motion: reduce` matches, no sprite steps through frames: looping animations show frame 0. One-shots and non-looping animations are not left hanging: a one-shot shows its middle frame, a non-looping animation its last frame, and after the animation's nominal duration (`frames / fps`) the element fires `spriteend` and moves on as usual. The setting is watched live: turning it on or off takes effect immediately.
-- **Off-screen.** One shared `IntersectionObserver` (with a 50 px margin, so sprites start just before they scroll in) takes sprites out of the frame loop while they are off-screen. They resume from the same frame. A one-shot started off-screen still ends (and fires `spriteend`) after its duration, as under reduced motion.
+- **Reduced motion.** While `prefers-reduced-motion: reduce` matches, no sprite steps through frames: looping animations show frame 0. One-shots and non-looping animations are not left hanging: a one-shot shows its middle frame, a non-looping animation its last frame, and after the animation's nominal duration (`frames / fps`) the element fires `pixel-end` and moves on as usual. The setting is watched live: turning it on or off takes effect immediately.
+- **Off-screen.** One shared `IntersectionObserver` (with a 50 px margin, so sprites start just before they scroll in) takes sprites out of the frame loop while they are off-screen. They resume from the same frame. A one-shot started off-screen still ends (and fires `pixel-end`) after its duration, as under reduced motion.
 - **Removed from the document.** The sprite leaves the frame loop and the observer. If it is put back (for example, moved to another container), it resumes where it was instead of reloading.
 
 ## Touch screens
@@ -380,8 +400,8 @@ The element renders into a `<canvas>` in an open shadow root with these styles:
 :host { display: inline-block; line-height: 0; vertical-align: bottom }
 canvas { display: block; image-rendering: crisp-edges; image-rendering: pixelated }
 :host([flip]) canvas { transform: scaleX(-1) }
-:host(:not([state=ready])) canvas { display: none }
-:host([state=ready]) slot { display: none }
+:host(:not([status=ready])) canvas { display: none }
+:host([status=ready]) slot { display: none }
 ::slotted(img) { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated }
 ```
 
@@ -469,7 +489,7 @@ direct control of position, gravity or collisions. Use a stage scene for an intr
 
 ## Testing on devices
 
-`test/browser/runtime.html` runs 24 behaviour checks in a real browser: single load on upgrade, the reserved box, errors and `reload()`, format checks, a throwing sprite not freezing the rest, `src` races, shared sheets, device-pixel scaling, `pxPerSecond`, decorative `alt`, touch and mouse input, one-shots, the shared clock, footstep events, holds, attachment points, the foot line, hit testing, the state machine, skins, transition clips and rage clicks. They pass in desktop Chromium, Firefox and WebKit (Playwright builds, via `scripts/browser-check.mjs`), and in iOS 18.1 Safari (iPhone 16 simulator, device pixel ratio 3). Results and any failures are listed at the top of the page, so they can be read on a phone. Serve the repo (`npm run studio`) and open `/test/browser/runtime.html` on each device; the page prints the device pixel ratio, hover capability and reduced-motion setting next to the results.
+`test/browser/runtime.html` runs 28 behaviour checks in a real browser: single load on upgrade, the reserved box, errors and `reload()`, format checks, a throwing sprite not freezing the rest, `src` races, shared sheets, device-pixel scaling, `pxPerSecond`, decorative `alt`, touch and mouse input, one-shots, the shared clock, footstep events, holds, attachment points, the foot line, hit testing, the state machine, skins, transition clips, rage clicks, the `pixel-` event names (bubbling, composed, with their legacy aliases), the `status` attribute, and an actor firing one `pixel-burst` per burst. They pass in desktop Chromium, Firefox and WebKit (Playwright builds, via `scripts/browser-check.mjs`), and in iOS 18.1 Safari (iPhone 16 simulator, device pixel ratio 3). Results and any failures are listed at the top of the page, so they can be read on a phone. Serve the repo (`npm run studio`) and open `/test/browser/runtime.html` on each device; the page prints the device pixel ratio, hover capability and reduced-motion setting next to the results.
 
 ## Examples
 
@@ -488,7 +508,7 @@ Hover to walk, click to wave once:
               hover-anim="walk" click-anim="wave" alt="Pip the adventurer"></pixel-sprite>
 ```
 
-A one-shot on click that returns to idle and fires `spriteend`:
+A one-shot on click that returns to idle and fires `pixel-end`:
 
 ```html
 <pixel-sprite src="assets/slime.bundle.json" anim="idle" size="72" click-anim="hop" alt="Slime"></pixel-sprite>
@@ -591,7 +611,7 @@ sheets; `pixel bundle --views front` (or `--views none`) ships fewer. See
 
 | Field | Type | Description |
 |---|---|---|
-| `format` | string | `"pixel-sprite/1"` (exported as `BUNDLE_FORMAT`). The runtime plays any `pixel-sprite/1.x` (later minor versions only add things it can ignore) and rejects other values with an `error` event. |
+| `format` | string | `"pixel-sprite/1"` (exported as `BUNDLE_FORMAT`). The runtime plays any `pixel-sprite/1.x` (later minor versions only add things it can ignore) and rejects other values with a `pixel-error` event. |
 | `name` | string | The spec's `name` (`"character"` if the spec has none). Used as the fallback `aria-label`. |
 | `size` | [w, h] | The spec canvas in units. Optional (absent in bundles built with 0.1.0, where 100 × 100 is assumed). Used to convert `speed` to px/s. |
 | `ground` | number | The foot line: y in units where the feet stand. From the figure (lowest toe, or the shadow line), the spec's `ground`, or the lowest opaque pixel of the first frame. |
@@ -609,11 +629,11 @@ sheets; `pixel bundle --views front` (or `--views none`) ships fewer. See
 | `row` | integer | Row of the sprite sheet holding this animation (0-based, same in every variant). |
 | `frames` | integer | Number of frames (1–64 in the spec; `checkBundle` accepts 1–256). Frame `i` is in column `i`. |
 | `fps` | number | Frames per second (spec default 8; `checkBundle` accepts above 0 up to 60). The element's `fps` attribute overrides it. |
-| `loop` | boolean | `true` to repeat. `false` stops on the last frame and fires `spriteend` (see [Animation playback](#animation-playback)). |
+| `loop` | boolean | `true` to repeat. `false` stops on the last frame and fires `pixel-end` (see [Animation playback](#animation-playback)). |
 | `speed` | number, optional | Travel speed in spec units per second for gait animations. Present only when non-zero. See [Moving a walking sprite](#moving-a-walking-sprite-across-the-page). |
 | `speedY` | number, optional | Climbing speed, units per second upward. |
 | `wall` | number, optional | Climbing: the x (units) of the wall the feet hold, to line the sprite up with an element's side. |
-| `events` | array, optional | `[{frame, name, data?}]`, fired as `spriteevent`. |
+| `events` | array, optional | `[{frame, name, data?}]`, fired as `pixel-event`. |
 | `durations` | array, optional | Milliseconds per frame, present when the spec has `holds`. |
 | `mix` | object, optional | `{from, to}` on transition clips, which are animations named `"from>to"` (from the spec's `mixes`, see [SPEC.md](SPEC.md#animations)). `play()` uses them on its own (see [Properties and methods](#properties-and-methods)). |
 

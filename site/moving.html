@@ -92,7 +92,7 @@
         let at = 0, pos = [...spots[0]], flight = null;
         const place = () => g.displaySize && (g.style.transform =
           `translate(${Math.round(pos[0] - g.displaySize.width / 2)}px, ${Math.round(pos[1] - g.groundOffset)}px)`);
-        g.addEventListener('ready', place);
+        g.addEventListener('pixel-ready', place);
         document.getElementById('jp-go').onclick = () => {
           const a = g.bundle.animations.jump;
           const ev = (n) => a.events.find((e) => e.name === n).frame;
@@ -103,7 +103,7 @@
           g.play('jump', { once: true });
           at = 1 - at;
         };
-        g.addEventListener('spriteevent', (e) => {
+        g.addEventListener('pixel-event', (e) => {
           if (e.detail.name === 'launch' && flight) flight.t = 0;
           document.getElementById('jp-out').textContent = `${e.detail.name} on frame ${e.detail.frame}`;
         });

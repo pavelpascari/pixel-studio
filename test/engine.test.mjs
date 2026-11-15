@@ -260,7 +260,7 @@ test('API misuse gives clear errors', async () => {
 test('spec data cannot reach Object.prototype (unsafe ids and names are rejected)', async () => {
   const { errors } = validate({ materials: { m: '#fff' }, parts: [{ id: '__proto__', shapes: [{ type: 'circle', cx: 5, cy: 5, r: 2, material: 'm' }] }], animations: { constructor: { frames: 2 } } });
   assert.deepEqual(errors.map((e) => e.path), ['$.parts[0].id', '$.animations.constructor']);
-  const { expandFigure } = await import('../src/core/index.js');
+  const { expandFigure } = await import('../src/core/internal.js');
   const fig = JSON.parse((await import('node:fs')).readFileSync(new URL('../figures/goose.json', import.meta.url), 'utf8'));
   assert.throws(() => expandFigure({}, fig, JSON.parse('{"bones": {"__proto__": {"polluted": 1}}}')), /no bone "__proto__"/);
   expandFigure({ animations: { walk: { motion: 'walk', tracks: JSON.parse('{"__proto__": {"polluted": [1]}}') } } }, fig);

@@ -9,7 +9,7 @@ A character animation that lives on a web page has to be:
 | Crisp at any CSS size, no blur | Integer-scaled pixels, `image-rendering: pixelated`, canvas sized to the sprite's native resolution |
 | Tiny and fast (hero, buttons, 404 pages, docs) | Bake to a sprite sheet (PNG) + a few hundred bytes of metadata; one small runtime file (`pixel-sprite.js`, about 15 KB gzipped); no framework |
 | Drop-in embed | One custom element: `<pixel-sprite src="fox.bundle.json" anim="idle">` |
-| Interactive | Named animations + `hover-anim` / `click-anim`, a `play()` API, `spriteend` events |
+| Interactive | Named animations + `hover-anim` / `click-anim`, a `play()` API, `pixel-end` events |
 | Responsive | Several resolutions per character (like `srcset`): the runtime picks the one that fits the rendered size |
 | Polite | Honours `prefers-reduced-motion`, pauses off-screen |
 

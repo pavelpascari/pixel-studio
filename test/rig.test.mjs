@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  validate, compile, samplePose, worldMatrices, checkBounds, resolveExtends, mergeVariant, renderFrame,
-} from '../src/core/index.js';
+import { validate, compile, checkBounds, renderFrame } from '../src/core/index.js';
+import { samplePose, worldMatrices, resolveExtends, mergeVariant } from '../src/core/internal.js';
 
 // A two-segment arm: shoulder at (30,50), elbow at (50,50), hand tip at (70,50).
 const arm = (anim = {}) => ({

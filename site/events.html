@@ -23,7 +23,7 @@
   <h2 id="events">Events</h2>
   <p>Motion models mark moments automatically: <code>footstep</code> (with the leg) in walks, runs and climbs,
     <code>launch</code> and <code>land</code> in jumps, <code>takeoff</code> and <code>land</code> in hops. Authors add their own,
-    like the goose's <code>honk</code>. The element fires a bubbling <code>spriteevent</code> on the frame where it happens.</p>
+    like the goose's <code>honk</code>. The element fires a bubbling <code>pixel-event</code> on the frame where it happens.</p>
   <div class="demo" data-title="Footsteps as they happen">
     <template>
       <pixel-sprite id="ev-goose" src="../demo/assets/goose-root.bundle.json" anim="waddle" size="128" states="off"></pixel-sprite>
@@ -32,7 +32,7 @@
       <script type="module">
         const out = document.getElementById('ev-out');
         const counts = {};
-        document.addEventListener('spriteevent', (e) => {
+        document.addEventListener('pixel-event', (e) => {
           if (e.detail.name !== 'footstep') return;
           const who = e.target.id.replace('ev-', '');
           counts[who] = (counts[who] ?? 0) + 1;
@@ -84,8 +84,8 @@
       <script type="module">
         for (const s of document.querySelectorAll('#gl-row .stand')) {
           const place = () => (s.style.top = `${130 - s.groundOffset}px`);
-          s.addEventListener('ready', place);
-          if (s.state === 'ready') place();
+          s.addEventListener('pixel-ready', place);
+          if (s.status === 'ready') place();
         }
       </script>
     </template>
@@ -123,8 +123,8 @@
       <div class="controls"><span class="readout" id="rc-out">click Pip several times quickly</span></div>
       <script type="module">
         const pip = document.getElementById('rc-pip'), out = document.getElementById('rc-out');
-        pip.addEventListener('spriteburst', (e) => (out.textContent = `burst ×${e.detail.count}: waving at ${pip.effectiveRate.toFixed(2)}× speed`));
-        pip.addEventListener('spritecalm', (e) => (out.textContent = `calm again after ${e.detail.count} clicks`));
+        pip.addEventListener('pixel-burst', (e) => (out.textContent = `burst ×${e.detail.count}: waving at ${pip.effectiveRate.toFixed(2)}× speed`));
+        pip.addEventListener('pixel-calm', (e) => (out.textContent = `calm again after ${e.detail.count} clicks`));
       </script>
     </template>
   </div>

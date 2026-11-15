@@ -1,7 +1,8 @@
 import {
   validate, compile, renderAnimation, renderSheet, resolveStyle, buildBundle, contactSheet, DETAIL_NAMES, pngBytes,
-  resolveSpec, checkBounds, samplePose, sampleValue, frameTime, worldMatrices,
+  resolveSpec, checkBounds,
 } from '../src/core/index.js';
+import { samplePose, sampleValue, frameTime, worldMatrices } from '../src/core/internal.js';
 import '../src/runtime/pixel-sprite.js';
 import { initAgent } from './agent.js';
 

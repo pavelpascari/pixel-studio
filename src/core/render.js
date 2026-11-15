@@ -9,12 +9,14 @@ import { sampleTexture } from './textures.js';
 import { samplePose } from './animate.js';
 import { worldMatrices, invert } from './rig.js';
 
-export const DETAIL_PRESETS = {
+// Frozen: they are read by everyone and never change.
+export const DETAIL_PRESETS = Object.freeze({
   1: { tones: 2, texture: 0, dither: false, outline: 'dark', innerLines: false, contactShadow: false, ambientBoost: 0.25 },
   2: { tones: 3, texture: 0.6, dither: false, outline: 'selective', innerLines: false, contactShadow: true, ambientBoost: 0 },
   3: { tones: 5, texture: 1, dither: true, outline: 'selective', innerLines: true, contactShadow: true, ambientBoost: 0 },
-};
-export const DETAIL_NAMES = { 1: 'icon', 2: 'sprite', 3: 'portrait' };
+});
+for (const p of Object.values(DETAIL_PRESETS)) Object.freeze(p);
+export const DETAIL_NAMES = Object.freeze({ 1: 'icon', 2: 'sprite', 3: 'portrait' });
 
 export const lodForRes = (res) => (res <= 20 ? 1 : res <= 40 ? 2 : 3);
 

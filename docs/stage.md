@@ -98,7 +98,7 @@ goose.goTo(document.querySelector('#summit'), { then: 'sit' });   // walk, jump,
 goose.hideBehind(document.querySelector('.crate'));               // run behind it, duck, peek
 goose.say('honk?', 1800);                                          // speech bubble at the beak (or head)
 goose.shoo();                                                      // startle and run away
-goose.addEventListener('actorstate', (e) => console.log(e.detail.from, '→', e.detail.to));
+goose.addEventListener('pixel-activity', (e) => console.log(e.detail.from, '→', e.detail.to));
 
 stage.pause(); stage.resume(); stage.paused;                       // what the button does (remembered)
 stage.world.invalidate();                                          // after moving elements with transforms
@@ -119,23 +119,63 @@ stage.world.invalidate();                                          // after movi
 | `actor.hurry(rate = 1.6)` | Hurry: animate and move `rate` times faster (up to 4; feet planted), run instead of walk, with the `rush` gait if the figure has one. `hurry(1)` to stop. Scene steps' `speed` uses it. |
 | `actor.pickUp(el)` | Walk to any element (a letter by a form, an icon) and pick it up: a copy, styled like it, rides at the `carry` point (else `beak`, `handR`, `head`, …); the original is hidden but keeps its space. `actor.carrying` is that element. |
 | `actor.drop('here' \| 'back')` | Put it down at its feet (the copy stays on the stage) or send it back to where it came from (the original reappears). |
-| `actor.exit('left' \| 'right' \| 'auto')` | Leave the screen by that edge: along a surface that reaches it, or with a leap from the end of one. Off screen it is hidden (`offstage` attribute); anything carried is delivered (`deliver` event; the original stays hidden). Undirected characters come back on their own after 5–9 s. |
+| `actor.exit('left' \| 'right' \| 'auto')` | Leave the screen by that edge: along a surface that reaches it, or with a leap from the end of one. Off screen it is hidden (`offstage` attribute); anything carried is delivered (`pixel-deliver` event; the original stays hidden). Undirected characters come back on their own after 5–9 s. |
 | `actor.enter('left' \| 'right' \| 'top' \| 'auto' \| element)` | Come back: walk in from a side along a visible surface that reaches it, or drop in from the top (onto the element's surface if given). |
 | `actor.directed` | `directed` attribute: the character does nothing on its own between orders and stays seated or hidden until told otherwise. Scenes set it on their cast while they play. |
-| `actor.state` | `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`, `performing`, `picking up`, `leaving`, `offstage`. |
-| `actor.sprite` | The inner `<pixel-sprite>` (for `spriteevent`, `point()`, …). |
-| events | `actorstate` `{from, to}`, `land`, `arrive` (end of a `goTo`), `burst` `{count, rate}` and `calm` (rage taps), `catchup` `{from: {x, y}}` (where it was), `tap` `{count}` (tapped or clicked; `count` counts quick taps), `pickup` / `deliver` `{prop}`, `drop` `{prop, how}`, `exit`, `enter`. |
+| `actor.activity` | What it is doing: `idle`, `walking`, `running`, `jumping`, `falling`, `climbing`, `sitting`, `hiding`, `startled`, `dragged`, `performing`, `picking up`, `leaving`, `offstage`. |
+| `actor.sprite` | The inner `<pixel-sprite>` (listen on it for `pixel-event`; `point()`, …). Its events stay inside the actor (see [Events](#events)). |
+| events | See [Events](#events): `pixel-activity`, `pixel-land`, `pixel-arrive`, `pixel-tap`, `pixel-burst`, `pixel-calm`, `pixel-catchup`, `pixel-pickup`, `pixel-drop`, `pixel-deliver`, `pixel-exit`, `pixel-enter`. |
 | `stage.actors`, `stage.pause()`, `stage.resume()`, `stage.paused`, `stage.world` | |
 | `stage.scrollSpeed` | How fast the page is scrolling, px/s (+ down), smoothed. |
 | `stage.playScene(scene, {trigger}?)` | Play a [scene](#scenes): an object, JSON text, or a selector for a `<script type="application/json">`; `trigger` is the element steps can call `"$trigger"`. Returns `{name, source, trigger, finished, stop()}` (`source` is the parsed scene object); `finished` resolves `true` at the end, `false` if stopped. A new scene stops the one playing. Throws with every problem listed (`err.errors`) if the scene is invalid. |
 | `stage.scene` | The scene playing now, or null. |
 | `stage.arm(scene)` | Arm a scene that has a `trigger`: it plays when that happens. Returns `{disarm()}`. Scenes in `<script type="application/json" data-pixel-scene>` are armed for you. See [Triggers](#triggers). |
 | `scene` attribute | `<pixel-stage scene="#intro">` plays that scene once the page is parsed. |
-| stage events | `scenestep` `{scene, step, path}`, `sceneevent` `{scene, name, detail}` (from `emit` steps), `sceneend` `{scene, completed}`. |
-| stage events | `fastscroll` `{speed}` when scrolling goes faster than 1.5 screen heights a second; `scrollsettle` when it stops. |
+| stage events | `pixel-scenestep`, `pixel-sceneevent`, `pixel-sceneend`, `pixel-fastscroll`, `pixel-scrollsettle`: see [Events](#events). |
 
 The module also exports `World`, `PixelStage`, `PixelActor`, `checkScene(scene, castNames?)`, `runScene(scene, env)`,
+`sceneEventName(name, onActorOrStage)` (a scene's short event name → the DOM event it listens to),
 `jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
+
+### Events
+
+Every event bubbles and is composed, so a listener on the stage or the document hears every character. Names start
+with `pixel-`; `e.target` is the actor (or the stage).
+
+| on | event | `detail` | when |
+|---|---|---|---|
+| actor | `pixel-activity` | `{from, to}` | `actor.activity` changed (`idle` → `walking`, …). |
+| actor | `pixel-tap` | `{count}` | Tapped or clicked on its opaque pixels; `count` counts quick taps. |
+| actor | `pixel-burst` | `{count, rate}` | Rage taps (the third quick tap on): it panics. |
+| actor | `pixel-calm` | none | The rage taps stopped. |
+| actor | `pixel-arrive` | none | The end of a `goTo`. |
+| actor | `pixel-land` | none | Landed from a jump or a fall. |
+| actor | `pixel-catchup` | `{from: {x, y}}` | Coming back into view (`keep-in-view`, `catchUp()`); `from` is where it was. |
+| actor | `pixel-pickup`, `pixel-deliver` | `{prop}` | Picked an element up; carried it off screen. |
+| actor | `pixel-drop` | `{prop, how}` | Put it down (`here` or `back`). |
+| actor | `pixel-exit`, `pixel-enter` | none | Left the screen; came back. |
+| stage | `pixel-scenestep` | `{scene, step, path}` | A scene step starts. |
+| stage | `pixel-sceneevent` | `{scene, name, detail}` | An `emit` step. |
+| stage | `pixel-sceneend` | `{scene, completed}` | A scene finished or was stopped. |
+| stage | `pixel-fastscroll` | `{speed}` | Scrolling went faster than 1.5 screen heights a second. |
+| stage | `pixel-scrollsettle` | none | The fast scrolling stopped. |
+
+An actor's inner `<pixel-sprite>` fires its own `pixel-` events (`pixel-end`, `pixel-burst`, …). They stop at the
+actor's shadow root, so a listener on the actor (or above it) hears each thing once, from the actor. Listen on
+`actor.sprite` itself for its baked events (`pixel-event`: footsteps, a honk).
+
+#### Renamed in 0.2.0-alpha
+
+The old names still fire for one alpha release (without bubbling, as before) and will be removed after 0.2.0-alpha.
+Scenes keep their short names (`"waitFor": "tap"`, `"event": "arrive"`): they are mapped to the `pixel-` events.
+
+| Old | New |
+|---|---|
+| `tap`, `burst`, `calm`, `arrive`, `land`, `catchup` | `pixel-tap`, `pixel-burst`, `pixel-calm`, `pixel-arrive`, `pixel-land`, `pixel-catchup` |
+| `pickup`, `drop`, `deliver`, `exit`, `enter` | `pixel-pickup`, `pixel-drop`, `pixel-deliver`, `pixel-exit`, `pixel-enter` |
+| `actorstate`, `actor.state` | `pixel-activity`, `actor.activity` |
+| `scenestep`, `sceneevent`, `sceneend` | `pixel-scenestep`, `pixel-sceneevent`, `pixel-sceneend` |
+| `fastscroll`, `scrollsettle` | `pixel-fastscroll`, `pixel-scrollsettle` |
 
 ### Styling
 
@@ -200,8 +240,8 @@ Steps run one after another. Each step does one thing:
 | `{"actor": a, "enter": from}` | come back: `left`, `right`, `top`, `auto`, or a selector to drop onto | `speed` |
 | `{"wait": ms}` | pause | |
 | `{"together": [steps]}` | run steps at the same time; continue when all are done | |
-| `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … | `timeout` (ms) |
-| `{"emit": name}` | fire `sceneevent` on the stage for page code | `detail` |
+| `{"waitFor": event, "on": who}` | wait for an event on a cast name, a selector or `"stage"`: `tap`, `click`, `arrive`, `burst`, … (actor and stage events by their short names: `tap` listens for `pixel-tap`; on `"stage"` it hears every character, as the events bubble) | `timeout` (ms) |
+| `{"emit": name}` | fire `pixel-sceneevent` on the stage for page code | `detail` |
 
 `speed` on a movement step puts the character in a hurry for that step (`actor.hurry(speed)`): it runs,
 animating and moving that much faster with its feet still planted, using its `rush` gait if it has one (the geese flap
@@ -259,8 +299,8 @@ Here a newsletter form hands the goose a letter, and the goose takes it off the 
 
 | trigger key | meaning |
 |---|---|
-| `event` | the event: `submit`, `click`, `input`, … any DOM event; `tap`, `burst`, `arrive` on a character; `visible` (half of a matching element scrolled into view) |
-| `on` | a selector (matched with `closest`, so elements added later count too), a cast name, or `"stage"` (`fastscroll`, `sceneevent`, …) |
+| `event` | the event: `submit`, `click`, `input`, … any DOM event; `tap`, `burst`, `arrive` on a character (short names for its `pixel-` events); `visible` (half of a matching element scrolled into view) |
+| `on` | a selector (matched with `closest`, so elements added later count too), a cast name, or `"stage"` (`fastscroll`, `sceneevent`, …: short names for the `pixel-` events) |
 | `once` | only the first time (default: every time) |
 | `preventDefault` | cancel the event's default action, e.g. a form's page load |
 
@@ -268,7 +308,7 @@ Here a newsletter form hands the goose a letter, and the goose takes it off the 
 - The scene starts just after the page's own handlers for that event, so they can show the letter first.
 - A triggered scene stops any other scene that is playing; while it is already playing, its trigger is ignored.
 - Without `preventDefault`, a form that really submits loads a new page and the scene never plays. Send it with
-  `fetch` in your own `submit` handler (and `preventDefault` there), and use `sceneevent` (`emit`) to update the page.
+  `fetch` in your own `submit` handler (and `preventDefault` there), and use `pixel-sceneevent` (`emit`) to update the page.
 - From code: `const t = stage.arm(scene)`, later `t.disarm()`. Or play it yourself from any handler:
   `form.addEventListener('submit', () => stage.playScene('#the-mail', { trigger: form }))`.
 
@@ -322,14 +362,14 @@ List them in the spec's animations, for example `"jump": {"motion": "jump"}`.
 
 - **Rage taps.** Three or more quick taps or clicks on a character (each within 450 ms of the last) are a burst: the
   character panics. It plays and moves faster with every tap (1.35×, then +0.35 per tap, up to 3×), keeps running away
-  from the latest tap, and the actor fires `burst` `{count, rate}`. When the taps stop, it fires `calm` and slows down.
+  from the latest tap, and the actor fires `pixel-burst` `{count, rate}`. When the taps stop, it fires `pixel-calm` and slows down.
   Movement always scales with the playback rate, so the feet stay planted at any speed.
-- **Fast scrolls.** The stage tracks scroll speed (`stage.scrollSpeed`) and fires `fastscroll` and `scrollsettle`.
+- **Fast scrolls.** The stage tracks scroll speed (`stage.scrollSpeed`) and fires `pixel-fastscroll` and `pixel-scrollsettle`.
   Characters with `keep-in-view` wait for the scroll to settle, then catch up (see above).
 
 ```js
-stage.addEventListener('fastscroll', () => goose.say('wait for me!'));
-goose.addEventListener('burst', (e) => { if (e.detail.count >= 8) goose.say('OK OK OK'); });
+stage.addEventListener('pixel-fastscroll', () => goose.say('wait for me!'));
+goose.addEventListener('pixel-burst', (e) => { if (e.detail.count >= 8) goose.say('OK OK OK'); });
 ```
 
 ## Phones, accessibility and performance

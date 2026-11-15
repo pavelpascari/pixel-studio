@@ -27,7 +27,7 @@
         const goose = document.getElementById('sm-goose');
         document.getElementById('sm-speed').oninput = (e) => goose.set('speed', Number(e.target.value));
         document.getElementById('sm-honk').onclick = () => goose.fire('honk');
-        goose.addEventListener('statechange', (e) => {
+        goose.addEventListener('pixel-statechange', (e) => {
           document.getElementById('sm-node').textContent = e.detail.to;
           document.getElementById('sm-log').textContent = `${e.detail.from} → ${e.detail.to}`;
         });

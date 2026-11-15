@@ -142,11 +142,11 @@
     document.getElementById('speed').oninput = (e) => { brainy.set('speed', Number(e.target.value)); document.getElementById('speedOut').value = e.target.value; };
     document.getElementById('honk').onclick = () => brainy.fire('honk');
     document.getElementById('skin').onchange = (e) => (e.target.value ? brainy.setAttribute('skin', e.target.value) : brainy.removeAttribute('skin'));
-    brainy.addEventListener('statechange', (e) => { document.getElementById('node').textContent = e.detail.to; });
-    brainy.addEventListener('spriteevent', (e) => { document.getElementById('evt').textContent = `${e.detail.name} (${e.detail.anim} frame ${e.detail.frame})`; });
+    brainy.addEventListener('pixel-statechange', (e) => { document.getElementById('node').textContent = e.detail.to; });
+    brainy.addEventListener('pixel-event', (e) => { document.getElementById('evt').textContent = `${e.detail.name} (${e.detail.anim} frame ${e.detail.frame})`; });
 
     // Example of the JS API: log one-shot completions.
-    document.addEventListener('spriteend', (e) => {
+    document.addEventListener('pixel-end', (e) => {
       if (e.target.localName === 'pixel-sprite') console.log('[pixel-sprite] finished', e.detail.anim);
     });
   </script>

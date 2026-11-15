@@ -5,7 +5,7 @@ import { TEXTURES } from './textures.js';
 import { mergeVariant } from './extend.js';
 import { buildMixes } from './mix.js';
 
-export const TRACK_PROPS = ['x', 'y', 'rot', 'sx', 'sy', 'show'];
+export const TRACK_PROPS = Object.freeze(['x', 'y', 'rot', 'sx', 'sy', 'show']);
 const PROFILES = ['dome', 'flat', 'none'];
 const WAVE_SHAPES = ['sin', 'tri', 'square', 'bounce'];
 const EASES = ['linear', 'smooth', 'step'];

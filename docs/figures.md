@@ -210,7 +210,7 @@ The figure's motions are presets for these models (plug-ins can add more with `r
 | `sit` | hips lowered to the foot line, legs out over an edge and swinging | |
 
 Events are turned into frame numbers (the first frame at or after the moment) and baked into the bundle, where pages
-receive them as `spriteevent`. Add your own with `"events": [{"frame": 3, "name": "honk"}]`, or turn the model's off
+receive them as `pixel-event`. Add your own with `"events": [{"frame": 3, "name": "honk"}]`, or turn the model's off
 with `"events": false`.
 
 ### Parameters

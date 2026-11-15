@@ -11,23 +11,25 @@
 //
 // Attributes: src, anim, size (CSS px, default 128), res (force a variant), fps (override),
 //             hover-anim, click-anim, paused, flip, alt ("" = decorative)
-//             state (set by the element: loading | ready | error)
+//             status (set by the element: loading | ready | error)
 // API:        el.play(name, {once, restart, mix}), el.pause(), el.resume(), el.reload(),
 //             el.bundle, el.animations, el.currentAnim, el.frame, el.displaySize, el.groundOffset,
 //             el.pxPerSecond(name), el.pxPerSecondY(name), el.point(name, {relative}), el.topAt(x0, x1), el.hitTest(x, y)
-// Events:     'ready'; 'error' (detail: {error}); 'spriteend' (bubbles; detail: {anim}) when a one-shot or
-//             non-looping animation ends — also under reduced motion, after the animation's duration;
-//             'spriteevent' (bubbles; detail: {anim, frame, name, data}) when a frame with a baked event
-//             (footstep, land, launch, an author's "honk") is shown.
+// Events:     all bubble and are composed: 'pixel-ready'; 'pixel-error' (detail: {error}); 'pixel-end'
+//             (detail: {anim}) when a one-shot or non-looping animation ends — also under reduced motion,
+//             after the animation's duration; 'pixel-event' (detail: {anim, frame, name, data}) when a frame
+//             with a baked event (footstep, land, launch, an author's "honk") is shown.
+//             Renamed in 0.2.0-alpha: the old names (ready, error, spriteend, spriteevent, spriteburst,
+//             spritecalm, statechange) and the `state` attribute/getter still work for one alpha release.
 // Rate:       rate="2" plays everything twice as fast (0.25..4); el.effectiveRate includes state machine
-//             node rates and burst speed-ups. Bursts: three or more quick clicks fire 'spriteburst'
-//             {count, rate} and, when they stop, 'spritecalm'; a burst speeds up a playing click-anim
+//             node rates and burst speed-ups. Bursts: three or more quick clicks fire 'pixel-burst'
+//             {count, rate} and, when they stop, 'pixel-calm' {count}; a burst speeds up a playing click-anim
 //             instead of restarting it. burst="off" turns detection off.
 // States:     if the bundle has a state machine ("states"), the element runs it: el.set(input, value),
-//             el.fire(trigger), el.stateNode, and a 'statechange' event (detail: {from, to}). Its
+//             el.fire(trigger), el.stateNode, and a 'pixel-statechange' event (detail: {from, to}). Its
 //             interactions replace hover-anim / click-anim. states="off" disables it (pixel-stage does).
 // Skins:      skin="winter" picks a skin baked into the bundle (variants with that skin).
-// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT }. `clock.add(fn)` runs fn(dt, now) on the
+// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT, SPRITE_EVENTS }. `clock.add(fn)` runs fn(dt, now) on the
 //             same frame loop and clamped dt the sprites use, so page movement stays in step with the legs.
 //
 // Playback is robust by design: one shared frame loop that a failing sprite cannot stop; one load path
@@ -47,6 +49,21 @@ const MAX_BACKING = 4096;   // longest canvas side in device px
 
 const report = (e) => (typeof reportError === 'function' ? reportError(e) : console.error(e));
 const nowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+// Events: every event is dispatched as `pixel-<name>` (bubbles, composed) through emit().
+// legacy name, remove after 0.2.0-alpha: the pre-0.2 name of each event and whether it bubbled.
+const LEGACY_EVENTS = {
+  ready: ['ready', false], error: ['error', false], statechange: ['statechange', true], end: ['spriteend', true],
+  event: ['spriteevent', true], burst: ['spriteburst', true], calm: ['spritecalm', true],
+};
+/** The names <pixel-sprite> dispatches (without the "pixel-" prefix). */
+export const SPRITE_EVENTS = Object.freeze(Object.keys(LEGACY_EVENTS));
+function emit(el, name, detail) {
+  el.dispatchEvent(new CustomEvent(`pixel-${name}`, { bubbles: true, composed: true, detail }));
+  // legacy name, remove after 0.2.0-alpha
+  const old = LEGACY_EVENTS[name];
+  if (old) el.dispatchEvent(new CustomEvent(old[0], { bubbles: old[1], detail }));
+}
+
 const raf = (fn) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(fn) : setTimeout(() => fn(nowMs()), 16));
 
 // ---------- clock: one frame loop for every sprite and for page code ----------
@@ -422,8 +439,8 @@ const STYLE = `
 :host{display:inline-block;line-height:0;vertical-align:bottom}
 canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
 :host([flip]) canvas{transform:scaleX(-1)}
-:host(:not([state=ready])) canvas{display:none}
-:host([state=ready]) slot{display:none}
+:host(:not([status=ready])) canvas{display:none}
+:host([status=ready]) slot{display:none}
 ::slotted(img){display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}`;
 
 const clampRate = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.min(4, Math.max(0.25, n)) : 1; };
@@ -489,7 +506,10 @@ export class PixelSprite extends Base {
   get animations() { return this._bundle ? Object.keys(this._bundle.animations) : []; }
   get currentAnim() { return this._anim; }
   get frame() { return this._frame; }
-  get state() { return this.getAttribute('state') || 'idle'; }
+  /** Load status: idle (nothing to load yet) | loading | ready | error. */
+  get status() { return this.getAttribute('status') || 'idle'; }
+  // legacy name, remove after 0.2.0-alpha
+  get state() { return this.status; }
   /** Displayed size in CSS px ({width, height}), or null before the bundle is ready. */
   get displaySize() { return this._css ? { ...this._css } : null; }
   /** CSS px from the top of the box down to the character's foot line (bundle `ground`). */
@@ -529,7 +549,7 @@ export class PixelSprite extends Base {
    * strip is empty or the sheet cannot be read (cross-origin). Cached per frame.
    */
   topAt(x0, x1) {
-    if (!this._css || this.state !== 'ready') return null;
+    if (!this._css || this.status !== 'ready') return null;
     const v = this._variant, an = this._bundle.animations[this._anim], W = this._css.width;
     if (this.hasAttribute('flip')) [x0, x1] = [W - x1, W - x0];
     const a = Math.max(0, Math.floor((Math.min(x0, x1) / W) * v.frameW)), b = Math.min(v.frameW, Math.ceil((Math.max(x0, x1) / W) * v.frameW));
@@ -552,7 +572,7 @@ export class PixelSprite extends Base {
 
   /** True if the sprite has an opaque pixel at this client point in the frame showing now. */
   hitTest(clientX, clientY) {
-    if (!this._css || this.state !== 'ready') return false;
+    if (!this._css || this.status !== 'ready') return false;
     const box = this._canvas.getBoundingClientRect();
     let x = clientX - box.left, y = clientY - box.top;
     if (x < 0 || y < 0 || x >= box.width || y >= box.height) return false;
@@ -644,7 +664,7 @@ export class PixelSprite extends Base {
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { if (token === this._token) this._load(); }, { once: true });
       return;
     }
-    this.setAttribute('state', 'loading');
+    this._status('loading');
     try {
       await null;   // always settle asynchronously, so listeners added right after append() see ready/error
       const base = src ? new URL(src, document.baseURI).href : document.baseURI;
@@ -658,11 +678,11 @@ export class PixelSprite extends Base {
       this._anim = null; this._once = false; this._ended = false;
       this._a11y();
       this._layout();
-      this.setAttribute('state', 'ready');
+      this._status('ready');
       this._sm = bundle.states && this.getAttribute('states') !== 'off' ? this._machine(bundle) : null;
       if (this._sm) this._sm.start(bundle.states.nodes[this.getAttribute('anim')] ? this.getAttribute('anim') : undefined);
       else this.play(this._baseAnim(), { restart: true });
-      this.dispatchEvent(new CustomEvent('ready'));
+      emit(this, 'ready');
     } catch (error) {
       if (token === this._token) this._fail(error);
     }
@@ -675,17 +695,22 @@ export class PixelSprite extends Base {
         if (phase != null) { const a = bundle.animations[anim]; this._frame = Math.floor(phase * a.frames) % a.frames; this._draw(); }
       },
       phase: () => { const a = bundle.animations[this._anim]; return a ? (this._frame + Math.min(1, this._acc / this._frameMs(a, this._frame))) / a.frames : 0; },
-      onChange: (from, to) => this.dispatchEvent(new CustomEvent('statechange', { bubbles: true, detail: { from, to } })),
+      onChange: (from, to) => emit(this, 'statechange', { from, to }),
       rate: (r) => { this._nodeRate = r; },
     });
+  }
+
+  _status(s) {
+    this.setAttribute('status', s);
+    this.setAttribute('state', s);   // legacy name, remove after 0.2.0-alpha
   }
 
   _fail(error) {
     this._ended = true;
     this._sync();
-    this.setAttribute('state', 'error');
+    this._status('error');
     console.error(error);
-    this.dispatchEvent(new CustomEvent('error', { detail: { error } }));
+    emit(this, 'error', { error });
   }
 
   _chooseVariant(bundle) {
@@ -767,19 +792,19 @@ export class PixelSprite extends Base {
   }
 
   /**
-   * Count a click toward a burst. From the third quick click on, fires 'spriteburst' {count, rate};
-   * after the clicking stops, 'spritecalm' {count}, and any burst speed-up ends.
+   * Count a click toward a burst. From the third quick click on, fires 'pixel-burst' {count, rate};
+   * after the clicking stops, 'pixel-calm' {count}, and any burst speed-up ends.
    */
   _clickBurst() {
     const now = performance.now();
     const b = this._bursts.hit(now);
     if (!b.burst) return null;
-    this.dispatchEvent(new CustomEvent('spriteburst', { bubbles: true, detail: { count: b.count, rate: b.rate } }));
+    emit(this, 'burst', { count: b.count, rate: b.rate });
     clearTimeout(this._calmTimer);
     this._calmTimer = setTimeout(() => {
       if (!this._bursts.calm(performance.now())) return;
       this._burstRate = 1;
-      this.dispatchEvent(new CustomEvent('spritecalm', { bubbles: true, detail: { count: b.count } }));
+      emit(this, 'calm', { count: b.count });
       this._sm?.interact('calm', { count: b.count, rate: 1 });
     }, this._bursts.gap + 20);
     return b;
@@ -815,7 +840,7 @@ export class PixelSprite extends Base {
     const run = moving && this._visible && !reducedMotion();
     if (run !== !!this._running) { if (run) clock.add(this._tick); else clock.remove(this._tick); this._running = run; }
     // Reduced motion or off-screen: no frame stepping, but one-shots and non-looping animations still
-    // end on time, so code waiting for 'spriteend' never hangs.
+    // end on time, so code waiting for 'pixel-end' never hangs.
     const hold = moving && (reducedMotion() || !this._visible) && (this._once || !a.loop);
     if (!hold) this._stopTimer();
     else if (!this._timer) {
@@ -859,7 +884,7 @@ export class PixelSprite extends Base {
     for (const e of a.events || []) {
       if (e.frame !== f) continue;
       if (!any) { any = true; if (this._drawn !== f) this._draw(); }
-      this.dispatchEvent(new CustomEvent('spriteevent', { bubbles: true, detail: { anim: this._anim, frame: f, name: e.name, data: e.data } }));
+      emit(this, 'event', { anim: this._anim, frame: f, name: e.name, data: e.data });
       this._sm?.event(e.name);
     }
     return any;
@@ -867,13 +892,13 @@ export class PixelSprite extends Base {
 
   _end() {
     const done = this._anim;
-    if (this._then) {   // a transition clip finished: on to the animation it leads into (no spriteend)
+    if (this._then) {   // a transition clip finished: on to the animation it leads into (no pixel-end)
       const { name, once } = this._then;
       this._then = null;
       this._start(name, once);
       return;
     }
-    const fire = () => this.dispatchEvent(new CustomEvent('spriteend', { detail: { anim: done }, bubbles: true }));
+    const fire = () => emit(this, 'end', { anim: done });
     if (this._sm) {
       const plays = this._plays;
       this._once = false; this._ended = true; this._sync();

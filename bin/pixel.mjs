@@ -32,8 +32,9 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validate, compile, renderSheet, renderAnimation, renderFrame, resolveStyle,
-  contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, samplePose, worldMatrices, MAX_RES,
+  contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, MAX_RES,
 } from '../src/core/index.js';
+import { samplePose, worldMatrices } from '../src/core/internal.js';
 import { encodePNG } from '../src/node/png.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');

@@ -33,12 +33,38 @@
 //                    back when scrolled out of sight: run there, or drop in from the top of the screen),
 //                    behaviours (default "wander sit hide climb jump"), anims ("walk=waddle run=run ...")
 // JS:  stage.actors, stage.pause(), stage.resume(), stage.paused, stage.world.invalidate(), stage.scrollSpeed;
-//      stage events 'fastscroll' {speed} and 'scrollsettle'
+//      stage events 'pixel-fastscroll' {speed} and 'pixel-scrollsettle'
 //      actor.goTo(element | {x, y}, {then: 'sit' | 'hide' | 'idle'}), actor.hideBehind(el), actor.say(text, ms),
-//      actor.shoo(), actor.catchUp(), actor.state; events on the actor: 'actorstate' {from, to}, 'land', 'arrive',
-//      'burst' {count, rate} (rage taps: it panics) and 'calm', 'catchup'
+//      actor.shoo(), actor.catchUp(), actor.activity; events on the actor: 'pixel-activity' {from, to}, 'pixel-land',
+//      'pixel-arrive', 'pixel-tap' {count}, 'pixel-burst' {count, rate} (rage taps: it panics) and 'pixel-calm',
+//      'pixel-catchup', 'pixel-enter', 'pixel-exit', 'pixel-pickup' / 'pixel-drop' / 'pixel-deliver' {prop}.
+//      Every event bubbles and is composed. Renamed in 0.2.0-alpha: the old names (tap, burst, actorstate, …,
+//      sceneevent, fastscroll, …) and actor.state still work for one alpha release.
 
-import { clock, BurstDetector } from './pixel-sprite.js';
+import { clock, BurstDetector, SPRITE_EVENTS } from './pixel-sprite.js';
+
+// Events: every event is dispatched as `pixel-<name>` (bubbles, composed) through emit().
+// legacy name, remove after 0.2.0-alpha: the pre-0.2 name of each event (none of them bubbled).
+const LEGACY_EVENTS = {
+  tap: 'tap', burst: 'burst', calm: 'calm', enter: 'enter', exit: 'exit', land: 'land', arrive: 'arrive', drop: 'drop',
+  pickup: 'pickup', deliver: 'deliver', catchup: 'catchup', activity: 'actorstate',
+  sceneevent: 'sceneevent', scenestep: 'scenestep', sceneend: 'sceneend', scrollsettle: 'scrollsettle', fastscroll: 'fastscroll',
+};
+function emit(el, name, detail) {
+  el.dispatchEvent(new CustomEvent(`pixel-${name}`, { bubbles: true, composed: true, detail }));
+  // legacy name, remove after 0.2.0-alpha
+  if (LEGACY_EVENTS[name]) el.dispatchEvent(new CustomEvent(LEGACY_EVENTS[name], { detail }));
+}
+/**
+ * Scenes name actor and stage events by their short names ("tap", "arrive"); on an actor or the stage those are
+ * the `pixel-` DOM events. Anything else ("click", "submit", "pixel-tap") is used as written.
+ */
+export function sceneEventName(name, onPixelElement) {
+  if (!onPixelElement) return name;
+  if (name === 'actorstate') return 'pixel-activity';   // legacy name, remove after 0.2.0-alpha
+  return Object.hasOwn(LEGACY_EVENTS, name) ? `pixel-${name}` : name;
+}
+const isPixelEl = (el) => el instanceof PixelActor || el instanceof PixelStage;
 
 const FLAGS = ['surface', 'climbable', 'perch', 'hide', 'occluder', 'avoid'];
 const SELECTOR = FLAGS.map((f) => `[data-pixel-${f}]`).join(',');
@@ -229,12 +255,13 @@ export class PixelStage extends Base {
         if (!el?.addEventListener) return r(false);
         let timer = 0;
         const on = () => { clearTimeout(timer); r(true); };
-        el.addEventListener(ev, on, { once: true });
-        if (timeout) timer = setTimeout(() => { el.removeEventListener(ev, on); r(false); }, timeout);
-        stopped.then(() => { clearTimeout(timer); el.removeEventListener(ev, on); });
+        const type = sceneEventName(ev, isPixelEl(el));
+        el.addEventListener(type, on, { once: true });
+        if (timeout) timer = setTimeout(() => { el.removeEventListener(type, on); r(false); }, timeout);
+        stopped.then(() => { clearTimeout(timer); el.removeEventListener(type, on); });
       }),
-      emit: (name, detail) => this.dispatchEvent(new CustomEvent('sceneevent', { detail: { scene: scene.name, name, detail } })),
-      onStep: (step, path) => this.dispatchEvent(new CustomEvent('scenestep', { detail: { scene: scene.name, step, path } })),
+      emit: (name, detail) => emit(this, 'sceneevent', { scene: scene.name, name, detail }),
+      onStep: (step, path) => emit(this, 'scenestep', { scene: scene.name, step, path }),
       stopped,
     };
     // Characters must be loaded and standing somewhere before they take orders.
@@ -245,7 +272,7 @@ export class PixelStage extends Base {
         cast.forEach((a, i) => { a.directed = was[i]; a.hurry(1); });
         if (this._scene === handle) this._scene = null;
         stop();
-        this.dispatchEvent(new CustomEvent('sceneend', { detail: { scene: scene.name, completed } }));
+        emit(this, 'sceneend', { scene: scene.name, completed });
         return completed;
       });
     this._scene = handle;
@@ -292,18 +319,21 @@ export class PixelStage extends Base {
     };
     const castEl = this._castNames(scene).includes(t.on) ? document.querySelector(scene.cast?.[t.on] ?? `#${t.on}`) : null;
     if (t.on === 'stage' || castEl) {
-      const el = castEl ?? this, h = (e) => fire(el, e);
-      el.addEventListener(t.event, h);
-      off = () => el.removeEventListener(t.event, h);
+      const el = castEl ?? this, h = (e) => fire(el, e), type = sceneEventName(t.event, isPixelEl(el));
+      el.addEventListener(type, h);
+      off = () => el.removeEventListener(type, h);
     } else if (t.event === 'visible') {
       const io = new IntersectionObserver((es) => { for (const en of es) if (en.isIntersecting) { io.unobserve(en.target); fire(en.target); } }, { threshold: 0.5 });
       for (const el of document.querySelectorAll(t.on)) io.observe(el);
       off = () => io.disconnect();
     } else {
       // Delegated on the document (capture), so it works for elements added later and pages that stop propagation.
-      const h = (e) => { const el = e.target?.closest?.(t.on); if (el) fire(el, e); };
-      document.addEventListener(t.event, h, true);
-      off = () => document.removeEventListener(t.event, h, true);
+      // An actor or the stage matching the selector answers to the pixel- name ("tap" → "pixel-tap"), other elements to t.event.
+      const pixel = sceneEventName(t.event, true);
+      const h = (e) => { const el = e.target?.closest?.(t.on); if (el && e.type === sceneEventName(t.event, isPixelEl(el))) fire(el, e); };
+      const types = [...new Set([t.event, pixel])];
+      for (const type of types) document.addEventListener(type, h, true);
+      off = () => { for (const type of types) document.removeEventListener(type, h, true); };
     }
     const armed = { scene, disarm: () => { off(); this._armed?.delete(armed); } };
     (this._armed ??= new Set()).add(armed);
@@ -380,7 +410,7 @@ export class PixelStage extends Base {
     this.scrollSpeed = 0;
     const settle = () => {
       this.scrollSpeed = 0;
-      if (fast) { fast = false; this.dispatchEvent(new CustomEvent('scrollsettle')); }
+      if (fast) { fast = false; emit(this, 'scrollsettle'); }
       for (const a of this.actors) a._checkInView?.(this.world, true);
     };
     const onScroll = () => {
@@ -391,7 +421,7 @@ export class PixelStage extends Base {
       // "Fast" is more than a screen height and a half per second.
       if (!fast && Math.abs(this.scrollSpeed) > innerHeight * 1.5) {
         fast = true;
-        this.dispatchEvent(new CustomEvent('fastscroll', { detail: { speed: Math.round(this.scrollSpeed) } }));
+        emit(this, 'fastscroll', { speed: Math.round(this.scrollSpeed) });
       }
       clearTimeout(timer);
       timer = setTimeout(settle, 160);
@@ -446,7 +476,7 @@ export class PixelStage extends Base {
       // Taps in quick succession are a burst (rage taps): the character panics instead.
       const det = (a._bursts ??= new BurstDetector());
       const b = det.hit(performance.now());
-      a.dispatchEvent(new CustomEvent('tap', { detail: { count: b.count } }));
+      emit(a, 'tap', { count: b.count });
       if (b.burst) a._rage({ ...b, min: det.min }, local(e)); else a.shoo(local(e));
     };
     const onClick = (e) => { if (performance.now() < swallow) { e.preventDefault(); e.stopPropagation(); swallow = 0; } };
@@ -477,20 +507,24 @@ export class PixelActor extends Base {
     this.sprite = root.querySelector('pixel-sprite');
     this._body = root.querySelector('.body');
     this._bubble = root.querySelector('.say');
-    this.x = 0; this.y = 0; this.facing = 1; this.state = 'idle'; this.view = 'side';
+    this.x = 0; this.y = 0; this.facing = 1; this.activity = 'idle'; this.view = 'side';
     this.plan = []; this.behind = new Set(); this._orders = [];
-    this.sprite.addEventListener('ready', () => this._onReady());
-    this.sprite.addEventListener('spriteevent', (e) => this._onEvent(e.detail));
-    this.sprite.addEventListener('spriteend', (e) => {
+    this.sprite.addEventListener('pixel-ready', () => this._onReady());
+    this.sprite.addEventListener('pixel-event', (e) => this._onEvent(e.detail));
+    this.sprite.addEventListener('pixel-end', (e) => {
       if (this._step?.waitEnd === e.detail.anim) this._step.done = true;
       if (this._turning?.anim === e.detail.anim) this._endTurn();
     });
+    // The inner sprite is an implementation detail: its events (composed, so they would cross the shadow
+    // boundary) stop here, and a listener on the actor sees each logical event once, from the actor.
+    for (const n of SPRITE_EVENTS) root.addEventListener(`pixel-${n}`, (e) => e.stopPropagation());
   }
 
   connectedCallback() {
     for (const a of ['src', 'size', 'alt', 'skin']) if (this.hasAttribute(a)) this.sprite.setAttribute(a, this.getAttribute(a));
     if (!this.hasAttribute('size')) this.sprite.setAttribute('size', '64');
     this.sprite.setAttribute('states', 'off');   // the stage chooses animations itself
+    this.sprite.setAttribute('burst', 'off');    // the stage counts taps and fires the actor's own pixel-burst
   }
   attributeChangedCallback(name, _o, v) {
     if (!this.sprite) return;
@@ -498,6 +532,10 @@ export class PixelActor extends Base {
   }
 
   get stage() { return this.closest('pixel-stage'); }
+
+  // legacy name, remove after 0.2.0-alpha: `state` is `activity` (idle, walking, performing, …).
+  get state() { return this.activity; }
+  set state(v) { this.activity = v; }
 
   _onReady() {
     const b = this.sprite.bundle;
@@ -742,18 +780,18 @@ export class PixelActor extends Base {
   _onstage() {
     this.offstage = false;
     this.removeAttribute('offstage');
-    this.dispatchEvent(new CustomEvent('enter'));
+    emit(this, 'enter');
   }
 
   _offstage() {
     this.offstage = true;
     this.setAttribute('offstage', '');
     this.platform = null; this.behind.clear();
-    this._setState('offstage');
+    this._setActivity('offstage');
     this._returnAt = performance.now() + rand(5000, 9000);
     const c = this._carry;
-    if (c) { this._carry = null; c.clone.remove(); this.dispatchEvent(new CustomEvent('deliver', { detail: { prop: c.el } })); }
-    this.dispatchEvent(new CustomEvent('exit'));
+    if (c) { this._carry = null; c.clone.remove(); emit(this, 'deliver', { prop: c.el }); }
+    emit(this, 'exit');
   }
 
   /** Start carrying el: a copy (styled like it) flies from its place to the carry point. */
@@ -772,7 +810,7 @@ export class PixelActor extends Base {
     this.append(clone);
     this._carry = { el, clone, w: r.width, h: r.height, from: { x: r.left + scrollX - w.origin.x, y: r.top + scrollY - w.origin.y }, t0: performance.now(), vis: el.style.visibility };
     el.style.visibility = 'hidden';
-    this.dispatchEvent(new CustomEvent('pickup', { detail: { prop: el } }));
+    emit(this, 'pickup', { prop: el });
   }
 
   /** Let go of what it carries: it stays on the stage at its feet, or flies back and the original reappears. */
@@ -792,7 +830,7 @@ export class PixelActor extends Base {
       c.clone.style.transform = `translate(${to.x}px, ${to.y}px) rotate(0deg)`;
     });
     if (how === 'back') setTimeout(() => { c.clone.remove(); c.el.style.visibility = c.vis; }, 320);
-    this.dispatchEvent(new CustomEvent('drop', { detail: { prop: c.el, how } }));
+    emit(this, 'drop', { prop: c.el, how });
   }
 
   /**
@@ -878,7 +916,7 @@ export class PixelActor extends Base {
    * event {count, rate} lets pages react. When the taps stop, a 'calm' event, and back to normal speed.
    */
   _rage(b, from) {
-    this.dispatchEvent(new CustomEvent('burst', { detail: { count: b.count, rate: b.rate } }));
+    emit(this, 'burst', { count: b.count, rate: b.rate });
     this._boost(b.rate, 'rage');
     if (this.anims.react && b.count % 3 === 0) this.say(['!!', 'HONK!!', '?!'][(b.count / 3) % 3 | 0], 700);
     // Already panicking: keep running (re-planned away from the latest tap) rather than reacting again.
@@ -887,7 +925,7 @@ export class PixelActor extends Base {
     this._calmTimer = setTimeout(() => {
       if (!this._bursts.calm(performance.now())) return;
       this._boost(1, 'rage');
-      this.dispatchEvent(new CustomEvent('calm'));
+      emit(this, 'calm');
     }, this._bursts.gap + 20);
   }
 
@@ -904,7 +942,7 @@ export class PixelActor extends Base {
    * Checked a few times a second and whenever scrolling settles; never in the middle of a fast scroll.
    */
   _checkInView(w, settled = false) {
-    if (!this.hasAttribute('keep-in-view') || this.offstage || this.state === 'leaving' || this._step?.free || !this._ready || !this._placed || this._still || this._busy() || (this._catching ?? 0) > performance.now()) return;
+    if (!this.hasAttribute('keep-in-view') || this.offstage || this.activity === 'leaving' || this._step?.free || !this._ready || !this._placed || this._still || this._busy() || (this._catching ?? 0) > performance.now()) return;
     const now = performance.now();
     if (!settled && now - (this._lastViewCheck ?? 0) < 300) return;
     this._lastViewCheck = now;
@@ -925,7 +963,7 @@ export class PixelActor extends Base {
     const near = (p) => Math.abs(p.y - this.y) + Math.abs(Math.max(p.x1, Math.min(p.x2, this.x)) - this.x);
     const target = visible.sort((a, b) => near(a) - near(b))[0];
     const x = clampTo(target, Math.max(vp.l + this.W, Math.min(vp.r - this.W, this.x)), this.W * 0.5);
-    this.dispatchEvent(new CustomEvent('catchup', { detail: { from: { x: this.x, y: this.y } } }));
+    emit(this, 'catchup', { from: { x: this.x, y: this.y } });
     this._catching = performance.now() + 10000;   // at most this long, even if the plan is abandoned
     const done = () => { this._catching = 0; this._boost(1, 'catchup'); };
     clearTimeout(this._catchTimer);
@@ -951,12 +989,12 @@ export class PixelActor extends Base {
   _do_call(st) { st.fn(); return true; }
 
   /** In the air, held, or on a wall: new orders wait until the character lands. */
-  _busy() { return this.state === 'falling' || this.state === 'dragged' || ['jump', 'climb'].includes(this._step?.type); }
+  _busy() { return this.activity === 'falling' || this.activity === 'dragged' || ['jump', 'climb'].includes(this._step?.type); }
 
   /** Picked up by the pointer: dangle (the fall animation) and follow it. */
   _grab() {
     this.plan = []; this._step = null; this.platform = null; this.behind.clear();
-    this._setState('dragged');
+    this._setActivity('dragged');
     this._play('fall');
   }
   _dragTo(x, y) { this.x = x; this.y = y; }
@@ -972,7 +1010,7 @@ export class PixelActor extends Base {
   _worldChanged(w) {
     if (!this._ready) return;
     if (!this._placed) return this._place(w);
-    if (['climbing', 'jumping', 'falling', 'dragged', 'leaving'].includes(this.state) || this._step?.free || this.offstage) return this._remap(w);
+    if (['climbing', 'jumping', 'falling', 'dragged', 'leaving'].includes(this.activity) || this._step?.free || this.offstage) return this._remap(w);
     // Stay on the same element; if it went away or moved from under us, fall.
     const p = this.platform && (this.platform.floor ? w.platformOf(null) : w.platformOf(this.platform.el));
     if (p && this.x >= p.x1 - 2 && this.x <= p.x2 + 2) { this.platform = p; this.y = p.y; }
@@ -1006,16 +1044,16 @@ export class PixelActor extends Base {
     this.x = clampTo(p, p.floor ? (vp.l + vp.r) / 2 : rand(p.x1, p.x2), this.W);
     this.y = p.y;
     this._placed = true;
-    this._setState('idle');
+    this._setActivity('idle');
     this._play('idle');
     this.setAttribute('data-ready', '');
   }
 
-  _setState(s) {
-    if (s === this.state) return;
-    const from = this.state;
-    this.state = s;
-    this.dispatchEvent(new CustomEvent('actorstate', { detail: { from, to: s } }));
+  _setActivity(s) {
+    if (s === this.activity) return;
+    const from = this.activity;
+    this.activity = s;
+    emit(this, 'activity', { from, to: s });
   }
 
   _play(role, opts) {
@@ -1063,9 +1101,9 @@ export class PixelActor extends Base {
     if (!this._placed) return;
     if (this._sayUntil && performance.now() > this._sayUntil) { this._bubble.classList.remove('on'); this._sayUntil = 0; }
     if (placeOnly || this._still) return;
-    if (this.state === 'dragged') return;
+    if (this.activity === 'dragged') return;
     this._checkInView(w);
-    if (this.state === 'falling') return this._fallStep(dt, w);
+    if (this.activity === 'falling') return this._fallStep(dt, w);
     // Riding a moving surface: carried along with it; off its end, fall.
     if (this.platform?.animated) {
       this.x += this.platform.dx ?? 0;
@@ -1095,11 +1133,11 @@ export class PixelActor extends Base {
     if (done) this._step = null;
   }
 
-  _do_idle(st) { this._setState('idle'); this._play('idle'); return st.t >= st.ms; }
+  _do_idle(st) { this._setActivity('idle'); this._play('idle'); return st.t >= st.ms; }
 
   /** Look at the reader: turn the head (the three-quarter "look@front"), or turn right round to face them. */
   _do_gaze(st) {
-    this._setState('idle');
+    this._setActivity('idle');
     const look = this.sprite.bundle.animations['look@front'];
     if (!st.started) { st.started = true; if (st.full || !look) this._turnTo('front'); }
     if (this.view === 'front') this._play('idle');
@@ -1108,17 +1146,17 @@ export class PixelActor extends Base {
     if (this.view !== 'side') this._turnTo('side');
     return true;
   }
-  _do_arrive() { this.dispatchEvent(new CustomEvent('arrive')); return true; }
+  _do_arrive() { emit(this, 'arrive'); return true; }
 
   _do_react(st) {
-    if (!st.started) { st.started = true; const n = this._play('react', { once: true }); st.waitEnd = n; this._setState('startled'); if (this.anims.react === 'honk') this.say('HONK!', 900); }
+    if (!st.started) { st.started = true; const n = this._play('react', { once: true }); st.waitEnd = n; this._setActivity('startled'); if (this.anims.react === 'honk') this.say('HONK!', 900); }
     return st.done || st.t > 2500;
   }
 
   _do_perform(st) {
     if (!st.started) {
       st.started = true;
-      this._setState('performing');
+      this._setActivity('performing');
       const once = this.sprite.bundle.animations[st.name].loop === false;
       this.sprite.play(st.name, once ? { once: true } : undefined);
       if (once) st.waitEnd = st.name;
@@ -1131,7 +1169,7 @@ export class PixelActor extends Base {
     // Long way to go: run (at the run's own no-slide speed).
     if (!st.run && st.t === dt * 1000 && (this._hurry || Math.abs(st.x - this.x) > this.W * 4) && this.anims.run) st.run = true;
     const role = st.run ? this._runRole() : 'walk';
-    this._setState(st.run ? 'running' : 'walking');
+    this._setActivity(st.run ? 'running' : 'walking');
     const dx = st.x - this.x;
     if (Math.abs(dx) < 1) { this.x = st.x; return true; }
     this.facing = Math.sign(dx);
@@ -1150,7 +1188,7 @@ export class PixelActor extends Base {
   _do_pickup(st) {
     if (!st.started) {
       st.started = true;
-      this._setState('picking up');
+      this._setActivity('picking up');
       this.face(st.el);
       this._play(this.anims.duck ? 'duck' : 'idle');
       if (st.el.isConnected) this._take(st.el);
@@ -1169,7 +1207,7 @@ export class PixelActor extends Base {
   _do_leave(st, dt, w) {
     const vp = w.viewport(), dir = st.dir;
     if (!st.started) { st.started = true; this.facing = dir; this.behind.clear(); }
-    this._setState('leaving');
+    this._setActivity('leaving');
     if (!st.air) {
       const role = this.anims.run ? this._runRole() : 'walk';
       this._play(role);
@@ -1203,7 +1241,7 @@ export class PixelActor extends Base {
       if (st.p.animated && st.rel != null) st.x = clampTo(st.p, st.p.x1 + st.rel, this.W * 0.2);   // it has moved since planning
       this.facing = st.x >= this.x ? 1 : -1;
       st.waitEnd = this._play('jump', { once: true });
-      this._setState('jumping');
+      this._setActivity('jumping');
       const lift = Math.max(this.H * 0.3, 8);
       st.arc = jumpArc(this.x, this.y, st.x, st.p.y, lift, j.flightMs / 1000);
       st.arc.y1 = st.p.y;
@@ -1217,7 +1255,7 @@ export class PixelActor extends Base {
       this.x = st.x0 + st.arc.vx * t + drift;
       this.y = st.y0 + st.arc.vy * t + (st.arc.g * t * t) / 2 + (st.p.y - st.arc.y1) * (t / st.arc.T);
       this.platform = null;
-      if (t >= st.arc.T) { this._land(st); this.dispatchEvent(new CustomEvent('land')); }
+      if (t >= st.arc.T) { this._land(st); emit(this, 'land'); }
     }
     if (st.done || st.t > st.limit) {
       this._land(st);
@@ -1243,7 +1281,7 @@ export class PixelActor extends Base {
       const wallPx = ((a.wall ?? this.sprite.bundle.size[0] * 0.6) / this.sprite.bundle.size[0]) * this.W;
       this.x = this.facing > 0 ? it.l - wallPx + this.W / 2 : it.r + wallPx - this.W / 2;
       this.platform = null;
-      this._setState('climbing');
+      this._setActivity('climbing');
     }
     this._play('climb');
     this.y -= this.sprite.pxPerSecondY(this.anims.climb) * this.sprite.effectiveRate * dt;
@@ -1260,14 +1298,14 @@ export class PixelActor extends Base {
   }
 
   _do_sit(st) {
-    this._setState('sitting');
+    this._setActivity('sitting');
     if (st.facing) this.facing = st.facing;
     this._play('sit');
     return st.t >= st.ms && !this.directed;   // directed: stay seated until the next order
   }
 
   _do_hide(st, dt, w) {
-    this._setState('hiding');
+    this._setActivity('hiding');
     this.behind.add(st.item.el);
     // Duck, and every few seconds peek out over the top.
     const cycle = st.t % 3200;
@@ -1282,7 +1320,7 @@ export class PixelActor extends Base {
   }
 
   _fall(vx) {
-    this._setState('falling');
+    this._setActivity('falling');
     this.platform = null;
     this._vx = vx; this._vy = 0;
     this._play('fall');
@@ -1301,10 +1339,10 @@ export class PixelActor extends Base {
     let land = null;
     for (const p of w.platforms) if (this.x >= p.x1 && this.x <= p.x2 && p.y >= y0 - 0.5 && p.y <= this.y && (!land || p.y < land.y)) land = p;
     if (land) {
-      this.y = land.y; this.platform = land; this._setState('idle');
+      this.y = land.y; this.platform = land; this._setActivity('idle');
       // Landed somewhere else than planned (or fell without a plan): think again.
       if (this.plan[0]?.p && this.plan[0].p !== land) this.plan = [];
-      this.dispatchEvent(new CustomEvent('land'));
+      emit(this, 'land');
       this._play('idle');
     } else if (this.y > w.height + this.H * 2) { this._placed = false; this._place(w); }
   }
@@ -1470,7 +1508,7 @@ export class PixelActor extends Base {
     const L = this.x - this.W / 2, T = this.y - (this.sprite.groundOffset ?? this.H), R = L + this.W, B = T + this.H;
     for (const el of [...this.behind]) {
       const it = w.items.find((i) => i.el === el);
-      if (!it || it.r <= L || it.l >= R || it.b <= T || it.t >= B) { if (this.state !== 'hiding') this.behind.delete(el); }
+      if (!it || it.r <= L || it.l >= R || it.b <= T || it.t >= B) { if (this.activity !== 'hiding') this.behind.delete(el); }
     }
     return w.items.filter((it) => (it.occluder || this.behind.has(it.el)) && it.el !== this.platform?.el &&
       it.r > L && it.l < R && it.b > T && it.t < B);
@@ -1482,7 +1520,7 @@ export class PixelActor extends Base {
     // Walking off (or in from) the page's right or bottom edge: keep the box inside the page and slide the
     // body out of it instead, clipped, so the page never grows a scrollbar.
     let sx = 0, sy = 0;
-    if (this.offstage || this.state === 'leaving' || this._step?.free) {
+    if (this.offstage || this.activity === 'leaving' || this._step?.free) {
       if (L + this.W > w.width) { sx = L + this.W - w.width; L -= sx; }
       if (T + this.H > w.height) { sy = T + this.H - w.height; T -= sy; }
     }

@@ -225,14 +225,14 @@
     while (logEl.children.length > 6) logEl.lastChild.remove();
   };
   for (const a of document.querySelectorAll('pixel-actor')) {
-    a.addEventListener('actorstate', (e) => log(a.id, e.detail.to));
-    a.addEventListener('burst', (e) => log(a.id, `rage taps ×${e.detail.count}: panicking at ${e.detail.rate.toFixed(2)}× speed`));
-    a.addEventListener('calm', () => log(a.id, 'calmed down'));
-    a.addEventListener('catchup', () => log(a.id, 'catching up with you'));
+    a.addEventListener('pixel-activity', (e) => log(a.id, e.detail.to));
+    a.addEventListener('pixel-burst', (e) => log(a.id, `rage taps ×${e.detail.count}: panicking at ${e.detail.rate.toFixed(2)}× speed`));
+    a.addEventListener('pixel-calm', () => log(a.id, 'calmed down'));
+    a.addEventListener('pixel-catchup', () => log(a.id, 'catching up with you'));
   }
   const stageEl = document.querySelector('pixel-stage');
-  stageEl.addEventListener('fastscroll', (e) => { log('page', `fast scroll (${e.detail.speed} px/s)`); goose.say('wait for me!', 1200); });
-  goose.sprite.addEventListener('spriteevent', (e) => { if (e.detail.name === 'honk') log('goose', 'HONK (event from the bundle)'); });
+  stageEl.addEventListener('pixel-fastscroll', (e) => { log('page', `fast scroll (${e.detail.speed} px/s)`); goose.say('wait for me!', 1200); });
+  goose.sprite.addEventListener('pixel-event', (e) => { if (e.detail.name === 'honk') log('goose', 'HONK (event from the bundle)'); });
   $('#hide').onclick = () => log('goose', goose.hideBehind($('#crate')) ? 'heading for the crate' : 'cannot get there');
   $('#sit').onclick = () => log('goose', goose.goTo($('#card-d'), { then: 'sit' }) ? 'going to Summit' : 'cannot get there');
   $('#climb').onclick = () => log('goose', goose.goTo($('#card-a')) ? 'going to Ridge loop' : 'cannot get there');
@@ -254,22 +254,22 @@
     stageEl.playScene('#the-plan');
     $('#scene').textContent = 'Stop the scene';
   };
-  stageEl.addEventListener('scenestep', (e) => { const s = e.detail.step; if (s.actor && !s.face) log(s.actor, Object.entries(s).filter(([k]) => k !== 'actor').map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')); });
-  stageEl.addEventListener('sceneend', (e) => { log('scene', e.detail.completed ? 'the end' : 'stopped'); $('#scene').textContent = 'Play a scene: “The plan”'; });
+  stageEl.addEventListener('pixel-scenestep', (e) => { const s = e.detail.step; if (s.actor && !s.face) log(s.actor, Object.entries(s).filter(([k]) => k !== 'actor').map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ')); });
+  stageEl.addEventListener('pixel-sceneend', (e) => { log('scene', e.detail.completed ? 'the end' : 'stopped'); $('#scene').textContent = 'Play a scene: “The plan”'; });
   // The page's own submit handling: show the letter (the scene's goose picks it up), then thank the reader.
   $('#signup').addEventListener('submit', (e) => { e.preventDefault(); $('#signup .letter').hidden = false; $('#signup-done').textContent = 'Sealed. The goose is on it…'; });
-  stageEl.addEventListener('sceneevent', (e) => {
+  stageEl.addEventListener('pixel-sceneevent', (e) => {
     if (e.detail.name !== 'delivered') return;
     const letter = $('#signup .letter');
     letter.hidden = true; letter.style.visibility = '';
     $('#signup').reset();
     $('#signup-done').textContent = 'Delivered. Welcome aboard!';
   });
-  stageEl.addEventListener('sceneend', (e) => {
+  stageEl.addEventListener('pixel-sceneend', (e) => {
     if (e.detail.scene !== 'the mail' || e.detail.completed) return;
     if (goose.carrying) goose.drop('back');   // interrupted: put the letter back for another try
   });
-  for (const ev of ['pickup', 'deliver', 'exit', 'enter']) goose.addEventListener(ev, () => log('goose', ev));
+  for (const ev of ['pickup', 'deliver', 'exit', 'enter']) goose.addEventListener(`pixel-${ev}`, () => log('goose', ev));
   $('#think').onclick = () => { const c = $('#moss'); if (c.perform('think', { ms: 3200 })) c.say('hmm…', 1600); };
   $('#say').onclick = () => goose.say(['honk?', 'nice trail', 'mine.', 'HONK'][(Math.random() * 4) | 0]);
 </script>

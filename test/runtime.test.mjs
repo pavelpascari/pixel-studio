@@ -357,3 +357,16 @@ test('StateMachine: an input named like a built-in key is not there until set', 
   m.start();
   assert.equal(m.node, 'a');
 });
+
+import { sceneEventName } from '../src/runtime/pixel-stage.js';
+import { SPRITE_EVENTS } from '../src/runtime/pixel-sprite.js';
+
+test('scenes keep short event names: actor and stage events map to their pixel- DOM names, others stay', () => {
+  for (const n of ['tap', 'burst', 'calm', 'arrive', 'land', 'enter', 'exit', 'pickup', 'drop', 'deliver', 'catchup', 'activity', 'sceneevent', 'fastscroll', 'scrollsettle'])
+    assert.equal(sceneEventName(n, true), `pixel-${n}`, n);
+  assert.equal(sceneEventName('actorstate', true), 'pixel-activity');   // the old name still works
+  for (const n of ['click', 'submit', 'visible', 'pointerdown', 'pixel-tap']) assert.equal(sceneEventName(n, true), n, n);
+  // on ordinary elements nothing changes ("drop" is the native drag-and-drop event there)
+  for (const n of ['drop', 'tap', 'click']) assert.equal(sceneEventName(n, false), n, n);
+  assert.deepEqual([...SPRITE_EVENTS].sort(), ['burst', 'calm', 'end', 'error', 'event', 'ready', 'statechange']);
+});
