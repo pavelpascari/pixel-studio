@@ -1,6 +1,6 @@
 // Public API of the Pixel Studio engine (isomorphic: browser + Node, zero dependencies).
 export { validate, compile, TRACK_PROPS } from './spec.js';
-export { renderFrame, renderAnimation, renderSheet, animationMeta, resolveStyle, lodForRes, DETAIL_PRESETS, DETAIL_NAMES } from './render.js';
+export { renderFrame, renderAnimation, renderSheet, animationMeta, resolveStyle, lodForRes, DETAIL_PRESETS, DETAIL_NAMES, MAX_RES } from './render.js';
 export { buildRamp, parseHex, toHex } from './color.js';
 export { TEXTURES } from './textures.js';
 export { SHAPE_TYPES } from './shapes.js';

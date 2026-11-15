@@ -321,3 +321,39 @@ test('runScene: carry, exit and enter become actor orders', async () => {
   assert.deepEqual(log.slice(0, 4), ['goose.hurry 1.8', 'goose.pickUp:start', 'goose.pickUp:end', 'goose.hurry 1']);   // hurried for that step only
   assert.deepEqual(log.filter((l) => l.endsWith(':start')), ['goose.pickUp:start', 'goose.exit:start', 'goose.enter:start', 'goose.drop:start']);
 });
+
+test('runScene: a looping scene whose steps finish at once does not starve the page', async () => {
+  const { env, log, stop } = fakeEnv({ fail: ['goTo'] });
+  const p = runScene({ loop: true, steps: [{ actor: 'nobody', goTo: '#x' }, { emit: 'tick' }] }, env);
+  const timerRan = await new Promise((r) => setTimeout(() => r(true), 20));   // never fires if the loop spins
+  assert.equal(timerRan, true);
+  stop();
+  assert.equal(await p, false);
+  assert.ok(log.filter((l) => l === 'emit tick').length <= 2, 'instant passes are spaced out');
+});
+
+test('checkScene: a looping scene needs a step that takes time', () => {
+  assert.equal(checkScene({ loop: true, steps: [{ emit: 'a' }, { emit: 'b' }] })[0]?.path, '$.loop');
+  assert.deepEqual(checkScene({ loop: true, steps: [{ emit: 'a' }, { wait: 100 }] }), []);
+  assert.deepEqual(checkScene({ loop: 3, steps: [{ emit: 'a' }] }), []);
+});
+
+test('checkBundle: types are checked, minor format versions play, built-in names are just names', () => {
+  const ok = () => ({ format: 'pixel-sprite/1', animations: { idle: { row: 0, frames: 4, fps: 8, loop: true } }, variants: [{ res: 16, frameW: 16, frameH: 16, image: 'data:,' }] });
+  assert.ok(checkBundle({ ...ok(), format: 'pixel-sprite/1.2' }));
+  assert.throws(() => checkBundle({ ...ok(), format: 'pixel-sprite/2' }), /format is/);
+  assert.throws(() => checkBundle({ ...ok(), animations: [] }), /animations must be an object/);
+  assert.throws(() => checkBundle({ ...ok(), animations: { idle: { row: 0, frames: 4, fps: 8, loop: 'no' } } }), /loop must be/);
+  assert.throws(() => checkBundle({ ...ok(), variants: [{ res: 16, frameW: '16', frameH: 16, image: 'data:,' }] }), /frameW/);
+  assert.throws(() => checkBundle({ ...ok(), points: { beak: 5 } }), /point "beak"/);
+  assert.throws(() => checkBundle({ ...ok(), states: { nodes: { a: { anim: 'idle' } }, transitions: {} } }), /transitions must be an array/);
+  assert.throws(() => checkBundle({ ...ok(), states: { nodes: { a: { anim: 'toString' } } } }), /unknown animation "toString"/);
+  assert.equal(checkBundle(ok()).animations.constructor, undefined);
+});
+
+test('StateMachine: an input named like a built-in key is not there until set', () => {
+  const m = new StateMachine({ initial: 'a', nodes: { a: { anim: 'idle' }, b: { anim: 'walk' } }, transitions: [{ from: 'a', to: 'b', when: 'constructor' }] },
+    ANIMS, { play: () => {}, phase: () => 0 });
+  m.start();
+  assert.equal(m.node, 'a');
+});

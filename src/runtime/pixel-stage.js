@@ -1605,6 +1605,10 @@ export function checkScene(scene, castNames = null) {
     if ('speed' in st && !(typeof st.speed === 'number' && st.speed >= 0.25 && st.speed <= 4)) err(`${p}.speed`, 'speed is how much faster: 0.25 … 4 (1.5 is a hurry)');
   };
   steps(scene.steps, '$.steps');
+  // a loop that never waits would replay instantly, forever
+  const takesTime = (list) => Array.isArray(list) && list.some((st) => st && typeof st === 'object' && !('emit' in st) && (!('together' in st) || takesTime(st.together)));
+  if (scene.loop === true && Array.isArray(scene.steps) && scene.steps.length && !takesTime(scene.steps))
+    err('$.loop', 'a scene that loops forever needs a step that takes time (wait, waitFor, or an actor doing something)');
   return errors;
 }
 
@@ -1616,7 +1620,15 @@ export function checkScene(scene, castNames = null) {
  */
 export async function runScene(scene, env) {
   let stopped = false;
-  const halt = env.stopped.then(() => { stopped = true; return false; });
+  // One stop listener for the whole scene: each waiting step registers here, rather than chaining onto a promise
+  // that never settles (which would pile up reactions in a scene that loops for hours).
+  const waiters = new Set();
+  env.stopped.then(() => { stopped = true; for (const w of waiters) w(false); });
+  const untilStopped = (p) => {
+    let w;
+    const s = new Promise((r) => { w = r; waiters.add(r); });
+    return Promise.race([p, s]).finally(() => waiters.delete(w));
+  };
   const target = (v) => (typeof v !== 'string' ? v : env.actor(v) ?? env.element(v));
   const exec = async (st, path) => {
     if ('wait' in st) return env.wait(st.wait);
@@ -1653,11 +1665,15 @@ export async function runScene(scene, env) {
     env.onStep?.(st, path);
     const p = exec(st, path);
     if (st.async) { p.catch(() => {}); return true; }
-    return Promise.race([p, halt]);
+    return untilStopped(p);
   };
   const times = scene.loop === true ? Infinity : scene.loop || 1;
   for (let n = 0; n < times && !stopped; n++) {
+    const t0 = Date.now();
     for (let i = 0; i < scene.steps.length && !stopped; i++) await run(scene.steps[i], `$.steps[${i}]`);
+    // A pass whose steps all finished at once (every actor missing, say) must not spin: give each pass at least
+    // 100 ms, through a real timer, so the page keeps running.
+    if (n + 1 < times && !stopped) await untilStopped(new Promise((r) => setTimeout(r, Math.max(0, 100 - (Date.now() - t0)))));
   }
   return !stopped;
 }

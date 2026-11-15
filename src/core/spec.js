@@ -12,7 +12,13 @@ const EASES = ['linear', 'smooth', 'step'];
 const OUTLINES = ['none', 'dark', 'selective'];
 
 /** Names that would reach Object.prototype when used as keys. */
-const UNSAFE_NAMES = new Set(['__proto__', 'constructor', 'prototype']);
+// Names that collide with built-in object keys (`{}.toString`, `__proto__`): a material or node called that
+// would look up the wrong thing. Every name-keyed map in a spec rejects them.
+const UNSAFE_NAMES = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty',
+  'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__']);
+const unsafe = (name) => UNSAFE_NAMES.has(name);
+/** How far outside the canvas a coordinate may be, in canvas sizes (keeps sampling and rendering bounded). */
+const REACH = 4;
 const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const isPt = (p) => Array.isArray(p) && p.length === 2 && isNum(p[0]) && isNum(p[1]);
 const isTrackValue = (v) => isNum(v) || (Array.isArray(v) && v.length > 0 && v.every(isNum)) ||
@@ -75,7 +81,7 @@ export function validate(spec) {
   if (spec.figure != null) err('$.figure', '"figure" must be resolved before validating (resolveSpec in the API; the CLI and studio do it for you)');
   unknownKeys(spec.style, 'style', '$.style', warn);
   const size = spec.size ?? [100, 100];
-  if (!isPt(size) || size[0] <= 0 || size[1] <= 0) err('$.size', 'size must be [width, height] in units, e.g. [100, 100]');
+  if (!isPt(size) || size[0] <= 0 || size[1] <= 0 || size[0] > 1000 || size[1] > 1000) err('$.size', 'size must be [width, height] in units (each 1..1000), e.g. [100, 100]');
 
   const mats = spec.materials;
   if (!mats || typeof mats !== 'object' || Array.isArray(mats) || !Object.keys(mats).length) {
@@ -83,6 +89,7 @@ export function validate(spec) {
   } else {
     for (const [name, m] of Object.entries(mats)) {
       const p = `$.materials.${name}`;
+      if (unsafe(name)) { err(p, `"${name}" cannot be used as a material name`); continue; }
       if (typeof m === 'string') { if (!parseHex(m)) err(p, `"${m}" is not a hex colour`); continue; }
       if (!m || typeof m !== 'object') { err(p, 'material must be an object or a hex string'); continue; }
       unknownKeys(m, 'material', p, warn);
@@ -113,6 +120,9 @@ export function validate(spec) {
       if (part.pivot != null && !isPt(part.pivot)) err(`${p}.pivot`, 'pivot must be [x, y]');
       if (part.z != null && !isNum(part.z)) err(`${p}.z`, 'z must be a number');
       if (part.tip != null && !isPt(part.tip)) err(`${p}.tip`, 'tip must be [x, y] (the end of a bone)');
+      for (const k of ['x', 'y', 'rot', 'shade']) if (part[k] != null && !isNum(part[k])) err(`${p}.${k}`, `${k} must be a number (got ${JSON.stringify(part[k])})`);
+      for (const k of ['sx', 'sy']) if (part[k] != null && !(isNum(part[k]) && Math.abs(part[k]) <= 16)) err(`${p}.${k}`, `${k} must be a scale between -16 and 16 (got ${JSON.stringify(part[k])})`);
+      if (part.show != null && !(isNum(part.show) || typeof part.show === 'boolean')) err(`${p}.show`, 'show must be true/false or a number (shown at >= 0.5)');
       if (part.follow != null) {
         if (isNum(part.follow)) { if (part.follow < 0) err(`${p}.follow`, 'follow amount must be >= 0'); }
         else if (!part.follow || typeof part.follow !== 'object' || Array.isArray(part.follow)) err(`${p}.follow`, 'follow must be an amount (e.g. 1) or {"freq": 3, "damping": 0.3, "amount": 1, "max": 40}');
@@ -130,7 +140,16 @@ export function validate(spec) {
         unknownKeys(s, 'shape', sp, warn);
         if (!SHAPE_TYPES.includes(s.type))
           return err(`${sp}.type`, `unknown shape type "${s.type}" (one of ${SHAPE_TYPES.join(', ')})${didYouMean(s.type, SHAPE_TYPES)}`);
-        for (const k of SHAPE_REQUIRED[s.type]) if (!isNum(s[k])) err(`${sp}.${k}`, `${s.type} needs numeric "${k}"`);
+        for (const k of SHAPE_REQUIRED[s.type] ?? []) if (!isNum(s[k])) err(`${sp}.${k}`, `${s.type} needs numeric "${k}"`);
+        // sizes are positive; every coordinate stays within a few canvas sizes (a typo like 1e7 would hang the renderer)
+        for (const k of ['w', 'h', 'r', 'rx', 'ry', 'r2']) if (s[k] != null && !(isNum(s[k]) && s[k] >= 0)) err(`${sp}.${k}`, `${k} must be a number >= 0 (got ${JSON.stringify(s[k])})`);
+        const lim = REACH * Math.max(...(isPt(size) ? size : [100, 100]));
+        const coords = [...['x', 'y', 'w', 'h', 'r', 'cx', 'cy', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'r2'].map((k) => [k, s[k]]),
+          ...(Array.isArray(s.points) ? s.points.flatMap((pt, k) => (Array.isArray(pt) ? pt.map((v) => [`points[${k}]`, v]) : [])) : [])];
+        const far = coords.find(([, v]) => isNum(v) && Math.abs(v) > lim);
+        if (far) err(`${sp}.${far[0]}`, `${far[1]} is far outside the canvas (keep shapes within ±${lim} units)`);
+        for (const k of ['minDetail', 'maxDetail']) if (s[k] != null && ![1, 2, 3].includes(s[k])) err(`${sp}.${k}`, `${k} must be 1, 2 or 3 (got ${JSON.stringify(s[k])})`);
+        if (s.shade != null && !isNum(s.shade)) err(`${sp}.shade`, `shade must be a number (got ${JSON.stringify(s.shade)})`);
         if (s.type === 'ellipse' && !isNum(s.r) && !(isNum(s.rx) && isNum(s.ry))) err(sp, 'ellipse needs "rx" and "ry" (or "r")');
         if (s.type === 'capsule' && !isNum(s.r) && !isNum(s.w)) err(sp, 'capsule needs a radius "r" (or width "w")');
         if (s.type === 'polygon') {
@@ -225,6 +244,7 @@ export function validate(spec) {
     if (!spec.points || typeof spec.points !== 'object' || Array.isArray(spec.points)) err('$.points', 'points must be {"name": {"part": "head", "at": [x, y]}}');
     else for (const [name, pt] of Object.entries(spec.points)) {
       const pp = `$.points.${name}`;
+      if (unsafe(name)) { err(pp, `"${name}" cannot be used as a point name`); continue; }
       if (!pt || typeof pt !== 'object' || Array.isArray(pt)) { err(pp, 'point must be {"part": "head", "at": [x, y] | "tip" | "pivot"}'); continue; }
       unknownKeys(pt, 'point', pp, warn);
       if (!partIds.has(pt.part)) err(`${pp}.part`, `unknown part "${pt.part}"${didYouMean(String(pt.part), [...partIds])}`);
@@ -251,6 +271,7 @@ export function validate(spec) {
     if (!spec.skins || typeof spec.skins !== 'object' || Array.isArray(spec.skins)) err('$.skins', 'skins must be {"name": {"parts": [...], "materials": {...}}}');
     else for (const [name, patch] of Object.entries(spec.skins)) {
       const sp = `$.skins.${name}`;
+      if (unsafe(name)) { err(sp, `"${name}" cannot be used as a skin name`); continue; }
       if (!patch || typeof patch !== 'object' || Array.isArray(patch)) { err(sp, 'a skin is a patch like a variant: {"parts": [...], "materials": {...}, "materialMap": {...}}'); continue; }
       for (const k of Object.keys(patch)) if (!SKIN_KEYS.includes(k)) err(`${sp}.${k}`, `skins can change ${SKIN_KEYS.join(', ')} (not "${k}"): every skin plays the same animations`);
       if (errors.length) continue;
@@ -291,13 +312,15 @@ function validateStates(st, anims, err, warn) {
   if (!nodes || !Object.keys(nodes).length) return err(`${P}.nodes`, 'nodes must name at least one node: {"idle": {"anim": "idle"}}');
   const names = Object.keys(nodes), animNames = Object.keys(anims);
   const inputs = st.inputs ?? {};
+  const isInput = (k) => typeof k === 'string' && Object.hasOwn(inputs, k);
+  for (const k of [...names, ...Object.keys(inputs)]) if (unsafe(k)) err(`${P}`, `"${k}" cannot be used as a node or input name`);
   for (const [k, v] of Object.entries(inputs)) if (!(isNum(v) || typeof v === 'boolean' || v === 'trigger' || typeof v === 'string')) err(`${P}.inputs.${k}`, 'an input starts as a number, true/false, a word, or "trigger"');
   if (st.initial != null && !names.includes(st.initial)) err(`${P}.initial`, `unknown node "${st.initial}"${didYouMean(st.initial, names)}`);
   for (const [n, node] of Object.entries(nodes)) {
     const np = `${P}.nodes.${n}`;
     if (!node || typeof node !== 'object') { err(np, 'a node is {"anim": "walk"}'); continue; }
     if (!animNames.includes(node.anim)) err(`${np}.anim`, `unknown animation "${node.anim}"${didYouMean(String(node.anim), animNames)}`);
-    if (node.rate != null && !((isNum(node.rate) && node.rate > 0 && node.rate <= 4) || (typeof node.rate === 'string' && node.rate in inputs)))
+    if (node.rate != null && !((isNum(node.rate) && node.rate > 0 && node.rate <= 4) || isInput(node.rate)))
       err(`${np}.rate`, `rate is a playback speed 0..4 or the name of an input${typeof node.rate === 'string' ? didYouMean(node.rate, Object.keys(inputs)) : ''}`);
     if (node.then != null && node.then !== 'previous' && !names.includes(node.then)) err(`${np}.then`, `then must be a node or "previous"${didYouMean(String(node.then), names)}`);
     if (node.random != null) {
@@ -310,7 +333,7 @@ function validateStates(st, anims, err, warn) {
     for (const t of String(w).split(/\s*(?:&&|\band\b)\s*/)) {
       const m = t.trim().match(CONDITION_TERM);
       if (!m) err(path, `cannot read "${t}": use name, !name, or name > 3 (joined with &&)`);
-      else if (!(m[2] in inputs)) err(path, `"${m[2]}" is not an input${didYouMean(m[2], Object.keys(inputs))}`);
+      else if (!isInput(m[2])) err(path, `"${m[2]}" is not an input${didYouMean(m[2], Object.keys(inputs))}`);
     }
   };
   if (st.transitions != null && !Array.isArray(st.transitions)) err(`${P}.transitions`, 'transitions must be an array');
@@ -324,8 +347,8 @@ function validateStates(st, anims, err, warn) {
   (Array.isArray(st.interactions) ? st.interactions : []).forEach((it, i) => {
     const ip = `${P}.interactions[${i}]`;
     if (!['click', 'enter', 'leave', 'burst', 'calm'].includes(it?.on)) err(`${ip}.on`, 'on must be "click", "enter", "leave", "burst" (a quick run of clicks) or "calm" (the run is over)');
-    if (it?.fire != null && !(it.fire in inputs)) err(`${ip}.fire`, `"${it.fire}" is not an input`);
-    for (const k of Object.keys(it?.set ?? {})) if (!(k in inputs)) err(`${ip}.set.${k}`, `"${k}" is not an input`);
+    if (it?.fire != null && !isInput(it.fire)) err(`${ip}.fire`, `"${it.fire}" is not an input`);
+    for (const k of Object.keys(it?.set ?? {})) if (!isInput(k)) err(`${ip}.set.${k}`, `"${k}" is not an input`);
   });
 }
 

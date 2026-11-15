@@ -24,6 +24,7 @@ const defined = (o) => Object.fromEntries(Object.entries(o || {}).filter(([, v])
 export function resolveStyle(compiled, res, overrides = {}) {
   const lod = Number(overrides.lod) || lodForRes(res);
   if (!DETAIL_PRESETS[lod]) throw new Error(`lod must be 1, 2 or 3 (got ${overrides.lod})`);
+  checkOverrides(overrides);
   return {
     light: -45, // azimuth in degrees, 0 = from top, negative = from the left
     elevation: 50,
@@ -39,6 +40,20 @@ export function resolveStyle(compiled, res, overrides = {}) {
     lod,
   };
 }
+
+/** Style overrides follow the same rules as a spec's "style"; a bad one throws a readable error. */
+function checkOverrides(o) {
+  const bad = (k, rule) => { throw new Error(`${k} ${rule} (got ${JSON.stringify(o[k])})`); };
+  if (o.tones != null && !(Number.isInteger(o.tones) && o.tones >= 2 && o.tones <= 6)) bad('tones', 'must be a whole number 2..6');
+  for (const k of ['light', 'elevation', 'ambient', 'curvature', 'texture', 'hueShift'])
+    if (o[k] != null && !(typeof o[k] === 'number' && Number.isFinite(o[k]))) bad(k, 'must be a number');
+  if (o.outline != null && !['none', 'dark', 'selective'].includes(o.outline)) bad('outline', 'must be dark, selective or none');
+  for (const k of ['dither', 'innerLines', 'contactShadow', 'snap', 'flip'])
+    if (o[k] != null && typeof o[k] !== 'boolean') bad(k, 'must be true or false');
+}
+
+/** The largest frame we render: bigger is never pixel art, and a typo like 3000 would take minutes. */
+export const MAX_RES = 512;
 
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 
@@ -87,7 +102,7 @@ export function renderFrame(compiled, { res = 32, anim, frame = 0, style } = {})
   // Shapes of the same material inside one part form one surface for lighting (no seams where
   // they overlap): the normal comes from the union (min) of their distance fields.
   for (const e of parts) {
-    e.surface = {};
+    e.surface = Object.create(null);
     for (const sh of e.shapes) {
       if (sh.op === 'cut') continue;
       const g = (e.surface[sh.material] ??= { shapes: [], R: 0 });
@@ -294,7 +309,7 @@ export function animationMeta(anim) {
 
 /** Render all frames of one animation. */
 export function renderAnimation(compiled, animName, res, overrides = {}) {
-  if (!(res > 0)) throw new Error(`res must be a positive number of pixels (got ${res})`);
+  if (!(res > 0 && res <= MAX_RES)) throw new Error(`res must be 1..${MAX_RES} pixels (got ${res})`);
   const style = resolveStyle(compiled, res, overrides);
   const anim = compiled.animations[animName];
   if (!anim) throw new Error(`unknown animation "${animName}" (have: ${Object.keys(compiled.animations).join(', ')})`);

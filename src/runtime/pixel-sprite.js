@@ -38,6 +38,11 @@
 // and pauses while off-screen.
 
 export const BUNDLE_FORMAT = 'pixel-sprite/1';
+// Bundles of the same major version play: "pixel-sprite/1.1" adds things a /1 runtime may ignore.
+const FORMAT_MAJOR = /^pixel-sprite\/1(?:\.\d+)*$/;
+const isObj = (o) => o != null && typeof o === 'object' && !Array.isArray(o);
+// Name-keyed maps without a prototype, so "constructor" or "toString" is just a name that is not there.
+const bare = (o) => Object.assign(Object.create(null), o);
 const MAX_BACKING = 4096;   // longest canvas side in device px
 
 const report = (e) => (typeof reportError === 'function' ? reportError(e) : console.error(e));
@@ -87,13 +92,23 @@ export const clock = (() => {
 /** Throw a clear error unless `b` looks like a pixel-sprite/1 bundle. Returns b. */
 export function checkBundle(b, where = 'bundle') {
   const fail = (msg) => { throw new Error(`pixel-sprite: ${where}: ${msg}`); };
-  if (!b || typeof b !== 'object') fail('not a JSON object');
-  if (b.format !== BUNDLE_FORMAT) fail(`format is ${JSON.stringify(b.format)}, expected "${BUNDLE_FORMAT}"`);
-  const anims = b.animations && typeof b.animations === 'object' ? Object.entries(b.animations) : [];
+  if (!isObj(b)) fail('not a JSON object');
+  if (typeof b.format !== 'string' || !FORMAT_MAJOR.test(b.format)) fail(`format is ${JSON.stringify(b.format)}, expected "${BUNDLE_FORMAT}"`);
+  if (b.animations != null && !isObj(b.animations)) fail('animations must be an object keyed by name');
+  b.animations = bare(b.animations);
+  const anims = Object.entries(b.animations);
   if (!anims.length) fail('has no animations');
   for (const [name, a] of anims) {
     if (!(Number.isInteger(a?.row) && a.row >= 0 && Number.isInteger(a.frames) && a.frames >= 1 && a.frames <= 256 && a.fps > 0 && a.fps <= 60))
       fail(`animation "${name}" needs integer row >= 0, integer frames 1..256 and fps above 0 and at most 60`);
+    if (a.loop != null && typeof a.loop !== 'boolean') fail(`animation "${name}": loop must be true or false`);
+  }
+  if (b.size != null && !(Array.isArray(b.size) && b.size.length === 2 && b.size.every((n) => typeof n === 'number' && n > 0))) fail('size must be [width, height] in units');
+  if (b.ground != null && !(typeof b.ground === 'number' && b.ground >= 0)) fail('ground must be a number (the foot line in units)');
+  if (b.points != null) {
+    if (!isObj(b.points)) fail('points must be an object keyed by name');
+    b.points = bare(b.points);
+    for (const [n, pt] of Object.entries(b.points)) if (!isObj(pt)) fail(`point "${n}" must be an object of per-animation positions`);
   }
   for (const [name, a] of anims) {
     if (a.durations != null && !(Array.isArray(a.durations) && a.durations.length === a.frames && a.durations.every((d) => Number.isFinite(d) && d >= 1)))
@@ -102,14 +117,17 @@ export function checkBundle(b, where = 'bundle') {
       fail(`animation "${name}": events must be [{frame, name}] with frames inside the animation`);
   }
   if (b.states != null) {
+    if (!isObj(b.states)) fail('states must be an object');
     const nodes = b.states.nodes;
-    if (!nodes || typeof nodes !== 'object' || !Object.keys(nodes).length) fail('states has no nodes');
+    if (!isObj(nodes) || !Object.keys(nodes).length) fail('states has no nodes');
+    b.states.nodes = bare(nodes);
     for (const [n, node] of Object.entries(nodes)) if (!b.animations[node?.anim]) fail(`states node "${n}" plays unknown animation "${node?.anim}"`);
-    for (const t of b.states.transitions ?? []) parseCondition(t.when);
+    for (const k of ['transitions', 'interactions']) if (b.states[k] != null && !Array.isArray(b.states[k])) fail(`states.${k} must be an array`);
+    for (const t of b.states.transitions ?? []) parseCondition(t?.when);
   }
   if (!Array.isArray(b.variants) || !b.variants.length) fail('has no variants');
   for (const v of b.variants) {
-    if (!(v?.frameW > 0 && v.frameH > 0)) fail(`variant ${v?.res} needs frameW and frameH`);
+    if (!(Number.isInteger(v?.frameW) && v.frameW > 0 && Number.isInteger(v.frameH) && v.frameH > 0)) fail(`variant ${v?.res} needs whole-number frameW and frameH`);
     if (typeof v.image === 'string') continue;
     // A skin stored as a change to the default sheet of the same resolution.
     if (!v.skin || !b.variants.some((d) => !d.skin && d.res === v.res && typeof d.image === 'string')) fail(`variant ${v.res} needs an image`);
@@ -125,7 +143,9 @@ function fetchBundle(url) {
   let p = bundles.get(url);
   if (!p) {
     p = fetch(url)
-      .then((r) => { if (!r.ok) throw new Error(`pixel-sprite: ${url} → HTTP ${r.status}`); return r.json(); })
+      .then((r) => { if (!r.ok) throw new Error(`pixel-sprite: ${url} → HTTP ${r.status}`); return r.text(); })
+      // a server that answers a missing file with an HTML page (SPA fallbacks) gets a message naming the URL
+      .then((t) => { try { return JSON.parse(t); } catch { throw new Error(`pixel-sprite: ${url} is not JSON (${/^\s*</.test(t) ? 'got an HTML page: is the path right?' : 'could not parse it'})`); } })
       .then((b) => checkBundle(b, url));
     bundles.set(url, p);
     p.catch(() => { if (bundles.get(url) === p) bundles.delete(url); });
@@ -177,6 +197,8 @@ async function applySkin(img, v, over) {
 }
 async function decodeImage(url, v) {
   const img = new Image();
+  // Sheets on another origin (a CDN) need CORS, or skins and hit tests cannot read their pixels.
+  if (!url.startsWith('data:')) img.crossOrigin = 'anonymous';
   img.src = url;
   try { await img.decode(); } catch { throw new Error(`pixel-sprite: could not decode the ${v.res} px sheet (${url.startsWith('data:') ? 'data URL' : url})`); }
   if (typeof createImageBitmap === 'function') { try { return await createImageBitmap(img); } catch { /* fall back to the <img> */ } }
@@ -300,7 +322,7 @@ export function parseCondition(src) {
 export class StateMachine {
   constructor(def, animations, host) {
     this.def = def; this.anims = animations; this.host = host;
-    this.inputs = {}; this.triggers = new Set();
+    this.inputs = Object.create(null); this.triggers = new Set();
     for (const [k, v] of Object.entries(def.inputs ?? {})) this.inputs[k] = v === 'trigger' ? false : v;
     this.transitions = (def.transitions ?? []).map((t) => ({ ...t, test: parseCondition(t.when), from: [].concat(t.from ?? '*') }));
     this.node = null; this.prev = null; this.pending = null; this.fidget = null; this.wait = 0;

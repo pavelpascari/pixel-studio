@@ -23,12 +23,16 @@
 //   style flags (preview, ascii, render, export, bundle): --lod 1|2|3 --tones n --texture 0..1 --dither true|false
 //                                                         --outline dark|selective|none --light deg --flip
 //   pixel brief                                      print the agent brief (spec format docs)
+//   pixel help                                       this text
+//
+//   --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures and motion models first
+//   errors print as one line and exit 1; PIXEL_DEBUG=1 adds the stack trace
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validate, compile, renderSheet, renderAnimation, renderFrame, resolveStyle,
-  contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, samplePose, worldMatrices,
+  contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, samplePose, worldMatrices, MAX_RES,
 } from '../src/core/index.js';
 import { encodePNG } from '../src/node/png.js';
 
@@ -41,7 +45,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
-      const [k, v] = a.slice(2).split('=');
+      const eq = a.indexOf('='), k = eq < 0 ? a.slice(2) : a.slice(2, eq), v = eq < 0 ? undefined : a.slice(eq + 1);
       args[k] = v ?? (!BOOLEAN_FLAGS.has(k) && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true);
     } else args._.push(a);
   }
@@ -99,25 +103,34 @@ function compileOrExit(spec) {
   return c;
 }
 
+/** A numeric flag, or a clear error naming what was typed. */
+const numFlag = (a, k) => {
+  if (a[k] == null) return undefined;
+  const n = Number(a[k]);
+  if (a[k] === true || !Number.isFinite(n)) fail(`--${k} must be a number (got "${a[k] === true ? '' : a[k]}")`);
+  return n;
+};
 const overridesFrom = (a) => ({
-  lod: a.lod ? Number(a.lod) : undefined,
-  tones: a.tones ? Number(a.tones) : undefined,
-  texture: a.texture != null ? Number(a.texture) : undefined,
+  lod: a.lod ? numFlag(a, 'lod') : undefined,
+  tones: numFlag(a, 'tones'),
+  texture: numFlag(a, 'texture'),
   dither: a.dither != null ? a.dither !== 'false' : undefined,
   outline: a.outline === true ? fail('--outline needs a value: dark, selective or none') : a.outline,
-  light: a.light != null ? Number(a.light) : undefined,
+  light: numFlag(a, 'light'),
   flip: a.flip && a.flip !== 'false' ? true : undefined,
 });
 
 const resList = (v, d) => {
   const list = String(v ?? d).split(',').map(Number);
-  if (!list.length || list.some((n) => !Number.isInteger(n) || n <= 0)) fail(`--res must be positive whole numbers, e.g. 16,32,64 (got "${v}")`);
+  if (!list.length || list.some((n) => !Number.isInteger(n) || n <= 0 || n > MAX_RES)) fail(`--res must be whole numbers 1..${MAX_RES}, e.g. 16,32,64 (got "${v}")`);
   return list;
 };
 const oneRes = (v, d) => {
   if (v != null && String(v).includes(',')) fail(`--res takes one resolution here (got "${v}"); use bundle or preview for several`);
   return resList(v, d)[0];
 };
+/** --frame n, wrapped into 0..frames-1 (so -1 is the last frame). */
+const frameIndex = (v, frames) => { const n = Math.trunc(Number(v) || 0); return ((n % frames) + frames) % frames; };
 function animOrExit(c, name) {
   const key = name ?? Object.keys(c.animations)[0];
   if (!c.animations[key]) fail(`no animation "${name}" (have: ${Object.keys(c.animations).join(', ')})`);
@@ -125,6 +138,19 @@ function animOrExit(c, name) {
 }
 const stem = (p) => basename(p).replace(/\.json$/, '');
 const pngDataURL = (w, h, rgba) => 'data:image/png;base64,' + encodePNG(w, h, rgba).toString('base64');
+
+// Anything that throws becomes one line on stderr and exit code 1 (PIXEL_DEBUG=1 shows the stack).
+// A closed pipe (`pixel ascii … | head`) is not an error, and the handler must never run twice: writing the
+// message to a closed stderr would throw again.
+let crashing = false;
+const crash = (e) => {
+  if (e?.code === 'EPIPE') process.exit(0);
+  if (crashing) process.exit(1);
+  crashing = true;
+  try { console.error(`error: ${e?.message ?? e}`); if (process.env.PIXEL_DEBUG) console.error(e?.stack); } finally { process.exit(1); }
+};
+process.on('uncaughtException', crash);
+process.on('unhandledRejection', crash);
 
 const [cmd, ...rest] = process.argv.slice(2);
 const args = parseArgs(rest);
@@ -181,7 +207,7 @@ switch (cmd) {
     const anim = animOrExit(c, args.anim);
     const frames = args.frame === 'all'
       ? [...Array(c.animations[anim].frames).keys()]
-      : [(Number(args.frame) || 0) % c.animations[anim].frames];
+      : [frameIndex(args.frame, c.animations[anim].frames)];
     const style = resolveStyle(c, res, overridesFrom(args));
     for (const f of frames) {
       const fr = renderFrame(c, { res, anim, frame: f, style });
@@ -251,7 +277,7 @@ switch (cmd) {
   case 'where': {
     const c = compileOrExit(await loadSpec(args._[0]));
     const anim = c.animations[animOrExit(c, args.anim)];
-    const frame = (Number(args.frame) || 0) % anim.frames;
+    const frame = frameIndex(args.frame, anim.frames);
     const pose = samplePose(c, anim, frame);
     const { world, visible } = worldMatrices(c.parts, pose);
     const at = (m, [x, y]) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]].map((v) => +v.toFixed(1));
@@ -275,7 +301,12 @@ switch (cmd) {
     if (extra.length) process.stdout.write(`\n## Plug-ins loaded for this project\n\n${extra.map((p) => `- ${p.kind} \`${p.name}\`${p.describe ? `: ${p.describe}` : ''}`).join('\n')}\n`);
     break;
   }
+  case 'help': case '--help': case '-h': case undefined:
   default:
-    console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n'));
-    process.exit(cmd ? 1 : 0);
+    {
+      const lines = readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1);   // skip the #! line
+      const header = lines.slice(0, lines.findIndex((l) => !l.startsWith('//')));
+      console.log(header.map((l) => l.slice(3)).join('\n'));
+    }
+    process.exit(!cmd || ['help', '--help', '-h'].includes(cmd) ? 0 : 1);
 }

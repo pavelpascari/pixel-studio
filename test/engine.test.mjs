@@ -266,3 +266,28 @@ test('spec data cannot reach Object.prototype (unsafe ids and names are rejected
   expandFigure({ animations: { walk: { motion: 'walk', tracks: JSON.parse('{"__proto__": {"polluted": [1]}}') } } }, fig);
   assert.equal(({}).polluted, undefined);
 });
+
+test('validate: names that collide with built-in object keys are rejected everywhere', () => {
+  const spec = { materials: { toString: { color: '#fff' } }, parts: [{ id: 'a', shapes: [{ type: 'circle', cx: 50, cy: 50, r: 10, material: 'toString' }] }] };
+  assert.ok(validate(spec).errors.some((e) => e.path === '$.materials.toString'));
+  const st = { materials: { m: '#fff' }, parts: [{ id: 'a', shapes: [{ type: 'circle', cx: 50, cy: 50, r: 10, material: 'm' }] }],
+    animations: { idle: { frames: 1 } }, states: { nodes: { idle: { anim: 'idle' } }, transitions: [{ to: 'idle', when: 'constructor' }] } };
+  assert.ok(validate(st).errors.some((e) => /constructor/.test(e.message)));
+});
+
+test('validate: part and shape numbers are checked, and shapes stay near the canvas', () => {
+  const paths = (part, shape) => validate({ materials: { m: '#fff' }, parts: [{ id: 'a', ...part, shapes: [{ type: 'circle', cx: 50, cy: 50, r: 10, material: 'm', ...shape }] }] }).errors.map((e) => e.path);
+  assert.deepEqual(paths({}, {}), []);
+  assert.deepEqual(paths({ x: 'abc', rot: '9', sx: 1e6 }, {}), ['$.parts[0].x', '$.parts[0].rot', '$.parts[0].sx']);
+  assert.deepEqual(paths({}, { r: -20 }), ['$.parts[0].shapes[0].r']);
+  assert.deepEqual(paths({}, { minDetail: 'x' }), ['$.parts[0].shapes[0].minDetail']);
+  assert.deepEqual(paths({}, { cx: 1e7 }), ['$.parts[0].shapes[0].cx']);
+});
+
+test('resolveStyle: overrides follow the style rules', () => {
+  const c = compile({ materials: { m: '#fff' }, parts: [{ id: 'a', shapes: [{ type: 'circle', cx: 50, cy: 50, r: 10, material: 'm' }] }], animations: { idle: { frames: 1 } } });
+  assert.throws(() => resolveStyle(c, 32, { tones: NaN }), /tones must be a whole number/);
+  assert.throws(() => resolveStyle(c, 32, { outline: 'foo' }), /outline must be/);
+  assert.throws(() => resolveStyle(c, 32, { lod: 9 }), /lod must be 1, 2 or 3/);
+  assert.equal(resolveStyle(c, 32, { tones: 4 }).tones, 4);
+});

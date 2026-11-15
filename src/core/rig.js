@@ -130,7 +130,8 @@ function samplesFor(sh) {
   let pts = edgeSamples.get(sh);
   if (pts) return pts;
   pts = [];
-  const [x0, y0, x1, y1] = sh.bbox, step = 0.75;
+  // 0.75-unit steps, coarser for huge shapes so the work stays bounded (~250k samples)
+  const [x0, y0, x1, y1] = sh.bbox, step = Math.max(0.75, Math.sqrt(((x1 - x0) * (y1 - y0)) / 250000) || 0.75);
   for (let y = y0; y <= y1 + 1e-9; y += step) for (let x = x0; x <= x1 + 1e-9; x += step) {
     const d = sh.sdf(x, y);
     if (d <= 0 && d > -1.5) pts.push([x, y]);
