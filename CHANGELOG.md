@@ -6,6 +6,9 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Removed
+- `demo/pp.html`, the P/P studio site sketch: it is a personal site, not an engine demo, so it no longer ships here.
+
 ## [0.2.0-alpha.0] - 2026-11-15
 
 The first alpha. Install from GitHub: `npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0`.

@@ -107,7 +107,7 @@ spec playgrounds that render as you type. The reference docs:
 | `references/` | Where motion data comes from: every source cited, every measured value and frame logged ([references/README.md](references/README.md), credits in [references/CREDITS.md](references/CREDITS.md)). |
 | `studio/` | The studio (live JSON editor, animated stage with onion skin and scrubbing, all detail levels at once, shader knobs, sheet, export, an **Agent** tab), the figure viewer, the goose workbench and the playground. |
 | `site/` | The docs site with live examples. |
-| `demo/` | Example pages: `index.html` (a landing page with a goose driven by its state machine), `flock.html` (unruly geese roaming a lawn), `stage.html` (characters climbing, jumping on and hiding behind cards), `runner.html` (Fox Trail, a tiny runner game), `pp.html` (a studio website whose goose follows you down the page). |
+| `demo/` | Example pages: `index.html` (a landing page with a goose driven by its state machine), `flock.html` (unruly geese roaming a lawn), `stage.html` (characters climbing, jumping on and hiding behind cards), `runner.html` (Fox Trail, a tiny runner game). |
 | `docs/` | Documentation; `docs/research/` holds research notes for upcoming work. |
 
 ## Levels of detail and texture
