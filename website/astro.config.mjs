@@ -12,9 +12,8 @@ export default defineConfig({
       name: 'Pixel Studio',
       // from README.md
       tagline: 'Agents describe characters; the engine draws them as pixel art at every level of detail; websites play them with one tag.',
-      // TODO: the production URL. With wrangler.jsonc as generated, that is
-      // https://pixel-studio.<your-subdomain>.workers.dev (or your custom domain).
-      url: 'https://pixel-studio.example.workers.dev',
+      // The production URL (Cloudflare Workers, see wrangler.jsonc).
+      url: 'https://pixel-studio.pascaripavel.workers.dev',
       // from git origin
       repo: 'https://github.com/pavelpascari/pixel-studio',
       // the header shows its version (0.2.0-alpha.0)
