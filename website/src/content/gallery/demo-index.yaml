@@ -1,0 +1,8 @@
+# A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
+# tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
+title: "Trailmark — demo site using <pixel-sprite>"
+description: A page from the demo/ folder.
+href: "/apps/demo/"
+kind: demo
+tags: ["demo"]
+order: 20

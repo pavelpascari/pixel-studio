@@ -1,0 +1,25 @@
+// Cloudflare Workers config: the site is deployed as a static-assets-only Worker (no server code).
+// Docs: https://github.com/pavelpascari/astro-project-site (Deploy).
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // CHANGE ME: the Worker's name. It becomes the URL https://<name>.<your-subdomain>.workers.dev and is part of
+  // every preview URL (https://<alias>-<name>.<your-subdomain>.workers.dev). Lowercase letters, digits and dashes.
+  "name": "pixel-studio",
+  // Bump deliberately (e.g. when upgrading wrangler); it pins the Workers runtime behaviour.
+  "compatibility_date": "2026-11-18",
+  "assets": {
+    // `astro build` output, including mirrored apps and public/_headers.
+    "directory": "./dist",
+    // Unknown URLs get dist/404.html with status 404.
+    "not_found_handling": "404-page",
+    // /docs → /docs/ (folder with index.html), /page.html → /page. Matches Astro's directory output and keeps
+    // relative URLs inside mirrored apps (../src/x.js) resolving the same way they do in dev.
+    "html_handling": "auto-trailing-slash"
+  },
+  // Serve on <name>.<subdomain>.workers.dev. Set to false once a custom domain is the only public address.
+  "workers_dev": true,
+  // Required for per-PR preview aliases (wrangler versions upload --preview-alias).
+  "preview_urls": true
+  // Custom domain (the zone must be on the same Cloudflare account). Uncomment, then `npm run deploy`:
+  // "routes": [{ "pattern": "docs.example.com", "custom_domain": true }]
+}
