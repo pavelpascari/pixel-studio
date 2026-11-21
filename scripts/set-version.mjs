@@ -4,7 +4,7 @@
 //   npm run version:set -- 0.2.0-alpha.1 [--date 2026-11-21]
 //
 // 1. `version` in packages/pixel-studio/package.json and packages/runtime/package.json
-// 2. pixel-studio's dependency on @pixel-studio/runtime, pinned to exactly that version
+// 2. @pixel-studio/core's dependency on @pixel-studio/runtime, pinned to exactly that version
 // 3. CHANGELOG.md: the `## [Unreleased]` notes move under `## [<version>] - <date>` (an empty Unreleased stays on
 //    top); fails if there is nothing to release
 // 4. package-lock.json, with the npm that runs this script

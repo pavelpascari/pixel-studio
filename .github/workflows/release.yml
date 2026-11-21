@@ -1,16 +1,16 @@
 # Release: push a signed tag `v<version>` matching the version of both packages (they always share it).
 #
 #   build (read-only token, no OIDC):
-#     1. checks the tag against packages/pixel-studio and packages/runtime, and pixel-studio's exact runtime pin
+#     1. checks the tag against packages/pixel-studio and packages/runtime, and @pixel-studio/core's exact runtime pin
 #     2. runs the tests, packs both packages, writes their SHA-256 and extracts the version's CHANGELOG section
 #   publish (needs build; runs no project or dependency code: no checkout, no npm install):
 #     3. creates the GitHub release (pre-release for versions with a `-`) with both tarballs, their checksums and the
 #        CHANGELOG section as notes
 #     4. stages both tarballs on npm through trusted publishing (OIDC: no token), under the pre-release's label
 #        (`alpha`, `beta`, `rc`) or `latest`. Staged is not published: a maintainer approves each with 2FA,
-#        @pixel-studio/runtime FIRST (pixel-studio depends on exactly that version), then pixel-studio:
+#        @pixel-studio/runtime FIRST (@pixel-studio/core depends on exactly that version), then pixel-studio:
 #        `npm stage list`, `npm stage approve <stage-id>`. So this workflow alone cannot put a version on npm.
-#        One-time setup on npmjs.com, for each of pixel-studio and @pixel-studio/runtime (after its first publish,
+#        One-time setup on npmjs.com, for each of @pixel-studio/core and @pixel-studio/runtime (after its first publish,
 #        which is by hand: npm cannot stage a brand-new package): Settings → Trusted publishing → GitHub Actions,
 #        user `pavelpascari`, repository `pixel-studio`, workflow `release.yml` (keep this file name), and
 #        "Allow npm publish" and "Allow npm dist-tag" left unticked (staging is always allowed).
@@ -57,7 +57,7 @@ jobs:
           runtime=$(node -p "require('./packages/runtime/package.json').version")
           pin=$(node -p "require('./packages/pixel-studio/package.json').dependencies['@pixel-studio/runtime']")
           if [ "$TAG" != "v$engine" ] || [ "$engine" != "$runtime" ] || [ "$pin" != "$runtime" ]; then
-            echo "::error title=Version mismatch::tag $TAG, pixel-studio $engine, @pixel-studio/runtime $runtime, pin $pin"
+            echo "::error title=Version mismatch::tag $TAG, @pixel-studio/core $engine, @pixel-studio/runtime $runtime, pin $pin"
             exit 1
           fi
           echo "version=$engine" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/release"
           npm pack --workspaces --pack-destination "$RUNNER_TEMP/release"
           cd "$RUNNER_TEMP/release"
-          for file in "pixel-studio-runtime-$VERSION.tgz" "pixel-studio-$VERSION.tgz"; do
+          for file in "pixel-studio-runtime-$VERSION.tgz" "pixel-studio-core-$VERSION.tgz"; do
             test -f "$file"
             sha256sum "$file" > "$file.sha256"
           done
@@ -154,8 +154,8 @@ jobs:
         run: |
           npm --version
           staged=0
-          # The runtime first: pixel-studio depends on exactly this runtime version.
-          for pkg in @pixel-studio/runtime pixel-studio; do
+          # The runtime first: @pixel-studio/core depends on exactly this runtime version.
+          for pkg in @pixel-studio/runtime @pixel-studio/core; do
             file="$(echo "$pkg" | sed 's#^@##; s#/#-#')-$VERSION.tgz"
             if npm view "$pkg@$VERSION" version > /dev/null 2>&1; then
               echo "::notice title=Already on npm::$pkg@$VERSION is already published"
@@ -172,4 +172,4 @@ jobs:
             echo
             echo "Not published yet. Approve with 2FA, **@pixel-studio/runtime first**: \`npm stage list\`, then \`npm stage approve <stage-id>\` for each."
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "::notice title=Staged on npm::Pixel Studio $VERSION is staged; approve @pixel-studio/runtime, then pixel-studio, with npm stage approve (2FA)"
+          echo "::notice title=Staged on npm::Pixel Studio $VERSION is staged; approve @pixel-studio/runtime, then @pixel-studio/core, with npm stage approve (2FA)"

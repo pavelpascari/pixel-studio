@@ -28,7 +28,7 @@ This page covers the element and the bundle format. For the character spec that 
 
 ## Installation
 
-The runtime is a single ES module with no imports, published as [`@pixel-studio/runtime`](https://www.npmjs.com/package/@pixel-studio/runtime) (released with the same version as `pixel-studio`). Copy its `src/pixel-sprite.js` next to your page and load it with a module script. Loading it registers the element as `pixel-sprite` (unless that name is already defined).
+The runtime is a single ES module with no imports, published as [`@pixel-studio/runtime`](https://www.npmjs.com/package/@pixel-studio/runtime) (released with the same version as `@pixel-studio/core`). Copy its `src/pixel-sprite.js` next to your page and load it with a module script. Loading it registers the element as `pixel-sprite` (unless that name is already defined).
 
 ```html
 <script type="module" src="pixel-sprite.js"></script>

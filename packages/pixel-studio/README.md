@@ -11,7 +11,7 @@ agent ──JSON rig──▶ engine (SDF raster + pixel-art shader) ──▶ b
 Plain ES modules, no build step. Node ≥ 20 for the CLI; any current browser for the runtime. MIT licensed.
 Two packages, always released with the same version:
 
-- **`pixel-studio`** (this one): the engine, the `pixel` CLI, the figure library, examples and docs. Its only
+- **`@pixel-studio/core`** (this one): the engine, the `pixel` CLI, the figure library, examples and docs. Its only
   dependency is the runtime.
 - **[`@pixel-studio/runtime`](https://www.npmjs.com/package/@pixel-studio/runtime)**: `<pixel-sprite>` and
   `<pixel-stage>`, the web components that play finished sprites. No dependencies; a site that only shows sprites
@@ -26,13 +26,13 @@ Docs and live demos: **[pixel-studio.sh](https://pixel-studio.sh)**.
 ## Five minutes to a goose on your page
 
 ```bash
-npm i pixel-studio   # brings @pixel-studio/runtime, nothing else
+npm i @pixel-studio/core   # brings @pixel-studio/runtime, nothing else
 ```
 
 Make a character by changing an example (`my-goose.json`):
 
 ```json
-{ "extends": "./node_modules/pixel-studio/examples/goose-base.json",
+{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
   "name": "Marigold",
   "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }
 ```
@@ -101,7 +101,7 @@ Start with [docs/getting-started.md](docs/getting-started.md), or read everythin
 |---|---|
 | `src/core/` | The isomorphic engine: spec validation (JSON paths + did-you-mean), figures and motion models, rig maths and IK, variants, SDF shapes, the rasterizer and pixel-art shader (hue-shifted ramps, lighting, textures, dither, outlines, inner lines, contact shadows), sheets, bundles, export, ASCII, plug-ins. |
 | `src/node/png.js` | The Node PNG encoder the CLI uses. |
-| `src/runtime.js`, `src/stage.js` | `pixel-studio/runtime` and `pixel-studio/stage`: re-export [`@pixel-studio/runtime`](https://www.npmjs.com/package/@pixel-studio/runtime), the web components. |
+| `src/runtime.js`, `src/stage.js` | `@pixel-studio/core/runtime` and `@pixel-studio/core/stage`: re-export [`@pixel-studio/runtime`](https://www.npmjs.com/package/@pixel-studio/runtime), the web components. |
 | `bin/pixel.mjs` | The CLI. `--plugin` loads plug-ins (shapes, textures, motion models; see `examples/plugins/`). |
 | `figures/` | The **figure library**: `goose` (and `goose-front` for its front and back views), `human`, `dog`, `chibi` (front-facing), `blob` (soft body). |
 | `examples/` | Characters: `goose-base` and its variants `goose-root`, `-sudo`, `-phreak`, `-kiddie`, `-greylag`; `pip`; `fox`, `slime`, `robot` (written by a separate agent that only had `SPEC.md` and the CLI); `moss`. |

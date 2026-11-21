@@ -1,21 +1,21 @@
 # JavaScript API reference
 
 This is the reference for the Pixel Studio engine's JavaScript API: every export of
-`src/core/index.js` (`pixel-studio`), the building blocks in `src/core/internal.js` (`pixel-studio/internal`,
-marked **Internal** below), plus `encodePNG` from `src/node/png.js`. The web runtimes (`pixel-studio/runtime`,
-`pixel-studio/stage`) are documented in [runtime.md](runtime.md) and [stage.md](stage.md).
+`src/core/index.js` (`@pixel-studio/core`), the building blocks in `src/core/internal.js` (`@pixel-studio/core/internal`,
+marked **Internal** below), plus `encodePNG` from `src/node/png.js`. The web runtimes (`@pixel-studio/core/runtime`,
+`@pixel-studio/core/stage`) are documented in [runtime.md](runtime.md) and [stage.md](stage.md).
 
 - The engine is plain ES modules with zero dependencies. The same code runs in Node (≥ 20, per
   `package.json` `engines`) and in modern browsers.
 - Import it by path, or by package name when it is installed (`package.json` has an `exports` map:
-  `pixel-studio`, `pixel-studio/internal`, `pixel-studio/runtime`, `pixel-studio/stage`, `pixel-studio/node/png`). Install
-  it with `npm i pixel-studio` (see [getting-started.md](getting-started.md)). The web components are their own package,
-  `@pixel-studio/runtime`, released with the same version; `pixel-studio/runtime` and `pixel-studio/stage` re-export it.
+  `@pixel-studio/core`, `@pixel-studio/core/internal`, `@pixel-studio/core/runtime`, `@pixel-studio/core/stage`, `@pixel-studio/core/node/png`). Install
+  it with `npm i @pixel-studio/core` (see [getting-started.md](getting-started.md)). The web components are their own package,
+  `@pixel-studio/runtime`, released with the same version; `@pixel-studio/core/runtime` and `@pixel-studio/core/stage` re-export it.
 
   ```js
   import { validate, compile, renderSheet } from './src/core/index.js';  // engine (browser + Node)
   import { encodePNG } from './src/node/png.js';                         // Node only (uses node:zlib)
-  // or, installed: import { compile } from 'pixel-studio'; import { encodePNG } from 'pixel-studio/node/png';
+  // or, installed: import { compile } from '@pixel-studio/core'; import { encodePNG } from '@pixel-studio/core/node/png';
   ```
 
 - The character spec format (materials, parts, shapes, animations, `reach`, figures, `extends`, `style`)
@@ -30,8 +30,8 @@ marked **Internal** below), plus `encodePNG` from `src/node/png.js`. The web run
 **Stability.** The project is at version 0.1.0. Nothing here carries a compatibility promise yet. The
 functions in the [typical pipeline](#typical-pipeline) are the intended entry points. Functions marked
 **low-level** expose engine internals (pose sampling, IK, motion generation) and are the most likely
-to change. Functions marked **Internal** are not exported from `pixel-studio` at all: the pipeline calls them for
-you, and tools that need them import `pixel-studio/internal` (`src/core/internal.js`), which carries no promise.
+to change. Functions marked **Internal** are not exported from `@pixel-studio/core` at all: the pipeline calls them for
+you, and tools that need them import `@pixel-studio/core/internal` (`src/core/internal.js`), which carries no promise.
 
 **Registries are read-only.** The lists of shape types, textures and motion models grow when plug-ins register; read them
 with [`shapeTypes()`, `textures()`, `motionModels()`, `leggedModels()`](#constants), which return fresh frozen arrays.
@@ -503,7 +503,7 @@ try {
 
 ### `resolveExtends`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 resolveExtends(spec: object, load: Function, options?: { from?, depth? }): Promise<object>
@@ -547,7 +547,7 @@ console.log(out.name, 'extends' in out, seen);   // red variant false [ [ 'base.
 
 ### `mergeVariant`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 mergeVariant(base: object, variant: object): object
@@ -670,7 +670,7 @@ try {
 
 ### `expandFigure`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 expandFigure(spec: object, figure: object, fit?: object, warn?: Function): object
@@ -933,7 +933,7 @@ console.log(sheet.meta);
 
 ### `buildMixes`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 buildMixes(compiled: CompiledSpec, mixes: { [ "from>to" ]: { frames?, ease?, fps? } }): string[]
@@ -983,7 +983,7 @@ console.log(animationMeta(c.animations.jump));
 
 ### `createImage`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 createImage(w: number, h: number, fill?: [r, g, b, a] | null): Image
@@ -998,7 +998,7 @@ createImage(w: number, h: number, fill?: [r, g, b, a] | null): Image
 
 ### `blit`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 blit(dst: Image, src: Image, dx: number, dy: number, k?: number): void
@@ -1122,7 +1122,7 @@ use them directly to inspect poses (as `pixel where` does) or to build tools.
 
 ### `sampleValue`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 sampleValue(v: TrackValue, t: number, loop: boolean, isStep: boolean, defaultOffset?: number): number
@@ -1162,7 +1162,7 @@ console.log(sampleValue({ wave: 1 }, 0.75, true, true));                 // 0   
 
 ### `frameTime`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 frameTime(anim: { frames: number, loop: boolean }, f: number): number
@@ -1179,7 +1179,7 @@ console.log(frameTime({ frames: 4, loop: true }, 3), frameTime({ frames: 4, loop
 
 ### `samplePose(compiled, anim, f)`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 samplePose(compiled: CompiledSpec, anim: CompiledAnimation, f: number): Pose
@@ -1212,7 +1212,7 @@ console.log(pose.reachMiss);    // []
 
 ### `samplePoseAt`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 samplePoseAt(compiled: CompiledSpec, anim: CompiledAnimation | null, t: number): Pose
@@ -1232,7 +1232,7 @@ Follow-through is a simulation over the whole animation and is only defined per 
 
 ### `followOffsets`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 followOffsets(compiled: CompiledSpec, anim: CompiledAnimation): Map<string, number[]> | null
@@ -1283,7 +1283,7 @@ to posed canvas coordinates.
 
 ### `worldMatrices`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 worldMatrices(parts: CompiledPart[], pose: Pose, adjust?: (t) => void):
@@ -1319,7 +1319,7 @@ console.log(at([70, 50]), visible.get('hand'));  // [ 50, 30 ] true   (the wrist
 
 ### `solveReach`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 solveReach(parts: CompiledPart[], pose: Pose, r: object, target: [x, y], aim?: number | null): number
@@ -1363,7 +1363,7 @@ console.log(Math.round(pose.get('upper').rot), Math.round(pose.get('lower').rot)
 
 ### `overflowForPose`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 overflowForPose(compiled: CompiledSpec, pose: Pose, margin?: number):
@@ -1610,7 +1610,7 @@ const bundle = await buildBundle(compiled, { encode });
 
 ### `bakePoints`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 bakePoints(compiled: CompiledSpec): { [point]: { [anim]: [x, y, rotDeg][] } } | null
@@ -1817,7 +1817,7 @@ this for its bundles.
 
 ### `paletteOf`
 
-**Internal**: import it from `pixel-studio/internal` (`src/core/internal.js`).
+**Internal**: import it from `@pixel-studio/core/internal` (`src/core/internal.js`).
 
 ```ts
 paletteOf(rgba: Uint8Array | Uint8ClampedArray): { colours: number[], idx: Uint8Array } | null
@@ -1840,7 +1840,7 @@ console.log(colours.map((c) => c.toString(16).padStart(8, '0')), idx);
 
 ## Internal helpers
 
-`src/core/internal.js` (`pixel-studio/internal`) re-exports the building blocks marked **Internal** above:
+`src/core/internal.js` (`@pixel-studio/core/internal`) re-exports the building blocks marked **Internal** above:
 `createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`, `frameTime`, `followOffsets`,
 `worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`, `expandFigure`, `paletteOf` and
 `buildMixes`. The CLI, the studio and the tests use them. The source modules export still more; these are internal
@@ -1885,7 +1885,7 @@ usePlugin(module: { default: (api) => void } | ((api) => void)): Promise<void>
   server can re-run a plug-in's setup; a different definition under a taken name throws.
 
 ```js
-import { usePlugin, resolveSpec, compile } from 'pixel-studio';
+import { usePlugin, resolveSpec, compile } from '@pixel-studio/core';
 await usePlugin(await import('./examples/plugins/extras.mjs'));   // star shape, feathers texture, float motion
 ```
 

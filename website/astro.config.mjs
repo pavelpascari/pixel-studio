@@ -19,7 +19,7 @@ export default defineConfig({
       // the header shows its version (both packages always share it)
       versionFrom: '../packages/pixel-studio/package.json',
       // from README.md
-      install: 'npm i pixel-studio',
+      install: 'npm i @pixel-studio/core',
       nav: [
         { label: 'Docs', href: '/docs/' },
         { label: 'Guide', href: '/docs/guide/' },
@@ -77,13 +77,13 @@ export default defineConfig({
             {
               title: 'Install',
               body: '',
-              code: 'npm i pixel-studio   # the engine and CLI; brings @pixel-studio/runtime with it',
+              code: 'npm i @pixel-studio/core   # the engine and CLI; brings @pixel-studio/runtime with it',
               lang: 'sh',
             },
             {
               title: 'Make a character by changing an example (my-goose.json)',
               body: '',
-              code: `{ "extends": "./node_modules/pixel-studio/examples/goose-base.json",
+              code: `{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
   "name": "Marigold",
   "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }`,
               lang: 'json',

@@ -6,6 +6,13 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Renamed: `pixel-studio` is now `@pixel-studio/core`
+- The engine package moves into the `@pixel-studio` organisation, next to `@pixel-studio/runtime`:
+  `npm i @pixel-studio/core`. Imports change with it: `@pixel-studio/core`, `@pixel-studio/core/internal`,
+  `@pixel-studio/core/runtime`, `@pixel-studio/core/stage`, `@pixel-studio/core/node/png`; the example paths become
+  `node_modules/@pixel-studio/core/examples/`. The `pixel` command is unchanged.
+- `pixel-studio` on npm stays at 0.2.0-alpha.1 and is deprecated, pointing here.
+
 ## [0.2.0-alpha.1] - 2026-11-21
 
 ### On npm, as two packages

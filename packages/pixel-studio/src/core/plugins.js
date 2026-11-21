@@ -3,7 +3,7 @@
 // web runtime needs nothing. Registered names validate like built-in ones (JSON paths,
 // did-you-mean) and are listed by `pixel brief`, so agents can use them.
 //
-//   import { registerShape, registerTexture, registerMotion } from 'pixel-studio';
+//   import { registerShape, registerTexture, registerMotion } from '@pixel-studio/core';
 //   registerShape('star', { required: ['cx', 'cy', 'r'], keys: ['r2', 'points'], compile: (s) => ({ sdf, R, bbox }) });
 //   registerTexture('feathers', (x, y, scale) => value);           // -1..1 brightness offset
 //   registerMotion('float', { legged: false, generate: ({ parts, rig, params, samples, loop }) => ({ tracks }) });
