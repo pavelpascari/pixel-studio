@@ -44,6 +44,8 @@ export default defineConfig({
           include: ['README.md', 'CHANGELOG.md', 'CONTRIBUTING.md'],
         },
       ],
+      // The guide (src/content/docs/docs/guide/) before the mounted sections, in the sidebar and the docs cards.
+      docsOrder: ['guide', 'reference', 'project'],
       // Static pages served byte for byte under /apps/, with the folders they load from, so their
       // relative URLs keep working. One gallery entry per page is in src/content/gallery/.
       mirrors: [
