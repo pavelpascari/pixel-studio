@@ -157,13 +157,23 @@ jobs:
           # The runtime first: @pixel-studio/core depends on exactly this runtime version.
           for pkg in @pixel-studio/runtime @pixel-studio/core; do
             file="$(echo "$pkg" | sed 's#^@##; s#/#-#')-$VERSION.tgz"
-            if npm view "$pkg@$VERSION" version > /dev/null 2>&1; then
+            if npm view "$pkg@$VERSION" version --prefer-online > /dev/null 2>&1; then
               echo "::notice title=Already on npm::$pkg@$VERSION is already published"
               continue
             fi
             # No token: npm exchanges this job's OIDC identity (id-token: write) for a one-off credential that
             # can stage, not publish. The version goes live when a maintainer approves it with 2FA.
-            npm stage publish "$file" --tag "$DIST_TAG" --access public
+            # A version published by hand moments before the tag can be missing from `npm view` still; npm then
+            # refuses to stage it, which means it is already there, not that the release failed.
+            if ! out=$(npm stage publish "$file" --tag "$DIST_TAG" --access public 2>&1); then
+              echo "$out"
+              if grep -q 'Cannot stage previously published version' <<< "$out"; then
+                echo "::notice title=Already on npm::$pkg@$VERSION is already published"
+                continue
+              fi
+              exit 1
+            fi
+            echo "$out"
             echo "- \`$pkg@$VERSION\` staged (tag \`$DIST_TAG\`)" >> "$GITHUB_STEP_SUMMARY"
             staged=$((staged + 1))
           done
