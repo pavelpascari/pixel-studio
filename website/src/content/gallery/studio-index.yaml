@@ -1,7 +1,7 @@
 # A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
 # tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
 title: Pixel Studio
-description: A page from the studio/ folder.
+description: "Describe a character and Claude writes its spec; the studio renders it, and the render goes back to Claude to critique."
 href: "/apps/studio/"
 kind: demo
 tags: ["studio"]

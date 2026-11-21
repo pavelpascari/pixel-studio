@@ -12,8 +12,8 @@ export default defineConfig({
       name: 'Pixel Studio',
       // from README.md
       tagline: 'Agents describe characters; the engine draws them as pixel art at every level of detail; websites play them with one tag.',
-      // The production URL (Cloudflare Workers, see wrangler.jsonc).
-      url: 'https://pixel-studio.pascaripavel.workers.dev',
+      // The production URL (a custom domain on the Cloudflare Worker, see wrangler.jsonc).
+      url: 'https://pixel-studio.sh',
       // from git origin
       repo: 'https://github.com/pavelpascari/pixel-studio',
       // the header shows its version (0.2.0-alpha.0)
@@ -32,6 +32,7 @@ export default defineConfig({
           dir: '../docs',
           route: 'reference',
           label: 'Reference',
+          description: 'Write a character, make it move and put it on a page: the spec, figures, runtime, stage, CLI and API.',
           order: ['getting-started.md'],
           exclude: ['plans/**', 'research/**'],
         },
@@ -39,6 +40,7 @@ export default defineConfig({
           dir: '..',
           route: 'project',
           label: 'Project',
+          description: 'The README, what changed in each release, and how to contribute.',
           include: ['README.md', 'CHANGELOG.md', 'CONTRIBUTING.md'],
         },
       ],

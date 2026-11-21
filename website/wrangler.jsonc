@@ -19,7 +19,7 @@
   // Serve on <name>.<subdomain>.workers.dev. Set to false once a custom domain is the only public address.
   "workers_dev": true,
   // Required for per-PR preview aliases (wrangler versions upload --preview-alias).
-  "preview_urls": true
-  // Custom domain (the zone must be on the same Cloudflare account). Uncomment, then `npm run deploy`:
-  // "routes": [{ "pattern": "docs.example.com", "custom_domain": true }]
+  "preview_urls": true,
+  // The public address. Listed here so a deploy keeps it attached to this Worker.
+  "routes": [{ "pattern": "pixel-studio.sh", "custom_domain": true }]
 }

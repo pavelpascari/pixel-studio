@@ -1,7 +1,7 @@
 # A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
 # tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
 title: Goose workbench — Pixel Studio
-description: A page from the studio/ folder.
+description: "One goose, large, with every part and rendering setting switchable: tones, outlines, texture, features."
 href: "/apps/studio/goose.html"
 kind: demo
 tags: ["studio"]

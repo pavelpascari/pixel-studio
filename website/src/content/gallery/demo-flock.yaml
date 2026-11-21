@@ -1,7 +1,7 @@
 # A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
 # tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
 title: The Flock — unruly hacker geese
-description: A page from the demo/ folder.
+description: "Four geese with personalities: click one to provoke it, or move onto the lawn and see who follows."
 href: "/apps/demo/flock.html"
 kind: demo
 tags: ["demo"]
