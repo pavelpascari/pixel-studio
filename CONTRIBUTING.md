@@ -18,7 +18,7 @@ npm run studio          # http://localhost:5173/studio/ , /studio/figures.html ,
 
 | Path | What |
 |---|---|
-| `packages/pixel-studio/` | The `pixel-studio` package: the engine (`src/core`, `src/node`), the `pixel` CLI (`bin/`), figures, examples, motion references, the user docs (`docs/`) and their tests (`test/`). |
+| `packages/pixel-studio/` | The `@pixel-studio/core` package: the engine (`src/core`, `src/node`), the `pixel` CLI (`bin/`), figures, examples, motion references, the user docs (`docs/`) and their tests (`test/`). |
 | `packages/runtime/` | The `@pixel-studio/runtime` package: `<pixel-sprite>` and `<pixel-stage>` (`src/`), no imports from the engine, and their tests. |
 | `studio/`, `demo/` | The studio and playground, and the demo pages. Served from the repository root by `npm run studio`. |
 | `website/` | pixel-studio.sh, including the guide (`src/content/docs/docs/guide/`: live examples and editable characters) (Astro, [astro-project-site](https://github.com/pavelpascari/astro-project-site)). Its own `npm install`; `npm run deploy` there. |
@@ -41,13 +41,13 @@ JSON spec to pixels. The other references:
 
 ## Rules the code keeps
 
-- **No dependencies.** Not at runtime, not for tests, not for building. (`pixel-studio` depends on
+- **No dependencies.** Not at runtime, not for tests, not for building. (`@pixel-studio/core` depends on
   `@pixel-studio/runtime`, its sibling in this repository, and nothing else.)
 - **`src/core` is isomorphic.** No DOM, no Node APIs. Node-only code goes in `src/node`, `bin`, `scripts`;
   browser-only code in `packages/runtime` and `studio`.
 - **The runtime never imports the engine.** It plays finished bundles, so a site can install it alone.
-- **Two packages, one version.** `pixel-studio` and `@pixel-studio/runtime` are always released together with the
-  same version, and `pixel-studio` depends on exactly that runtime version. `npm run version:set -- <version>`
+- **Two packages, one version.** `@pixel-studio/core` and `@pixel-studio/runtime` are always released together with the
+  same version, and `@pixel-studio/core` depends on exactly that runtime version. `npm run version:set -- <version>`
   sets all three; a test fails if they drift.
 - **Deterministic.** The same spec renders the same pixels on every machine. No `Math.random`, no clocks.
 - **Everything reduces to a plain spec.** `extends`, figures and motions expand into ordinary parts and tracks
@@ -77,7 +77,7 @@ recreations of existing characters or games.
 
 Both packages are released together, from one signed tag, with the same version.
 
-1. `npm run version:set -- <version>` (for example `0.2.0-alpha.2`): sets both versions, pins `pixel-studio`'s
+1. `npm run version:set -- <version>` (for example `0.2.0-alpha.2`): sets both versions, pins `@pixel-studio/core`'s
    dependency on exactly that runtime, moves the changelog's *Unreleased* notes under the version, and refreshes
    the lockfile. It commits nothing.
 2. Review `git diff`; commit it signed: `git commit -S -am "Release <version>"`.
@@ -86,7 +86,7 @@ Both packages are released together, from one signed tag, with the same version.
 4. The tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml): it checks the tag against both
    versions, runs the tests, packs both packages, creates the GitHub release (with both tarballs, their SHA-256 and
    the changelog section) and **stages** both on npm (pre-releases under their label, `alpha`, `beta`, `rc`).
-5. Approve them with your npm 2FA, **`@pixel-studio/runtime` first** (`pixel-studio` depends on exactly that
+5. Approve them with your npm 2FA, **`@pixel-studio/runtime` first** (`@pixel-studio/core` depends on exactly that
    version): `npm stage list`, then `npm stage approve <stage-id> --otp=<code>` for each (npm 11.15.0+), or from the
    packages' pages on npmjs.com. The workflow cannot publish on its own: its trusted publisher may only stage.
 

@@ -1,4 +1,4 @@
-// The two packages are released together: same version, and pixel-studio pins exactly that runtime.
+// The two packages are released together: same version, and @pixel-studio/core pins exactly that runtime.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -7,7 +7,7 @@ const json = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8')
 const engine = json('../package.json');
 const runtime = json('../../runtime/package.json');
 
-test('pixel-studio and @pixel-studio/runtime share one version', () => {
+test('@pixel-studio/core and @pixel-studio/runtime share one version', () => {
   assert.equal(runtime.name, '@pixel-studio/runtime');
   assert.equal(engine.version, runtime.version);
   assert.equal(engine.dependencies['@pixel-studio/runtime'], runtime.version, 'an exact pin, not a range');
@@ -23,7 +23,7 @@ test('every export of both packages points at a file', () => {
   }
 });
 
-test('pixel-studio/runtime and pixel-studio/stage re-export the runtime package', async () => {
+test('@pixel-studio/core/runtime and @pixel-studio/core/stage re-export the runtime package', async () => {
   const shim = await import('../src/runtime.js');
   const direct = await import('../../runtime/src/pixel-sprite.js');
   assert.equal(shim.checkBundle, direct.checkBundle);

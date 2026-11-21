@@ -9,7 +9,7 @@ dependencies, no build step:
 - **`<pixel-stage>`** and **`<pixel-actor>`** let characters live on the page itself: walk along cards, jump between
   them, climb their sides, sit on edges and hide behind things, without ever blocking a click.
 
-The bundles come from the [`pixel-studio`](https://www.npmjs.com/package/pixel-studio) engine and CLI
+The bundles come from the [`@pixel-studio/core`](https://www.npmjs.com/package/@pixel-studio/core) engine and CLI
 (`npx pixel bundle my-goose.json --out my-goose.bundle.json`). This package never imports the engine, so a site that
 only shows finished sprites installs just this. Both packages are always released with the same version.
 

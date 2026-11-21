@@ -7,13 +7,13 @@ browser. Every command below was run as written.
 
 ```bash
 mkdir my-site && cd my-site && npm init -y
-npm i pixel-studio
+npm i @pixel-studio/core
 ```
 
-This installs two packages: `pixel-studio` and the web components it depends on, `@pixel-studio/runtime` (always the
+This installs two packages: `@pixel-studio/core` and the web components it depends on, `@pixel-studio/runtime` (always the
 same version), and nothing else. A site that only plays finished sprites needs just `npm i @pixel-studio/runtime`.
 The package brings the engine, the `pixel` command, the web components, the figure
-library and the example characters in `node_modules/pixel-studio/examples/`.
+library and the example characters in `node_modules/@pixel-studio/core/examples/`.
 
 ## 2. Describe a character
 
@@ -22,7 +22,7 @@ example: it `extends` one and changes only what differs. Save this as `my-goose.
 
 ```json
 {
-  "extends": "./node_modules/pixel-studio/examples/goose-base.json",
+  "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
   "name": "Marigold",
   "materials": {
     "feather": { "color": "#e8b04a" },

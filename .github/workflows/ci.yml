@@ -49,16 +49,16 @@ jobs:
           npm init -y > /dev/null
           # Only the two tarballs just packed from this commit; nothing is fetched from the registry.
           npm install "$RUNNER_TEMP"/tgz/*.tgz --no-audit --no-fund
-          printf '%s' '{ "extends": "./node_modules/pixel-studio/examples/goose-base.json", "name": "CI goose" }' > g.json
+          printf '%s' '{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json", "name": "CI goose" }' > g.json
           npx pixel validate g.json
           npx pixel bundle g.json --out g.bundle.json
           npx pixel brief > /dev/null
           node --input-type=module -e "
             import { readFileSync } from 'node:fs';
             const rt = await import('@pixel-studio/runtime');
-            const shim = await import('pixel-studio/runtime');
+            const shim = await import('@pixel-studio/core/runtime');
             await import('@pixel-studio/runtime/stage');
-            if (rt.checkBundle !== shim.checkBundle) throw new Error('pixel-studio/runtime is not @pixel-studio/runtime');
+            if (rt.checkBundle !== shim.checkBundle) throw new Error('@pixel-studio/core/runtime is not @pixel-studio/runtime');
             rt.checkBundle(JSON.parse(readFileSync('g.bundle.json', 'utf8')));
             console.log('packed packages OK');
           "

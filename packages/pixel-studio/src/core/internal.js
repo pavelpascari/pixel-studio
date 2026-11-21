@@ -1,4 +1,4 @@
-// Engine building blocks (`pixel-studio/internal`). The public pipeline in ./index.js calls these for you;
+// Engine building blocks (`@pixel-studio/core/internal`). The public pipeline in ./index.js calls these for you;
 // they are exported for tools (the CLI, the studio, tests) and may change or disappear in any release.
 export { createImage, blit } from './image.js';
 export { bakePoints } from './bundle.js';

@@ -20,7 +20,7 @@ From a checkout:
 node bin/pixel.mjs <command> [args]
 ```
 
-`package.json` declares a `pixel` bin, so after installing the package (`npm i pixel-studio`, see [getting-started.md](getting-started.md)) or running `npm link` in the checkout, the same commands run as `pixel <command>` (or `npx pixel <command>`). The examples below use `node bin/pixel.mjs` and are run from `packages/pixel-studio/` in the repository. Output file paths are shortened to `$OUT/` (a scratch directory).
+`package.json` declares a `pixel` bin, so after installing the package (`npm i @pixel-studio/core`, see [getting-started.md](getting-started.md)) or running `npm link` in the checkout, the same commands run as `pixel <command>` (or `npx pixel <command>`). The examples below use `node bin/pixel.mjs` and are run from `packages/pixel-studio/` in the repository. Output file paths are shortened to `$OUT/` (a scratch directory).
 
 ## Arguments and flags
 

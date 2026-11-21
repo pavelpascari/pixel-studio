@@ -6,10 +6,10 @@ Docs, demos and the playground: **[pixel-studio.sh](https://pixel-studio.sh)**.
 
 | Package | What | Install |
 |---|---|---|
-| [`pixel-studio`](packages/pixel-studio/) | The engine, the `pixel` CLI, the figure library, examples and the reference docs. | `npm i pixel-studio` |
+| [`@pixel-studio/core`](packages/pixel-studio/) | The engine, the `pixel` CLI, the figure library, examples and the reference docs. | `npm i @pixel-studio/core` |
 | [`@pixel-studio/runtime`](packages/runtime/) | `<pixel-sprite>` and `<pixel-stage>`: the web components that play finished sprites on a page. No dependencies. | `npm i @pixel-studio/runtime` |
 
-The two are always released together, with the same version; `pixel-studio` depends on exactly that runtime.
+The two are always released together, with the same version; `@pixel-studio/core` depends on exactly that runtime.
 Start with [getting started](packages/pixel-studio/docs/getting-started.md). Changes are in the
 [changelog](CHANGELOG.md).
 
@@ -17,7 +17,7 @@ Start with [getting started](packages/pixel-studio/docs/getting-started.md). Cha
 
 | Path | What |
 |---|---|
-| [`packages/pixel-studio/`](packages/pixel-studio/) | The `pixel-studio` package ([README](packages/pixel-studio/README.md), [docs](packages/pixel-studio/docs/README.md)). |
+| [`packages/pixel-studio/`](packages/pixel-studio/) | The `@pixel-studio/core` package ([README](packages/pixel-studio/README.md), [docs](packages/pixel-studio/docs/README.md)). |
 | [`packages/runtime/`](packages/runtime/) | The `@pixel-studio/runtime` package. |
 | [`studio/`](studio/) | The studio, the figure viewer, the goose workbench and the URL-driven playground. |
 | [`demo/`](demo/) | Demo pages: a landing page, a flock on a lawn, characters on cards, a tiny runner game. |

@@ -1,6 +1,6 @@
 // Public API of the Pixel Studio engine (isomorphic: browser + Node, zero dependencies).
 // Building blocks the pipeline uses internally (pose sampling, rig maths, PNG palettes, ...) are in
-// ./internal.js (`pixel-studio/internal`): no compatibility promise there.
+// ./internal.js (`@pixel-studio/core/internal`): no compatibility promise there.
 export { validate, compile, TRACK_PROPS } from './spec.js';
 export { renderFrame, renderAnimation, renderSheet, animationMeta, resolveStyle, lodForRes, DETAIL_PRESETS, DETAIL_NAMES, MAX_RES } from './render.js';
 export { buildRamp, parseHex, toHex } from './color.js';
