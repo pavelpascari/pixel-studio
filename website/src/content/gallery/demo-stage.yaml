@@ -1,0 +1,8 @@
+# A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
+# tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
+title: Pixel Stage — characters that live on the page
+description: "Characters walk along the page's cards, jump between them, climb, hide and ride a cloud; tap to shoo, drag to throw."
+href: "/apps/demo/stage.html"
+kind: demo
+tags: ["demo"]
+order: 40

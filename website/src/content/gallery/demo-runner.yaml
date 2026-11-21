@@ -1,0 +1,8 @@
+# A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
+# tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
+title: "Fox Trail — a tiny runner played by <pixel-sprite>"
+description: "An endless runner: a fox whose gallop is measured from Muybridge's hounds, on a trail that scrolls at the speed of its paws."
+href: "/apps/demo/runner.html"
+kind: demo
+tags: ["demo"]
+order: 30

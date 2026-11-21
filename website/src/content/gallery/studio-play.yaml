@@ -1,0 +1,8 @@
+# A demo page found by `project-site init` (title from its <title>). Fields: title, description, href, kind,
+# tags, order, poster (an image next to this file) or posterUrl, posterAlt, pixelated, external, draft.
+title: Playground — Pixel Studio
+description: "Try a character's colours, textures, style, skins and animations; the whole setup lives in the URL."
+href: "/apps/studio/play.html"
+kind: demo
+tags: ["studio"]
+order: 80
