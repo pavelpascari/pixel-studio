@@ -63,49 +63,8 @@ export default defineConfig({
           ],
         },
       ],
-      // The landing page at /. Hero title defaults to `name`, its lead to `tagline`.
-      landing: {
-        hero: {
-          primary: { label: 'Get started', href: '/docs/reference/getting-started/' },
-          secondary: { label: 'Gallery', href: '/gallery/' },
-        },
-        // features: [{ title, body }], cards under the hero (none found in README.md).
-        // README.md, "Five minutes to a goose on your page": its code blocks
-        steps: {
-          title: 'Five minutes to a goose on your page',
-          items: [
-            {
-              title: 'Install',
-              body: '',
-              code: 'npm i @pixel-studio/core   # the engine and CLI; brings @pixel-studio/runtime with it',
-              lang: 'sh',
-            },
-            {
-              title: 'Make a character by changing an example (my-goose.json)',
-              body: '',
-              code: `{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
-  "name": "Marigold",
-  "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }`,
-              lang: 'json',
-            },
-            {
-              title: 'Run npx pixel validate, preview and bundle',
-              body: '',
-              code: `npx pixel validate my-goose.json                          # errors with JSON paths and did-you-mean
-npx pixel preview  my-goose.json --out my-goose.png       # every animation at 16, 32 and 64 px
-npx pixel bundle   my-goose.json --out my-goose.bundle.json`,
-              lang: 'sh',
-            },
-            {
-              title: 'Put it on a page with @pixel-studio/runtime',
-              body: 'A site that only plays sprites needs just the runtime: npm i @pixel-studio/runtime, no dependencies.',
-              code: `<script type="module" src="node_modules/@pixel-studio/runtime/src/pixel-sprite.js"></script>
-<pixel-sprite src="my-goose.bundle.json" anim="idle" size="128" hover-anim="waddle" click-anim="honk"></pixel-sprite>`,
-              lang: 'html',
-            },
-          ],
-        },
-      },
+      // The landing page is src/pages/index.astro (it replaces the built-in one): live characters, the runtime,
+      // the stage, the studio and the steps.
       // The blog at /blog/: one file per post in src/content/blog/ (title, description, date, authors, tags, draft).
       // Authors from package.json.
       blog: { authors: { 'pavel-pascari': { name: 'Pavel Pascari' } } },
