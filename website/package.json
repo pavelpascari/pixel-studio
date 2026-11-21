@@ -12,7 +12,8 @@
     "docs:check": "project-site docs:check",
     "deploy": "npm run build && wrangler deploy",
     "deploy:preview": "npm run build && project-site deploy:preview",
-    "cf:dev": "astro build && wrangler dev --port 8787"
+    "cf:dev": "node ../scripts/build-demo.mjs && astro build && wrangler dev --port 8787",
+    "prebuild": "node ../scripts/build-demo.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.43.1",

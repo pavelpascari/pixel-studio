@@ -16,12 +16,13 @@ export default defineConfig({
       url: 'https://pixel-studio.sh',
       // from git origin
       repo: 'https://github.com/pavelpascari/pixel-studio',
-      // the header shows its version (0.2.0-alpha.0)
-      versionFrom: '../package.json',
+      // the header shows its version (both packages always share it)
+      versionFrom: '../packages/pixel-studio/package.json',
       // from README.md
-      install: 'npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0',
+      install: 'npm i pixel-studio',
       nav: [
         { label: 'Docs', href: '/docs/' },
+        { label: 'Guide', href: '/docs/guide/' },
         { label: 'Blog', href: '/blog/' },
         { label: 'Gallery', href: '/gallery/' },
       ],
@@ -29,12 +30,11 @@ export default defineConfig({
       // links; other relative links point at the file in the repo. `include` picks files from a folder.
       externalDocs: [
         {
-          dir: '../docs',
+          dir: '../packages/pixel-studio/docs',
           route: 'reference',
           label: 'Reference',
           description: 'Write a character, make it move and put it on a page: the spec, figures, runtime, stage, CLI and API.',
           order: ['getting-started.md'],
-          exclude: ['plans/**', 'research/**'],
         },
         {
           dir: '..',
@@ -46,7 +46,21 @@ export default defineConfig({
       ],
       // Static pages served byte for byte under /apps/, with the folders they load from, so their
       // relative URLs keep working. One gallery entry per page is in src/content/gallery/.
-      mirrors: [{ from: '..', to: 'apps', include: ['demo', 'studio', 'docs', 'examples', 'figures', 'src'] }],
+      mirrors: [
+        {
+          from: '..',
+          to: 'apps',
+          include: [
+            'demo',
+            'studio',
+            'packages/pixel-studio/src',
+            'packages/pixel-studio/docs',
+            'packages/pixel-studio/examples',
+            'packages/pixel-studio/figures',
+            'packages/runtime/src',
+          ],
+        },
+      ],
       // The landing page at /. Hero title defaults to `name`, its lead to `tagline`.
       landing: {
         hero: {
@@ -61,7 +75,7 @@ export default defineConfig({
             {
               title: 'Install',
               body: '',
-              code: 'npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0   # one package, no dependencies',
+              code: 'npm i pixel-studio   # the engine and CLI; brings @pixel-studio/runtime with it',
               lang: 'sh',
             },
             {
@@ -79,6 +93,13 @@ export default defineConfig({
 npx pixel preview  my-goose.json --out my-goose.png       # every animation at 16, 32 and 64 px
 npx pixel bundle   my-goose.json --out my-goose.bundle.json`,
               lang: 'sh',
+            },
+            {
+              title: 'Put it on a page with @pixel-studio/runtime',
+              body: 'A site that only plays sprites needs just the runtime: npm i @pixel-studio/runtime, no dependencies.',
+              code: `<script type="module" src="node_modules/@pixel-studio/runtime/src/pixel-sprite.js"></script>
+<pixel-sprite src="my-goose.bundle.json" anim="idle" size="128" hover-anim="waddle" click-anim="honk"></pixel-sprite>`,
+              lang: 'html',
             },
           ],
         },

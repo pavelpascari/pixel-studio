@@ -1,0 +1,213 @@
+/* The guide's live examples and playgrounds (LiveExample.astro, SpecPlayground.astro).
+   The preview is always drawn on light grid paper, in both themes: the sprites, cards and walls in the examples are
+   designed for it. Everything here is scoped under .ps-example / .ps-playground. */
+
+.ps-example,
+.ps-playground {
+  --ps-ink: #23212c;
+  --ps-muted: #5d5a6b;
+  --ps-line: #e4ded3;
+  --ps-grid: #efe9df;
+  --ps-paper: #fffdf9;
+  margin-block: 1rem 1.75rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.ps-head {
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  font-size: var(--sl-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-2);
+  border-block-end: 1px solid var(--sl-color-gray-5);
+  background: var(--sl-color-gray-6);
+}
+.ps-hint {
+  margin-inline-start: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ps-preview,
+.ps-stagebox {
+  color: var(--ps-ink);
+  background-color: var(--ps-paper);
+  background-image: linear-gradient(var(--ps-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ps-grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.ps-preview {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  font-size: 0.95rem;
+}
+.ps-preview figure {
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ps-muted);
+}
+.ps-preview figcaption {
+  margin-block-start: 0.25rem;
+}
+.ps-preview .controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  font-size: 0.875rem;
+}
+.ps-preview button,
+.ps-preview select,
+.ps-preview input {
+  font: inherit;
+  font-size: 0.875rem;
+}
+.ps-preview button {
+  padding: 0.375rem 0.75rem;
+  border: 2px solid var(--ps-ink);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--ps-ink);
+  cursor: pointer;
+}
+.ps-preview button:focus-visible,
+.ps-pg-controls select:focus-visible,
+.ps-spec:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+.ps-preview output,
+.ps-preview .readout {
+  font: 0.8125rem var(--sl-font-mono);
+  color: var(--ps-muted);
+}
+.ps-preview code {
+  font-family: var(--sl-font-mono);
+  font-size: 0.85em;
+}
+.ps-example .expressive-code {
+  margin: 0;
+}
+.ps-example .expressive-code .frame {
+  border-radius: 0;
+}
+
+/* Playgrounds */
+.ps-pg {
+  display: grid;
+  grid-template-columns: minmax(13.75rem, 18.75rem) minmax(0, 1fr);
+}
+.ps-pg-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1rem;
+  border-inline-end: 1px solid var(--sl-color-gray-5);
+}
+.ps-stagebox {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  border-radius: 0.5rem;
+}
+.ps-stagebox canvas {
+  image-rendering: pixelated;
+}
+.ps-pg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+}
+.ps-pg-controls select {
+  font: inherit;
+}
+.ps-status {
+  max-height: 9rem;
+  overflow: auto;
+  font: 0.75rem/1.45 var(--sl-font-mono);
+  white-space: pre-wrap;
+}
+.ps-status.ok { color: var(--sl-color-green-high, #1a7f37); }
+.ps-status.warn { color: var(--sl-color-orange-high, #9a6700); }
+.ps-status.err { color: var(--sl-color-red-high, #cf222e); }
+.ps-spec {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  margin: 0;
+  padding: 0.875rem 1rem;
+  border: 0;
+  resize: vertical;
+  font: 0.8125rem/1.55 var(--sl-font-mono);
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+  color: var(--sl-color-white);
+  background: var(--sl-color-black);
+}
+
+@media (max-width: 50rem) {
+  .ps-pg {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ps-pg-view {
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--sl-color-gray-5);
+  }
+  .ps-preview {
+    padding: 1rem;
+  }
+}
+
+/* Fingers, not cursors: the examples' controls big enough to tap. */
+@media (pointer: coarse) {
+  .ps-preview button,
+  .ps-preview select,
+  .ps-pg-controls select {
+    min-height: 2.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Page-specific scenery used inside the examples (from the original guide pages). */
+.ps-preview .ground-line { position: absolute; inset-inline: 0; border-block-start: 2px dashed #e8743b; }
+.ps-preview .bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 2px 8px;
+  border: 2px solid var(--ps-ink);
+  border-radius: 8px;
+  background: #fff;
+  font: 700 13px system-ui;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ps-preview .dot { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; pointer-events: none; }
+.ps-preview .lane { position: relative; width: 100%; height: 120px; overflow: hidden; border-block-end: 6px solid #8a5a3b; }
+.ps-preview .lane pixel-sprite { position: absolute; left: 0; top: 0; will-change: transform; }
+.ps-preview .wall { position: absolute; width: 70px; background: #fffdf8; border: 2px solid var(--ps-ink); border-radius: 10px 10px 0 0; }
+.ps-preview .ledge { position: absolute; height: 10px; background: #8a5a3b; border-radius: 3px; }
+.ps-preview .row { display: flex; align-items: flex-end; gap: 12px; width: 100%; padding: 0 8px; }
+.ps-preview .shelf { width: 100%; height: 12px; border-radius: 4px; background: #8a5a3b; }
+.ps-preview .tcard { flex: 1; min-width: 0; padding: 10px 12px; background: #fff; border: 2px solid var(--ps-ink); border-radius: 10px; font-size: 14px; }
+.ps-preview .crate {
+  flex: 0 0 64px;
+  height: 32px;
+  border: 3px solid #5b3a24;
+  border-radius: 4px;
+  background: repeating-linear-gradient(90deg, #c08552 0 12px, #a8703f 12px 14px);
+}
+.ps-preview .stage-demo { width: 100%; }

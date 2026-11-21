@@ -1,14 +1,17 @@
-// Run the in-browser checks and every docs-site page in real browser engines (Firefox and WebKit by
-// default; add chromium with --browsers). Playwright is not a dependency of this project: install it in
-// any folder and run this script from there, with the dev server running (npm run studio):
+// Run the in-browser runtime checks and every page of the website's guide (live examples and editable
+// characters) in real browser engines (Firefox and WebKit by default; add chromium with --browsers). Playwright is
+// not a dependency of this project: install it in any folder and run this script from there, with the dev server
+// running (npm run studio) and the website served (in website/: npm run build && npm run preview):
 //
 //   mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
-//   node /path/to/pixel-studio/scripts/browser-check.mjs [--base http://localhost:5173] [--browsers firefox,webkit,chromium]
+//   node /path/to/pixel-studio/scripts/browser-check.mjs [--base http://localhost:5173] [--site http://localhost:4321]
+//        [--browsers firefox,webkit,chromium]
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const BASE = arg('base', 'http://localhost:5173');
+const SITE = arg('site', 'http://localhost:4321');
 let pw;
 try { pw = createRequire(join(process.cwd(), 'x.js'))('playwright'); }
 catch { console.error('playwright not found: run this from a folder where it is installed (npm i playwright)'); process.exit(2); }
@@ -33,18 +36,18 @@ for (const name of arg('browsers', 'firefox,webkit').split(',')) {
       const text = (await Promise.all(m.args().map((a) => a.evaluate((v) => v?.message ?? String(v)).catch(() => '')))).join(' ') || m.text();
       if (!EXPECTED.test(text)) errs.push(text);
     });
-    await pg.goto(`${BASE}/site/${p}.html`);
+    await pg.goto(`${SITE}/docs/guide/${p === 'index' ? '' : `${p}/`}`);
     await pg.waitForTimeout(['motions', 'authoring'].includes(p) ? 6000 : 3000);
     // Pages with many sprites can still be loading on a busy machine: give them up to 15 s more.
     await pg.waitForFunction(() => ![...document.querySelectorAll('pixel-sprite')].some((s) => s.status === 'loading'), null, { timeout: 15000 }).catch(() => {});
     const bad = await pg.evaluate(() => [
       ...[...document.querySelectorAll('pixel-sprite')].filter((s) => s.status !== 'ready' && !/missing/.test(s.getAttribute('src'))).map((s) => `sprite ${s.getAttribute('src')}: ${s.status}`),
-      ...[...document.querySelectorAll('.pg-status')].filter((s) => !s.classList.contains('ok')).map((s) => `playground: ${s.textContent.slice(0, 100)}`),
+      ...[...document.querySelectorAll('.ps-status')].filter((s) => !s.classList.contains('ok')).map((s) => `playground: ${s.textContent.slice(0, 100)}`),
     ]);
-    if (errs.length || bad.length) { failed = true; report.push(`site/${p}.html: ${[...errs, ...bad].join(' | ')}`); }
+    if (errs.length || bad.length) { failed = true; report.push(`guide/${p}: ${[...errs, ...bad].join(' | ')}`); }
     await pg.close();
   }
-  console.log(`${name}: ${report.join('\n  ')}${report.length === 1 ? '\n  docs site: all pages clean' : ''}`);
+  console.log(`${name}: ${report.join('\n  ')}${report.length === 1 ? '\n  guide: all pages clean' : ''}`);
   await browser.close();
 }
 process.exit(failed ? 1 : 0);

@@ -260,7 +260,7 @@ sources. This does not matter for us today, because the shipped clips are Blende
 
 Pixel Studio and Mesh2Motion represent motion differently. The table shows the conversions an importer would need.
 
-| Mesh2Motion | Pixel Studio ([SPEC.md](../SPEC.md), [figures.md](../figures.md)) | Conversion |
+| Mesh2Motion | Pixel Studio ([SPEC.md](../../packages/pixel-studio/docs/SPEC.md), [figures.md](../../packages/pixel-studio/docs/figures.md)) | Conversion |
 |---|---|---|
 | 3D local quaternion per bone, 24/30 fps, linear | 2D `rot` in degrees, clockwise, *added to the rest pose*, relative to the parent; `frames` 1..64; arrays with exactly `frames` entries give one value per frame | FK in 3D, then project each bone's world segment onto the side plane. The local angle is `atan2` of the child segment minus the parent's, minus the rest offset |
 | Hips translation (Y-up, metres) | Root `x`, `y` tracks (units, y down) | Scale by the ratio of our leg length to theirs (human: hip→ankle 37.1 units vs 0.84 m). Flip y |
@@ -295,7 +295,7 @@ Pixel Studio and Mesh2Motion represent motion differently. The table shows the c
 
 **Check the per-joint conventions before relying on these maps.** The dog figure's hind `thigh/shin/hock` and the fox's
 `upper/lower/ankle` may not be anatomically one-to-one. Our dog's knee points forward and its hock backward
-([figures/dog.json](../../figures/dog.json) description). In the fox clips the `upper–lower` joint is always flexed 59–150°
+([figures/dog.json](../../packages/pixel-studio/figures/dog.json) description). In the fox clips the `upper–lower` joint is always flexed 59–150°
 in one direction (§5), which matches a stifle, but this should be checked visually in the PoC.
 
 ---
@@ -337,7 +337,7 @@ the side plane.
 - **The bird's femur is splayed 40–68° sideways**, so it cannot be projected. Drop it, as noted in §4.
 - **Wings flap in the frontal plane.** A side view sees a wing that rises above the back and shortens. Our goose `wing` is
   one rigid bone. `sx`/`sy` scale in the part's rest axes, before rotation
-  ([rig.js `localMatrix`](../../src/core/rig.js)), so they can only foreshorten along the bone if the bone lies along an
+  ([rig.js `localMatrix`](../../packages/pixel-studio/src/core/rig.js)), so they can only foreshorten along the bone if the bone lies along an
   axis at rest. The goose wing is about 10° off horizontal, so this is close enough.
 
 ### 5.3 Gait numbers against our presets
@@ -436,7 +436,7 @@ This is the strongest use.
   Every value is per frame. This is a normal hand-keyed animation, so lint, `where`, follow-through and bundles all work
   unchanged.
 - **Planted feet.** Pass `--motion pose` to emit tracks for a `pose` motion instead. Root tracks are applied before the
-  legs are solved, so the feet stay planted while the clip drives the body and arms ([figures.md](../figures.md),
+  legs are solved, so the feet stay planted while the clip drives the body and arms ([figures.md](../../packages/pixel-studio/docs/figures.md),
   "Your tracks on top of a motion").
 - **Zero-dependency constraint.** The engine has no dependencies (`package.json`). Keep the decoder out of `src/core`.
   Either:

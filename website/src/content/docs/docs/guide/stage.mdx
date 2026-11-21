@@ -1,0 +1,149 @@
+---
+title: "Characters on the page"
+description: "<pixel-stage> turns your layout into a little world. Mark elements as surfaces, walls and hiding spots; characters walk along them, drop and jump between them, climb up, sit on edges and duck out of sight. They never block a click, and a tap shoos them."
+sidebar:
+  order: 5
+---
+import LiveExample from '../../../../components/LiveExample.astro';
+
+## Try it
+
+<LiveExample
+  title="Cards, a crate and two characters"
+  height={300}
+  code={`<script type="module" src="../packages/runtime/src/pixel-stage.js"></script>
+<div class="stage-demo">
+  <div class="row">
+    <article id="st-tall" class="tcard" style="min-height:170px" data-pixel-surface data-pixel-climbable><b>Ridge loop</b></article>
+    <div id="st-crate" class="crate" data-pixel-hide></div>
+    <article id="st-low" class="tcard" style="min-height:70px" data-pixel-surface data-pixel-perch><b>Lakeside</b></article>
+    <article id="st-mid" class="tcard" style="min-height:110px" data-pixel-surface data-pixel-climbable><b>Old forest</b></article>
+  </div>
+  <div class="shelf" data-pixel-surface></div>
+</div>
+<div class="controls">
+  <button id="st-hide">goose.hideBehind(crate)</button>
+  <button id="st-sit">goose.goTo(Lakeside, {then: 'sit'})</button>
+  <button id="st-climb">goose.goTo(Ridge loop)</button>
+  <button id="st-say">goose.say('honk?')</button>
+  <button id="st-scene">stage.playScene('#race')</button>
+  <span class="readout" id="st-out"></span>
+</div>
+<script type="application/json" id="race">
+  {"cast": {"goose": "#st-goose", "pip": "#st-pip"}, "steps": [
+    {"together": [{"actor": "goose", "goTo": "#st-low", "at": 0.2}, {"actor": "pip", "goTo": "#st-low", "at": 0.8}]},
+    {"together": [{"actor": "goose", "face": "pip"}, {"actor": "pip", "face": "goose"}]},
+    {"actor": "pip", "say": "Race you to the top?", "ms": 1600},
+    {"actor": "goose", "say": "HONK", "ms": 900},
+    {"together": [{"actor": "goose", "goTo": "#st-tall"}, {"actor": "pip", "goTo": "#st-mid"}]},
+    {"actor": "goose", "say": "first!", "ms": 1400, "async": true},
+    {"actor": "pip", "perform": "wave"},
+    {"actor": "pip", "goTo": "#st-mid", "then": "sit"}
+  ]}
+</script>
+<pixel-stage controls="none" floor="none">
+  <pixel-actor id="st-goose" src="../demo/assets/goose-root.bundle.json" size="72" start="#st-low" alt="a goose"></pixel-actor>
+  <pixel-actor id="st-pip" src="../demo/assets/pip.bundle.json" size="64" start="#st-mid" alt="Pip"></pixel-actor>
+</pixel-stage>
+<script type="module">
+  await customElements.whenDefined('pixel-actor');
+  const goose = document.getElementById('st-goose'), out = document.getElementById('st-out');
+  const say = (ok, what) => (out.textContent = ok ? what : 'no way there right now');
+  goose.addEventListener('pixel-activity', (e) => (out.textContent = \`goose: \${e.detail.to}\`));
+  document.getElementById('st-hide').onclick = () => say(goose.hideBehind(document.getElementById('st-crate')), 'heading for the crate');
+  document.getElementById('st-sit').onclick = () => say(goose.goTo(document.getElementById('st-low'), { then: 'sit' }), 'going to sit');
+  document.getElementById('st-climb').onclick = () => say(goose.goTo(document.getElementById('st-tall')), 'off to Ridge loop');
+  document.getElementById('st-say').onclick = () => goose.say('honk?');
+  const stage = document.querySelector('pixel-stage'), sceneBtn = document.getElementById('st-scene');
+  sceneBtn.onclick = () => (stage.scene ? stage.scene.stop() : stage.playScene('#race'));
+  stage.addEventListener('pixel-scenestep', (e) => (out.textContent = \`scene: \${e.detail.path}\`));
+  stage.addEventListener('pixel-sceneend', (e) => (out.textContent = e.detail.completed ? 'scene: the end' : 'scene: stopped'));
+</script>`}
+/>
+
+Tap or click a character to shoo it; with a mouse, drag one to pick it up and throw it. This page hides the stage's own pause button (`controls="none"`) and its floor; the [full demo page](/apps/demo/stage.html) has both.
+
+## Staying in sight
+
+Give a character `keep-in-view` and it follows the reader: after a scroll settles, it runs back if it is close (at 2.5× speed, feet still planted), or drops in from the top of the screen onto a visible surface. The stage also reports scroll speed, so a page can react to fast scrolling. Try it on the [demo page](/apps/demo/stage.html), which is long enough to scroll.
+
+```js
+<pixel-actor src="goose.bundle.json" size="64" keep-in-view></pixel-actor>
+
+stage.addEventListener('pixel-fastscroll', (e) => goose.say('wait for me!'));   // e.detail.speed in px/s
+goose.addEventListener('pixel-catchup', () => console.log('coming back'));
+goose.addEventListener('pixel-burst', (e) => console.log('rage taps', e.detail.count));   // tapping fast makes it panic
+```
+
+## Scenes
+
+A scene is a scripted moment written as data: who goes where, says what, and when. Steps run in order; `together` runs several at once, `"async": true` starts one without waiting, and `waitFor` pauses until something happens (a tap on a character, a click on a button). The cast is *directed* while it plays: characters wait for their next line instead of wandering off. Steps that cannot happen (no route, a tap that startles a character) are skipped, so readers poking at the characters never jam it. Press **stage.playScene('#race')** in the example above to play this one.
+
+```json
+{"cast": {"goose": "#st-goose", "pip": "#st-pip"}, "steps": [
+  {"together": [{"actor": "goose", "goTo": "#st-low", "at": 0.2}, {"actor": "pip", "goTo": "#st-low", "at": 0.8}]},
+  {"together": [{"actor": "goose", "face": "pip"}, {"actor": "pip", "face": "goose"}]},
+  {"actor": "pip", "say": "Race you to the top?", "ms": 1600},
+  {"actor": "goose", "say": "HONK", "ms": 900},
+  {"together": [{"actor": "goose", "goTo": "#st-tall"}, {"actor": "pip", "goTo": "#st-mid"}]},
+  {"actor": "goose", "say": "first!", "ms": 1400, "async": true},
+  {"actor": "pip", "perform": "wave"},
+  {"actor": "pip", "goTo": "#st-mid", "then": "sit"}
+]}
+```
+
+```js
+const run = stage.playScene('#race');      // an object, JSON text, or a <script type="application/json">
+await run.finished;                        // true at the end, false if run.stop() was called
+stage.addEventListener('pixel-sceneevent', (e) => console.log(e.detail.name));   // from {"emit": "…"} steps
+
+// The same orders, awaitable from code: true when done, false if impossible or interrupted.
+if (await goose.run('goTo', summit, { then: 'sit' })) await goose.say('made it');
+```
+
+Steps: `goTo` (a selector, a cast name, or a point; `then`, `at`), `hideBehind`, `perform`, `say`, `face`, `shoo`, `wait`, `together`, `waitFor`, `emit`. `<pixel-stage scene="#intro">` plays one when the page loads. The full table is in [docs/stage.md](/docs/reference/stage/#scenes).
+
+### Triggers, carrying and leaving
+
+Give a scene a `trigger` and mark its script `data-pixel-scene`: it plays by itself when that happens: a form submitted, a button clicked, a section scrolled into view (`"visible"`), a character tapped. Characters can `pickUp` any element (a copy rides at the beak or hand), `drop` it, `exit` by the side of the screen (delivering what they carry) and `enter` again. A character with front and back views can turn to the reader: `{"face": "viewer"}`, `"away"`, `"side"`. The [demo page's newsletter form](/apps/demo/stage.html#newsletter) hands the goose a letter to post.
+
+```json
+{"cast": {"goose": "#goose"},
+ "trigger": {"event": "submit", "on": "#signup", "preventDefault": true},
+ "steps": [
+   {"actor": "goose", "pickUp": "$trigger .letter"},
+   {"actor": "goose", "exit": "right"},
+   {"wait": 1800}, {"emit": "delivered"},
+   {"actor": "goose", "enter": "right"},
+   {"actor": "goose", "say": "delivered. HONK"}
+ ]}
+```
+
+## Marking up your page
+
+| attribute | meaning |
+| --- | --- |
+| `data-pixel-surface` | its top edge is a platform |
+| `data-pixel-climbable` | its sides are walls (its foot must rest on a platform) |
+| `data-pixel-perch` | a favourite place to sit |
+| `data-pixel-hide` | a hiding spot (standing on a platform) |
+| `data-pixel-occluder` | characters always pass behind it |
+| `data-pixel-avoid` | never stand on or hide behind it |
+
+## Scripting
+
+```js
+const goose = document.querySelector('pixel-actor');
+goose.goTo(document.querySelector('#summit'), { then: 'sit' });   // route: walk, drop, jump, climb
+goose.hideBehind(document.querySelector('.crate'));               // duck and peek
+goose.say('honk?');                                                // bubble at the beak
+goose.shoo();                                                      // startle and run
+moss.perform('think');                                            // any animation of its own, in place
+goose.addEventListener('pixel-activity', (e) => console.log(e.detail.to));
+
+const stage = document.querySelector('pixel-stage');
+stage.pause();                // what the built-in button does; remembered
+stage.world.invalidate();     // after you move elements with CSS transforms
+```
+
+Characters need a few animations to do all this: a walk with a `speed`, `jump`, `fall`, `climb`, `sit`, `duck` and `peek`. Every figure has presets for them; see [Figures and motions](/docs/guide/motions/). The full reference is [docs/stage.md](/docs/reference/stage/).

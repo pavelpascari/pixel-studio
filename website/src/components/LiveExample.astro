@@ -1,0 +1,26 @@
+---
+// A live example from the guide: the markup runs in a preview, and the same markup is shown below it. Paths in
+// `code` are written as in the repository (../demo/assets/, ../packages/…); the preview loads them from /apps/
+// (the website's mirror), and the code shown drops them, as a reader would use the files next to their page.
+import { Code } from '@astrojs/starlight/components';
+import '../styles/guide.css';
+
+interface Props {
+  title: string;
+  code: string;
+  height?: number;
+  lang?: string;
+}
+const { title, code, height, lang = 'html' } = Astro.props;
+const live = code
+  .replaceAll('../demo/assets/', '/apps/demo/assets/')
+  .replaceAll('../packages/', '/apps/packages/');
+const shown = code.replaceAll('../demo/assets/', '').replaceAll('../packages/runtime/src/', '');
+---
+
+<div class="ps-example not-content">
+  <p class="ps-head">{title}</p>
+  <div class="ps-preview" style={height ? `min-height: ${height}px` : undefined} set:html={live} />
+  <Code code={shown} lang={lang} />
+</div>
+<script is:inline type="module" src="/apps/packages/runtime/src/pixel-sprite.js"></script>

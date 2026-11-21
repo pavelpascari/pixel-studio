@@ -1,0 +1,55 @@
+{
+  "name": "pixel-studio",
+  "version": "0.2.0-alpha.0",
+  "description": "Agents describe characters as JSON rigs; a zero-dependency engine renders them as pixel-art animations at every level of detail, with realistic skeleton motion; websites play them with one tag.",
+  "keywords": [
+    "pixel-art",
+    "sprite",
+    "animation",
+    "sdf",
+    "skeleton",
+    "inverse-kinematics",
+    "web-component",
+    "agents",
+    "llm"
+  ],
+  "license": "MIT",
+  "author": "Pavel Pascari",
+  "homepage": "https://pixel-studio.sh",
+  "bugs": "https://github.com/pavelpascari/pixel-studio/issues",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavelpascari/pixel-studio.git",
+    "directory": "packages/pixel-studio"
+  },
+  "exports": {
+    ".": "./src/core/index.js",
+    "./internal": "./src/core/internal.js",
+    "./node/png": "./src/node/png.js",
+    "./runtime": "./src/runtime.js",
+    "./stage": "./src/stage.js",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "pixel": "bin/pixel.mjs"
+  },
+  "files": [
+    "src",
+    "bin",
+    "figures",
+    "examples",
+    "references",
+    "docs",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@pixel-studio/runtime": "0.2.0-alpha.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

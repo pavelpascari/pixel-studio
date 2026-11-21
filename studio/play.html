@@ -62,7 +62,7 @@
 <body>
 <header>
   <h1>Playground</h1>
-  <p>Colours, textures, style, skins and animations, all kept in the link. <a href="../docs/playground.md">Payload guide</a> · <a href="play.schema.json">schema</a> · <a href="../docs/SPEC.md">full spec</a> · <a href="index.html">studio</a></p>
+  <p>Colours, textures, style, skins and animations, all kept in the link. <a href="../packages/pixel-studio/docs/playground.md">Payload guide</a> · <a href="play.schema.json">schema</a> · <a href="../packages/pixel-studio/docs/SPEC.md">full spec</a> · <a href="index.html">studio</a></p>
 </header>
 <main>
   <section id="stageCol">
@@ -101,7 +101,7 @@
       <div class="row" style="margin-top:6px">
         <button id="apply" class="primary" title="Ctrl/⌘+Enter">Apply</button>
         <button id="reset">Clear</button>
-        <span class="dim">Changes to the base character. <a href="../docs/playground.md#the-payload">What can go here</a></span>
+        <span class="dim">Changes to the base character. <a href="../packages/pixel-studio/docs/playground.md#the-payload">What can go here</a></span>
       </div>
     </div>
     <div>
@@ -116,7 +116,7 @@
 </main>
 <section id="howto">
   <h2>For agents</h2>
-  <p>Everything on this page is set by its URL. Read <a href="../docs/playground.md">docs/playground.md</a> (URL options, payload format, examples) and <a href="play.schema.json">play.schema.json</a> (every field of the payload); the full character format is <a href="../docs/SPEC.md">docs/SPEC.md</a>.</p>
+  <p>Everything on this page is set by its URL. Read <a href="../packages/pixel-studio/docs/playground.md">docs/playground.md</a> (URL options, payload format, examples) and <a href="play.schema.json">play.schema.json</a> (every field of the payload); the full character format is <a href="../packages/pixel-studio/docs/SPEC.md">docs/SPEC.md</a>.</p>
 <pre>play.html?c=goose-root&amp;view=front&amp;anim=waddle&amp;skin=party&amp;res=64#spec={"materials":{"hoodie":{"color":"#2f6b4f","texture":"cloth"}}}</pre>
   <p>In a browser, <code>window.playground</code> drives the page: <code>await playground.ready</code>, <code>playground.options()</code>, <code>await playground.set({...})</code>, <code>await playground.link()</code>, <code>playground.frame()</code>.</p>
   <h2 style="margin-top:14px">This character</h2>
@@ -124,7 +124,7 @@
 </section>
 
 <script type="module">
-import { resolveSpec, compile, renderFrame, resolveStyle, textures } from '../src/core/index.js';
+import { resolveSpec, compile, renderFrame, resolveStyle, textures } from '../packages/pixel-studio/src/core/index.js';
 
 const CHARACTERS = ['goose-base', 'goose-root', 'goose-sudo', 'goose-phreak', 'goose-kiddie', 'goose-greylag', 'moss', 'fox', 'pip', 'robot', 'slime'];
 const RES = [16, 24, 32, 48, 64, 96, 128, 192];
@@ -221,8 +221,8 @@ async function build() {
   const spec = isFull(S.spec) || S.spec.extends ? S.spec : { extends: `${S.c}.json`, ...S.spec };
   try {
     resolved = await resolveSpec(structuredClone(spec), {
-      loadRef: (ref) => loadJSON(`../examples/${ref}`),
-      loadFigure: (n) => loadJSON(`../figures/${n}.json`),
+      loadRef: (ref) => loadJSON(`../packages/pixel-studio/examples/${ref}`),
+      loadFigure: (n) => loadJSON(`../packages/pixel-studio/figures/${n}.json`),
       warn: (p, m) => notes.warnings.push(`${p}: ${m}`),
     });
     compiled = compile(resolved);
@@ -509,7 +509,7 @@ window.playground = {
   },
   get errors() { return [...notes.errors]; },
   get warnings() { return [...notes.warnings]; },
-  docs: { guide: new URL('../docs/playground.md', location.href).href, schema: new URL('play.schema.json', location.href).href, spec: new URL('../docs/SPEC.md', location.href).href },
+  docs: { guide: new URL('../packages/pixel-studio/docs/playground.md', location.href).href, schema: new URL('play.schema.json', location.href).href, spec: new URL('../packages/pixel-studio/docs/SPEC.md', location.href).href },
 };
 
 /** ?bg=: a hex colour without the # (fff, 1b1424) or any CSS colour name. */

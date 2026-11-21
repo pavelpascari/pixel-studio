@@ -1,0 +1,152 @@
+---
+title: "Figures and motions"
+description: "Figures are skeletons with motion models: feet planted with inverse kinematics, hips that rise and fall, heads that hold their gaze, tails that follow through. Characters dressed on a figure get every motion."
+sidebar:
+  order: 7
+---
+import LiveExample from '../../../../components/LiveExample.astro';
+import SpecPlayground from '../../../../components/SpecPlayground.astro';
+
+## The figures
+
+| figure | view | motions | dressed as |
+| --- | --- | --- | --- |
+| `goose` | side | idle walk run rush sneak · jump fall sit duck peek climb · flap honk **fly** | the five geese |
+| `human` | side | idle walk run **sprint** · jump fall sit duck peek climb · **sitDown standUp** |  |
+| `dog` | side | idle walk trot **gallop** · jump fall duck peek | Ember the fox |
+| `chibi` | front | idle walk run · jump fall sit duck peek | Pip, Bolt |
+| `blob` | any | idle hop travel · fall peek | the slime |
+
+## Every animation of every example
+
+<LiveExample
+  title="Gallery (built from the bundles)"
+  code={`<div id="gal" style="width:100%"></div>
+<script type="module">
+  const chars = ['goose-root', 'goose-greylag', 'pip', 'fox', 'slime', 'robot', 'moss'];
+  const root = document.getElementById('gal');
+  for (const name of chars) {
+    const bundle = await (await fetch(\`../demo/assets/\${name}.bundle.json\`)).json();
+    const h = Object.assign(document.createElement('h3'), { textContent: bundle.name });
+    const grid = Object.assign(document.createElement('div'), { className: 'gallery' });
+    for (const [anim, a] of Object.entries(bundle.animations)) {
+      const fig = document.createElement('figure');
+      const s = document.createElement('pixel-sprite');
+      s.setAttribute('src', \`../demo/assets/\${name}.bundle.json\`);
+      s.setAttribute('anim', anim);
+      s.setAttribute('size', '72');
+      s.setAttribute('states', 'off');
+      const tags = [a.loop ? '' : 'one-shot', a.speed ? \`\${a.speed} u/s\` : '', a.speedY ? \`climbs \${a.speedY} u/s\` : '',
+        (a.events ?? []).map((e) => e.name).filter((n, i, xs) => xs.indexOf(n) === i).join(' ')].filter(Boolean).join(' · ');
+      fig.append(s, Object.assign(document.createElement('div'), { textContent: anim }),
+        Object.assign(document.createElement('small'), { textContent: tags }));
+      grid.append(fig);
+    }
+    root.append(h, grid);
+  }
+</script>`}
+/>
+
+One-shots (jump, honk, wave) play once and hold; hover a card's sprite or reload to see them again.
+
+## Measured from photographs
+
+These motions come from Eadweard Muybridge's *Animal Locomotion* (1887, public domain, scans from the Boston Public Library) and published measurements. Every value, and every frame of the sit-down and stand-up, is logged with the plate frame or table it came from in [`references/`](https://github.com/pavelpascari/pixel-studio/blob/main/packages/pixel-studio/references/README.md) (raw measurements, one file per plate, in `references/measurements/`).
+
+| motion | from | what the source sets |
+| --- | --- | --- |
+| `dog.gallop` | plates 708–710 (racing hounds) | 0.25 s cycle, each paw down 22% of it, hind–hind–fore–fore footfalls, two flight phases |
+| `human.sprint` | plates 60, 62, 64 (running full speed) | 0.5 s cycle, feet down 29%, elbows bent about 90°, big arm swing |
+| `human.sitDown` | plate 236, frames 6–12 | hip height and trunk lean of every frame; 183 ms between frames |
+| `human.standUp` | plate 249, frames 1–10 | lean forward to 34° with the hips still down, then rise; 92 ms between frames |
+| `goose.fly` | Meir et al. 2019; plates 755, 765 (pigeon, vulture) | 5 wingbeats a second; the wing sweeps from high above the back to below the body, and comes up folded |
+
+<SpecPlayground
+  title="Dog skeleton: trot and gallop"
+  anim="gallop"
+  res={64}
+  spec={`{
+  "figure": "dog",
+  "animations": {
+    "gallop": {"motion": "gallop"},
+    "trot": {"motion": "trot"}
+  }
+}`}
+/>
+
+<SpecPlayground
+  title="Human skeleton: sprint, sit down, stand up"
+  anim="sprint"
+  res={64}
+  spec={`{
+  "figure": "human",
+  "animations": {
+    "sprint": {"motion": "sprint"},
+    "sitDown": {"motion": "sitDown"},
+    "standUp": {"motion": "standUp"},
+    "run": {"motion": "run"}
+  }
+}`}
+/>
+
+<SpecPlayground
+  title="Goose skeleton: fly"
+  anim="fly"
+  res={64}
+  spec={`{
+  "figure": "goose",
+  "animations": {
+    "fly": {"motion": "fly"},
+    "flap": {"motion": "flap"}
+  }
+}`}
+/>
+
+Sit-down and stand-up play once; pick them again to replay. The goose's `flap` is take-off flapping (6 Hz), `fly` level flight (5 Hz).
+
+## Tune a motion
+
+A bare figure (no `parts`) is drawn as its skeleton. Change a motion's parameters and watch the feet: in a walk, a planted foot must not slide. Try `"stride": 20` (too long: validation reports the foot that misses), or `"lift": 8`.
+
+<SpecPlayground
+  title="Goose skeleton"
+  anim="walk"
+  res={64}
+  spec={`{
+  "figure": "goose",
+  "animations": {
+    "walk":  {"motion": "walk", "stride": 13, "lift": 4, "bob": 1.2},
+    "jump":  {"motion": "jump", "dip": 5, "tuck": 4, "height": 14},
+    "climb": {"motion": "climb"},
+    "sit":   {"motion": "sit"}
+  }
+}`}
+/>
+
+<SpecPlayground
+  title="Dog skeleton: walk and trot"
+  anim="trot"
+  res={64}
+  spec={`{
+  "figure": "dog",
+  "animations": {
+    "walk": {"motion": "walk"},
+    "trot": {"motion": "trot", "stride": 30, "duty": 0.46}
+  }
+}`}
+/>
+
+<SpecPlayground
+  title="Blob: squash and stretch"
+  anim="hop"
+  res={48}
+  spec={`{
+  "figure": "blob",
+  "animations": {
+    "hop": {"motion": "hop", "height": 18, "squash": 0.24, "stretch": 0.16},
+    "idle": {"motion": "idle"}
+  }
+}`}
+/>
+
+Every parameter is listed in [docs/figures.md](/docs/reference/figures/).

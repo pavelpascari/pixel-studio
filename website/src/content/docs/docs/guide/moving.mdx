@@ -1,0 +1,111 @@
+---
+title: "Moving sprites"
+description: "Walk cycles plant their feet. Move the sprite at the animation's own speed and the feet stay put on the ground; any other speed and they skate. The bundle tells you the right speed."
+sidebar:
+  order: 4
+---
+import LiveExample from '../../../../components/LiveExample.astro';
+
+## Walking without sliding
+
+`el.pxPerSecond(anim)` is the speed, in CSS pixels per second, at which the feet stay still. Move with the shared `clock`: it gives you the same time step the sprite uses to change frames, so the two never drift apart.
+
+<LiveExample
+  title="The right speed, and a wrong one"
+  code={`<div class="lane"><pixel-sprite id="mv-a" src="../demo/assets/goose-root.bundle.json" anim="waddle" size="96" states="off"></pixel-sprite></div>
+<div class="lane"><pixel-sprite id="mv-b" src="../demo/assets/goose-root.bundle.json" anim="waddle" size="96" states="off"></pixel-sprite></div>
+<div class="controls"><span class="readout" id="mv-out"></span></div>
+<script type="module">
+  import { clock } from '../packages/runtime/src/pixel-sprite.js';
+  const lanes = [[document.getElementById('mv-a'), 1], [document.getElementById('mv-b'), 2.2]];   // the second is too fast
+  const x = [0, 0];
+  clock.add((dt) => {
+    lanes.forEach(([g, factor], i) => {
+      const v = g.pxPerSecond('waddle');
+      if (!v) return;
+      const width = g.parentElement.clientWidth + g.displaySize.width;
+      x[i] = (x[i] + (v * factor * dt) / 1000) % width;
+      g.style.transform = \`translateX(\${Math.round(x[i] - g.displaySize.width)}px)\`;
+    });
+    const v = lanes[0][0].pxPerSecond('waddle');
+    if (v) document.getElementById('mv-out').textContent = \`top: \${v.toFixed(1)} px/s, feet planted · bottom: \${(v * 2.2).toFixed(1)} px/s, feet skating\`;
+  });
+</script>`}
+/>
+
+## Climbing
+
+A `climb` animation has a vertical speed (`el.pxPerSecondY()`) and a `wall` line: where its feet meet the wall, in the bundle's units. Line that up with the wall's edge and move up at that speed.
+
+<LiveExample
+  title="Up the side of a card"
+  height={260}
+  code={`<div id="cl-box" style="position:relative;height:240px;width:100%">
+  <div class="wall" id="cl-wall" style="left:180px;top:40px;height:200px"></div>
+  <pixel-sprite id="cl-goose" src="../demo/assets/goose-root.bundle.json" anim="climb" size="80" states="off" style="position:absolute;left:0;top:0"></pixel-sprite>
+</div>
+<script type="module">
+  import { clock } from '../packages/runtime/src/pixel-sprite.js';
+  const g = document.getElementById('cl-goose');
+  const wallLeft = 180, bottom = 240, top = 40;
+  let feetY = bottom;
+  clock.add((dt) => {
+    if (!g.displaySize) return;
+    const b = g.bundle, a = b.animations.climb;
+    const wallPx = (a.wall / b.size[0]) * g.displaySize.width;      // where the feet are, inside the sprite
+    feetY -= (g.pxPerSecondY('climb') * dt) / 1000;
+    if (feetY < top + 10) feetY = bottom;                           // start again at the bottom
+    g.style.transform = \`translate(\${wallLeft - wallPx}px, \${Math.round(feetY - g.groundOffset)}px)\`;
+  });
+</script>`}
+/>
+
+## Jumping along an arc
+
+A `jump` jumps in place, so the page can carry the sprite. Its `launch` and `land` events give the flight time; `jumpArc()` (from `pixel-stage.js`) solves the gravity that lands exactly on target in exactly that time.
+
+<LiveExample
+  title="Ledge to ledge"
+  height={230}
+  code={`<div id="jp-box" style="position:relative;height:210px;width:100%">
+  <div class="ledge" style="left:10px;width:150px;top:170px"></div>
+  <div class="ledge" style="left:250px;width:150px;top:90px"></div>
+  <pixel-sprite id="jp-goose" src="../demo/assets/goose-root.bundle.json" anim="idle" size="80" states="off" style="position:absolute;left:0;top:0"></pixel-sprite>
+</div>
+<div class="controls"><button id="jp-go">Jump</button><span class="readout" id="jp-out"></span></div>
+<script type="module">
+  import { clock } from '../packages/runtime/src/pixel-sprite.js';
+  import { jumpArc } from '../packages/runtime/src/pixel-stage.js';
+  const g = document.getElementById('jp-goose');
+  const spots = [[70, 170], [310, 90]];
+  let at = 0, pos = [...spots[0]], flight = null;
+  const place = () => g.displaySize && (g.style.transform =
+    \`translate(\${Math.round(pos[0] - g.displaySize.width / 2)}px, \${Math.round(pos[1] - g.groundOffset)}px)\`);
+  g.addEventListener('pixel-ready', place);
+  document.getElementById('jp-go').onclick = () => {
+    const a = g.bundle.animations.jump;
+    const ev = (n) => a.events.find((e) => e.name === n).frame;
+    const seconds = (ev('land') - ev('launch')) / a.fps;
+    const to = spots[1 - at];
+    g.toggleAttribute('flip', to[0] < pos[0]);
+    flight = { arc: jumpArc(pos[0], pos[1], to[0], to[1], 30, seconds), from: [...pos], to, t: -1 };
+    g.play('jump', { once: true });
+    at = 1 - at;
+  };
+  g.addEventListener('pixel-event', (e) => {
+    if (e.detail.name === 'launch' && flight) flight.t = 0;
+    document.getElementById('jp-out').textContent = \`\${e.detail.name} on frame \${e.detail.frame}\`;
+  });
+  clock.add((dt) => {
+    if (flight && flight.t >= 0) {
+      flight.t = Math.min(flight.arc.T, flight.t + dt / 1000);
+      const { vx, vy, g: grav } = flight.arc, t = flight.t;
+      pos = [flight.from[0] + vx * t, flight.from[1] + vy * t + (grav * t * t) / 2];
+      if (t >= flight.arc.T) { pos = [...flight.to]; flight = null; }
+    }
+    place();
+  });
+</script>`}
+/>
+
+Or let [`<pixel-stage>`](/docs/guide/stage/) do all of this for you, on your real page.
