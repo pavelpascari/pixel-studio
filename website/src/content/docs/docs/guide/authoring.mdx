@@ -1,25 +1,19 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Writing a character — Pixel Studio</title>
-<link rel="stylesheet" href="site.css">
-<script type="module" src="site.js"></script>
-</head>
-<body>
-<main>
-  <h1>Writing a character</h1>
-  <p class="lede">A character is JSON: materials, parts made of shapes, and animations. The engine shades it like a pixel
-    artist would at every size. The playgrounds below run the real engine in your browser: edit the spec and watch.</p>
+---
+title: "Writing a character"
+description: "A character is JSON: materials, parts made of shapes, and animations. The engine shades it like a pixel artist would at every size. The playgrounds below run the real engine in your browser: edit the spec and watch."
+sidebar:
+  order: 6
+---
+import SpecPlayground from '../../../../components/SpecPlayground.astro';
 
-  <h2 id="shapes">Parts and shapes</h2>
-  <p>Coordinates are units on a 100 × 100 canvas, y down. Parts hold shapes (<code>circle</code>, <code>ellipse</code>,
-    <code>rect</code>, <code>capsule</code>, <code>polygon</code>) and rotate around their <code>pivot</code>; a part with a
-    <code>parent</code> moves with it.</p>
-  <div class="playground" data-title="A blob with a face" data-res="32">
-    <script type="application/json">
-{
+## Parts and shapes
+
+Coordinates are units on a 100 × 100 canvas, y down. Parts hold shapes (`circle`, `ellipse`, `rect`, `capsule`, `polygon`) and rotate around their `pivot`; a part with a `parent` moves with it.
+
+<SpecPlayground
+  title="A blob with a face"
+  res={32}
+  spec={`{
   "name": "Mochi",
   "materials": {
     "body": {"color": "#7fd18b"},
@@ -40,17 +34,19 @@
       "face": {"show": [1, 1, 1, 1, 1, 1, 0, 1]}
     }}
   }
-}
-    </script>
-  </div>
-  <p>Try: change the body colour, make the ellipse wider, or set the size to 16 px to see the icon render.</p>
+}`}
+/>
 
-  <h2 id="materials">Materials and textures</h2>
-  <p>Materials give colour, texture (<code>noise fur scales stripes checker cloth bricks spots metal</code>), shine, and whether a
-    shape is outlined. Textures stick to moving parts; small sizes simplify them automatically.</p>
-  <div class="playground" data-title="Textures" data-res="48">
-    <script type="application/json">
-{
+Try: change the body colour, make the ellipse wider, or set the size to 16 px to see the icon render.
+
+## Materials and textures
+
+Materials give colour, texture (`noise fur scales stripes checker cloth bricks spots metal`), shine, and whether a shape is outlined. Textures stick to moving parts; small sizes simplify them automatically.
+
+<SpecPlayground
+  title="Textures"
+  res={48}
+  spec={`{
   "name": "swatches",
   "materials": {
     "fur": {"color": "#c9773a", "texture": "fur"},
@@ -64,16 +60,17 @@
     {"id": "c", "shapes": [{"type": "circle", "cx": 27, "cy": 72, "r": 19, "material": "metal"}]},
     {"id": "d", "shapes": [{"type": "rect", "x": 54, "y": 54, "w": 38, "h": 38, "r": 6, "material": "cloth"}]}
   ]
-}
-    </script>
-  </div>
+}`}
+/>
 
-  <h2 id="tracks">Animating parts</h2>
-  <p>Tracks animate <code>x</code>, <code>y</code>, <code>rot</code>, <code>sx</code>, <code>sy</code> and <code>show</code>
-    per part, as keyframes, eased keys, or waves (<code>sin tri square bounce</code>).</p>
-  <div class="playground" data-title="A waving flag" data-res="48">
-    <script type="application/json">
-{
+## Animating parts
+
+Tracks animate `x`, `y`, `rot`, `sx`, `sy` and `show` per part, as keyframes, eased keys, or waves (`sin tri square bounce`).
+
+<SpecPlayground
+  title="A waving flag"
+  res={48}
+  spec={`{
   "name": "flag",
   "materials": {"pole": "#6b4a2f", "cloth": {"color": "#e8743b", "texture": "cloth"}},
   "parts": [
@@ -89,17 +86,18 @@
       "flag3": {"rot": {"wave": 14, "phase": 0.4}}
     }}
   }
-}
-    </script>
-  </div>
+}`}
+/>
 
-  <h2 id="figures">Start from a figure</h2>
-  <p>For animals and people, start from a figure: a skeleton with realistic motion models. Dress its bones by id with
-    shapes; the motions come for free. Here is a goose with a few shapes and three motions; add <code>"jump"</code>,
-    <code>"climb"</code> or <code>"sit"</code> to the animations.</p>
-  <div class="playground" data-title="Dressing the goose figure" data-anim="walk" data-res="48">
-    <script type="application/json">
-{
+## Start from a figure
+
+For animals and people, start from a figure: a skeleton with realistic motion models. Dress its bones by id with shapes; the motions come for free. Here is a goose with a few shapes and three motions; add `"jump"`, `"climb"` or `"sit"` to the animations.
+
+<SpecPlayground
+  title="Dressing the goose figure"
+  anim="walk"
+  res={48}
+  spec={`{
   "name": "plain goose",
   "figure": "goose",
   "materials": {
@@ -130,25 +128,27 @@
     "walk": {"motion": "walk"},
     "run": {"motion": "run"}
   }
-}
-    </script>
-  </div>
+}`}
+/>
 
-  <h2 id="plugins">Plug-ins: new shapes, textures and motions</h2>
-  <p>A plug-in registers new building blocks; specs then use them like built-ins, with the same validation. This playground
-    loads <code>examples/plugins/extras.mjs</code>, which adds a <code>star</code> shape, a <code>feathers</code> texture and a
-    <code>float</code> motion.</p>
-  <pre class="snippet" data-lang="js">
-    export default function setup({ registerShape, registerTexture, registerMotion }) {
-      registerShape('star', { required: ['cx', 'cy', 'r'], keys: ['r2', 'tips', 'round', 'rot'], compile: (s) => ({ sdf, R, bbox }) });
-      registerTexture('feathers', (x, y, scale) => brightness);
-      registerMotion('float', { generate: ({ rig, params, samples }) => ({ tracks: { [rig.root]: { y: [...], rot: [...] } } }) });
-    }
-    // CLI: node bin/pixel.mjs preview starfish.json --plugin extras.mjs
-  </pre>
-  <div class="playground" data-title="A starfish made of plug-ins" data-plugin="../packages/pixel-studio/examples/plugins/extras.mjs" data-res="48">
-    <script type="application/json">
-{
+## Plug-ins: new shapes, textures and motions
+
+A plug-in registers new building blocks; specs then use them like built-ins, with the same validation. This playground loads `examples/plugins/extras.mjs`, which adds a `star` shape, a `feathers` texture and a `float` motion.
+
+```js
+export default function setup({ registerShape, registerTexture, registerMotion }) {
+  registerShape('star', { required: ['cx', 'cy', 'r'], keys: ['r2', 'tips', 'round', 'rot'], compile: (s) => ({ sdf, R, bbox }) });
+  registerTexture('feathers', (x, y, scale) => brightness);
+  registerMotion('float', { generate: ({ rig, params, samples }) => ({ tracks: { [rig.root]: { y: [...], rot: [...] } } }) });
+}
+// CLI: npx pixel preview starfish.json --plugin extras.mjs
+```
+
+<SpecPlayground
+  title="A starfish made of plug-ins"
+  res={48}
+  plugin="/apps/packages/pixel-studio/examples/plugins/extras.mjs"
+  spec={`{
   "name": "Twinkle the starfish",
   "figure": {"use": "blob"},
   "materials": {
@@ -167,14 +167,9 @@
   "animations": {
     "float": {"motion": "float", "frames": 12, "fps": 8, "height": 5, "tilt": 8}
   }
-}
-    </script>
-  </div>
+}`}
+/>
 
-  <h2 id="more">Points, events, skins, state machines</h2>
-  <p>Specs can also name attachment points, add events, define skins and carry a state machine. See
-    <a href="events.html">Events, points and the foot line</a> and <a href="states.html">State machines and skins</a>, and the
-    full format in <a href="../packages/pixel-studio/docs/SPEC.md">docs/SPEC.md</a> (which doubles as the brief for AI agents writing characters).</p>
-</main>
-</body>
-</html>
+## Points, events, skins, state machines
+
+Specs can also name attachment points, add events, define skins and carry a state machine. See [Events, points and the foot line](/docs/guide/events/) and [State machines and skins](/docs/guide/states/), and the full format in [docs/SPEC.md](/docs/reference/spec/) (which doubles as the brief for AI agents writing characters).

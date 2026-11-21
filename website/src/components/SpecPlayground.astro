@@ -1,0 +1,147 @@
+---
+// An editable character: the spec on the right, drawn by the engine in the browser on the left as you type.
+// The engine, figures and examples load from /apps/packages/pixel-studio/ (the website's mirror of the package).
+import '../styles/guide.css';
+
+interface Props {
+  title?: string;
+  spec: string;
+  anim?: string;
+  res?: number;
+  plugin?: string;
+}
+const { title = 'Playground', spec, anim, res = 48, plugin } = Astro.props;
+const rows = Math.min(28, spec.split('\n').length + 1);
+---
+
+<div class="ps-playground not-content" data-anim={anim} data-plugin={plugin}>
+  <p class="ps-head">{title} <span class="ps-hint">edit the spec, the drawing follows</span></p>
+  <div class="ps-pg">
+    <div class="ps-pg-view">
+      <div class="ps-stagebox"><canvas></canvas></div>
+      <div class="ps-pg-controls">
+        <label>Animation <select class="ps-anim"></select></label>
+        <label
+          >Size <select class="ps-res">
+            {[16, 24, 32, 48, 64].map((r) => <option selected={r === res}>{r}</option>)}
+          </select> px</label
+        >
+      </div>
+      <div class="ps-status" role="status"></div>
+    </div>
+    <textarea class="ps-spec" spellcheck="false" aria-label={`${title}: character spec (JSON)`} rows={rows}>{spec}</textarea>
+  </div>
+</div>
+
+<script>
+  const ENGINE = '/apps/packages/pixel-studio/src/core/index.js';
+  const PKG = '/apps/packages/pixel-studio';
+  // The engine is plain JavaScript loaded at run time from the mirror, so it is typed loosely here.
+  type Engine = Record<string, any>;
+
+  let engine: Promise<Engine> | undefined;
+  const loadEngine = () => (engine ??= import(/* @vite-ignore */ ENGINE) as Promise<Engine>);
+  const plugins = new Map<string, Promise<void>>();
+
+  const json = async (url: string) => {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${url.replace(`${PKG}/`, '')}: HTTP ${r.status}`);
+    return r.json();
+  };
+  const loadFigure = (name: string) => json(`${PKG}/figures/${name}.json`);
+  const loadRef = (ref: string) => json(`${PKG}/examples/${ref}`);
+
+  for (const box of document.querySelectorAll<HTMLElement>('.ps-playground')) {
+    const ta = box.querySelector('textarea')!;
+    const canvas = box.querySelector('canvas')!;
+    const status = box.querySelector<HTMLElement>('.ps-status')!;
+    const animSel = box.querySelector<HTMLSelectElement>('.ps-anim')!;
+    const resSel = box.querySelector<HTMLSelectElement>('.ps-res')!;
+    const state = { compiled: null as any, frames: [] as ImageData[], f: 0, acc: 0, seq: 0, fps: 8 };
+    const show = (cls: string, text: string) => {
+      status.className = `ps-status ${cls}`;
+      status.textContent = text;
+    };
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+    const draw = () => {
+      if (state.frames.length) canvas.getContext('2d')!.putImageData(state.frames[state.f], 0, 0);
+    };
+
+    async function frames() {
+      const { renderFrame, resolveStyle } = await loadEngine();
+      const c = state.compiled;
+      if (!c) return;
+      const res = Number(resSel.value);
+      const anim = c.animations[animSel.value] ?? Object.values(c.animations)[0];
+      const style = resolveStyle(c, res);
+      state.frames = Array.from({ length: anim.frames }, (_, f) => {
+        const fr = renderFrame(c, { res, anim, frame: f, style });
+        return new ImageData(new Uint8ClampedArray(fr.rgba), fr.w, fr.h);
+      });
+      state.fps = anim.fps;
+      state.f = 0;
+      const k = Math.max(1, Math.floor(160 / state.frames[0].height));
+      canvas.width = state.frames[0].width;
+      canvas.height = state.frames[0].height;
+      canvas.style.width = `${canvas.width * k}px`;
+      canvas.style.height = `${canvas.height * k}px`;
+      draw();
+    }
+
+    async function rebuild() {
+      const seq = ++state.seq;
+      const { validate, compile, resolveSpec, usePlugin } = await loadEngine();
+      const plugin = box.dataset.plugin;
+      if (plugin) {
+        if (!plugins.has(plugin)) plugins.set(plugin, import(/* @vite-ignore */ plugin).then(usePlugin));
+        await plugins.get(plugin);
+      }
+      let spec;
+      try {
+        spec = JSON.parse(ta.value);
+      } catch (e) {
+        return show('err', `JSON: ${(e as Error).message}`);
+      }
+      const notes: string[] = [];
+      try {
+        spec = await resolveSpec(spec, { loadFigure, loadRef, warn: (p: string, m: string) => notes.push(`${p}: ${m}`) });
+      } catch (e: any) {
+        return show('err', (e.errors ?? [{ path: '$', message: e.message }]).map((x: any) => `${x.path}: ${x.message}`).join('\n'));
+      }
+      if (seq !== state.seq) return;
+      const { errors, warnings } = validate(spec);
+      if (errors.length) return show('err', errors.map((x: any) => `${x.path}: ${x.message}`).join('\n'));
+      state.compiled = compile(spec);
+      const names = Object.keys(state.compiled.animations);
+      const want = animSel.value || box.dataset.anim;
+      animSel.innerHTML = names.map((n) => `<option ${n === want ? 'selected' : ''}>${esc(n)}</option>`).join('');
+      const lines = [...notes, ...warnings.map((x: any) => `${x.path}: ${x.message}`)];
+      show(lines.length ? 'warn' : 'ok', lines.join('\n') || `ok: ${names.length} animation${names.length > 1 ? 's' : ''}`);
+      await frames();
+    }
+
+    let timer = 0;
+    ta.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(rebuild, 350);
+    });
+    animSel.onchange = frames;
+    resSel.onchange = frames;
+    let last = 0;
+    const loop = (t: number) => {
+      if (state.frames.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        state.acc += last ? Math.min(100, t - last) : 0;
+        const step = 1000 / state.fps;
+        while (state.acc >= step) {
+          state.acc -= step;
+          state.f = (state.f + 1) % state.frames.length;
+          draw();
+        }
+      }
+      last = t;
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    rebuild().catch((e) => show('err', String(e?.message ?? e)));
+  }
+</script>

@@ -22,6 +22,7 @@ export default defineConfig({
       install: 'npm i pixel-studio',
       nav: [
         { label: 'Docs', href: '/docs/' },
+        { label: 'Guide', href: '/docs/guide/' },
         { label: 'Blog', href: '/blog/' },
         { label: 'Gallery', href: '/gallery/' },
       ],

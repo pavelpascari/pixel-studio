@@ -21,7 +21,6 @@ Start with [getting started](packages/pixel-studio/docs/getting-started.md). Cha
 | [`packages/runtime/`](packages/runtime/) | The `@pixel-studio/runtime` package. |
 | [`studio/`](studio/) | The studio, the figure viewer, the goose workbench and the URL-driven playground. |
 | [`demo/`](demo/) | Demo pages: a landing page, a flock on a lawn, characters on cards, a tiny runner game. |
-| [`site/`](site/) | The older hand-written guide pages with live examples. |
 | [`website/`](website/) | pixel-studio.sh (Astro and [astro-project-site](https://github.com/pavelpascari/astro-project-site), on Cloudflare Workers). |
 | [`docs/research/`](docs/research/) | Research notes behind the design. |
 | [`scripts/`](scripts/) | The dev server, the demo build, the version script and browser checks. |
@@ -30,7 +29,7 @@ Start with [getting started](packages/pixel-studio/docs/getting-started.md). Cha
 npm install          # links the two packages; no third-party dependencies
 npm test             # both packages
 npm run build:demo   # the demo's bundles and posters
-npm run studio       # http://localhost:5173/studio/ , /demo/ , /site/
+npm run studio       # http://localhost:5173/studio/ , /demo/
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Released under the [MIT License](LICENSE). Motion data comes only from

@@ -28,7 +28,7 @@ for (const f of readdirSync(join(ROOT, 'packages/pixel-studio/examples')).filter
   const first = Object.values(c.animations)[0];
   const fr = renderFrame(c, { res: 64, anim: first, frame: 0, style: resolveStyle(c, 64) });
   writeFileSync(join(ROOT, 'demo/assets', `${name}.poster.png`), encodePNG(fr.w, fr.h, fr.rgba));
-  // The goose also ships as a game-engine sheet (docs site: PixiJS / Phaser example).
+  // The goose also ships as a game-engine sheet (the guide's PixiJS / Phaser example).
   if (name === 'goose-root') {
     const ex = exportSheet(c, 32, { image: `${name}.32.png` });
     writeFileSync(join(ROOT, 'demo/assets', `${name}.32.png`), encodePNG(ex.width, ex.height, ex.rgba));

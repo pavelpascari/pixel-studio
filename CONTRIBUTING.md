@@ -20,8 +20,8 @@ npm run studio          # http://localhost:5173/studio/ , /studio/figures.html ,
 |---|---|
 | `packages/pixel-studio/` | The `pixel-studio` package: the engine (`src/core`, `src/node`), the `pixel` CLI (`bin/`), figures, examples, motion references, the user docs (`docs/`) and their tests (`test/`). |
 | `packages/runtime/` | The `@pixel-studio/runtime` package: `<pixel-sprite>` and `<pixel-stage>` (`src/`), no imports from the engine, and their tests. |
-| `studio/`, `demo/`, `site/` | The studio and playground, the demo pages, and the older hand-written guide pages. Served from the repository root by `npm run studio`. |
-| `website/` | pixel-studio.sh (Astro, [astro-project-site](https://github.com/pavelpascari/astro-project-site)). Its own `npm install`; `npm run deploy` there. |
+| `studio/`, `demo/` | The studio and playground, and the demo pages. Served from the repository root by `npm run studio`. |
+| `website/` | pixel-studio.sh, including the guide (`src/content/docs/docs/guide/`: live examples and editable characters) (Astro, [astro-project-site](https://github.com/pavelpascari/astro-project-site)). Its own `npm install`; `npm run deploy` there. |
 | `docs/research/` | Research notes behind the design. Not shipped in the packages. |
 | `scripts/` | The dev server, the demo build, version and browser checks. |
 
@@ -97,11 +97,12 @@ By contributing you agree that your contributions are licensed under the [MIT Li
 ## Browser checks
 
 `test/browser/runtime.html` checks the runtime in a real browser (open it on any device while `npm run studio` runs).
-To run it, and every page of the docs site, in Firefox and WebKit, install Playwright anywhere outside the project and
-run the script from there:
+To run it, and every page of the website's guide, in Firefox and WebKit, serve both (`npm run studio` here, and
+`npm run build && npm run preview` in `website/`), install Playwright anywhere outside the project and run the script
+from there:
 
 ```bash
 mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
-node /path/to/pixel-studio/scripts/browser-check.mjs        # --browsers firefox,webkit,chromium  --base http://localhost:5173
+node /path/to/pixel-studio/scripts/browser-check.mjs   # --browsers firefox,webkit,chromium  --base http://localhost:5173  --site http://localhost:4321
 ```
 

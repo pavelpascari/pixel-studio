@@ -1,0 +1,42 @@
+---
+title: "Guide"
+description: "Describe a character as JSON; the engine draws it as pixel art at every size, with realistic motion; one tag plays it on any web page, where it can even walk around your layout. Every example on these pages is live: the code under each one is exactly what runs."
+sidebar:
+  order: 0
+  label: Overview
+---
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+import LiveExample from '../../../../components/LiveExample.astro';
+
+<LiveExample
+  title="Hello, goose"
+  code={`<script type="module" src="../packages/runtime/src/pixel-sprite.js"></script>
+<pixel-sprite src="../demo/assets/goose-root.bundle.json" size="128" alt="root, a goose in a hoodie"></pixel-sprite>
+<pixel-sprite src="../demo/assets/pip.bundle.json" anim="walk" size="128" alt="Pip walking"></pixel-sprite>
+<pixel-sprite src="../demo/assets/fox.bundle.json" anim="trot" size="128" alt="Ember the fox trotting"></pixel-sprite>
+<pixel-sprite src="../demo/assets/slime.bundle.json" anim="hop" size="96" alt="a hopping slime"></pixel-sprite>
+<pixel-sprite src="../demo/assets/moss.bundle.json" anim="think" size="128" click-anim="hop" alt="Moss thinking"></pixel-sprite>`}
+/>
+
+Click the goose: its bundle carries a small state machine, so it honks; hover it and it starts hacking.
+
+## How it fits together
+
+1.  **Write a character** as JSON: materials, parts with shapes, animations. Start from a figure (goose, human, dog, chibi, blob) and its motion models do the walking, jumping and climbing. [Writing a character](/docs/guide/authoring/)
+2.  **Bake a bundle**: one JSON file with sprite sheets at 16, 32 and 64 px plus events, attachment points and the foot line. `npx pixel bundle goose.json`. [Bundles](/docs/guide/export/)
+3.  **Play it** with `<pixel-sprite>`, drive it with a state machine, move it with the shared clock, or let it loose on the page with `<pixel-stage>`.
+
+## Topics
+
+<CardGrid>
+  <LinkCard title="Putting a sprite on a page" href="/docs/guide/sprite/" description="Sizes, detail levels, hover and click, playback API, fallbacks." />
+  <LinkCard title="Events, points and the foot line" href="/docs/guide/events/" description="Footsteps, speech bubbles at the beak, standing on an edge, hit testing." />
+  <LinkCard title="State machines and skins" href="/docs/guide/states/" description="Set a speed, fire a honk; party hats and team colours." />
+  <LinkCard title="Moving sprites" href="/docs/guide/moving/" description="Walk without sliding, climb, jump along an arc." />
+  <LinkCard title="Characters on the page" href="/docs/guide/stage/" description="Walking on cards, climbing, sitting on edges, hiding behind things." />
+  <LinkCard title="Writing a character" href="/docs/guide/authoring/" description="Live spec playgrounds: shapes, materials, tracks, figures." />
+  <LinkCard title="Figures and motions" href="/docs/guide/motions/" description="Every figure and motion, rendered; tune parameters live." />
+  <LinkCard title="Bundles and game engines" href="/docs/guide/export/" description="The bundle format, CLI, PixiJS and Phaser." />
+</CardGrid>
+
+Every option and format is in the [reference](/docs/reference/).

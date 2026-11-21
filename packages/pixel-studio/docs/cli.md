@@ -533,7 +533,7 @@ Defined in `package.json`:
 
 | Script | Command | What it does |
 |---|---|---|
-| `npm run studio` | `node scripts/serve.mjs` | Starts the static server (see below). Studio at `http://localhost:5173/studio/`, docs site at `http://localhost:5173/site/`, demo pages at `http://localhost:5173/demo/`. |
+| `npm run studio` | `node scripts/serve.mjs` | Starts the static server (see below). Studio at `http://localhost:5173/studio/`, demo pages at `http://localhost:5173/demo/`. |
 | `npm test` | `npm test --workspaces` | Runs both packages' test suites with Node's built-in test runner: engine, figure, rig, plug-in and reference-registry tests in `packages/pixel-studio/test/`, runtime tests in `packages/runtime/test/`. |
 | `npm run build:demo` | `node scripts/build-demo.mjs` | Copies `packages/runtime/src/pixel-sprite.js` and `pixel-stage.js` to `demo/assets/`, and builds `demo/assets/<name>.bundle.json` (16, 32 and 64 px) and `demo/assets/<name>.poster.png` (the first frame at 64 px, a fallback image for `<pixel-sprite>`) for every `packages/pixel-studio/examples/*.json`, plus a 32 px game-engine sheet for `goose-root` (`demo/assets/goose-root.32.png` and `.32.json`, as [`export`](#export) writes). Prints one line per bundle: path, size in KB, animation names. Writes into the repository (the output is not committed). |
 | `npm run previews` | `node scripts/build-demo.mjs --previews` | Everything `build:demo` does, plus a contact sheet per example in `previews/<name>.png` (16/32/64 px blocks, 96 px cells). |
@@ -549,7 +549,7 @@ Defined in `package.json`:
 
 ## scripts/serve.mjs
 
-A zero-dependency static file server for the studio, the docs site (`site/`) and the demo pages. It serves the repository root.
+A zero-dependency static file server for the studio and the demo pages. It serves the repository root.
 
 | Environment variable | Default | Description |
 |---|---|---|
@@ -566,7 +566,6 @@ On start it prints:
 
 ```
 Pixel Studio  → http://localhost:5173/studio/
-Docs site     → http://localhost:5173/site/
 Demo website  → http://localhost:5173/demo/
 ```
 

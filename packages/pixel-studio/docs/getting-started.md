@@ -82,4 +82,4 @@ In production, copy `pixel-sprite.js` and the bundle next to your page; the runt
 | let characters walk, climb and hide on your page's own elements | [stage.md](stage.md) |
 | use the sprites in Phaser or PixiJS | [cli.md](cli.md#export) (`npx pixel export`) |
 | call the engine from JavaScript | [api.md](api.md) |
-| see it all live, with editable examples | clone the repository, `npm run studio`, open `http://localhost:5173/site/` |
+| see it all live, with editable examples | the [guide](https://pixel-studio.sh/docs/guide/) on pixel-studio.sh |

@@ -3,7 +3,7 @@
 | I want to… | read |
 |---|---|
 | get a character onto a page in five minutes | [getting-started.md](getting-started.md) |
-| understand what this is and try it | [the project README](../README.md), and the docs site with live examples: `site/` (`npm run studio`, then `/site/`) |
+| understand what this is and try it | [the project README](../README.md), and the [guide](https://pixel-studio.sh/docs/guide/): every feature as a live example next to its code, with characters you can edit |
 | write a character (or brief an agent to) | [SPEC.md](SPEC.md): the spec format. It is also the agent brief (`pixel brief`) |
 | make characters move realistically | [figures.md](figures.md): figure library, motion models, follow-through, writing a figure |
 | put a character on a web page | [runtime.md](runtime.md): `<pixel-sprite>`, bundles, events, attachment points, state machines, skins, moving sprites at the right speed |

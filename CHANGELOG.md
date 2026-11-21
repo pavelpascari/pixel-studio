@@ -16,6 +16,12 @@ Until 1.0, minor versions may change the spec format.
   the imports are `@pixel-studio/runtime` and `@pixel-studio/runtime/stage`.
 - The `pixel-studio` package no longer ships the research notes (`docs/research/`); they stay in the repository.
 
+### Guide
+- The hand-written guide pages (`site/`) move into pixel-studio.sh as the **Guide** (`/docs/guide/`): the same nine
+  topics, every live example running next to its code (now with the site's highlighting, copy button and themes) and
+  every editable character redrawn by the engine as you type. `site/` is gone; `scripts/browser-check.mjs` checks
+  the guide's pages instead.
+
 ### Repository
 - Laid out as npm workspaces: `packages/pixel-studio/`, `packages/runtime/`, with the studio, demos, guide pages
   and website around them. `npm install` links the two packages; there are still no third-party dependencies.

@@ -5,7 +5,8 @@ description: "Agents describe characters; the engine draws them as pixel art at 
 
 Agents describe characters; the engine draws them as pixel art at every level of detail; websites play them with one tag.
 
-- [Reference](/docs/reference/): the docs/ folder of the repository (11 pages).
-- [Project](/docs/project/): README.md, CHANGELOG.md, CONTRIBUTING.md from the repository root.
-
-Pages in `src/content/docs/docs/` appear here too, next to the mounted ones.
+- [Guide](/docs/guide/): learn it by example. Every page has live sprites next to their code, and editable characters
+  the engine redraws as you type.
+- [Reference](/docs/reference/): every option and format: the character spec, figures, `<pixel-sprite>`,
+  `<pixel-stage>`, the CLI and the JavaScript API.
+- [Project](/docs/project/): the README, what changed in each release, and how to contribute.
