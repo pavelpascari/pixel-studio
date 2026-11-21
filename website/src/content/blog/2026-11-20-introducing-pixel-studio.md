@@ -22,13 +22,13 @@ Agents describe characters; the engine draws them as pixel art at every level of
 Install:
 
 ```sh
-npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0   # one package, no dependencies
+npm i @pixel-studio/core   # the engine and CLI; brings @pixel-studio/runtime, nothing else
 ```
 
 Make a character by changing an example (my-goose.json):
 
 ```json
-{ "extends": "./node_modules/pixel-studio/examples/goose-base.json",
+{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
   "name": "Marigold",
   "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }
 ```
@@ -41,7 +41,8 @@ npx pixel preview  my-goose.json --out my-goose.png       # every animation at 1
 npx pixel bundle   my-goose.json --out my-goose.bundle.json
 ```
 
-The [documentation](/docs/reference/getting-started/) has the rest.
+A site that only plays the bundle needs just `npm i @pixel-studio/runtime`. The [guide](/docs/guide/) shows every
+feature live, and the [documentation](/docs/reference/getting-started/) has the rest.
 
 ## What's next
 

@@ -358,7 +358,7 @@ statements.
 **Sketch.** Build-time JS registries, used by the CLI, the studio and Node. Bundles stay data only.
 
 ```js
-import { registerMotion, registerShape, registerTexture, registerConstraint } from 'pixel-studio';
+import { registerMotion, registerShape, registerTexture, registerConstraint } from '@pixel-studio/core';
 registerShape('star', { compile: (s) => ({ sdf, bbox, R }), schema: {cx: 'number', cy: 'number', r: 'number', points: 'int'} });
 registerTexture('feathers', (x, y, scale) => value01);
 registerMotion('swim', { params: {...}, generate(parts, rig, m) { return { tracks, speed, events } } });
