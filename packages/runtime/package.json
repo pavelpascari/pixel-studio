@@ -1,6 +1,6 @@
 {
   "name": "@pixel-studio/runtime",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.1",
   "description": "Play Pixel Studio sprites on any web page: <pixel-sprite> for one character, <pixel-stage> for characters that walk, climb and hide on the page. No dependencies, no build step.",
   "keywords": [
     "pixel-art",

@@ -6,6 +6,8 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.1] - 2026-11-21
+
 ### On npm, as two packages
 - **`pixel-studio`** (the engine, the `pixel` CLI, figures, examples, motion references and the reference docs) and
   **`@pixel-studio/runtime`** (`<pixel-sprite>`, `<pixel-stage>` and `<pixel-actor>`) are published on npm, always
