@@ -6,6 +6,25 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### On npm, as two packages
+- **`pixel-studio`** (the engine, the `pixel` CLI, figures, examples, motion references and the reference docs) and
+  **`@pixel-studio/runtime`** (`<pixel-sprite>`, `<pixel-stage>` and `<pixel-actor>`) are published on npm, always
+  with the same version: `npm i pixel-studio`, or `npm i @pixel-studio/runtime` for a site that only plays sprites.
+  The runtime has no dependencies and never imports the engine; `pixel-studio` depends on exactly its version.
+- `pixel-studio/runtime` and `pixel-studio/stage` keep working: they re-export the runtime package. In the runtime
+  package the files are `src/pixel-sprite.js` and `src/pixel-stage.js` (were `src/runtime/` in `pixel-studio`), and
+  the imports are `@pixel-studio/runtime` and `@pixel-studio/runtime/stage`.
+- The `pixel-studio` package no longer ships the research notes (`docs/research/`); they stay in the repository.
+
+### Repository
+- Laid out as npm workspaces: `packages/pixel-studio/`, `packages/runtime/`, with the studio, demos, guide pages
+  and website around them. `npm install` links the two packages; there are still no third-party dependencies.
+- Generated files are no longer committed: `demo/assets/` (built by `npm run build:demo`, and by the website's build)
+  and `previews/` (which still held a contact sheet of a character that no longer exists).
+- CI on every push and pull request: both packages' tests on Node 20 and 24, Markdown links, the packed packages
+  installed and used from a fresh folder, and the website build. Releases are staged on npm from a signed tag and
+  approved by a maintainer with 2FA (see CONTRIBUTING.md).
+
 ### Removed
 - `demo/pp.html`, the P/P studio site sketch: it is a personal site, not an engine demo, so it no longer ships here.
 
@@ -63,7 +82,7 @@ Old event names, the `state` attribute and `actor.state` still work in this alph
 - **Runtime:** `checkBundle` type-checks animations, loops, points, size, ground, states and frame sizes; it accepts
   later minor versions of the format (`pixel-sprite/1.x`); name lookups cannot hit built-in keys; a bundle URL that
   serves an HTML page gets an error that says so; sheets on another origin load with `crossOrigin="anonymous"`.
-- **Docs:** a new [getting-started guide](docs/getting-started.md); the README leads with install and a five-minute
+- **Docs:** a new [getting-started guide](packages/pixel-studio/docs/getting-started.md); the README leads with install and a five-minute
   path; every reference doc re-checked against the code (stale outputs re-run, fixed "known issues" removed, views
   documented in the agent brief, skins described as the deltas they are).
 
@@ -190,7 +209,7 @@ Old event names, the `state` attribute and `actor.state` still work in this alph
 - New `studio/play.html`: one character, animated, set up entirely by its URL: `?c=goose-root&view=front&anim=waddle&skin=party&res=64`
   plus `#spec=` with changes to materials, style and parts (URL-encoded JSON, or deflate-raw + base64url; a whole goose is about 2 KB).
   Panels for colours, textures and style write into the link; **Copy link** shares it.
-- For agents: [docs/playground.md](docs/playground.md) (URL options, payload rules, examples), `studio/play.schema.json` (JSON
+- For agents: [docs/playground.md](packages/pixel-studio/docs/playground.md) (URL options, payload rules, examples), `studio/play.schema.json` (JSON
   Schema of the payload), and `window.playground` (`ready`, `options()`, `set()`, `link()`, `frame()`) in the page.
 - `llms.txt` at the site root points agents to the playground, its guide and the spec.
 - `scripts/serve.mjs` no longer serves dotfiles or dot-folders (`.git` was reachable through a tunnel) and answers

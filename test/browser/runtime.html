@@ -33,7 +33,7 @@
   document.getElementById('upgraded').addEventListener('pixel-ready', () => window.__readyCount++);
 </script>
 <script type="module">
-import { clock } from '../../src/runtime/pixel-sprite.js';
+import { clock } from '../../packages/runtime/src/pixel-sprite.js';
 
 const GOOSE = '../../demo/assets/goose-root.bundle.json';
 const PIP = '../../demo/assets/pip.bundle.json';
@@ -376,7 +376,7 @@ await check('pixel-error bubbles; the state attribute mirrors status', async () 
 });
 
 await check('an actor: one pixel-burst per rage burst (the inner sprite\'s events stay inside); actor.activity and its state alias', async () => {
-  await import('../../src/runtime/pixel-stage.js');
+  await import('../../packages/runtime/src/pixel-stage.js');
   const st = document.createElement('pixel-stage');
   st.setAttribute('controls', 'none');
   const actor = document.createElement('pixel-actor');

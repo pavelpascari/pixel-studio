@@ -73,7 +73,7 @@ The recommended architecture is in [§4](#4-recommended-architecture) and the de
   - **Phaser** `TimeStep`: smooths deltas over a 10-frame history, enforces a "panic" cooldown (`panicMax` 120 frames) after focus or resume, and shifts `startTime` by the pause duration on resume ([source](https://raw.githubusercontent.com/phaserjs/phaser/master/src/core/TimeStep.js)).
   - **lottie-web** `AnimationManager`: **one shared rAF loop** for all animations. It runs only while `playingAnimationsNum > 0` and offers `freeze()` and `unfreeze()`. It has no visibility handling ([source](https://raw.githubusercontent.com/airbnb/lottie-web/master/player/js/animation/AnimationManager.js)).
 - **Cadence under throttling:** 12 fps is a whole number of frames at 60 and 120 Hz (5 and 10 refreshes) but not at 30 Hz (2.5), so Low Power Mode alternates 66 ms and 100 ms frames. 6, 10 and 15 fps divide all of 30, 60 and 120. The goose bundles use 6, 10 and 12 fps.
-- **Keeping movement in sync:** gait `speed` is in units/s and is converted to CSS px/s ([docs/runtime.md](../runtime.md#moving-a-walking-sprite-across-the-page)). Feet stay planted only if the body moves by `speed · dt` with the **same `dt`** used to advance frames, so the clamp must match. Today the runtime clamps at 100 ms and `flock.html` at 50 ms.
+- **Keeping movement in sync:** gait `speed` is in units/s and is converted to CSS px/s ([docs/runtime.md](../../packages/pixel-studio/docs/runtime.md#moving-a-walking-sprite-across-the-page)). Feet stay planted only if the body moves by `speed · dt` with the **same `dt`** used to advance frames, so the clamp must match. Today the runtime clamps at 100 ms and `flock.html` at 50 ms.
 
 ### 2.4 Memory, decode and delivery
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Events, points and the foot line — Pixel Studio</title>
 <link rel="stylesheet" href="site.css">
-<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="../packages/runtime/src/pixel-sprite.js"></script>
 <script type="module" src="site.js"></script>
 <style>
   .ground-line { position: absolute; left: 0; right: 0; border-top: 2px dashed #e8743b; }
@@ -56,7 +56,7 @@
       </div>
       <div class="controls"><button id="pt-flip">flip</button><span class="readout" id="pt-out"></span></div>
       <script type="module">
-        import { clock } from '../src/runtime/pixel-sprite.js';
+        import { clock } from '../packages/runtime/src/pixel-sprite.js';
         const goose = document.getElementById('pt-goose'), bubble = document.getElementById('pt-bubble');
         document.getElementById('pt-flip').onclick = () => goose.toggleAttribute('flip');
         clock.add(() => {

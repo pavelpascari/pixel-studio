@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bundles and game engines — Pixel Studio</title>
 <link rel="stylesheet" href="site.css">
-<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="../packages/runtime/src/pixel-sprite.js"></script>
 <script type="module" src="site.js"></script>
 </head>
 <body>
@@ -41,7 +41,7 @@
     </template>
   </div>
   <p>Sheets are PNG data URLs, one per size. A skin is stored as a change to the plain sheet when that is smaller (<code>recolor</code>: colours swapped, <code>overlay</code>: pixels drawn on top), otherwise as its own sheet. Events, attachment points, the foot line, speeds and the state
-    machine are stored in units, so one table serves every size. The full format is in <a href="../docs/runtime.md">docs/runtime.md</a>.</p>
+    machine are stored in units, so one table serves every size. The full format is in <a href="../packages/pixel-studio/docs/runtime.md">docs/runtime.md</a>.</p>
 
   <h2 id="pixi">PixiJS</h2>
   <p><code>pixel export</code> writes frames named by index, a PixiJS <code>animations</code> map, and per-frame durations.

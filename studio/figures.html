@@ -80,8 +80,8 @@
   </section>
 </main>
 <script type="module">
-import { resolveSpec, compile } from '../src/core/index.js';
-import { samplePoseAt, followOffsets, worldMatrices } from '../src/core/internal.js';
+import { resolveSpec, compile } from '../packages/pixel-studio/src/core/index.js';
+import { samplePoseAt, followOffsets, worldMatrices } from '../packages/pixel-studio/src/core/internal.js';
 
 const FIGURES = ['goose', 'goose-front', 'human', 'dog', 'chibi', 'blob'];
 const $ = (s) => document.querySelector(s);
@@ -99,7 +99,7 @@ const state = { figure: null, compiled: null, anim: null, t0: performance.now(),
 const figs = {};
 
 async function loadFigure(name) {
-  figs[name] ??= await (await fetch(`../figures/${name}.json`, { cache: 'no-store' })).json();
+  figs[name] ??= await (await fetch(`../packages/pixel-studio/figures/${name}.json`, { cache: 'no-store' })).json();
   return figs[name];
 }
 

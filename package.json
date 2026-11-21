@@ -1,27 +1,20 @@
 {
-  "name": "pixel-studio",
-  "version": "0.2.0-alpha.0",
+  "name": "pixel-studio-repo",
   "private": true,
-  "description": "Agents describe characters as JSON rigs; a zero-dependency engine renders them as pixel-art animations at every level of detail, with realistic skeleton motion; websites play them with one tag.",
-  "keywords": ["pixel-art", "sprite", "animation", "sdf", "skeleton", "inverse-kinematics", "web-component", "agents", "llm"],
-  "license": "MIT",
-  "author": "Pavel Pascari",
   "type": "module",
-  "exports": {
-    ".": "./src/core/index.js",
-    "./runtime": "./src/runtime/pixel-sprite.js",
-    "./stage": "./src/runtime/pixel-stage.js",
-    "./internal": "./src/core/internal.js",
-    "./node/png": "./src/node/png.js",
-    "./package.json": "./package.json"
-  },
-  "bin": { "pixel": "bin/pixel.mjs" },
-  "files": ["src", "bin", "figures", "docs", "examples", "references", "LICENSE", "README.md", "CHANGELOG.md"],
+  "workspaces": [
+    "packages/runtime",
+    "packages/pixel-studio"
+  ],
   "scripts": {
+    "test": "npm test --workspaces",
     "studio": "node scripts/serve.mjs",
-    "test": "node --test test/*.test.mjs",
     "build:demo": "node scripts/build-demo.mjs",
-    "previews": "node scripts/build-demo.mjs --previews"
+    "previews": "node scripts/build-demo.mjs --previews",
+    "version:set": "node scripts/set-version.mjs",
+    "check:links": "node scripts/check-links.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

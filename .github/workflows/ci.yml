@@ -1,0 +1,89 @@
+# Pixel Studio's CI: both packages' tests on the oldest and newest supported Node, the Markdown links, the packed
+# packages installed and used from a fresh folder, and the website (pixel-studio.sh) built from this commit.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read # check out the repository
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 24] # package.json engines: >=20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # No dependency cache: there are no third-party dependencies to cache.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - run: npm ci
+      - name: Tests (both packages)
+        run: npm test
+      - name: Markdown links
+        run: npm run check:links
+      - name: Demo assets build
+        run: npm run build:demo
+      - name: The packed packages, installed and used from a fresh folder
+        run: | # zizmor: ignore[adhoc-packages] (installs only the two tarballs packed from this commit)
+          mkdir -p "$RUNNER_TEMP/tgz" "$RUNNER_TEMP/app"
+          npm pack --workspaces --pack-destination "$RUNNER_TEMP/tgz"
+          cd "$RUNNER_TEMP/app"
+          npm init -y > /dev/null
+          # Only the two tarballs just packed from this commit; nothing is fetched from the registry.
+          npm install "$RUNNER_TEMP"/tgz/*.tgz --no-audit --no-fund
+          printf '%s' '{ "extends": "./node_modules/pixel-studio/examples/goose-base.json", "name": "CI goose" }' > g.json
+          npx pixel validate g.json
+          npx pixel bundle g.json --out g.bundle.json
+          npx pixel brief > /dev/null
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const rt = await import('@pixel-studio/runtime');
+            const shim = await import('pixel-studio/runtime');
+            await import('@pixel-studio/runtime/stage');
+            if (rt.checkBundle !== shim.checkBundle) throw new Error('pixel-studio/runtime is not @pixel-studio/runtime');
+            rt.checkBundle(JSON.parse(readFileSync('g.bundle.json', 'utf8')));
+            console.log('packed packages OK');
+          "
+
+  website:
+    name: website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # check out the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The npm cache is fine here: this job holds no secrets and publishes nothing, and npm ci checks every package
+      # against website/package-lock.json's integrity hashes.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm # zizmor: ignore[cache-poisoning]
+          cache-dependency-path: website/package-lock.json
+      - name: Install
+        working-directory: website
+        run: npm ci
+      # prebuild runs the demo build; then astro check, astro build and docs:check.
+      - name: Build
+        working-directory: website
+        run: npm run build

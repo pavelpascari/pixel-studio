@@ -5,19 +5,19 @@
 ## Try a look
 
 - [Playground](/studio/play.html): one character, set up entirely by its URL (`?c=goose-root&view=front&anim=waddle&skin=party&res=64#spec=<payload>`).
-- [Playground guide](/docs/playground.md): URL options, how the payload changes a character, examples, and `window.playground` for browser agents.
+- [Playground guide](/packages/pixel-studio/docs/playground.md): URL options, how the payload changes a character, examples, and `window.playground` for browser agents.
 - [Payload schema](/studio/play.schema.json): JSON Schema of the `#spec=` payload.
 
 ## Start
 
-- [Getting started](/docs/getting-started.md): install, write a character as a variant, validate, preview, bundle, put it on a page.
+- [Getting started](/packages/pixel-studio/docs/getting-started.md): install, write a character as a variant, validate, preview, bundle, put it on a page.
 
 ## Reference
 
-- [Character format](/docs/SPEC.md): materials, parts, shapes, animations, skins, variants, style.
-- [Figures](/docs/figures.md): the skeletons characters are built on, and front/back views.
-- [Example characters](/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, goose-greylag, moss, fox, pip, robot, slime (`/examples/<name>.json`).
-- [Runtime](/docs/runtime.md): `<pixel-sprite>` for putting a character on a web page.
-- [Stage](/docs/stage.md): `<pixel-stage>`, characters that walk, climb and hide on a page's own elements.
-- [CLI](/docs/cli.md): `pixel validate | preview | ascii | bundle | export | where | resolve | figures | brief`.
-- [JavaScript API](/docs/api.md): every export of the engine.
+- [Character format](/packages/pixel-studio/docs/SPEC.md): materials, parts, shapes, animations, skins, variants, style.
+- [Figures](/packages/pixel-studio/docs/figures.md): the skeletons characters are built on, and front/back views.
+- [Example characters](/packages/pixel-studio/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, goose-greylag, moss, fox, pip, robot, slime (`/packages/pixel-studio/examples/<name>.json`).
+- [Runtime](/packages/pixel-studio/docs/runtime.md): `<pixel-sprite>` for putting a character on a web page.
+- [Stage](/packages/pixel-studio/docs/stage.md): `<pixel-stage>`, characters that walk, climb and hide on a page's own elements.
+- [CLI](/packages/pixel-studio/docs/cli.md): `pixel validate | preview | ascii | bundle | export | where | resolve | figures | brief`.
+- [JavaScript API](/packages/pixel-studio/docs/api.md): every export of the engine.

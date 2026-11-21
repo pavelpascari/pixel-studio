@@ -1,9 +1,9 @@
 import {
   validate, compile, renderAnimation, renderSheet, resolveStyle, buildBundle, contactSheet, DETAIL_NAMES, pngBytes,
   resolveSpec, checkBounds,
-} from '../src/core/index.js';
-import { samplePose, sampleValue, frameTime, worldMatrices } from '../src/core/internal.js';
-import '../src/runtime/pixel-sprite.js';
+} from '../packages/pixel-studio/src/core/index.js';
+import { samplePose, sampleValue, frameTime, worldMatrices } from '../packages/pixel-studio/src/core/internal.js';
+import '../packages/runtime/src/pixel-sprite.js';
 import { initAgent } from './agent.js';
 
 const $ = (s) => document.querySelector(s);
@@ -104,14 +104,14 @@ function parseEditor() {
 
 // "extends" refers to files in examples/ (fetched fresh, so edits to a base show up on rebuild).
 const loadRef = async (ref) => {
-  const r = await fetch(`../examples/${ref}`, { cache: 'no-store' });
+  const r = await fetch(`../packages/pixel-studio/examples/${ref}`, { cache: 'no-store' });
   if (!r.ok) throw new Error(`examples/${ref}: HTTP ${r.status}`);
   return r.json();
 };
 
 // "figure" refers to the skeleton library in figures/.
 const loadFigure = async (name) => {
-  const r = await fetch(`../figures/${name}.json`, { cache: 'no-store' });
+  const r = await fetch(`../packages/pixel-studio/figures/${name}.json`, { cache: 'no-store' });
   if (!r.ok) throw new Error(`figures/${name}.json: HTTP ${r.status}`);
   return r.json();
 };
@@ -396,7 +396,7 @@ function openExport() {
 
 // ---------- examples ----------
 async function loadExample(name) {
-  const r = await fetch(`../examples/${name}.json`);
+  const r = await fetch(`../packages/pixel-studio/examples/${name}.json`);
   if (!r.ok) throw new Error(`examples/${name}.json: HTTP ${r.status}`);
   $('#editor').value = await r.text();
   state.frame = 0;
@@ -427,7 +427,7 @@ async function init() {
 
   // Examples (only those that exist)
   const sel = $('#example');
-  const available = (await Promise.all(EXAMPLES.map(async (n) => ((await fetch(`../examples/${n}.json`, { method: 'HEAD' })).ok ? n : null)))).filter(Boolean);
+  const available = (await Promise.all(EXAMPLES.map(async (n) => ((await fetch(`../packages/pixel-studio/examples/${n}.json`, { method: 'HEAD' })).ok ? n : null)))).filter(Boolean);
   sel.replaceChildren(new Option('— choose —', ''), ...available.map((n) => new Option(n, n)));
   sel.onchange = () => sel.value && loadExample(sel.value);
 
@@ -484,12 +484,12 @@ async function init() {
   };
   $('#btn-export').onclick = openExport;
   $('#btn-export-bundle').onclick = async (e) => { e.preventDefault(); download(`${slug(state.compiled.name)}.bundle.json`, JSON.stringify(await exportBundle())); };
-  $('#btn-export-runtime').onclick = async (e) => { e.preventDefault(); download('pixel-sprite.js', await (await fetch('../src/runtime/pixel-sprite.js')).text(), 'text/javascript'); };
+  $('#btn-export-runtime').onclick = async (e) => { e.preventDefault(); download('pixel-sprite.js', await (await fetch('../packages/runtime/src/pixel-sprite.js')).text(), 'text/javascript'); };
   $('#btn-copy-inline').onclick = async (e) => {
     e.preventDefault();
     const b = await exportBundle();
     const anims = Object.keys(b.animations);
-    const runtime = await (await fetch('../src/runtime/pixel-sprite.js')).text();
+    const runtime = await (await fetch('../packages/runtime/src/pixel-sprite.js')).text();
     const snippet = `<pixel-sprite anim="${attr(anims[0])}" size="128"${anims[1] ? ` hover-anim="${attr(anims[1])}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
     await navigator.clipboard.writeText(snippet);
     $('#inline-size').textContent = `copied · ${(snippet.length / 1024).toFixed(1)} KB`;
@@ -498,7 +498,7 @@ async function init() {
   $('#wv-click').onchange = mountWebview;
 
   // Brief
-  const brief = await (await fetch('../docs/SPEC.md')).text();
+  const brief = await (await fetch('../packages/pixel-studio/docs/SPEC.md')).text();
   $('#brief-text').textContent = brief;
   $('#btn-copy-brief').onclick = () => navigator.clipboard.writeText(brief);
 
