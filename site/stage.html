@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Characters on the page — Pixel Studio</title>
 <link rel="stylesheet" href="site.css">
-<script type="module" src="../src/runtime/pixel-sprite.js"></script>
+<script type="module" src="../packages/runtime/src/pixel-sprite.js"></script>
 <script type="module" src="site.js"></script>
 <style>
   .row { display: flex; align-items: flex-end; gap: 12px; width: 100%; padding: 0 8px; }
@@ -25,7 +25,7 @@
   <h2 id="try">Try it</h2>
   <div class="demo" data-title="Cards, a crate and two characters" data-height="300">
     <template>
-      <script type="module" src="../src/runtime/pixel-stage.js"></script>
+      <script type="module" src="../packages/runtime/src/pixel-stage.js"></script>
       <div class="stage-demo">
         <div class="row">
           <article id="st-tall" class="tcard" style="min-height:170px" data-pixel-surface data-pixel-climbable><b>Ridge loop</b></article>
@@ -121,7 +121,7 @@
   <p>Steps: <code>goTo</code> (a selector, a cast name, or a point; <code>then</code>, <code>at</code>),
     <code>hideBehind</code>, <code>perform</code>, <code>say</code>, <code>face</code>, <code>shoo</code>, <code>wait</code>,
     <code>together</code>, <code>waitFor</code>, <code>emit</code>. <code>&lt;pixel-stage scene="#intro"&gt;</code> plays one
-    when the page loads. The full table is in <a href="../docs/stage.md#scenes">docs/stage.md</a>.</p>
+    when the page loads. The full table is in <a href="../packages/pixel-studio/docs/stage.md#scenes">docs/stage.md</a>.</p>
 
   <h3 id="triggers">Triggers, carrying and leaving</h3>
   <p>Give a scene a <code>trigger</code> and mark its script <code>data-pixel-scene</code>: it plays by itself when that
@@ -169,7 +169,7 @@
   </pre>
   <p>Characters need a few animations to do all this: a walk with a <code>speed</code>, <code>jump</code>, <code>fall</code>,
     <code>climb</code>, <code>sit</code>, <code>duck</code> and <code>peek</code>. Every figure has presets for them; see
-    <a href="motions.html">Figures and motions</a>. The full reference is <a href="../docs/stage.md">docs/stage.md</a>.</p>
+    <a href="motions.html">Figures and motions</a>. The full reference is <a href="../packages/pixel-studio/docs/stage.md">docs/stage.md</a>.</p>
 </main>
 </body>
 </html>

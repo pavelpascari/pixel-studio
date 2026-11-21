@@ -3,3 +3,7 @@ node_modules/
 *.log
 .playwright-mcp/
 .claude/worktrees/
+
+# Generated: npm run build:demo (demo/assets) and npm run previews (previews/)
+demo/assets/
+previews/

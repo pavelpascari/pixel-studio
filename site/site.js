@@ -9,7 +9,7 @@
 //     <script type="application/json"> { …spec… } </script>
 //   </div>
 
-import { validate, compile, renderFrame, resolveStyle, resolveSpec, usePlugin } from '../src/core/index.js';
+import { validate, compile, renderFrame, resolveStyle, resolveSpec, usePlugin } from '../packages/pixel-studio/src/core/index.js';
 
 const PAGES = [
   ['index.html', 'Overview'],
@@ -52,7 +52,7 @@ function layout() {
   }
   const extra = document.createElement('li');
   extra.className = 'extra';
-  extra.innerHTML = `<a href="../studio/">Studio</a> · <a href="../demo/">Demo site</a> · <a href="../docs/README.md">Reference docs</a>`;
+  extra.innerHTML = `<a href="../studio/">Studio</a> · <a href="../demo/">Demo site</a> · <a href="../packages/pixel-studio/docs/README.md">Reference docs</a>`;
   ul.append(extra);
   nav.querySelector('.menu').onclick = (e) => {
     const open = nav.classList.toggle('open');
@@ -146,12 +146,12 @@ function demos() {
 // ---------- spec playgrounds: edit JSON, see it drawn by the engine ----------
 
 const loadFigure = async (name) => {
-  const r = await fetch(`../figures/${name}.json`);
+  const r = await fetch(`../packages/pixel-studio/figures/${name}.json`);
   if (!r.ok) throw new Error(`figures/${name}.json: HTTP ${r.status}`);
   return r.json();
 };
 const loadRef = async (ref) => {
-  const r = await fetch(`../examples/${ref}`);
+  const r = await fetch(`../packages/pixel-studio/examples/${ref}`);
   if (!r.ok) throw new Error(`examples/${ref}: HTTP ${r.status}`);
   return r.json();
 };

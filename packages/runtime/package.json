@@ -1,0 +1,37 @@
+{
+  "name": "@pixel-studio/runtime",
+  "version": "0.2.0-alpha.0",
+  "description": "Play Pixel Studio sprites on any web page: <pixel-sprite> for one character, <pixel-stage> for characters that walk, climb and hide on the page. No dependencies, no build step.",
+  "keywords": [
+    "pixel-art",
+    "sprite",
+    "animation",
+    "web-component",
+    "custom-element"
+  ],
+  "license": "MIT",
+  "author": "Pavel Pascari",
+  "homepage": "https://pixel-studio.sh",
+  "bugs": "https://github.com/pavelpascari/pixel-studio/issues",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavelpascari/pixel-studio.git",
+    "directory": "packages/runtime"
+  },
+  "exports": {
+    ".": "./src/pixel-sprite.js",
+    "./stage": "./src/pixel-stage.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "sideEffects": true,
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

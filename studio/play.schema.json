@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "play.schema.json",
   "title": "Pixel Studio playground payload",
-  "description": "The JSON in the playground's #spec=. Usually a change to the character picked with ?c= (a variant: list only what differs). With its own `figure` or `size` and no `extends` it is a whole character instead. Guide: ../docs/playground.md. Full format: ../docs/SPEC.md (Materials, Parts, Shapes, Variants, Style, Skins).",
+  "description": "The JSON in the playground's #spec=. Usually a change to the character picked with ?c= (a variant: list only what differs). With its own `figure` or `size` and no `extends` it is a whole character instead. Guide: ../packages/pixel-studio/docs/playground.md. Full format: ../packages/pixel-studio/docs/SPEC.md (Materials, Parts, Shapes, Variants, Style, Skins).",
   "type": "object",
   "properties": {
     "extends": { "type": "string", "description": "Base character file, e.g. \"goose-root.json\". Set automatically from ?c= when absent (unless this is a whole character).", "examples": ["goose-base.json", "goose-root.json", "goose-sudo.json", "goose-phreak.json", "goose-kiddie.json", "goose-greylag.json", "moss.json", "fox.json", "pip.json", "robot.json", "slime.json"] },
@@ -46,20 +46,20 @@
     },
     "animations": {
       "type": "object",
-      "description": "null removes an animation; an existing one merges (tracks merge per part and property, null removes); a new name adds one. Format: ../docs/SPEC.md#animations.",
+      "description": "null removes an animation; an existing one merges (tracks merge per part and property, null removes); a new name adds one. Format: ../packages/pixel-studio/docs/SPEC.md#animations.",
       "additionalProperties": { "type": ["object", "null"] }
     },
     "views": {
       "type": "object",
-      "description": "Front/back views: {\"front\": {\"parts\": [...part patches, ids without the \"front.\" prefix]}, \"back\": {...}}. See ../docs/figures.md.",
+      "description": "Front/back views: {\"front\": {\"parts\": [...part patches, ids without the \"front.\" prefix]}, \"back\": {...}}. See ../packages/pixel-studio/docs/figures.md.",
       "additionalProperties": { "type": "object" }
     },
-    "figure": { "description": "Whole characters only: the skeleton to build on, e.g. \"goose\". See ../docs/SPEC.md#figures-start-from-a-skeleton-that-already-moves-well." },
+    "figure": { "description": "Whole characters only: the skeleton to build on, e.g. \"goose\". See ../packages/pixel-studio/docs/SPEC.md#figures-start-from-a-skeleton-that-already-moves-well." },
     "size": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "Whole characters only: canvas size in units, usually [100, 100]." },
     "points": { "type": "object", "description": "Attachment points: {\"beak\": {\"part\": \"head\", \"at\": [x, y]}}." },
     "ground": { "type": "number", "description": "y of the foot line in units." },
     "states": { "type": "object", "description": "State machine for <pixel-sprite>; not used by the playground." },
-    "mixes": { "type": "object", "description": "Transition clips; see ../docs/SPEC.md#transition-clips." }
+    "mixes": { "type": "object", "description": "Transition clips; see ../packages/pixel-studio/docs/SPEC.md#transition-clips." }
   },
   "additionalProperties": false,
   "$defs": {
@@ -106,7 +106,7 @@
         "id": { "type": "string" },
         "remove": { "const": true, "description": "Delete this part and its children." },
         "parent": { "type": ["string", "null"], "description": "Part it moves with, e.g. \"head\"." },
-        "bone": { "type": "string", "description": "Characters built on a figure: attach this new part to that bone (parent = the bone, pivot = its joint, z = its z + 0.5). See ../docs/figures.md." },
+        "bone": { "type": "string", "description": "Characters built on a figure: attach this new part to that bone (parent = the bone, pivot = its joint, z = its z + 0.5). See ../packages/pixel-studio/docs/figures.md." },
         "pivot": { "$ref": "#/$defs/point", "description": "Point it rotates and scales around." },
         "z": { "type": "number", "description": "Draw order; higher is in front." },
         "shade": { "type": "number", "description": "Brightness offset, e.g. -0.35 for the far wing or leg." },

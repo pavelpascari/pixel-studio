@@ -350,9 +350,9 @@ than we use. **Verdict: own module.**
 
 The engine already has two solvers:
 
-- `ccd` in [src/core/rig.js](../../src/core/rig.js): cyclic coordinate descent with absolute joint limits and an `aim`
+- `ccd` in [src/core/rig.js](../../packages/pixel-studio/src/core/rig.js): cyclic coordinate descent with absolute joint limits and an `aim`
   for the end part. `solveReach` adds four perturbed restarts.
-- an analytic `twoBone` in [src/core/motion.js](../../src/core/motion.js): law of cosines plus a bend-sign choice. It is
+- an analytic `twoBone` in [src/core/motion.js](../../packages/pixel-studio/src/core/motion.js): law of cosines plus a bend-sign choice. It is
   used for legs with two upper bones, and `ccd` with a "bent seed" retry is used for longer chains.
 
 **Test** (`lib/test-ik.mjs`, `lib/test-ikts.mjs`). A planar leg, thigh 20 and shin 17 (our human's ratio), starting
@@ -468,11 +468,11 @@ The reference script in mesh2motion.md §8 compares a handful of curves with 16 
 
 Grep of `src/core` for what already exists:
 
-- **Deterministic noise:** `hash2` in [src/core/textures.js](../../src/core/textures.js). An integer hash; textures use it
+- **Deterministic noise:** `hash2` in [src/core/textures.js](../../packages/pixel-studio/src/core/textures.js). An integer hash; textures use it
   for value noise.
-- **Spring / second-order dynamics:** `followOffsets` in [src/core/animate.js](../../src/core/animate.js). A damped angular
+- **Spring / second-order dynamics:** `followOffsets` in [src/core/animate.js](../../packages/pixel-studio/src/core/animate.js). A damped angular
   spring per `follow` part, integrated at 8 substeps.
-- **Easing:** `smooth` (smoothstep) and `minJerk` in [src/core/motion.js](../../src/core/motion.js), and `linear | smooth |
+- **Easing:** `smooth` (smoothstep) and `minJerk` in [src/core/motion.js](../../packages/pixel-studio/src/core/motion.js), and `linear | smooth |
   step` in `animate.js`.
 
 Candidates:

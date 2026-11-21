@@ -10,7 +10,7 @@ Studio's model? That model is a JSON spec written by an agent, rigid SDF parts o
 
 **The constraint that shapes every recommendation.** Every tool surveyed except Aseprite, Phaser and Pixi's
 flipbook path *evaluates the skeleton at runtime*. Pixel Studio deliberately does not: its look comes from
-re-rasterizing SDF geometry with the pixel-art shader at bake time (see [DESIGN.md](../DESIGN.md)). So each
+re-rasterizing SDF geometry with the pixel-art shader at bake time (see [DESIGN.md](../../packages/pixel-studio/docs/DESIGN.md)). So each
 runtime feature has to be one of three things:
 
 - **(a)** baked into frames,
@@ -210,7 +210,7 @@ selection, so the runtime stays small, likely ~1 KB more, though that is unmeasu
 - **Runtime API:** `el.set('speed', 40)`, `el.fire('honk')`, `el.state`, and a `statechange` event
   (`detail: {from, to}`). The `hover-anim` / `click-anim` attributes compile to a default machine.
 - `speed`-driven walk rate: `rate` scales fps so feet do not slide at a varying ground speed. This extends
-  the existing `speed` contract in [figures.md](../figures.md#speed).
+  the existing `speed` contract in [figures.md](../../packages/pixel-studio/docs/figures.md#speed).
 
 ### R4. Baked transitions and sync switching (High, M)
 

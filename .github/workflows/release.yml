@@ -1,0 +1,172 @@
+# Release: push a signed tag `v<version>` matching the version of both packages (they always share it).
+#
+#   build (read-only token, no OIDC):
+#     1. checks the tag against packages/pixel-studio and packages/runtime, and pixel-studio's exact runtime pin
+#     2. runs the tests, packs both packages, writes their SHA-256 and extracts the version's CHANGELOG section
+#   publish (needs build; runs no project or dependency code: no checkout, no npm install):
+#     3. creates the GitHub release (pre-release for versions with a `-`) with both tarballs, their checksums and the
+#        CHANGELOG section as notes
+#     4. stages both tarballs on npm through trusted publishing (OIDC: no token), under the pre-release's label
+#        (`alpha`, `beta`, `rc`) or `latest`. Staged is not published: a maintainer approves each with 2FA,
+#        @pixel-studio/runtime FIRST (pixel-studio depends on exactly that version), then pixel-studio:
+#        `npm stage list`, `npm stage approve <stage-id>`. So this workflow alone cannot put a version on npm.
+#        One-time setup on npmjs.com, for each of pixel-studio and @pixel-studio/runtime (after its first publish,
+#        which is by hand: npm cannot stage a brand-new package): Settings → Trusted publishing → GitHub Actions,
+#        user `pavelpascari`, repository `pixel-studio`, workflow `release.yml` (keep this file name), and
+#        "Allow npm publish" and "Allow npm dist-tag" left unticked (staging is always allowed).
+# No dependency cache anywhere in this workflow (cache poisoning would reach the published tarballs).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build # = the job id, so check names stay "build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # check out the repository
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      dist_tag: ${{ steps.version.outputs.dist_tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Tag matches both packages
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          engine=$(node -p "require('./packages/pixel-studio/package.json').version")
+          runtime=$(node -p "require('./packages/runtime/package.json').version")
+          pin=$(node -p "require('./packages/pixel-studio/package.json').dependencies['@pixel-studio/runtime']")
+          if [ "$TAG" != "v$engine" ] || [ "$engine" != "$runtime" ] || [ "$pin" != "$runtime" ]; then
+            echo "::error title=Version mismatch::tag $TAG, pixel-studio $engine, @pixel-studio/runtime $runtime, pin $pin"
+            exit 1
+          fi
+          echo "version=$engine" >> "$GITHUB_OUTPUT"
+          case "$engine" in
+            *-*) pre=${engine#*-}; echo "dist_tag=${pre%%.*}" >> "$GITHUB_OUTPUT"; echo "prerelease=true" >> "$GITHUB_OUTPUT";;
+            *)   echo "dist_tag=latest" >> "$GITHUB_OUTPUT"; echo "prerelease=false" >> "$GITHUB_OUTPUT";;
+          esac
+
+      - run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Markdown links
+        run: npm run check:links
+
+      - name: Pack
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          npm pack --workspaces --pack-destination "$RUNNER_TEMP/release"
+          cd "$RUNNER_TEMP/release"
+          for file in "pixel-studio-runtime-$VERSION.tgz" "pixel-studio-$VERSION.tgz"; do
+            test -f "$file"
+            sha256sum "$file" > "$file.sha256"
+          done
+
+      - name: Release notes from the CHANGELOG
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="[$VERSION]" '
+            index($0, "## " v) == 1 { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release/notes.md"
+          if [ ! -s "$RUNNER_TEMP/release/notes.md" ]; then
+            echo "::error title=No changelog section::CHANGELOG.md has no '## [$VERSION]' section"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish # = the job id, so check names stay "publish"
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the GitHub release and upload its assets
+      id-token: write # npm trusted publishing (OIDC, staging only) and provenance
+    steps:
+      # `npm stage publish` needs npm 11.15.0+ (Node 24 ships it).
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+
+      - name: Verify the tarballs
+        working-directory: ${{ runner.temp }}/release
+        run: sha256sum --check ./*.tgz.sha256
+
+      - name: GitHub release
+        working-directory: ${{ runner.temp }}/release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          flags=()
+          [ "$PRERELEASE" = true ] && flags+=(--prerelease)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" ./*.tgz ./*.tgz.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" ./*.tgz ./*.tgz.sha256 --repo "$GITHUB_REPOSITORY" \
+              --title "Pixel Studio $TAG" --notes-file notes.md --verify-tag "${flags[@]}"
+          fi
+
+      - name: Stage on npm (trusted publishing)
+        working-directory: ${{ runner.temp }}/release
+        env:
+          DIST_TAG: ${{ needs.build.outputs.dist_tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          npm --version
+          # The runtime first: pixel-studio depends on exactly this runtime version.
+          for pkg in @pixel-studio/runtime pixel-studio; do
+            file="$(echo "$pkg" | sed 's#^@##; s#/#-#')-$VERSION.tgz"
+            if npm view "$pkg@$VERSION" version > /dev/null 2>&1; then
+              echo "::notice title=Already on npm::$pkg@$VERSION is already published"
+              continue
+            fi
+            # No token: npm exchanges this job's OIDC identity (id-token: write) for a one-off credential that
+            # can stage, not publish. The version goes live when a maintainer approves it with 2FA.
+            npm stage publish "$file" --tag "$DIST_TAG" --access public
+            echo "- \`$pkg@$VERSION\` staged (tag \`$DIST_TAG\`)" >> "$GITHUB_STEP_SUMMARY"
+          done
+          {
+            echo
+            echo "Not published yet. Approve with 2FA, **@pixel-studio/runtime first**: \`npm stage list\`, then \`npm stage approve <stage-id>\` for each."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Staged on npm::Pixel Studio $VERSION is staged; approve @pixel-studio/runtime, then pixel-studio, with npm stage approve (2FA)"

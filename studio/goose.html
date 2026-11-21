@@ -133,8 +133,8 @@
   </aside>
 </main>
 <script type="module">
-import { resolveSpec, compile, renderFrame, resolveStyle } from '../src/core/index.js';
-import { samplePose, worldMatrices } from '../src/core/internal.js';
+import { resolveSpec, compile, renderFrame, resolveStyle } from '../packages/pixel-studio/src/core/index.js';
+import { samplePose, worldMatrices } from '../packages/pixel-studio/src/core/internal.js';
 
 const BASES = { 'goose-base': 'plain goose', 'goose-root': 'root (hoodie)', 'goose-sudo': 'sudo', 'goose-phreak': 'phreak', 'goose-kiddie': 'kiddie', 'goose-greylag': 'greylag (wild)' };
 const RES = [32, 48, 64, 96, 128, 192];
@@ -181,7 +181,7 @@ async function loadBaseMap() {
   let rig = false;
   for (let ref = `${S.base}.json`; ref;) {
     if (ref === 'goose-base.json') rig = true;
-    const sp = await loadJSON(`../examples/${ref}`);
+    const sp = await loadJSON(`../packages/pixel-studio/examples/${ref}`);
     baseMap = { ...(sp.materialMap ?? {}), ...baseMap };
     ref = sp.extends;
   }
@@ -242,8 +242,8 @@ async function rebuild() {
   try {
     await loadBaseMap();
     resolved = await resolveSpec(variantSpec(), {
-      loadRef: (ref) => loadJSON(`../examples/${ref}`),
-      loadFigure: (n) => loadJSON(`../figures/${n}.json`),
+      loadRef: (ref) => loadJSON(`../packages/pixel-studio/examples/${ref}`),
+      loadFigure: (n) => loadJSON(`../packages/pixel-studio/figures/${n}.json`),
       warn: (p, m) => warns.push(`${p}: ${m}`),
     });
     compiled = compile(resolved);
@@ -325,7 +325,7 @@ let exportCheck = 0;
 async function checkExport(spec) {
   const n = ++exportCheck;
   try {
-    compile(await resolveSpec(JSON.parse(pretty(spec)), { loadRef: (ref) => loadJSON(`../examples/${ref}`), loadFigure: (f) => loadJSON(`../figures/${f}.json`) }));
+    compile(await resolveSpec(JSON.parse(pretty(spec)), { loadRef: (ref) => loadJSON(`../packages/pixel-studio/examples/${ref}`), loadFigure: (f) => loadJSON(`../packages/pixel-studio/figures/${f}.json`) }));
     if (n === exportCheck) $('#exportOk').textContent = '✓ builds';
   } catch (e) { if (n === exportCheck) $('#exportOk').textContent = `✗ ${e.message}`; }
 }
