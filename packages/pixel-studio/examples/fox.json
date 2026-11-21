@@ -7,7 +7,7 @@
       "tail2": {"from": [25, 49], "to": [18, 30], "follow": {"freq": 2.8, "damping": 0.35, "amount": 0.6, "max": 20}},
       "neck":  {"from": [60, 57], "to": [64, 49]},
       "head":  {"from": [64, 49], "to": [86, 52]},
-      "ear":   {"from": [73, 34], "to": [72, 15]}
+      "ear":   {"from": [60, 34], "to": [58, 14]}
     }
   },
   "size": [100, 100],
@@ -55,15 +55,15 @@
 
     {"id": "neck", "shapes": [{"type": "capsule", "x1": 60, "y1": 57, "x2": 64, "y2": 49, "r": 7, "material": "fur"}]},
     {"id": "head", "shapes": [
-      {"type": "polygon", "points": [[56, 38], [57, 16], [68, 32]], "r": 1.5, "material": "fur", "shade": -0.3},
+      {"type": "polygon", "points": [[65, 33], [73, 16], [78, 34]], "r": 1.5, "material": "fur", "shade": -0.3},
       {"type": "circle", "cx": 66, "cy": 44, "r": 14, "material": "fur"},
       {"type": "polygon", "points": [[72, 42], [86, 50], [85, 54], [72, 55]], "r": 2, "material": "fur"},
       {"type": "polygon", "points": [[56, 52], [68, 50], [86, 54], [78, 59], [60, 60]], "r": 2, "material": "cream"},
       {"type": "circle", "cx": 86, "cy": 51, "r": 2.2, "material": "nose"}
     ]},
     {"id": "ear", "shapes": [
-      {"type": "polygon", "points": [[63, 34], [72, 14], [79, 35]], "r": 1.5, "material": "fur"},
-      {"type": "polygon", "points": [[69, 31], [72, 21], [75, 31]], "material": "cream", "minDetail": 3}
+      {"type": "polygon", "points": [[51, 36], [58, 14], [68, 33]], "r": 1.5, "material": "fur"},
+      {"type": "polygon", "points": [[56, 32], [58, 21], [62, 31]], "material": "cream", "minDetail": 3}
     ]},
     {"id": "eye", "bone": "head", "pivot": [72, 42], "shapes": [
       {"type": "ellipse", "cx": 72, "cy": 42, "rx": 2.6, "ry": 3.6, "material": "eye"},

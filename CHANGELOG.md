@@ -6,6 +6,10 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Changed
+- `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
+  (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
+
 ## [0.2.0-alpha.2] - 2026-11-21
 
 ### Renamed: `pixel-studio` is now `@pixel-studio/core`
