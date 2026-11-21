@@ -153,6 +153,7 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           npm --version
+          staged=0
           # The runtime first: pixel-studio depends on exactly this runtime version.
           for pkg in @pixel-studio/runtime pixel-studio; do
             file="$(echo "$pkg" | sed 's#^@##; s#/#-#')-$VERSION.tgz"
@@ -164,7 +165,9 @@ jobs:
             # can stage, not publish. The version goes live when a maintainer approves it with 2FA.
             npm stage publish "$file" --tag "$DIST_TAG" --access public
             echo "- \`$pkg@$VERSION\` staged (tag \`$DIST_TAG\`)" >> "$GITHUB_STEP_SUMMARY"
+            staged=$((staged + 1))
           done
+          [ "$staged" -eq 0 ] && exit 0
           {
             echo
             echo "Not published yet. Approve with 2FA, **@pixel-studio/runtime first**: \`npm stage list\`, then \`npm stage approve <stage-id>\` for each."
