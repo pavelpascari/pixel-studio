@@ -1,6 +1,6 @@
 {
   "name": "@pixel-studio/core",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-alpha.2",
   "description": "Agents describe characters as JSON rigs; a zero-dependency engine renders them as pixel-art animations at every level of detail, with realistic skeleton motion; websites play them with one tag.",
   "keywords": [
     "pixel-art",
@@ -47,7 +47,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@pixel-studio/runtime": "0.2.0-alpha.1"
+    "@pixel-studio/runtime": "0.2.0-alpha.2"
   },
   "engines": {
     "node": ">=20"

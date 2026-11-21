@@ -6,6 +6,8 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.2] - 2026-11-21
+
 ### Renamed: `pixel-studio` is now `@pixel-studio/core`
 - The engine package moves into the `@pixel-studio` organisation, next to `@pixel-studio/runtime`:
   `npm i @pixel-studio/core`. Imports change with it: `@pixel-studio/core`, `@pixel-studio/core/internal`,
