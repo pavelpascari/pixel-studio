@@ -1,16 +1,12 @@
 ---
-title: "What's new in the next release: lighter pages, characters you can hold on a phone"
+title: "Pixel Studio 0.2.0-alpha.3: lighter pages, characters you can hold on a phone"
 description: "Characters that load only when the reader gets near, pick up and throw on touch screens, bundles with only the animations a page plays, and a simpler way into the studio."
-date: 2026-11-22
+date: 2026-11-22T17:00:00Z
 authors: [pavel-pascari]
 tags: [release]
-draft: true
+draft: false
 ---
 
-<!--
-  Before publishing: put the version (0.2.0-alpha.3) in the title, set `date` to the release day, and set
-  `draft: false`.
--->
 
 Pixel Studio 0.2.0-alpha.3 is out: `npm i @pixel-studio/core@0.2.0-alpha.3`, or
 `npm i @pixel-studio/runtime@0.2.0-alpha.3` for a site that only plays characters. This release cuts what a page

@@ -1,10 +1,10 @@
 ---
 title: "Planted feet: how a pixel fox walks without sliding"
 description: "Pixel Studio characters stand on skeletons with procedural motion: feet pinned by inverse kinematics, a speed in pixels per second, and a gallop timed from Muybridge's photographs of racing hounds."
-date: 2026-11-23
+date: 2026-11-22T14:00:00Z
 authors: [pavel-pascari]
 tags: [deep-dive, motion]
-draft: true
+draft: false
 ---
 
 import { MarginNote } from 'astro-project-site/components';
@@ -29,7 +29,7 @@ This post follows one character, Ember the fox, from a skeleton to the gallop be
 
 ## A skeleton with roles
 
-Ember stands on a **figure**, a reusable skeleton in `figures/dog.json`. Bones are dots and lines in a 100×100
+Ember is dressed on a **figure**, a reusable skeleton in `figures/dog.json`. Bones are dots and lines in a 100×100
 canvas, drawn in a rest pose standing on the ground. A `rig` then says what each bone is for:
 
 ```json title="figures/dog.json (abridged)"

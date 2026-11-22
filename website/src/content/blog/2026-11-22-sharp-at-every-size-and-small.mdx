@@ -1,10 +1,10 @@
 ---
 title: "Sharp at every size, and small: from a JSON character to pixels on a page"
 description: "How Pixel Studio draws a character described in JSON as pixel art at three levels of detail, packs it into one bundle, scales it in whole device pixels so it never blurs, and what all of that costs a page."
-date: 2026-11-23
+date: 2026-11-22T15:00:00Z
 authors: [pavel-pascari]
 tags: [deep-dive, rendering, performance]
-draft: true
+draft: false
 ---
 
 import { MarginNote } from 'astro-project-site/components';
@@ -277,7 +277,7 @@ pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
 With the rule, a `layout-shift` observer in Chrome measured 0 at device pixel ratios of 1, 2 and 3, but Lighthouse
 reported 0.003. Its emulated phone has a ratio of 1.75, where whole device pixels make a 64 px fox 73 px tall once
 loaded, so the box grows a little after all.<MarginNote kind="field" numbered>`vertical-align: bottom` is there for the same reason: without it, a sprite in a line of text still shifted the line by 0.002 when the script ran.</MarginNote>
-For no shift at all, use a `size` that is a whole multiple of the sheet it shows.
+That last 0.003 is the whole-device-pixel rounding itself. Removing it means changing how the runtime rounds the scale on such screens, which is on the to-do list.
 
 ## Where the numbers come from
 
