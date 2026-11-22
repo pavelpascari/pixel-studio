@@ -52,6 +52,11 @@ const cast = [
   { id: 'fox', label: 'Fox', customize: 'Customize Ember', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
   { id: 'pip', label: 'Pip', customize: 'Customize Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
 ].map((c) => ({ ...c, studio: `/apps/studio/?c=${encodeURIComponent(c.id)}` }));
+// How big the hero's character is drawn: bigger where the demo has room, as it was on phones. A bundle holds 16, 32
+// and 64 px frames scaled by whole numbers, so 96 is drawn at exactly 96 px and 64 at 64 px (72 was drawn at 64
+// too). The window's room above its cards (landing.css, .ps-window-cards) is sized for these; `narrow` is the same
+// breakpoint as the stylesheet's narrow layout.
+const heroSize = { wide: 96, narrow: 64, narrowQuery: '(max-width: 52rem)' };
 
 // "Make it yours": goose-root's looks, each an excerpt of packages/pixel-studio/examples/goose-root.json.
 const looks = [
@@ -323,7 +328,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
   {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
       hero's cast shares its default bundles with the "Small" row, so the page downloads each of them once. */}
   <pixel-stage label="characters" controls="none" floor="none">
-    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size={heroSize.wide} alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
     <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.lean.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
   </pixel-stage>
   <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
@@ -442,7 +447,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
   </button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
-  <script is:inline define:vars={{ cast, play, sceneLetterName: sceneLetter.name }}>
+  <script is:inline define:vars={{ cast, play, heroSize, sceneLetterName: sceneLetter.name }}>
     // A classic script (define:vars): everything it touches is in the HTML above it, and it only calls the
     // characters' methods once they exist.
     const $ = (s, root = document) => root.querySelector(s);
@@ -508,17 +513,27 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
     };
     for (const b of $$('[data-move]')) b.addEventListener('click', () => order(moves[b.dataset.move]));
 
-    let picked = cast[0];
-    segmented('cast', (id) => {
-      const c = cast.find((x) => x.id === id);
-      if (!c || c === picked) return;
+    // The character's size for this screen. The page's own actor gets it here, before the stage's module script
+    // (deferred) brings it to life; a new pick, or a screen that crosses the breakpoint (a phone turned sideways),
+    // puts a new actor on the card the old one stood on.
+    const narrow = matchMedia(heroSize.narrowQuery);
+    const sizeNow = () => String(narrow.matches ? heroSize.narrow : heroSize.wide);
+    actor()?.setAttribute('size', sizeNow());
+    const recast = (c) => {
       const old = actor();
       const startOn = old?.platform?.el === cardB ? '.ps-mini--b' : '.ps-mini--a';
       const next = document.createElement('pixel-actor');
-      const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
+      const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: sizeNow(), alt: c.alt, start: startOn, directed: '' };
       for (const [k, v] of Object.entries(attrs)) next.setAttribute(k, v);
       old?.remove();
       stage.append(next);
+    };
+    let picked = cast[0];
+    narrow.addEventListener?.('change', () => recast(picked));
+    segmented('cast', (id) => {
+      const c = cast.find((x) => x.id === id);
+      if (!c || c === picked) return;
+      recast(c);
       who.textContent = c.who;
       // Every link to the studio follows the pick: "Customize …" under the demo, "Open the studio" further down.
       for (const a of $$('a[href]')) if (a.getAttribute('href') === picked.studio) a.setAttribute('href', c.studio);

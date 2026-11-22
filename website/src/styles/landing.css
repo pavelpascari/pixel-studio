@@ -176,8 +176,9 @@ pixel-sprite {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1.25rem, 6vw, 3rem);
   align-items: end;
-  /* Room above the higher card for a 72 px character standing on it. */
-  padding-top: 6.5rem;
+  /* Room above the higher card for the character standing on it: 96 px here, 64 px on narrow screens (heroSize in
+     index.astro), with a little air for its jumps and speech bubble. */
+  padding-top: 8.5rem;
 }
 .ps-mini {
   position: relative;
@@ -189,7 +190,7 @@ pixel-sprite {
   box-shadow: var(--site-shadow);
 }
 .ps-mini--b {
-  margin-bottom: 3.75rem;
+  margin-bottom: 5rem;
 }
 .ps-mini h3 {
   margin: 0 0 0.8rem;
@@ -212,9 +213,10 @@ pixel-sprite {
 .ps-crate {
   position: absolute;
   right: 0.75rem;
-  top: -2.2rem;
-  width: 2.6rem;
-  height: 2.2rem;
+  /* Big enough to hide the character crouching behind it (and scaled with it on narrow screens). */
+  top: -2.9rem;
+  width: 3.4rem;
+  height: 2.9rem;
   border-radius: 3px 3px 0 0;
   background: repeating-linear-gradient(90deg, #b07a3c 0 0.55rem, #946431 0.55rem 0.62rem);
   border: 2px solid #6e4a24;
@@ -833,6 +835,11 @@ pixel-sprite {
   }
   .ps-mini--b {
     margin-bottom: 3rem;
+  }
+  .ps-crate {
+    top: -2.2rem;
+    width: 2.6rem;
+    height: 2.2rem;
   }
   .ps-embed {
     grid-template-columns: minmax(0, 1fr);
