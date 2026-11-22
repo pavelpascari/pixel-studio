@@ -29,7 +29,7 @@ Start with [getting started](packages/pixel-studio/docs/getting-started.md). Cha
 npm install          # links the two packages; no third-party dependencies
 npm test             # both packages
 npm run build:demo   # the demo's bundles and posters
-npm run studio       # http://localhost:5173/studio/ , /demo/
+npm run studio       # http://localhost:5173/studio/ (or /studio/?c=fox for the simple view), /demo/
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Released under the [MIT License](LICENSE). Motion data comes only from

@@ -7,6 +7,15 @@ Until 1.0, minor versions may change the spec format.
 ## [Unreleased]
 
 ### Added
+- The studio opens a character from its link: `studio/?c=<example>&skin=<skin>&anim=<anim>&res=<px>` (the
+  playground's names) shows that example in a simple view: the preview large, a few animations, its looks and four
+  sizes, then Customise (the full editor), Create with Claude (the Agent tab) or Export. `&edit` opens it in the full
+  editor instead, and "Simple view" in the toolbar goes back. An example opened this way is not saved over the spec
+  kept in the browser until it is edited. The full editor gains a "look" picker for characters with skins, and the
+  export snippets carry the skin picked. Without `?c=` the studio opens as before.
+- Every studio page (studio, playground, figures, goose workbench) links back to the website: the Pixel Studio name
+  goes to the home page, and a Docs link to the docs.
+- The landing page's "Open the studio" buttons open the character picked in the hero, in the simple view.
 - A performance page (`docs/performance.md`, pixel-studio.sh/docs/reference/performance/): download sizes of the
   runtime and every example bundle, load impact (Lighthouse, mobile profile), main-thread time per frame for 1, 10
   and 50 sprites and a stage with three actors, memory, and how to keep each small. The size tables are generated

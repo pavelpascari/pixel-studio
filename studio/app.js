@@ -10,6 +10,14 @@ const $ = (s) => document.querySelector(s);
 const EXAMPLES = ['goose-base', 'goose-root', 'goose-sudo', 'goose-phreak', 'goose-kiddie', 'goose-greylag', 'pip', 'fox', 'slime', 'robot'];
 const LOD_STRIP = [16, 24, 32, 48, 64];
 const STORAGE_KEY = 'pixel-studio:spec';
+// The simple view's animation picker: the common moves, then a character's own (the goose's hack, …), at most
+// MAIN_MAX of them; the full editor has them all.
+const MAIN_ANIMS = ['idle', 'walk', 'waddle', 'run', 'trot', 'jump', 'hop', 'wave', 'honk', 'hack', 'headbang', 'sneak', 'think', 'flap'];
+const MAIN_MAX = 7;
+const SIZES = [16, 32, 48, 64];
+// ?c=<example>&skin=<skin>&anim=<anim>&res=<px> (the playground's names) opens that example in the simple view;
+// add &edit for the full editor. Without ?c= the studio opens the spec saved in this browser, as before.
+const query = new URLSearchParams(location.search);
 
 const state = {
   compiled: null,
@@ -21,7 +29,13 @@ const state = {
   lod: [],             // [{res, style, canvases: []}]
   lastTick: 0,
   acc: 0,
+  skin: '',            // '' = the character as written; else one of compiled.skins
+  // false while showing an example opened from the link: it is not saved over the spec in localStorage until the
+  // user changes it (adopt()).
+  persist: true,
 };
+/** What is drawn: the compiled spec, or the skin picked. */
+const cur = () => (state.skin && state.compiled?.skins?.[state.skin]) || state.compiled;
 
 // ---------- helpers ----------
 // Escape a value for a double-quoted HTML attribute (snippets the user copies into their pages).
@@ -143,12 +157,27 @@ async function rebuild() {
     ]);
     return;
   }
-  localStorage.setItem(STORAGE_KEY, $('#editor').value);
+  if (state.persist) localStorage.setItem(STORAGE_KEY, $('#editor').value);
   state.compiled = compile(spec);
   warnings.push(...checkBounds(state.compiled));
   const names = Object.keys(state.compiled.animations);
-  if (!names.includes(state.anim)) state.anim = names[0];
+  if (state.anim && !names.includes(state.anim)) {
+    // An animation the link asks for that this character lacks: its own walk, else idle.
+    const alias = { walk: 'waddle', waddle: 'walk' }[state.anim];
+    const next = names.includes(alias) ? alias : names.includes('idle') ? 'idle' : names[0];
+    if (!alias || next !== alias) warnings.push({ path: 'anim', message: `${state.anim} is not an animation of this character; showing ${next}` });
+    state.anim = next;
+  }
+  if (!state.anim) state.anim = names[0];
+  const skins = Object.keys(state.compiled.skins ?? {});
+  if (state.skin && !skins.includes(state.skin)) {
+    warnings.push({ path: 'skin', message: `${state.skin}: this character has ${skins.join(', ') || 'no skins'}` });
+    state.skin = '';
+  }
   renderChips(names);
+  renderSkins(skins);
+  renderEntry();
+  syncURL();
   const t0 = performance.now();
   renderCurrent();
   renderLodStrip();
@@ -162,12 +191,12 @@ async function rebuild() {
 
 function renderCurrent() {
   if (!state.compiled) return;
-  const { frames } = renderAnimation(state.compiled, state.anim, res(), overrides());
+  const { frames } = renderAnimation(cur(), state.anim, res(), overrides());
   state.frames = frames;
   state.frameCanvases = frames.map(toCanvas);
   state.frame %= frames.length;
   $('#scrub').max = frames.length - 1;
-  const st = resolveStyle(state.compiled, res(), overrides());
+  const st = resolveStyle(cur(), res(), overrides());
   $('#res-label').textContent = `${res()}px · ${DETAIL_NAMES[st.lod]}`;
   drawView();
 }
@@ -176,7 +205,7 @@ function renderLodStrip() {
   const strip = $('#lod-strip');
   const go = globalOverrides();
   state.lod = LOD_STRIP.map((r) => {
-    const { frames, style } = renderAnimation(state.compiled, state.anim, r, go);
+    const { frames, style } = renderAnimation(cur(), state.anim, r, go);
     return { res: r, style, canvases: frames.map(toCanvas) };
   });
   strip.replaceChildren(...state.lod.map((l) => {
@@ -201,7 +230,7 @@ function renderLodStrip() {
 }
 
 function renderSheetView(t0) {
-  const sheet = renderSheet(state.compiled, res(), overrides());
+  const sheet = renderSheet(cur(), res(), overrides());
   const c = $('#sheet');
   c.width = sheet.width; c.height = sheet.height;
   c.getContext('2d').putImageData(new ImageData(sheet.rgba, sheet.width, sheet.height), 0, 0);
@@ -244,7 +273,7 @@ function drawView() {
 
 /** Rig overlay: part pivots (dots), and for reach constraints the target (ring) and the tip (dot). */
 function drawRig(ctx, u) {
-  const c = state.compiled, anim = c.animations[state.anim];
+  const c = cur(), anim = c.animations[state.anim];
   const pose = samplePose(c, anim, state.frame);
   const { world, visible } = worldMatrices(c.parts, pose);
   const at = (m, [x, y]) => [(m[0] * x + m[2] * y + m[4]) * u, (m[1] * x + m[3] * y + m[5]) * u];
@@ -319,9 +348,81 @@ function renderChips(names) {
     b.textContent = n;
     b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(n === state.anim));
-    b.onclick = () => { state.anim = n; state.frame = 0; renderChips(names); renderCurrent(); renderLodStrip(); };
+    b.onclick = () => setAnim(n);
     return b;
   }));
+}
+function setAnim(n) {
+  state.anim = n; state.frame = 0;
+  renderChips(Object.keys(state.compiled.animations)); renderEntry(); renderCurrent(); renderLodStrip(); syncURL();
+}
+function setSkin(skin) {
+  state.skin = skin;
+  $('#skin').value = skin;
+  renderEntry();
+  const t0 = performance.now();
+  renderCurrent(); renderLodStrip(); renderSheetView(t0); syncURL();
+}
+// The full view's skin picker (only for characters with skins).
+function renderSkins(skins) {
+  $('#skin-field').hidden = !skins.length;
+  $('#skin').replaceChildren(new Option('default', ''), ...skins.map((n) => new Option(n, n)));
+  $('#skin').value = state.skin;
+}
+
+// ---------- the simple view ----------
+/** Radios in a .pick fieldset: items [{value, label}] and the one checked. A group with one choice is hidden. */
+function fillPick(id, items, checked) {
+  const name = id.slice(1), box = $(`${id} .pick-row`), key = JSON.stringify(items);
+  // Same choices: only move the check, so the radio with keyboard focus stays in the page.
+  if (box.dataset.key === key) {
+    for (const i of box.querySelectorAll('input')) i.checked = i.value === String(checked);
+    return;
+  }
+  box.dataset.key = key;
+  box.replaceChildren(...items.map(({ value, label }) => {
+    const l = document.createElement('label');
+    l.append(Object.assign(document.createElement('input'), { type: 'radio', name, value: String(value), checked: String(value) === String(checked) }), label);
+    return l;
+  }));
+  $(id).hidden = items.length < 2;
+}
+function renderEntry() {
+  if (!state.compiled) return;
+  const names = Object.keys(state.compiled.animations);
+  const main = MAIN_ANIMS.filter((n) => names.includes(n)).slice(0, MAIN_MAX);
+  if (!main.length) main.push(...names.slice(0, MAIN_MAX));
+  if (!main.includes(state.anim)) main.push(state.anim);
+  $('#entry-title').textContent = state.compiled.name;
+  fillPick('#pick-anim', main.map((n) => ({ value: n, label: n })), state.anim);
+  fillPick('#pick-skin', ['', ...Object.keys(state.compiled.skins ?? {})].map((n) => ({ value: n, label: n || 'default' })), state.skin);
+  const sizes = SIZES.includes(res()) ? SIZES : [...SIZES, res()].sort((a, b) => a - b);
+  fillPick('#pick-size', sizes.map((r) => ({ value: r, label: `${r} px` })), res());
+  $('#btn-all-anims').hidden = names.length <= main.length;
+  $('#btn-all-anims').textContent = `All ${names.length} animations`;
+}
+const isSimple = () => document.body.classList.contains('simple');
+function setSimple(on) {
+  document.body.classList.toggle('simple', on);
+  requestAnimationFrame(drawView);   // the stage changed size
+  syncURL();
+}
+/** While the example from the link is on screen, the link follows the choices (to share or reload it). */
+function syncURL() {
+  if (state.persist || !state.compiled) return;
+  const q = new URLSearchParams({ c: $('#example').value });
+  if (state.skin) q.set('skin', state.skin);
+  if (state.anim) q.set('anim', state.anim);
+  if (res() !== 48) q.set('res', res());
+  let search = q.toString();
+  if (!isSimple()) search += '&edit';
+  history.replaceState(null, '', `${location.pathname}?${search}`);
+}
+/** The user changed the spec (or loaded another): it is theirs now, saved here, and the link no longer names it. */
+function adopt() {
+  if (state.persist) return;
+  state.persist = true;
+  history.replaceState(null, '', location.pathname);
 }
 
 // ---------- editor navigation ----------
@@ -384,24 +485,26 @@ function openExport() {
   if (!state.compiled) return;
   const name = slug(state.compiled.name);
   const anims = Object.keys(state.compiled.animations);
+  const skin = state.skin ? ` skin="${attr(state.skin)}"` : '';
   $('#embed-src').textContent =
 `<script type="module" src="/pixel-sprite.js"></script>
 
 <pixel-sprite src="/sprites/${name}.bundle.json"
-              anim="${attr(anims[0])}" size="128"${anims[1] ? `\n              hover-anim="${attr(anims[1])}"` : ''}${anims[2] ? ` click-anim="${attr(anims[2])}"` : ''}
+              anim="${attr(anims[0])}" size="128"${skin}${anims[1] ? `\n              hover-anim="${attr(anims[1])}"` : ''}${anims[2] ? ` click-anim="${attr(anims[2])}"` : ''}
               alt="${state.compiled.name.replace(/"/g, '&quot;')}"></pixel-sprite>`;
   $('#inline-size').textContent = '';
   $('#export-dialog').showModal();
 }
 
 // ---------- examples ----------
-async function loadExample(name) {
+async function loadExample(name, { anim = null, skin = '' } = {}) {
   const r = await fetch(`../packages/pixel-studio/examples/${name}.json`);
   if (!r.ok) throw new Error(`examples/${name}.json: HTTP ${r.status}`);
   $('#editor').value = await r.text();
   state.frame = 0;
-  state.anim = null;
-  rebuild();
+  state.anim = anim;
+  state.skin = skin;
+  await rebuild();
 }
 
 const TEMPLATE = {
@@ -429,8 +532,9 @@ async function init() {
   const sel = $('#example');
   const available = (await Promise.all(EXAMPLES.map(async (n) => ((await fetch(`../packages/pixel-studio/examples/${n}.json`, { method: 'HEAD' })).ok ? n : null)))).filter(Boolean);
   sel.replaceChildren(new Option('— choose —', ''), ...available.map((n) => new Option(n, n)));
-  sel.onchange = () => sel.value && loadExample(sel.value);
+  sel.onchange = () => { if (sel.value) { adopt(); loadExample(sel.value); } };
 
+  $('#editor').addEventListener('input', adopt);
   $('#editor').addEventListener('input', debounce(rebuild, 250));
   $('#editor').addEventListener('keydown', (e) => {
     if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); }
@@ -454,8 +558,14 @@ async function init() {
     labels(); rerender(); renderLodStrip(); refreshWebview();
   };
 
-  $('#btn-play').onclick = () => { state.playing = !state.playing; $('#btn-play').textContent = state.playing ? '❚❚' : '▶'; };
-  $('#scrub').oninput = (e) => { state.playing = false; $('#btn-play').textContent = '▶'; state.frame = Number(e.target.value); drawView(); drawLod(); };
+  const setPlaying = (on) => {
+    state.playing = on;
+    $('#btn-play').textContent = on ? '❚❚' : '▶';
+    $('#btn-pause').setAttribute('aria-pressed', String(!on));
+  };
+  $('#btn-play').onclick = () => setPlaying(!state.playing);
+  $('#btn-pause').onclick = () => setPlaying(!state.playing);
+  $('#scrub').oninput = (e) => { setPlaying(false); state.frame = Number(e.target.value); drawView(); drawLod(); };
   $('#bg').onchange = (e) => { $('#stage').className = `stage ${e.target.value}`; };
   $('#stage').className = 'stage checker';
   $('#grid').onchange = drawView;
@@ -466,15 +576,32 @@ async function init() {
     if (e.target.closest('textarea, input, select')) return;
     if (e.key === ' ') { e.preventDefault(); $('#btn-play').click(); }
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      state.playing = false; $('#btn-play').textContent = '▶';
+      setPlaying(false);
       const n = state.frameCanvases.length || 1;
       state.frame = (state.frame + (e.key === 'ArrowRight' ? 1 : n - 1)) % n;
       drawView(); drawLod();
     }
   });
 
-  $('#btn-new').onclick = () => { $('#editor').value = JSON.stringify(TEMPLATE, null, 2); sel.value = ''; rebuild(); };
-  $('#btn-format').onclick = () => { const p = parseEditor(); if (p.spec) { $('#editor').value = JSON.stringify(p.spec, null, 2); } };
+  // The simple view: its pickers, the way on (Customise, Create with Claude, Export) and back.
+  $('#skin').onchange = (e) => setSkin(e.target.value);
+  $('#pick-anim').addEventListener('change', (e) => setAnim(e.target.value));
+  $('#pick-skin').addEventListener('change', (e) => setSkin(e.target.value));
+  $('#pick-size').addEventListener('change', (e) => { $('#res').value = e.target.value; $('#lod').value = ''; rerender(); syncURL(); });
+  const tab = (name) => document.querySelector(`.tabs button[data-tab="${name}"]`);
+  const customise = () => { setSimple(false); tab('spec').click(); tab('spec').focus(); };
+  $('#btn-customise').onclick = customise;
+  $('#btn-all-anims').onclick = () => { setSimple(false); $('#anim-chips button[aria-checked=true]')?.focus(); };
+  $('#btn-create').onclick = () => {
+    setSimple(false);
+    tab('agent').click();
+    ($('#api-key').value ? $('#prompt') : $('#api-key')).focus();
+  };
+  $('#btn-export-simple').onclick = openExport;
+  $('#btn-simple').onclick = () => { setSimple(true); $('#btn-customise').focus(); };
+
+  $('#btn-new').onclick = () => { adopt(); $('#editor').value = JSON.stringify(TEMPLATE, null, 2); sel.value = ''; rebuild(); };
+  $('#btn-format').onclick = () => { const p = parseEditor(); if (p.spec) { adopt(); $('#editor').value = JSON.stringify(p.spec, null, 2); } };
   $('#btn-download-spec').onclick = () => state.compiled && download(`${slug(state.compiled.name)}.json`, $('#editor').value);
   $('#btn-download-png').onclick = () => {
     if (!state.compiled) return;
@@ -490,7 +617,7 @@ async function init() {
     const b = await exportBundle();
     const anims = Object.keys(b.animations);
     const runtime = await (await fetch('../packages/runtime/src/pixel-sprite.js')).text();
-    const snippet = `<pixel-sprite anim="${attr(anims[0])}" size="128"${anims[1] ? ` hover-anim="${attr(anims[1])}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
+    const snippet = `<pixel-sprite anim="${attr(anims[0])}" size="128"${state.skin ? ` skin="${attr(state.skin)}"` : ''}${anims[1] ? ` hover-anim="${attr(anims[1])}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
     await navigator.clipboard.writeText(snippet);
     $('#inline-size').textContent = `copied · ${(snippet.length / 1024).toFixed(1)} KB`;
   };
@@ -505,7 +632,7 @@ async function init() {
   initAgent({
     brief,
     getSpecText: () => $('#editor').value,
-    setSpecText: (t) => { $('#editor').value = t; sel.value = ''; rebuild(); },
+    setSpecText: (t) => { adopt(); $('#editor').value = t; sel.value = ''; rebuild(); },
     validate,
     // Contact sheet PNG of the current spec (all animations × 16/32/64) for the agent to look at.
     renderPreviewPNG: () => {
@@ -519,6 +646,18 @@ async function init() {
     hasRender: () => !!state.compiled,
   });
 
+  const linked = query.get('c');
+  if (linked && available.includes(linked)) {
+    state.persist = false;
+    sel.value = linked;
+    const r = Number(query.get('res'));
+    if (r) { $('#res').value = Math.min(96, Math.max(12, Math.round(r / 2) * 2)); $('#lod').value = ''; }
+    document.body.classList.toggle('simple', !query.has('edit'));
+    await loadExample(linked, { anim: query.get('anim'), skin: query.get('skin') || '' });
+    requestAnimationFrame(loop);
+    return;
+  }
+  if (linked) console.warn(`c=${linked}: not an example here (have: ${available.join(', ')}); opening the saved spec`);
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) { $('#editor').value = saved; rebuild(); }
   else if (available.length) { sel.value = available[0]; await loadExample(available[0]); }
