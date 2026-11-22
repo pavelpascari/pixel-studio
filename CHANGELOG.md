@@ -34,6 +34,8 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.3] - 2026-11-22
+
 ### Upgrading
 - **CLI:** `pixel bundle` now writes the side view only. If a page turns a character towards the reader (a
   `<pixel-stage>` character's `face('viewer')`, its glances at the reader, or an animation such as `idle@front`),
