@@ -6,3 +6,5 @@ href: "/apps/demo/flock.html"
 kind: demo
 tags: ["demo"]
 order: 10
+poster: demo-flock.jpg
+posterAlt: "Five pixel geese on a dark green lawn under a terminal-style title, The Flock"

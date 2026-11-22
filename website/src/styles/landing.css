@@ -1,39 +1,104 @@
 /* The landing page (src/pages/index.astro) only. Colours and spacing come from astro-project-site's --site-*
-   tokens, so light and dark themes follow the rest of the site. */
+   tokens (Pixel Studio's palette is src/styles/theme.css), so light and dark themes follow the rest of the site. */
 
 pixel-sprite {
   image-rendering: pixelated;
+}
+
+.ps-link {
+  color: var(--site-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ps-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Segmented controls (a fieldset of radios, drawn as the studio's chips) and the move buttons. */
+.ps-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--site-border);
+  border-radius: calc(var(--site-radius-sm) + 0.25rem);
+  background: var(--site-bg);
+}
+.ps-seg label {
+  position: relative;
+  display: flex;
+}
+.ps-seg input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ps-seg span,
+.ps-moves button {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: var(--site-radius-sm);
+  background: transparent;
+  color: var(--site-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ps-seg label:hover span {
+  border-color: var(--site-border);
+}
+.ps-seg input:checked + span {
+  border-color: var(--site-accent);
+  background: var(--site-accent);
+  color: var(--site-on-accent);
+}
+.ps-seg--small span {
+  min-height: 2.5rem;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.9rem;
+}
+.ps-seg input:focus-visible + span,
+.ps-moves button:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
 }
 
 /* ---------- hero ---------- */
 
 .ps-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: clamp(1.5rem, 4vw, 3.5rem);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(1.75rem, 4vw, 3.5rem);
   align-items: center;
   max-width: var(--site-max-width);
   margin: 0 auto;
-  padding: clamp(2.5rem, 7vw, 5.5rem) var(--site-space, 1.5rem) clamp(2rem, 5vw, 4rem);
+  padding: clamp(2rem, 6vw, 4.5rem) var(--site-space, 1rem) clamp(2.5rem, 6vw, 4.5rem);
 }
 .ps-eyebrow {
-  margin: 0 0 0.75rem;
-  color: var(--site-accent-strong);
+  margin: 0 0 0.9rem;
+  color: var(--site-muted);
   font-family: var(--site-font-mono);
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .ps-hero h1 {
   margin: 0;
   font-family: var(--site-font-heading);
-  font-size: clamp(2.4rem, 5.5vw, 4rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
 }
 .ps-lead {
   margin: 1.25rem 0 1.75rem;
-  max-width: 34rem;
+  max-width: 30rem;
   color: var(--site-muted);
   font-size: 1.15rem;
   line-height: 1.6;
@@ -41,83 +106,332 @@ pixel-sprite {
 .ps-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-block: 0 1.25rem;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+.ps-actions .site-btn {
+  min-height: 2.9rem;
+}
+.ps-status {
+  margin: 1.5rem 0 0;
+  color: var(--site-muted);
+  font-family: var(--site-font-mono);
+  font-size: 0.8rem;
 }
 
-/* The line-up: characters standing on one ground line. */
-.ps-lineup {
-  position: relative;
+/* The demo: a small page for a character to live on, and the controls to direct it. */
+.ps-demo {
+  display: grid;
+  gap: 0.9rem;
+}
+.ps-demo-head {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 0.25rem 0.5rem;
-  padding: 2.5rem 1.25rem 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+.ps-demo-head .ps-seg {
+  flex: none;
+}
+.ps-demo-head h2 {
+  margin: 0;
+  color: var(--site-muted);
+  font-family: var(--site-font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.ps-window {
+  position: relative;
+  padding: 0 clamp(0.9rem, 3vw, 1.5rem);
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   background:
-    linear-gradient(to top, var(--site-accent-soft) 0 1.6rem, transparent 1.6rem),
+    radial-gradient(circle, color-mix(in oklab, var(--site-muted) 28%, transparent) 1px, transparent 1.5px) 0 0 / 16px 16px,
     var(--site-surface);
+  overflow: hidden;
 }
-.ps-lineup pixel-sprite {
-  cursor: pointer;
-}
-.ps-hint {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0.3rem;
-  margin: 0;
+.ps-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 calc(-1 * clamp(0.9rem, 3vw, 1.5rem));
+  padding: 0.7rem clamp(0.9rem, 3vw, 1.5rem);
+  border-bottom: 1px solid var(--site-border);
   color: var(--site-muted);
   font-family: var(--site-font-mono);
   font-size: 0.75rem;
-  text-align: center;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.ps-window-bar i {
+  width: 4.5rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--site-border);
+}
+.ps-window-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 6vw, 3rem);
+  align-items: end;
+  /* Room above the higher card for a 72 px character standing on it. */
+  padding-top: 6.5rem;
+}
+.ps-mini {
+  position: relative;
+  padding: 0.9rem 1rem 1.1rem;
+  border: 1px solid var(--site-border);
+  border-top: 2px solid var(--site-text);
+  border-radius: 4px;
+  background: var(--site-bg);
+  box-shadow: var(--site-shadow);
+}
+.ps-mini--b {
+  margin-bottom: 3.75rem;
+}
+.ps-mini h3 {
+  margin: 0 0 0.8rem;
+  font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+  font-weight: 600;
+}
+.ps-lines {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+.ps-lines i {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--site-border);
+}
+.ps-lines i:last-child {
+  width: 60%;
+}
+.ps-crate {
+  position: absolute;
+  right: 0.75rem;
+  top: -2.2rem;
+  width: 2.6rem;
+  height: 2.2rem;
+  border-radius: 3px 3px 0 0;
+  background: repeating-linear-gradient(90deg, #b07a3c 0 0.55rem, #946431 0.55rem 0.62rem);
+  border: 2px solid #6e4a24;
+  border-bottom: 0;
+}
+.ps-window-ground {
+  height: 1.25rem;
+  margin: 1.5rem calc(-1 * clamp(0.9rem, 3vw, 1.5rem)) 0;
+  border-top: 1px solid var(--site-border);
+  background: color-mix(in oklab, var(--site-accent) 10%, var(--site-surface));
+}
+.ps-moves {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.ps-moves button {
+  min-height: 3rem;
+  border-color: var(--site-border);
+  background: var(--site-surface);
+}
+.ps-moves button:hover {
+  border-color: var(--site-accent);
+}
+.ps-moves button:active {
+  background: var(--site-accent-soft);
+}
+.ps-who,
+.ps-still {
+  margin: 0;
+  color: var(--site-muted);
+}
+.ps-still {
+  font-size: 0.9rem;
 }
 
-/* ---------- two packages ---------- */
+/* ---------- make it yours ---------- */
 
-.ps-packages {
+.ps-make {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: start;
+}
+.ps-make-preview {
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  padding: 1.5rem 1rem;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-bg);
+}
+.ps-make-sprite {
+  margin-bottom: 0.5rem;
+}
+.ps-code {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+.ps-code figcaption {
+  color: var(--site-muted);
+  font-size: 0.9rem;
+}
+.ps-code pre,
+.ps-embed pre {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-code-bg);
+  color: var(--site-code-text);
+  font-family: var(--site-font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.ps-code pre[hidden] {
+  display: none;
+}
+
+/* ---------- embed ---------- */
+
+.ps-embeds {
+  display: grid;
   gap: 1.25rem;
 }
-.ps-package {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.5rem;
+.ps-embed {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
   background: var(--site-surface);
+  overflow: hidden;
 }
-.ps-package h3 {
+.ps-embed-result {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  border-right: 1px solid var(--site-border);
+  background:
+    radial-gradient(circle, color-mix(in oklab, var(--site-muted) 28%, transparent) 1px, transparent 1.5px) 0 0 / 16px 16px,
+    var(--site-bg);
+}
+.ps-embed-result--stage {
+  align-content: center;
+  gap: 1rem;
+  text-align: center;
+}
+.ps-embed-result--stage p {
   margin: 0;
-  font-size: 1.5rem;
+  max-width: 18rem;
+  color: var(--site-muted);
 }
-.ps-package p {
+.ps-embed-text {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  padding: 1.5rem;
+}
+.ps-embed-text h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.ps-embed-text p {
   margin: 0;
   color: var(--site-muted);
-  line-height: 1.6;
 }
-.ps-package > a {
-  margin-top: auto;
-  font-weight: 600;
-}
-.ps-tag {
-  font-family: var(--site-font-mono);
-  font-size: 0.85rem;
-  color: var(--site-accent-strong) !important;
+.ps-install {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  margin-top: 1.5rem;
 }
 
-/* ---------- runtime ---------- */
+/* ---------- studio ---------- */
 
 .ps-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: clamp(1.5rem, 4vw, 3rem);
   align-items: center;
 }
-.ps-sizes {
+.ps-split--studio {
+  align-items: start;
+}
+.ps-loop {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ps-loop li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+  line-height: 1.55;
+}
+.ps-loop li > span {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 4px;
+  background: var(--site-accent-soft);
+  color: var(--site-accent-strong);
+  font-family: var(--site-font-mono);
+  font-weight: 700;
+}
+.ps-shot {
+  margin: 0;
+}
+.ps-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  box-shadow: var(--site-shadow);
+}
+/* The key requirement sits right beside the button that needs it. */
+.ps-key {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem 1.5rem;
+  align-items: center;
+  margin-top: 2rem;
+}
+.ps-key p {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--site-muted);
+  font-size: 0.92rem;
+}
+
+/* ---------- details ---------- */
+
+.ps-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: center;
+  margin-bottom: 2.5rem;
+}
+.ps-detail-text h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+.ps-detail-text p {
+  margin: 0 0 0.75rem;
+  color: var(--site-muted);
+  line-height: 1.6;
+}
+.ps-sizes,
+.ps-gaits {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -142,140 +456,50 @@ pixel-sprite {
   font-family: var(--site-font-mono);
   font-size: 0.8rem;
 }
-.ps-points {
+.ps-facts {
   display: grid;
-  gap: 1rem;
-  margin: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0 0 2.5rem;
   padding: 0;
   list-style: none;
-  line-height: 1.6;
-}
-.ps-points strong {
-  display: block;
-}
-
-/* ---------- stage ---------- */
-
-.ps-playground {
-  padding: 3.5rem 1.5rem 0;
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
-  border: 1px solid var(--site-border);
-  overflow: hidden;
-}
-.ps-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1rem, 4vw, 3.5rem);
-  align-items: end;
-}
-.ps-card {
-  position: relative;
-  padding: 1.1rem 1.2rem 1.25rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius-sm, 8px);
-  background: var(--site-bg);
-  box-shadow: var(--site-shadow);
-}
-.ps-card--high {
-  margin-bottom: 4.5rem;
-}
-.ps-card h3 {
-  margin: 0 0 0.35rem;
-  font-size: 1.05rem;
-}
-.ps-card p {
-  margin: 0;
-  color: var(--site-muted);
-  font-size: 0.92rem;
-  line-height: 1.5;
-}
-.ps-crate {
-  position: absolute;
-  right: 1rem;
-  top: -2.25rem;
-  width: 2.75rem;
-  height: 2.25rem;
-  border-radius: 4px 4px 0 0;
-  background: repeating-linear-gradient(90deg, #b07a3c 0 0.55rem, #946431 0.55rem 0.62rem);
-  border: 2px solid #6e4a24;
-  border-bottom: 0;
-}
-.ps-ground {
-  height: 1.5rem;
-  margin: 2rem -1.5rem 0;
-  background: var(--site-accent-soft);
-  border-top: 2px solid color-mix(in srgb, var(--site-accent) 45%, transparent);
-}
-.ps-caption {
-  margin: 0;
-  padding: 0.6rem 0 0.9rem;
-  color: var(--site-muted);
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* ---------- studio ---------- */
-
-.ps-split--studio {
-  align-items: start;
-}
-.ps-loop {
-  display: grid;
-  gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.ps-loop li {
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  gap: 0.75rem;
   line-height: 1.55;
 }
-.ps-loop li > span {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--site-accent-soft);
-  color: var(--site-accent-strong);
-  font-weight: 700;
-}
-.ps-shot {
-  margin: 0;
-}
-.ps-shot img {
+.ps-facts strong {
   display: block;
-  width: 100%;
-  height: auto;
+}
+.ps-packages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+.ps-package {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.25rem 1.5rem;
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
-  box-shadow: var(--site-shadow);
+  background: var(--site-bg);
+}
+.ps-package h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.ps-package p {
+  margin: 0;
+  color: var(--site-muted);
+  line-height: 1.6;
+}
+.ps-tag {
+  font-family: var(--site-font-mono);
+  font-size: 0.85rem;
+  color: var(--site-accent-strong) !important;
 }
 .ps-note {
-  margin: 1.5rem 0 1.25rem;
+  margin: 1rem 0 0;
   color: var(--site-muted);
-  font-size: 0.95rem;
-}
-
-/* ---------- motion ---------- */
-
-.ps-gaits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 1.25rem;
-  align-items: end;
-  padding: 1.5rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  background: var(--site-surface);
-}
-
-.ps-more {
-  margin: 1.25rem 0 0;
-  font-weight: 600;
+  font-size: 0.92rem;
 }
 
 /* ---------- pause control ---------- */
@@ -304,13 +528,40 @@ pixel-sprite {
 
 @media (max-width: 52rem) {
   .ps-hero,
-  .ps-split {
+  .ps-split,
+  .ps-make,
+  .ps-detail {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ps-cards {
+  /* Phones: headline, one line of explanation, the action, and the demo right below. */
+  .ps-hero {
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+  }
+  .ps-eyebrow {
+    margin-bottom: 0.6rem;
+  }
+  .ps-lead {
+    margin: 0.9rem 0 1.25rem;
+    font-size: 1.05rem;
+  }
+  .ps-status {
+    margin-top: 1rem;
+  }
+  .ps-window-cards {
+    padding-top: 5.25rem;
+  }
+  .ps-mini--b {
+    margin-bottom: 3rem;
+  }
+  .ps-embed {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ps-card--high {
-    margin-bottom: 0;
+  .ps-embed-result {
+    border-right: 0;
+    border-bottom: 1px solid var(--site-border);
+  }
+  .ps-key {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

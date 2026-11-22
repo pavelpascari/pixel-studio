@@ -20,12 +20,15 @@ export default defineConfig({
       versionFrom: '../packages/pixel-studio/package.json',
       // from README.md
       install: 'npm i @pixel-studio/core',
+      // Short: the guide is the first section of the docs, and the source link is the header's GitHub icon.
       nav: [
+        { label: 'Examples', href: '/gallery/' },
         { label: 'Docs', href: '/docs/' },
-        { label: 'Guide', href: '/docs/guide/' },
         { label: 'Blog', href: '/blog/' },
-        { label: 'Gallery', href: '/gallery/' },
+        { label: 'Studio', href: '/apps/studio/' },
       ],
+      // The studio's palette on every page (warm yellow / amber); see the file for the contrast figures.
+      customCss: ['./src/styles/theme.css'],
       // Markdown from the repository, mounted under /docs/<route>/. Links between mounted files become site
       // links; other relative links point at the file in the repo. `include` picks files from a folder.
       externalDocs: [
@@ -63,8 +66,8 @@ export default defineConfig({
           ],
         },
       ],
-      // The landing page is src/pages/index.astro (it replaces the built-in one): live characters, the runtime,
-      // the stage, the studio and the steps.
+      // The landing page is src/pages/index.astro (it replaces the built-in one): a character to direct on a
+      // small page, then its looks, its embed, the studio, examples and the details.
       // The blog at /blog/: one file per post in src/content/blog/ (title, description, date, authors, tags, draft).
       // Authors from package.json.
       blog: { authors: { 'pavel-pascari': { name: 'Pavel Pascari' } } },
