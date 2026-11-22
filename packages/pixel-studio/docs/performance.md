@@ -8,6 +8,7 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 - [Download size](#download-size)
 - [Load impact](#load-impact)
 - [Cost per frame](#cost-per-frame)
+- [Touch scrolling](#touch-scrolling)
 - [Memory](#memory)
 - [Keeping it small](#keeping-it-small)
 - [How it was measured](#how-it-was-measured)
@@ -155,6 +156,30 @@ sprite because it also moves the characters across the page and decides what eac
   (0.016 ms with 4x CPU), on top of a fixed cost for the loop and the first sprite.
 - These are main-thread numbers. Compositing the canvases takes GPU and compositor time as well, which is not
   included.
+
+## Touch scrolling
+
+So that a finger can pick a character up, a stage with `grab="on"` (the default) keeps one non-passive `touchmove`
+listener on the document. It does nothing unless a character is held, but the browser has to wait for it before a
+swipe can start scrolling. Measured on `demo/stage.html` in Chrome (headless, Pixel 7 profile, real touch input),
+15 swipes per case that start off the characters, interleaved: time from `touchstart` to the first `scroll` event,
+and frames over 50 ms during the fling that follows.
+
+| Case | Swipe to first scroll (median) | 4x CPU | Long frames in the fling |
+|---|--:|--:|--:|
+| Stage, `grab="on"` (touch listener) | 66 ms | 64 ms | 0 |
+| Stage, `grab="off"` (no touch listener) | 49 ms | 47 ms | 0 |
+| Same page without a stage | 32 ms | 31 ms | 0 |
+
+- The touch listener makes a swipe start scrolling one frame later (16 ms, with or without CPU throttling); the
+  fling that follows is not affected. A paused stage, `prefers-reduced-motion`, `grab="mouse"` and `grab="off"`
+  register no touch listener and do not pay it.
+- The rest of the stage (its pointer listeners and per-frame work) accounts for one more frame against a page with no
+  stage at all.
+- The listener cannot wait for a hold to begin: Chrome honours one added mid-gesture, but WebKit (by its design; not tested here) decides when a
+  touch starts whether its moves can be cancelled, so on iPhones the page would scroll away under a held character.
+- The test driver sends each touch point and waits for the browser to acknowledge it, so these are upper bounds
+  measured in whole frames; a real finger's swipe overlaps them. The script is not in `scripts/bench/` yet.
 
 ## Memory
 

@@ -32,6 +32,8 @@
 // Stage attributes:  controls = bottom-right (default) | bottom-left | top-right | top-left | none
 //                    floor    = document (default: the bottom of the page) | none
 //                    roam     = viewport (default: prefer places on screen) | page
+//                    grab     = on (default: pick up by hold or drag, any pointer) | mouse (mouse and pen only,
+//                               no touch listeners: the 0.2 behaviour) | off (no picking up; taps still shoo)
 // Actor attributes:  src, size (default 64), alt, start (selector to stand on first), keep-in-view (come
 //                    back when scrolled out of sight: run there, or drop in from the top of the screen),
 //                    behaviours (default "wander sit hide climb jump"), anims ("walk=waddle run=run ...")
@@ -460,6 +462,7 @@ export class PixelStage extends Base {
     this._unscroll?.();
     for (const [t, fn] of this._inputs || []) document.removeEventListener(t, fn, true);
     this._endInput?.();
+    if (this._touchGuarded) { document.removeEventListener('touchmove', this._onTouchMove, true); this._touchGuarded = false; }
   }
 
   pause() { this._paused = true; store.set('pixel-stage:paused', '1'); this._label(); this._sync(); }
@@ -474,6 +477,7 @@ export class PixelStage extends Base {
 
   /** Run the loop unless paused or the user prefers reduced motion. */
   _sync() {
+    this._touchGuard();
     const still = this._paused || reducedMotion();
     for (const a of this.actors) a._setStill(still);
     if (still) clock.remove(this._tick); else clock.add(this._tick);
@@ -545,6 +549,7 @@ export class PixelStage extends Base {
       emit(actor, 'grab', { pointerType: g.pointerType });
     };
     const onDown = (e) => {
+      swallow = null;   // a new press: its own click is the page's
       if (g && e.pointerId !== g.id) {
         // A second finger: while waiting for a hold it is a pinch (a zoom, not a pick-up); while holding, ignored.
         if (g.grabbed) return;
@@ -553,7 +558,7 @@ export class PixelStage extends Base {
       if (g) onCancel({ pointerId: g.id });   // a press whose end never arrived (released outside the window)
       if (e.button !== 0) return;
       actor = hit(e) ?? null;
-      const canGrab = !!actor && !this._paused && !reducedMotion();
+      const canGrab = !!actor && this._grabs(e.pointerType || 'mouse');
       g = new Gesture(pt(e), { pointerType: e.pointerType || 'mouse', id: e.pointerId, onActor: !!actor, canGrab });
       if (!g.pending) return;
       // Never preventDefault here for touch: until the hold completes, a swipe must scroll the page.
@@ -600,23 +605,51 @@ export class PixelStage extends Base {
       if (r) { a0._throw(0, 0); emit(a0, 'throw', { vx: 0, vy: 0, pointerType: type }); }
     };
     // Once a character is held, the finger moves it instead of the page. This listener is not passive because
-    // the decision has to be possible on the first move after the hold; it does nothing otherwise.
-    const onTouchMove = (e) => { if (g?.grabbed && e.cancelable) e.preventDefault(); };
+    // the decision has to be possible on the first move after the hold; it does nothing otherwise. It is only
+    // registered while a finger can pick a character up (see _touchGuard): WebKit decides at touchstart whether
+    // a touch's moves can be cancelled, so it cannot be added once a hold completes.
+    this._onTouchMove = (e) => { if (g?.grabbed && e.cancelable) e.preventDefault(); };
     // A long press on a character (held or waiting for the hold) opens no context menu (Android, desktop touch).
     const onMenu = (e) => { if (g && g.mode !== 'none' && g.pointerType !== 'mouse') e.preventDefault(); };
-    // The click that follows a tap on a character or a throw does not reach the page; later clicks, or clicks
-    // somewhere else, do.
+    // The click that follows a tap on a character or a throw does not reach the page; the click of any later press
+    // does (a new press clears this). Not matched by position: WebKit moves a tap's click onto a nearby link.
     const onClick = (e) => {
       const s = swallow;
-      if (!s || performance.now() - s.t > 500 || !(Math.hypot(e.clientX - s.x, e.clientY - s.y) <= GESTURE.tapSlop)) return;
+      if (!s || performance.now() - s.t > 500) return;
       swallow = null;
       e.preventDefault(); e.stopPropagation();
     };
     this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['pointercancel', onCancel],
-      ['touchmove', onTouchMove], ['contextmenu', onMenu], ['click', onClick]];
-    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' ? true : t === 'touchmove' ? false : undefined });
+      ['contextmenu', onMenu], ['click', onClick]];
+    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' ? true : undefined });
     this._endInput = finish;
+    this._touchGuard();
   }
+
+  /** `grab`: 'on' (default), 'mouse' (mouse and pen only) or 'off'. */
+  get grab() { const v = this.getAttribute('grab'); return v === 'off' || v === 'mouse' ? v : 'on'; }
+  set grab(v) { this.setAttribute('grab', String(v)); }
+
+  /** Whether a press with this pointer type can pick a character up now. */
+  _grabs(pointerType) {
+    const mode = this.grab;
+    return mode !== 'off' && !(mode === 'mouse' && pointerType === 'touch') && !this._paused && !reducedMotion();
+  }
+
+  /**
+   * The page-wide non-passive touchmove listener exists only while a finger can pick a character up: grab="on",
+   * not paused, no reduced motion. Otherwise the stage adds no listener that could delay a scroll.
+   */
+  _touchGuard() {
+    const want = !!this._onTouchMove && this.isConnected !== false && this._grabs('touch');
+    if (want === !!this._touchGuarded) return;
+    this._touchGuarded = want;
+    if (want) document.addEventListener('touchmove', this._onTouchMove, { capture: true, passive: false });
+    else document.removeEventListener('touchmove', this._onTouchMove, true);
+  }
+
+  attributeChangedCallback(name) { if (name === 'grab') this._touchGuard(); }
+  static observedAttributes = ['grab'];
 }
 
 // ---------- an actor: a sprite with a body in the world and a small brain ----------

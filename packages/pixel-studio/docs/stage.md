@@ -74,6 +74,7 @@ Layout tips, learned building the demo:
 | `label` | `character` or `characters` | The word on the button: "Pause characters" / "Play characters". Without it, the button says `character` when the stage has one actor. |
 | `floor` | `document` | `none`: no floor at the bottom of the page. |
 | `roam` | `viewport` | `page`: wander anywhere, not just near what is on screen. |
+| `grab` | `on` | Who can pick characters up ([Interactions](#interactions-on-every-device)): `on` (a hold, or a mouse or pen drag), `mouse` (mouse and pen only, as in 0.2.0-alpha: a finger only taps, and the stage adds no touch listener), `off` (nobody; taps still shoo). Also `stage.grab`. |
 
 `<pixel-actor>`
 
@@ -374,7 +375,7 @@ names a scene plays itself (`--anims stage,hack`). Without `--views` the charact
   split into disjoint cells so overlapping occluders don't cancel out, and rounded to device pixels. The page is not touched.
 - **Clicks go through.** The stage and its characters have `pointer-events: none`. Capture-phase listeners on the
   document test presses against the character's opaque pixels (`hitTest`); only a tap on the character itself shoos it,
-  and that one click (at the same spot, within 500 ms) does not reach the page.
+  and that one click (the click of that press) does not reach the page.
 - **One clock.** Movement uses the same frame clock and `dt` as the sprites' frame stepping (see [runtime.md](runtime.md)).
 
 ## Rage taps and fast scrolls
@@ -415,14 +416,20 @@ Only presses on a character's opaque pixels count; everything else reaches the p
   the page scrolls as it always does. Only after a completed hold does the stage cancel `touchmove`, so the finger carries
   the character instead of the page. Nothing calls `preventDefault` on `pointerdown` or `touchstart` for touch, and
   `touch-action` is never set. For this the stage keeps one non-passive `touchmove` listener on the document, which does
-  nothing unless a character is held.
+  nothing unless a character is held. It is there only while a finger can pick a character up (`grab="on"`, not paused,
+  no reduced motion), and it has a small cost: in Chrome a swipe anywhere on the page starts scrolling about one frame
+  (16 ms) later (measured in [performance.md](performance.md#touch-scrolling)). It cannot be added only once a hold
+  begins, because WebKit decides when a touch starts whether its moves can be cancelled (by its design; Chrome does
+  honour a listener added mid-gesture). `grab="mouse"` or
+  `grab="off"` removes it.
 - **No long-press side effects.** While a finger or pen rests on a character, the page's `user-select` and
   `-webkit-touch-callout` are `none` (no text selection, magnifier or link callout on iOS), and the context menu of a long
   press is suppressed. The page's own inline values come back when the press ends or turns into a scroll. Mouse
   right-clicks are never touched.
 - **When the browser takes the pointer** (`pointercancel`: a system gesture, a scroll that began), a held character
   drops where it is (`pixel-throw` with 0, 0). A second finger while waiting for a hold is a pinch: no pick-up.
-- **Off while paused or under reduced motion**: picking up is off; taps still shoo.
+- **Off while paused, under reduced motion, or with `grab="off"`** (and for fingers with `grab="mouse"`): picking up
+  is off, nothing special happens on a long press, and taps still shoo.
 - **Keyboard and screen readers.** The characters are decorative: their layer is `aria-hidden`, and they take no focus,
   because a moving focus target that runs away when activated would be a trap, not a control. The accessible control is
   the pause button. If a character's reaction matters to your page, give the page a real button that calls

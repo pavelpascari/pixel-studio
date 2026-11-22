@@ -122,7 +122,7 @@ test('gesture: a release at the last move\'s position (as browsers send it) keep
 // ---------- the stage's input wiring ----------
 
 /** A stage with one character whose opaque pixels are the box 100..140 × 100..140 (client px). */
-function setup({ paused = false } = {}) {
+function setup({ paused = false, grab = null } = {}) {
   listeners.clear();
   const log = [];
   const actor = new EventTarget();
@@ -137,9 +137,21 @@ function setup({ paused = false } = {}) {
   });
   const events = [];
   for (const n of ['tap', 'burst', 'grab', 'throw']) actor.addEventListener(`pixel-${n}`, (e) => events.push({ type: n, ...e.detail }));
-  const stage = { actors: [actor], world: { origin: { x: 0, y: 0 } }, _paused: paused };
+  const attrs = new Map(grab == null ? [] : [['grab', grab]]);
+  const stage = Object.create(PixelStage.prototype, { actors: { value: [actor] } });
+  Object.assign(stage, {
+    world: { origin: { x: 0, y: 0 } }, _paused: paused,
+    getAttribute: (k) => attrs.get(k) ?? null,
+    setAttribute(k, v) { attrs.set(k, String(v)); this.attributeChangedCallback(k); },
+  });
   PixelStage.prototype._input.call(stage);
   return { stage, actor, log, events };
+}
+/** A click at this point (no press before it); returns whether it was kept from the page. */
+function clickAt(clientX, clientY) {
+  const e = { type: 'click', clientX, clientY, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() {} };
+  listeners.get('click').fn(e);
+  return e.defaultPrevented;
 }
 let ids = 0;
 /** One pointer: down(x, y), move(x, y), up(), cancel(); each returns whether the event's default was prevented. */
@@ -170,7 +182,8 @@ test('input: a tap fires the same pixel-tap for mouse, pen and touch, with the p
     p.down(120, 120); wait(80); p.up();
     assert.deepEqual(events, [{ type: 'tap', count: 1, pointerType: type }], type);
     assert.deepEqual(log, ['shoo']);
-    assert.equal(p.click(), true, `${type}: the tap's click does not reach the page`);
+    assert.equal(clickAt(140, 160), true,
+      `${type}: the tap's click does not reach the page, also when the browser moved it onto a nearby link (WebKit)`);
     wait(1000);
   }
 });
@@ -310,4 +323,58 @@ test('sprite: on touch a tap enters (then clicks) and leaves a few seconds after
   ev('pointerenter', 'mouse'); ev('pointerdown', 'mouse'); ev('click'); ev('pointerleave', 'mouse');
   wait(TOUCH_HOVER_MS * 2);
   assert.deepEqual(seen, ['enter', 'click', 'leave']);
+});
+
+// ---------- grab="mouse" / grab="off": no page-wide non-passive touch listener ----------
+
+const touchListener = () => listeners.get('touchmove');
+
+test('grab: on by default, the non-passive touchmove listener is there only while a finger can pick up', () => {
+  const { stage } = setup();
+  assert.equal(stage.grab, 'on');
+  assert.equal(touchListener()?.opts.passive, false);
+  stage._paused = true; stage._touchGuard();
+  assert.equal(touchListener(), undefined, 'paused: no touch listener');
+  stage._paused = false; stage._touchGuard();
+  assert.equal(touchListener()?.opts.passive, false);
+  stage.setAttribute('grab', 'off');
+  assert.equal(touchListener(), undefined, 'switched off live');
+  stage.setAttribute('grab', 'on');
+  assert.equal(touchListener()?.opts.passive, false);
+});
+
+test('grab="mouse": the mouse drags and throws as before; a finger hold does nothing special, taps still shoo', () => {
+  const { log, events } = setup({ grab: 'mouse' });
+  assert.equal(touchListener(), undefined);
+  const t = pointer('touch');
+  t.down(120, 120);
+  assert.equal(htmlStyle.props.size, 0, 'no long-press suppression');
+  wait(GESTURE.holdMs + 50);
+  assert.equal(t.menu(), false);
+  t.move(120, 60);
+  t.up();
+  assert.deepEqual(log, []);
+  t.down(120, 120); wait(60); t.up();
+  assert.deepEqual(events.map((e) => `${e.type} ${e.pointerType}`), ['tap touch']);
+  const m = pointer('mouse');
+  m.down(120, 120);
+  for (let i = 1; i <= 4; i++) { wait(16); m.move(120 + i * 10, 120); }
+  m.up();
+  assert.deepEqual(events.slice(1).map((e) => e.type), ['grab', 'throw']);
+  wait(1000);
+});
+
+test('grab="off": nothing picks up, for any pointer; taps still shoo', () => {
+  const { log, events } = setup({ grab: 'off' });
+  assert.equal(touchListener(), undefined);
+  for (const type of ['mouse', 'pen', 'touch']) {
+    const p = pointer(type);
+    assert.equal(p.down(120, 120), false, `${type}: nothing prevented`);
+    wait(GESTURE.holdMs + 50);
+    p.move(160, 120); p.up();
+    p.down(120, 120); wait(60); p.up();
+    wait(1000);
+  }
+  assert.deepEqual(log, ['shoo', 'shoo', 'shoo']);
+  assert.deepEqual(events.map((e) => `${e.type} ${e.pointerType}`), ['tap mouse', 'tap pen', 'tap touch']);
 });

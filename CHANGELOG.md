@@ -34,6 +34,8 @@ Until 1.0, minor versions may change the spec format.
   wobble 10 px), move the finger to carry it, lift to throw it with the finger's speed. A quick tap still shoos it,
   and a swipe that starts on a character still scrolls the page: the stage only takes the finger once the hold is
   complete. On Android the pick-up gives a short buzz. Mice and pens can use the same hold (or drag at once, as before).
+- `<pixel-stage grab="mouse">` keeps picking up to the mouse and pen, and `grab="off"` turns it off; either way the
+  stage adds no touch listener, so swipes start scrolling a frame sooner.
 - Actor events `pixel-grab` `{pointerType}` and `pixel-throw` `{vx, vy, pointerType}` (scenes: `grab`, `throw`), and
   `pointerType` in `pixel-tap` and `pixel-burst`, so pages can tell how a character was touched and react the same
   way on every device.
@@ -50,8 +52,8 @@ Until 1.0, minor versions may change the spec format.
   default (the demos use it), and the studio's export dialog has a checkbox for them, off by default.
 - `<pixel-stage>`: while a finger or pen rests on a character, the long-press text selection, iOS callout and
   context menu are suppressed (the page's own styles come back after). A `pointercancel` now drops a held character
-  where it is instead of leaving it stuck in the air. The click swallowed after a tap on a character or a throw must
-  be at the same spot, so a quick tap elsewhere right after reaches the page. A throw uses the last 100 ms of
+  where it is instead of leaving it stuck in the air. Only the click of the press that tapped a character or threw it
+  is kept from the page, so a quick tap elsewhere right after reaches it. A throw uses the last 100 ms of
   movement, and a pointer that rests before letting go drops the character instead of throwing it.
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
   (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
