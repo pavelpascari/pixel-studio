@@ -31,7 +31,7 @@ in this post:
   <figcaption>The example characters that come with the engine. Tap one. The goose honks; tap it fast and it panics.</figcaption>
 </figure>
 
-<p class="ps-post-pause"><button type="button" class="site-btn" aria-pressed="false" data-ps-pause>Pause characters</button></p>
+<p class="ps-post-pause"><button type="button" class="site-btn" data-ps-pause>Pause characters</button></p>
 
 Each of them is one file, and the page you are reading plays them with one script.
 
@@ -155,13 +155,14 @@ jump and hide on a small page, then follow "Customize" into the studio and make 
 <script type="module" src="/apps/packages/runtime/src/pixel-sprite.js"></script>
 <script>{`
   (() => {
-    // One control for every character in the post (WCAG 2.2.2). Its name stays the same; aria-pressed says
-    // whether they are paused.
+    // One control for every character in the post (WCAG 2.2.2). Its label says what it will do: "Pause
+    // characters" while they play, "Play characters" while they are paused.
     const button = document.querySelector('[data-ps-pause]');
     if (!button) return;
     button.addEventListener('click', () => {
-      const paused = button.getAttribute('aria-pressed') !== 'true';
-      button.setAttribute('aria-pressed', String(paused));
+      const paused = !button.hasAttribute('data-paused');
+      button.toggleAttribute('data-paused', paused);
+      button.textContent = paused ? 'Play characters' : 'Pause characters';
       for (const sprite of document.querySelectorAll('pixel-sprite')) sprite.toggleAttribute('paused', paused);
     });
   })();
