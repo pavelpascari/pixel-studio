@@ -1,5 +1,5 @@
 // What a page downloads for Pixel Studio characters: the runtime files and every demo bundle, raw, gzip and brotli,
-// and how much smaller one goose's bundle gets with fewer resolutions, without its extra views, or with --external.
+// and how much smaller one goose's bundle gets with fewer resolutions, views or animations, or with --external.
 // Node built-ins only. The bundles come from demo/assets (npm run build:demo).
 //
 //   node scripts/bench/sizes.mjs            markdown tables
@@ -54,7 +54,7 @@ export function bundleSizes() {
   });
 }
 
-/** The goose rebuilt with the CLI's options (same code as `pixel bundle`): fewer resolutions, no extra views, --external. */
+/** The goose rebuilt with the CLI's options (same code as `pixel bundle`): resolutions, views, animations, --external. */
 export async function gooseOptions(name = GOOSE) {
   const { compile, buildBundle, resolveSpec } = await import('../../packages/pixel-studio/src/core/index.js');
   const { encodePNG } = await import('../../packages/pixel-studio/src/node/png.js');
@@ -76,11 +76,16 @@ export async function gooseOptions(name = GOOSE) {
     const json = sizesOf(JSON.stringify(bundle));
     rows.push({ flags, animations, decoded, raw: json.raw + png.length, gzip: json.gzip + png.length, brotli: json.brotli + png.length, external: true });
   };
-  await add('(default: `--res 16,32,64`, every view)', {});
-  await add('`--res 32`', { resolutions: [32] });
-  await add('`--views none`', { views: [] });
-  await add('`--res 32 --views none`', { resolutions: [32], views: [] });
-  await add('`--res 32 --views none --external`', { resolutions: [32], views: [] }, true);
+  // The first row is the demo build (buildBundle's defaults: every view); the CLI ships the side view unless --views.
+  await add('`--views all` (as built for the demos)', {});
+  await add('(default: `--res 16,32,64`, side view only)', { views: [] });
+  await add('`--anims stage`', { views: [], animations: ['stage'] });
+  await add('`--anims idle,waddle,honk`', { views: [], animations: ['idle', 'waddle', 'honk'] });
+  await add('`--views all --anims stage`', { animations: ['stage'] });
+  await add('`--res 32 --views all`', { resolutions: [32] });
+  await add('`--res 32`', { resolutions: [32], views: [] });
+  await add('`--res 32 --anims idle,waddle,honk`', { resolutions: [32], views: [], animations: ['idle', 'waddle', 'honk'] });
+  await add('`--res 32 --external`', { resolutions: [32], views: [] }, true);
   return rows;
 }
 

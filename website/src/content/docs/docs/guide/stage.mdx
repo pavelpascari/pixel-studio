@@ -61,7 +61,7 @@ import LiveExample from '../../../../components/LiveExample.astro';
 </script>`}
 />
 
-Tap or click a character to shoo it; with a mouse, drag one to pick it up and throw it. This page hides the stage's own pause button (`controls="none"`) and its floor; the [full demo page](/apps/demo/stage.html) has both.
+Tap or click a character to shoo it; press and hold one (or drag it with a mouse) to pick it up, and let go to throw it. This page hides the stage's own pause button (`controls="none"`) and its floor; the [full demo page](/apps/demo/stage.html) has both.
 
 ## Staying in sight
 
@@ -105,7 +105,7 @@ Steps: `goTo` (a selector, a cast name, or a point; `then`, `at`), `hideBehind`,
 
 ### Triggers, carrying and leaving
 
-Give a scene a `trigger` and mark its script `data-pixel-scene`: it plays by itself when that happens: a form submitted, a button clicked, a section scrolled into view (`"visible"`), a character tapped. Characters can `pickUp` any element (a copy rides at the beak or hand), `drop` it, `exit` by the side of the screen (delivering what they carry) and `enter` again. A character with front and back views can turn to the reader: `{"face": "viewer"}`, `"away"`, `"side"`. The [demo page's newsletter form](/apps/demo/stage.html#newsletter) hands the goose a letter to post.
+Give a scene a `trigger` and mark its script `data-pixel-scene`: it plays by itself when that happens: a form submitted, a button clicked, a section scrolled into view (`"visible"`), a character tapped. Characters can `pickUp` any element (a copy rides at the beak or hand), `drop` it, `exit` by the side of the screen (delivering what they carry) and `enter` again. A character with front and back views can turn to the reader: `{"face": "viewer"}`, `"away"`, `"side"` (bundle it with `npx pixel bundle goose.json --views all --anims stage`: the views, and only the animations a stage plays). The [demo page's newsletter form](/apps/demo/stage.html#newsletter) hands the goose a letter to post.
 
 ```json
 {"cast": {"goose": "#goose"},

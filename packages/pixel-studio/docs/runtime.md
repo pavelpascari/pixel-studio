@@ -67,6 +67,7 @@ The module exports:
 | `parseCondition(when)` | Parses a transition's `when` into a function `(inputs, triggers) → boolean`; throws on bad syntax. |
 | `BUNDLE_FORMAT` | `"pixel-sprite/1"`. |
 | `SPRITE_EVENTS` | The events the element fires, without the `pixel-` prefix: `ready`, `error`, `statechange`, `end`, `event`, `burst`, `calm` (frozen). |
+| `TOUCH_HOVER_MS` | How long a tap on a touch screen counts as hovering for a state machine's `enter` / `leave`: 3000 ([Touch screens](#touch-screens)). |
 
 It can be imported in Node: without `HTMLElement`, the class extends an empty class and the element is not registered. The tests use this for the helpers and the clock.
 
@@ -99,8 +100,9 @@ If both are present, `src` wins. The inline JSON is read once, when the element 
 | `burst` | on | read on click | `burst="off"` turns off rapid-click detection (see [Bursts](#bursts-rage-clicks)). |
 | `skin` | none | yes | A skin baked into the bundle (see [Skins](#skins)). Unknown names show the default look. |
 | `states` | on | at load | `states="off"` ignores the bundle's state machine (pages and `<pixel-stage>` that choose animations themselves set this). |
+| `loading` | `eager` | yes | `loading="lazy"` waits to fetch the bundle and decode its sheet until the sprite comes within about one viewport of being seen, like `<img loading="lazy">` (see [Lazy loading](#lazy-loading)). Switching a waiting sprite to `eager` loads it at once. Also `el.loading`. |
 | `alt` | none | yes | Text alternative, copied into `aria-label`. `alt=""` marks the sprite as decorative (see [Accessibility](#accessibility)). |
-| `status` | set by the element | — | `loading`, `ready` or `error`. Absent before the first load starts. Use it for CSS, e.g. `pixel-sprite[status=error] { display: none }`. (Also mirrored to the legacy `state` attribute until 0.2.0-alpha is out; see [Renamed in 0.2.0-alpha](#renamed-in-020-alpha).) |
+| `status` | set by the element | — | `loading`, `ready` or `error`. Absent before the first load starts (also while a lazy sprite waits). Use it for CSS, e.g. `pixel-sprite[status=error] { display: none }`. (Also mirrored to the legacy `state` attribute until 0.2.0-alpha is out; see [Renamed in 0.2.0-alpha](#renamed-in-020-alpha).) |
 
 Attribute changes made before the element is first connected (including the attribute callbacks of an upgrade) are folded into the single first load.
 
@@ -112,7 +114,7 @@ Attribute changes made before the element is first connected (including the attr
 | `el.animations` | Array of animation names in the bundle (`[]` before load). |
 | `el.currentAnim` | Name of the animation showing now (`null` before load). |
 | `el.frame` | Index of the frame showing now. |
-| `el.status` | Load status: `'idle'` (nothing loaded yet), `'loading'`, `'ready'` or `'error'`. Not to be confused with the state machine (`el.stateNode`). |
+| `el.status` | Load status: `'idle'` (nothing loaded yet, or a lazy sprite still waiting), `'loading'`, `'ready'` or `'error'`. Not to be confused with the state machine (`el.stateNode`). |
 | `el.displaySize` | `{ width, height }` in CSS px as displayed, or `null` before load. |
 | `el.pxPerSecond(name = currentAnim)` | CSS px per second that animation should travel for its feet not to slide, at the displayed size; `null` if it has no `speed`. |
 | `el.play(name, { once = false, restart = once, mix = true } = {})` | Play `name`. If the bundle has a transition clip from the current animation to `name` (`waddle>idle`) and the switch happens at a boundary (the current animation is on its first frame, i.e. a loop's end, or a one-shot finished), the clip plays first; `mix: false` skips it. With `once: true` it plays to the end, fires `pixel-end`, then returns to `hover-anim` (if a mouse is over it) or the base animation. If `name` is already playing (looping, not a one-shot) the call does nothing unless `restart: true`, so hovering in and out does not restart a walk cycle. Returns `false` for unknown names or before load. Does not change the `anim` attribute. |
@@ -139,7 +141,7 @@ listeners outside it). Names start with `pixel-`.
 | `pixel-end` | `{ anim }` | A one-shot animation (`play(name, { once: true })`, `click-anim`, or a tap) reached its end, or a non-looping animation (`loop: false`) played as a normal animation reached its last frame. Also fired under reduced motion and while off-screen, after the animation's duration, so code waiting for it never hangs. |
 | `pixel-event` | `{ anim, frame, name, data }` | A frame with a baked event is shown: `footstep`, `land`, `launch`, an author's `honk` (see [Events](#events-attachment-points-and-the-foot-line)). |
 | `pixel-statechange` | `{ from, to }` | The state machine moved to another node. |
-| `pixel-burst` | `{ count, rate }` | The third and every further click (or tap) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
+| `pixel-burst` | `{ count, rate }` | The third and every further click (or tap: the same on every device) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
 | `pixel-calm` | `{ count }` | The clicking stopped (450 ms after the last burst click). Any burst speed-up ends. |
 
 Because events bubble, one listener can watch every sprite on a page (from `demo/index.html`). The sprites
@@ -170,7 +172,7 @@ did not bubble, and no old name is composed). They will be removed after 0.2.0-a
 
 ## Loading, errors and fallbacks
 
-- **The box is reserved at once.** Before the bundle arrives the element is `size × size` CSS px (the canvas starts at 0 × 0, not the browser's default 300 × 150), so the page does not jump when it loads. After load the box takes the displayed size. If it fails, the box stays reserved.
+- **The box is reserved at once.** Before the bundle arrives the element is `size × size` CSS px (the canvas starts at 0 × 0, not the browser's default 300 × 150), so the page does not jump when it loads. After load the box takes the displayed size: the same as `size` when `size` is a whole multiple of the sheet's resolution and the screen's device pixel ratio is a whole number, otherwise a few pixels off (see [Device pixels](#device-pixels-and-scaling)). If it fails, the box stays reserved.
 - **Fallback content.** Children of the element (other than the inline bundle script) are shown until the sprite is `ready`, and again on `error`. A poster image is the usual choice; it also shows when JavaScript is off:
 
   ```html
@@ -180,12 +182,48 @@ did not bubble, and no old name is composed). They will be removed after 0.2.0-a
   ```
 
   Slotted `<img>` elements fill the box with `image-rendering: pixelated`. Any still of the character works as a poster (for example one frame cut from a `pixel render` sheet).
-- **Before the script runs** the element is an unknown inline element. To reserve its space even then, add a rule such as `pixel-sprite:not(:defined) { display: inline-block; width: 128px; height: 128px }`.
+- **Before the script runs** the element is an unknown inline element with no size, and the content below it moves down when it gets its box (CLS 0.03 for one sprite, see [performance.md](performance.md#load-impact)). To reserve the space from the first paint, put this in the page's CSS, with one line for each `size` you use:
+
+  ```css
+  pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+  pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
+  ```
+
+  The first line matches the element's own style once it is defined (`vertical-align: bottom` matters for a sprite inside a line of text) and its default `size`.
+- **Lazy loading.** See [below](#lazy-loading).
 - **Races.** Each load carries a token; a load that is overtaken by a newer `src` is dropped. A new bundle, its variant and its sheet are committed together, so no frame ever sees a bundle with an animation from another one.
 - **Shared work.** Bundles are fetched once per URL and each variant sheet is decoded once (into an `ImageBitmap` where supported) and shared by every sprite that uses it.
 - **Not JSON.** A server that answers a missing bundle with an HTML page (a common single-page-app fallback) gets a `pixel-error` naming the URL and saying it got HTML, rather than a bare JSON parse error.
 - **Sheets on another origin.** Sheets that are not data URLs (`pixel bundle --external`) are loaded with `crossOrigin="anonymous"`. If they live on another origin (a CDN), it must send `Access-Control-Allow-Origin`; otherwise skins stored as deltas, `hitTest` and `topAt` cannot read the pixels.
 - **Content Security Policy.** Bundles with data-URL sheets (the default) need `img-src data:`; fetched bundles need `connect-src` for their URL. For a strict CSP, build bundles whose `image` fields point at separate PNG files.
+
+### Lazy loading
+
+A sprite fetches its bundle and decodes its sheet as soon as it is in the document, even far below the fold. For
+characters further down a long page, add `loading="lazy"`:
+
+```html
+<pixel-sprite src="fox.bundle.json" size="64" alt="A fox" loading="lazy"></pixel-sprite>
+```
+
+- **When it loads.** A second shared `IntersectionObserver`, with a margin of one viewport, starts the load when the
+  sprite comes within one screen height (or width) of the visible area, so it is usually ready by the time it scrolls
+  in. Until then nothing is fetched or decoded, its box is reserved from `size`, fallback content (a poster) shows,
+  and `status` stays absent (`el.status` is `'idle'`).
+- **Once is enough.** After it has come near once, the sprite behaves like an eager one: a later `src` change or
+  `reload()` loads at once, wherever it is. While it waits, `src` changes and `reload()` only change what will be
+  loaded: the last `src` is fetched once.
+- **Attributes set while it waits apply when it loads** (`anim`, `size`, `skin`, `paused` and `pause()`, `rate`, ...),
+  and `pixel-ready` fires as usual. `play()`, `set()` and `fire()` need the bundle, as for any sprite before
+  `pixel-ready`: they do nothing (`play()` returns `false`); set `anim` instead, or call them from a `pixel-ready`
+  listener.
+- **Removed while it waits**, it stops being watched; put back, it waits again.
+- **Hidden sprites** (`display: none`, or inside a closed `<details>`) never intersect, so they wait until shown.
+- **Without `IntersectionObserver`** (very old browsers) a lazy sprite loads at once.
+- **Off-screen pausing and reduced motion** work as before, once it has loaded.
+- **Not for stage actors.** `<pixel-actor>` does not pass `loading` on: an actor always loads at once, because the
+  stage needs its size and animations to place it and route it, and it walks on and off the screen. To delay a
+  whole stage, add the `<pixel-stage>` element (or its script) later, for example in a `load` event listener.
 
 ## Animation playback
 
@@ -308,7 +346,7 @@ goose.addEventListener('pixel-statechange', (e) => console.log(e.detail.from, '�
 | `transitions[].from` / `to` | A node, a list of nodes, or `"*"`. The first matching transition wins. |
 | `transitions[].when` | `name`, `!name`, or `name op value` (`== != > < >= <=`), joined with `&&` or `and`. A value is a number, `true`, `false`, or a word, quoted or not (`mood == happy`, `mood == 'happy'`). No `when`: always true. |
 | `transitions[].at` | When to switch: `now` (default), `end` (when the animation finishes or loops), `sync` (keep the cycle's phase: walk → run without a hitch), or an event name such as `footstep`. A waiting switch is dropped if its condition stops being true. |
-| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
+| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen; on touch screens a tap enters and leaves 3 s after the last tap, see [Touch screens](#touch-screens)), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
 
 `play()` still works and overrides the machine until its next transition. While the machine runs, changes to the
 `anim` attribute are ignored. `states="off"` turns the machine off. The machine is a plain class, exported as
@@ -381,15 +419,25 @@ To keep the pixels aligned when you move a sprite, round positions to device pix
 - **Reduced motion.** While `prefers-reduced-motion: reduce` matches, no sprite steps through frames: looping animations show frame 0. One-shots and non-looping animations are not left hanging: a one-shot shows its middle frame, a non-looping animation its last frame, and after the animation's nominal duration (`frames / fps`) the element fires `pixel-end` and moves on as usual. The setting is watched live: turning it on or off takes effect immediately.
 - **Off-screen.** One shared `IntersectionObserver` (with a 50 px margin, so sprites start just before they scroll in) takes sprites out of the frame loop while they are off-screen. They resume from the same frame. A one-shot started off-screen still ends (and fires `pixel-end`) after its duration, as under reduced motion.
 - **Removed from the document.** The sprite leaves the frame loop and the observer. If it is put back (for example, moved to another container), it resumes where it was instead of reloading.
-- **Loading is not deferred.** Off-screen sprites stop drawing, but a sprite fetches its bundle and decodes its sheet as soon as it is connected, even far below the fold. [performance.md](performance.md) has the measured costs (download, time per frame, memory) and how to load a character only when it comes near the viewport.
+- **Loading is eager by default.** Off-screen sprites stop drawing, but a sprite fetches its bundle and decodes its sheet as soon as it is connected, even far below the fold, unless it has [`loading="lazy"`](#lazy-loading). [performance.md](performance.md) has the measured costs (download, time per frame, memory).
 
 ## Touch screens
 
-On touch screens `pointerenter` and `pointerleave` fire around every tap, so a hover animation would only flash while the finger is down. The element therefore:
+On touch screens `pointerenter` and `pointerleave` fire around every tap, so a hover animation would only flash while the finger is down. The element therefore gives every interaction a touch equivalent:
 
-- runs `hover-anim` on hover only for mouse and pen pointers;
-- on a tap, plays `click-anim` once, or, if there is none, plays `hover-anim` once, so touch users see it too;
-- never calls `preventDefault` and does not set `touch-action`, so sprites never block scrolling.
+| interaction | mouse and pen | touch |
+|---|---|---|
+| `hover-anim` | plays while the pointer is over the sprite | a tap plays it once (when there is no `click-anim`) |
+| `click-anim` | a click plays it once | a tap plays it once |
+| state machine `enter` / `leave` | the pointer comes over the sprite / leaves it | a tap is `enter` (then `click`); `leave` follows 3 s after the last tap (`TOUCH_HOVER_MS`), so a state like goose-root's `hovered` (it hacks) lasts long enough to see |
+| state machine `click` | a click | a tap |
+| bursts (`pixel-burst`, `pixel-calm`, `burst` / `calm` interactions) | quick clicks | quick taps, the same counts and timing |
+
+- The sprite never calls `preventDefault` and does not set `touch-action`, so sprites never block scrolling or zooming.
+- A sprite is an image (`role="img"`, or `aria-hidden` when decorative) and takes no keyboard focus. If an animation is
+  something a reader should be able to trigger, put the sprite in a `<button>` and call `play()` from its click handler:
+  the button gets keyboard, screen reader and touch support for free.
+- Characters on a [`<pixel-stage>`](stage.md#interactions-on-every-device) can also be picked up and thrown by touch: press and hold.
 
 Make tappable sprites at least 44 × 44 CSS px, or give them padding.
 
@@ -539,6 +587,16 @@ Inline in text:
 <style>.inline-sprite { vertical-align: -6px; }</style>
 ```
 
+Far down a long page: nothing is fetched until it comes near, and its box is kept from the first paint:
+
+```html
+<style>
+  pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+  pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
+</style>
+<pixel-sprite src="assets/fox.bundle.json" anim="walk" size="64" alt="Fox" loading="lazy"></pixel-sprite>
+```
+
 Created from script, with `play(..., { once: true })` (from `demo/flock.html`):
 
 ```js
@@ -554,7 +612,7 @@ sprite.play('honk', { once: true });   // returns to idle (or hover-anim) when d
 
 ## Bundle format `pixel-sprite/1`
 
-A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json`, 161 KB; abridged, images shortened):
+A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json --views all`, 160 KB; abridged, images shortened):
 
 ```json
 {
@@ -605,7 +663,8 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 `turn@<view>` and `unturn@<view>` (one-shots from the side to that view and back) and, for views with a `look`,
 `look@<view>` (the side idle with the head turned). They are ordinary animations to the element: `play('idle@front')`.
 [`<pixel-stage>`](stage.md) uses them for `actor.face('viewer')`. Each view adds about a full set of rows to the
-sheets; `pixel bundle --views front` (or `--views none`) ships fewer. See
+sheets, so `pixel bundle` leaves them out unless asked (`--views front`, `--views all`); `buildBundle` keeps them
+all unless given `views`. See
 [figures.md](figures.md#views-the-same-character-from-other-angles).
 
 ### Top level

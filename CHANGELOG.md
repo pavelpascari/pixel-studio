@@ -42,6 +42,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   with your finger, and let go to throw it. A quick tap still shoos it, and a swipe that starts on a character still
   scrolls the page. On Android the pick-up gives a short buzz. Mice and pens can use the same hold, or drag at once
   as before.
+- **Runtime:** `<pixel-stage grab="mouse">` keeps picking up to the mouse and pen, and `grab="off"` turns it off.
+  Either way the stage adds no touch listener, so swipes on the page start scrolling a frame sooner (the measured cost
+  of touch pick-up is in the [performance docs](https://pixel-studio.sh/docs/reference/performance/)).
 - **Runtime:** new actor events `pixel-grab` and `pixel-throw` (in scenes: `grab` and `throw`), and `pointerType` in
   `pixel-tap` and `pixel-burst`, so a page can tell how a character was touched and react the same way on every
   device.
@@ -89,6 +92,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   takes the studio's colours. The header is shorter: Examples, Docs, Blog, Studio.
 
 ### Fixed
+- **Runtime:** a character held when the browser cancelled the gesture stayed stuck in the air; it now drops where it
+  is.
+- **Runtime:** after a tap shooed a character, a tap anywhere on the page within half a second was swallowed; only
+  the click of the tap on the character is now kept from the page.
+- **Runtime:** on iPhones, a tap on a character could open a link underneath it.
 - **Engine:** a bundle whose state machine played a view that was left out (`--views`) was rejected by the runtime.
   States whose animation is not in the bundle are now dropped, with the transitions to them, and `pixel bundle` names
   them.

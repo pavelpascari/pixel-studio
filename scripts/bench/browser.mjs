@@ -56,7 +56,7 @@ const CASES = {
   'plain': { label: 'Plain page (no characters)' },
   'sprite-1': { label: '1 sprite', head: SPRITE_JS, sprites: foxes(1) },
   // runtime.md's rule for the box before the script runs (an undefined element is inline and has no size).
-  'sprite-1-reserved': { label: '1 sprite, box reserved in CSS', head: `${SPRITE_JS}<style>pixel-sprite:not(:defined){display:inline-block;width:64px;height:64px}</style>`, sprites: foxes(1) },
+  'sprite-1-reserved': { label: '1 sprite, box reserved in CSS', head: `${SPRITE_JS}<style>pixel-sprite:not(:defined){display:inline-block;vertical-align:bottom;width:64px;height:64px}</style>`, sprites: foxes(1) },
   'sprite-10': { label: '10 sprites', head: SPRITE_JS, sprites: foxes(10) },
   'sprite-50': { label: '50 sprites', head: SPRITE_JS, sprites: foxes(50) },
   'sprite-50-offscreen': { label: '50 sprites, all off-screen', head: SPRITE_JS, sprites: `<div class="spacer"></div>${foxes(50)}` },

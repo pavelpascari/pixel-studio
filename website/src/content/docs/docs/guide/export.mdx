@@ -12,8 +12,12 @@ import LiveExample from '../../../../components/LiveExample.astro';
 npx pixel validate goose.json                       # errors with JSON paths, clipped parts, missed feet
 npx pixel preview  goose.json --anim walk,jump      # contact sheet PNG of those animations
 npx pixel bundle   goose.json --out site/goose.bundle.json
+npx pixel bundle   goose.json --anims idle,waddle,honk --res 32 --out site/goose.bundle.json  # only what the page plays
+npx pixel bundle   goose.json --views all --anims stage --out site/goose.bundle.json  # a <pixel-stage> actor that turns
 npx pixel export   goose.json --res 32 --out game/  # game/goose.32.png + game/goose.32.json
 ```
+
+`pixel bundle` ships the side view only: front and back views (for a stage character that turns to the reader) are added with `--views all`. `--anims` keeps only the animations named, with their transitions; a state machine loses the nodes whose animation is gone. Every flag is in [docs/cli.md](/docs/reference/cli/#bundle), and what each saves in [Performance](/docs/reference/performance/#keeping-it-small).
 
 ## What a bundle holds
 

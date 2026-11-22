@@ -10,8 +10,9 @@
 //   <pixel-sprite anim="idle"><script type="application/json">{...bundle...}</script></pixel-sprite>
 //
 // Attributes: src, anim, size (CSS px, default 128), res (force a variant), fps (override),
-//             hover-anim, click-anim, paused, flip, alt ("" = decorative)
-//             status (set by the element: loading | ready | error)
+//             hover-anim, click-anim, paused, flip, alt ("" = decorative),
+//             loading ("lazy": fetch and decode only when near the viewport; default eager)
+//             status (set by the element: loading | ready | error; absent while idle)
 // API:        el.play(name, {once, restart, mix}), el.pause(), el.resume(), el.reload(),
 //             el.bundle, el.animations, el.currentAnim, el.frame, el.displaySize, el.groundOffset,
 //             el.pxPerSecond(name), el.pxPerSecondY(name), el.point(name, {relative}), el.topAt(x0, x1), el.hitTest(x, y)
@@ -27,17 +28,21 @@
 //             instead of restarting it. burst="off" turns detection off.
 // States:     if the bundle has a state machine ("states"), the element runs it: el.set(input, value),
 //             el.fire(trigger), el.stateNode, and a 'pixel-statechange' event (detail: {from, to}). Its
-//             interactions replace hover-anim / click-anim. states="off" disables it (pixel-stage does).
+//             interactions replace hover-anim / click-anim (on touch: a tap enters, clicks, and leaves 3 s
+//             later). states="off" disables it (pixel-stage does).
 // Skins:      skin="winter" picks a skin baked into the bundle (variants with that skin).
-// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT, SPRITE_EVENTS }. `clock.add(fn)` runs fn(dt, now) on the
+// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT, SPRITE_EVENTS, TOUCH_HOVER_MS }. `clock.add(fn)` runs fn(dt, now) on the
 //             same frame loop and clamped dt the sprites use, so page movement stays in step with the legs.
 //
 // Playback is robust by design: one shared frame loop that a failing sprite cannot stop; one load path
 // guarded by a token (src changes cannot race); the box is reserved from `size` before the bundle
 // arrives; decoded sheets are shared between sprites; scale is chosen in *device* pixels so every
 // sprite pixel is a whole number of screen pixels on any devicePixelRatio; hover animations are for
-// mouse and pen only (a tap plays them once on touch screens). Respects prefers-reduced-motion (live)
-// and pauses while off-screen.
+// mouse and pen only (a tap plays them once on touch screens; for a state machine a tap is "enter", then
+// "click", and "leave" TOUCH_HOVER_MS later). Never blocks scrolling. Not focusable: a sprite is an image, and
+// a page that wants a keyboard action puts it in a <button> and calls play(). Respects prefers-reduced-motion (live)
+// and pauses while off-screen. loading="lazy" waits to fetch and decode until the sprite is within about
+// one viewport of being seen.
 
 export const BUNDLE_FORMAT = 'pixel-sprite/1';
 // Bundles of the same major version play: "pixel-sprite/1.1" adds things a /1 runtime may ignore.
@@ -272,6 +277,16 @@ function watchDpr() {
 }
 function onDpr() { watchDpr(); live.forEach((el) => el._layout()); }
 
+// loading="lazy": a second observer with a margin of one viewport, so a character has loaded (a fetch and
+// a decode) by the time it scrolls in. Each sprite is watched only until it first comes near.
+let nearIo = null;
+function watchNear(el, on) {
+  nearIo ??= new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { nearIo.unobserve(e.target); e.target._comeNear(); }
+  }, { rootMargin: '100%' });
+  if (on) nearIo.observe(el); else nearIo.unobserve(el);
+}
+
 function observe(el, on) {
   if (typeof IntersectionObserver !== 'function') return;
   io ??= new IntersectionObserver((entries) => {
@@ -443,13 +458,16 @@ canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
 :host([status=ready]) slot{display:none}
 ::slotted(img){display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}`;
 
+/** How long a tap on a touch screen counts as hovering, for a state machine's "enter" / "leave" (ms). */
+export const TOUCH_HOVER_MS = 3000;
+
 const clampRate = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.min(4, Math.max(0.25, n)) : 1; };
 
 // (Base class guard lets Node import the helpers for tests.)
 const Base = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
 
 export class PixelSprite extends Base {
-  static observedAttributes = ['src', 'anim', 'size', 'res', 'paused', 'fps', 'alt', 'skin', 'rate'];
+  static observedAttributes = ['src', 'anim', 'size', 'res', 'paused', 'fps', 'alt', 'skin', 'rate', 'loading'];
   static clock = clock;
 
   constructor() {
@@ -469,7 +487,10 @@ export class PixelSprite extends Base {
     setupPage();
     live.add(this);
     observe(this, true);
-    if (this._inited) { this._layout(); this._sync(); return; }   // moved in the DOM: resume, don't restart
+    if (this._inited) {   // moved in the DOM: resume, don't restart
+      if (this._waiting) watchNear(this, true);
+      this._layout(); this._sync(); return;
+    }
     this._inited = true;
     this._fps = Math.min(60, Number(this.getAttribute('fps')) || 0);
     this._userRate = clampRate(this.getAttribute('rate'));
@@ -485,6 +506,8 @@ export class PixelSprite extends Base {
   disconnectedCallback() {
     live.delete(this);
     observe(this, false);
+    if (this._waiting) watchNear(this, false);
+    if (this._touchHovered) { clearTimeout(this._touchLeave); this._touchHovered = false; this._sm?.interact('leave'); }
     this._sync();
   }
 
@@ -498,9 +521,14 @@ export class PixelSprite extends Base {
     else if (name === 'fps') this._fps = Math.min(60, Number(newV) || 0);
     else if (name === 'rate') this._userRate = clampRate(newV);
     else if (name === 'alt') this._a11y();
+    else if (name === 'loading' && this._waiting && !this._lazy()) this._comeNear();
   }
 
   // ----- public API -----
+
+  /** "lazy" or "eager" (the default), like <img loading>. */
+  get loading() { return this.getAttribute('loading') === 'lazy' ? 'lazy' : 'eager'; }
+  set loading(v) { this.setAttribute('loading', String(v)); }
 
   get bundle() { return this._bundle; }
   get animations() { return this._bundle ? Object.keys(this._bundle.animations) : []; }
@@ -664,6 +692,11 @@ export class PixelSprite extends Base {
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { if (token === this._token) this._load(); }, { once: true });
       return;
     }
+    if (this._lazy()) {   // wait, with the box reserved and status idle, until the sprite comes near
+      this._waiting = true;
+      if (this.isConnected) watchNear(this, true);
+      return;
+    }
     this._status('loading');
     try {
       await null;   // always settle asynchronously, so listeners added right after append() see ready/error
@@ -686,6 +719,18 @@ export class PixelSprite extends Base {
     } catch (error) {
       if (token === this._token) this._fail(error);
     }
+  }
+
+  /** True while a lazy sprite has not yet come near the viewport (and the browser can tell us when it does). */
+  _lazy() { return this.loading === 'lazy' && !this._near && typeof IntersectionObserver === 'function'; }
+
+  /** Near the viewport (or no longer lazy): load what was waiting. Lazy loading is over for this element. */
+  _comeNear() {
+    this._near = true;
+    if (!this._waiting) return;
+    this._waiting = false;
+    if (nearIo) nearIo.unobserve(this);
+    this._load();
   }
 
   _machine(bundle) {
@@ -811,14 +856,28 @@ export class PixelSprite extends Base {
   }
 
   /**
-   * Pointer input → state machine interactions: "click" (also taps), "enter" / "leave" (mouse, pen),
+   * Pointer input → state machine interactions: "click" (also taps), "enter" / "leave" (mouse and pen; a tap
+   * on a touch screen enters, and leaves a few seconds later),
    * "burst" (a quick run of clicks: "$count" and "$rate" in `set`) and "calm" (the burst is over).
    */
   _interact(e, burst) {
-    if (e.type === 'pointerdown') return;
-    const on = e.type === 'click' ? 'click' : e.pointerType === 'touch' ? null : e.type === 'pointerenter' ? 'enter' : 'leave';
-    if (on) this._sm.interact(on);
+    if (e.type === 'pointerdown') { this._pointer = e.pointerType; return; }
+    if (e.type === 'click') {
+      if (this._pointer === 'touch') this._touchHover();
+      this._pointer = null;
+      this._sm.interact('click');
+    } else if (e.pointerType !== 'touch') this._sm.interact(e.type === 'pointerenter' ? 'enter' : 'leave');
     if (burst) this._sm.interact('burst', burst);
+  }
+
+  /**
+   * Touch has no hover (enter and leave bracket every tap), so a tap stands in for it: "enter" before the tap's
+   * "click", and "leave" TOUCH_HOVER_MS after the last tap. A state like "hovered" then lasts long enough to see.
+   */
+  _touchHover() {
+    if (!this._touchHovered) { this._touchHovered = true; this._sm.interact('enter'); }
+    clearTimeout(this._touchLeave);
+    this._touchLeave = setTimeout(() => { this._touchHovered = false; this._sm?.interact('leave'); }, TOUCH_HOVER_MS);
   }
 
   // ----- playback -----

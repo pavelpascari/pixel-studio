@@ -362,7 +362,7 @@ import { sceneEventName } from '../src/pixel-stage.js';
 import { SPRITE_EVENTS } from '../src/pixel-sprite.js';
 
 test('scenes keep short event names: actor and stage events map to their pixel- DOM names, others stay', () => {
-  for (const n of ['tap', 'burst', 'calm', 'arrive', 'land', 'enter', 'exit', 'pickup', 'drop', 'deliver', 'catchup', 'activity', 'sceneevent', 'fastscroll', 'scrollsettle'])
+  for (const n of ['tap', 'burst', 'calm', 'arrive', 'land', 'enter', 'exit', 'pickup', 'drop', 'deliver', 'catchup', 'activity', 'sceneevent', 'fastscroll', 'scrollsettle', 'grab', 'throw'])
     assert.equal(sceneEventName(n, true), `pixel-${n}`, n);
   assert.equal(sceneEventName('actorstate', true), 'pixel-activity');   // the old name still works
   for (const n of ['click', 'submit', 'visible', 'pointerdown', 'pixel-tap']) assert.equal(sceneEventName(n, true), n, n);

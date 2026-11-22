@@ -178,8 +178,9 @@ view dresses its own figure (a front-view one) with the same materials:
 - Top-level parts hidden by default (`"show": 0`, a prop like root's server rack) stay hidden through the turns.
 - `examples/goose-base.json` has front and back views; the whole flock inherits them. `studio/goose.html` shows them,
   and its features have front and back versions.
-- Views make bundles bigger: each adds about a full set of animations. Ship only the ones a page uses:
-  `pixel bundle goose.json --views front` (or `--views none`), `buildBundle(c, {views: ['front']})`.
+- Views make bundles bigger: each adds about a full set of animations. `pixel bundle` ships the side view only;
+  ask for the ones a page uses: `pixel bundle goose.json --views front` (or `--views all`),
+  `buildBundle(c, {views: ['front']})` (`buildBundle` ships every view unless told otherwise).
 
 ### Speed
 

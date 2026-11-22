@@ -8,15 +8,17 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 - [Download size](#download-size)
 - [Load impact](#load-impact)
 - [Cost per frame](#cost-per-frame)
+- [Touch scrolling](#touch-scrolling)
 - [Memory](#memory)
 - [Keeping it small](#keeping-it-small)
 - [How it was measured](#how-it-was-measured)
 
 ## In short
 
-- **Download:** 13 KB of script for `<pixel-sprite>`, 38 KB for `<pixel-stage>` (brotli; 15 and 44 KB gzip), plus
+- **Download:** 14 KB of script for `<pixel-sprite>`, 42 KB for `<pixel-stage>` (brotli; 16 and 48 KB gzip), plus
   one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
-  resolution, and 14 KB for the same goose built with `--res 32 --views none`.
+  resolution, 55 KB for the same goose as `pixel bundle` builds it by default (the side view only), and 14 KB with
+  `--res 32` (4 KB with only the three animations a page plays, `--anims idle,waddle,honk`).
 - **Loading:** no measurable change to LCP or TBT on a throttled mobile profile. One sprite causes a small layout
   shift (CLS 0.03) unless its box is reserved in CSS.
 - **Playing:** under 0.1 ms of main thread per frame for one sprite, 0.4 ms for 50, 0.3 ms for a stage with three
@@ -25,8 +27,8 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 - **Memory:** the decoded sprite sheet is the large part: 0.1 to 2 MB at 32 px for most characters, and about
   8 MB for a goose at 64 px (20 MB for the greylag, whose longest animation has almost three times as many frames).
   It is shared by every sprite of that character.
-- **The catch:** a sprite fetches and decodes its bundle as soon as it is in the page, even far below the fold.
-  [Set `src` when it comes near](#keeping-it-small) on long pages.
+- **Below the fold:** by default a sprite fetches and decodes its bundle as soon as it is in the page, even far
+  below the fold. On long pages, [`loading="lazy"`](#keeping-it-small) waits until it comes near.
 
 ## Download size
 
@@ -42,12 +44,13 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 <!-- gen:sizes table=runtime -->
 | File | Raw | gzip | brotli |
 |---|--:|--:|--:|
-| `pixel-sprite.js` | 45.6 KB | 15.2 KB | 13.3 KB |
-| `pixel-stage.js` | 89.0 KB | 28.3 KB | 24.7 KB |
-| both (a page with `<pixel-stage>`) | 134.6 KB | 43.5 KB | 38.0 KB |
+| `pixel-sprite.js` | 48.6 KB | 16.1 KB | 14.1 KB |
+| `pixel-stage.js` | 98.5 KB | 31.4 KB | 27.4 KB |
+| both (a page with `<pixel-stage>`) | 147.1 KB | 47.5 KB | 41.5 KB |
 <!-- /gen -->
 
-The example characters as built for the demos (`pixel bundle` defaults: 16, 32 and 64 px, every view, every skin).
+The example characters as built for the demos (16, 32 and 64 px, every view, every skin: `buildBundle`'s defaults, or
+`pixel bundle --views all`).
 Bundles are mostly PNG data, which is already compressed: gzip and brotli save 30 to 45% (mostly the base64
 overhead), not the two thirds they save on script. A sprite decodes only the one sheet it shows, as RGBA in memory:
 the last two columns (see [Memory](#memory)).
@@ -69,21 +72,26 @@ the last two columns (see [Memory](#memory)).
 <!-- /gen -->
 
 The geese carry front and back views (`idle@front`, `turn@back`, …, used by `<pixel-stage>` to face the viewer) and,
-for `goose-root`, two skins: that is most of their weight. The same goose built with fewer options:
+for `goose-root`, two skins: that is most of their weight. The same goose built with other options ("gzip saved" is
+against the first row, the demo build; `pixel bundle` without `--views` ships the side view only):
 
 <!-- gen:sizes table=goose -->
 | `pixel bundle goose-root.json` with | Animations | Raw | gzip | brotli | gzip saved | Largest sheet decoded |
 |---|--:|--:|--:|--:|--:|--:|
-| (default: `--res 16,32,64`, every view) | 42 | 160.2 KB | 104.9 KB | 102.8 KB |  | 7.9 MB (64 px) |
-| `--res 32` | 42 | 48.4 KB | 25.2 KB | 23.5 KB | 76% | 2.0 MB (32 px) |
-| `--views none` | 17 | 83.4 KB | 56.8 KB | 55.3 KB | 46% | 3.2 MB (64 px) |
-| `--res 32 --views none` | 17 | 25.0 KB | 15.0 KB | 13.7 KB | 86% | 0.8 MB (32 px) |
-| `--res 32 --views none --external` | 17 | 19.5 KB | 12.7 KB | 12.2 KB | 88% | 0.8 MB (32 px) |
+| `--views all` (as built for the demos) | 42 | 160.2 KB | 104.9 KB | 102.8 KB |  | 7.9 MB (64 px) |
+| (default: `--res 16,32,64`, side view only) | 17 | 83.4 KB | 56.8 KB | 55.3 KB | 46% | 3.2 MB (64 px) |
+| `--anims stage` | 14 | 68.6 KB | 47.0 KB | 45.7 KB | 55% | 2.6 MB (64 px) |
+| `--anims idle,waddle,honk` | 5 | 24.2 KB | 16.4 KB | 15.8 KB | 84% | 0.8 MB (64 px) |
+| `--views all --anims stage` | 37 | 138.7 KB | 91.1 KB | 89.2 KB | 13% | 6.9 MB (64 px) |
+| `--res 32 --views all` | 42 | 48.4 KB | 25.2 KB | 23.5 KB | 76% | 2.0 MB (32 px) |
+| `--res 32` | 17 | 25.0 KB | 15.0 KB | 13.7 KB | 86% | 0.8 MB (32 px) |
+| `--res 32 --anims idle,waddle,honk` | 5 | 7.4 KB | 4.6 KB | 4.2 KB | 96% | 0.2 MB (32 px) |
+| `--res 32 --external` | 17 | 19.5 KB | 12.7 KB | 12.2 KB | 88% | 0.8 MB (32 px) |
 <!-- /gen -->
 
 The `--external` row counts the JSON and the one PNG a page downloads (the 32 px sheet); PNG files are served as they
-are, without further compression. A stage actor built with `--views none` cannot turn to face the reader; everything
-else works.
+are, without further compression. A stage actor built without `--views` cannot turn to face the reader; everything
+else works. `--anims stage` keeps what a stage actor plays (here everything but `flap`, `fly` and `hack`).
 
 ## Load impact
 
@@ -110,7 +118,11 @@ Requests include the page and a favicon request.
   90 ms) appear on the plain page too.
 - **CLS.** 0.03 for one sprite: before its script runs the element has no size, then takes its box and pushes the
   content below down. The CSS rule in [Keeping it small](#keeping-it-small) brings it to 0.003; a poster image with
-  `width` and `height` also reserves the box from the first paint. The stage adds no shift: its characters are drawn in a layer above the page.
+  `width` and `height` also reserves the box from the first paint. What is left is the device pixel ratio of the
+  profile's phone, 1.75: whole device pixels per sprite pixel make the 64 px fox 73 px tall once it has loaded
+  ([why](runtime.md#device-pixels-and-scaling)). At a device pixel ratio of 1, 2 or 3 the same page shifts by 0.000
+  (measured in Chrome 156 with a `layout-shift` `PerformanceObserver`, which gives the same 0.031 and 0.003 at 1.75).
+  The stage adds no shift: its characters are drawn in a layer above the page.
 - **Bytes.** The 1-sprite page transfers the runtime (15 KB gzip) and the fox's bundle (44 KB gzip); the stage page
   the two runtime files (44 KB) and three bundles (145 KB, 105 KB of it the goose).
 
@@ -145,6 +157,30 @@ sprite because it also moves the characters across the page and decides what eac
 - These are main-thread numbers. Compositing the canvases takes GPU and compositor time as well, which is not
   included.
 
+## Touch scrolling
+
+So that a finger can pick a character up, a stage with `grab="on"` (the default) keeps one non-passive `touchmove`
+listener on the document. It does nothing unless a character is held, but the browser has to wait for it before a
+swipe can start scrolling. Measured on `demo/stage.html` in Chrome (headless, Pixel 7 profile, real touch input),
+15 swipes per case that start off the characters, interleaved: time from `touchstart` to the first `scroll` event,
+and frames over 50 ms during the fling that follows.
+
+| Case | Swipe to first scroll (median) | 4x CPU | Long frames in the fling |
+|---|--:|--:|--:|
+| Stage, `grab="on"` (touch listener) | 66 ms | 64 ms | 0 |
+| Stage, `grab="off"` (no touch listener) | 49 ms | 47 ms | 0 |
+| Same page without a stage | 32 ms | 31 ms | 0 |
+
+- The touch listener makes a swipe start scrolling one frame later (16 ms, with or without CPU throttling); the
+  fling that follows is not affected. A paused stage, `prefers-reduced-motion`, `grab="mouse"` and `grab="off"`
+  register no touch listener and do not pay it.
+- The rest of the stage (its pointer listeners and per-frame work) accounts for one more frame against a page with no
+  stage at all.
+- The listener cannot wait for a hold to begin: Chrome honours one added mid-gesture, but WebKit (by its design; not tested here) decides when a
+  touch starts whether its moves can be cancelled, so on iPhones the page would scroll away under a held character.
+- The test driver sends each touch point and waits for the browser to acknowledge it, so these are upper bounds
+  measured in whole frames; a real finger's swipe overlaps them. The script is not in `scripts/bench/` yet.
+
 ## Memory
 
 Rerun with `node scripts/bench/browser.mjs --only runtime`. Measured after a forced garbage collection, as the
@@ -165,11 +201,12 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
 - **The decoded sheet.** A sprite decodes only the sheet it shows, once per bundle and resolution, shared by every
   sprite that uses it. In memory it is width × height × 4 bytes, much more than the PNG: the last two columns of
   the [bundles table](#download-size). A 64 px goose sheet with front and back views is about 8 MB decoded; the
-  [goose table](#download-size) shows how `--views none` and `--res 32` shrink it. A 32 px sheet is a quarter of
+  [goose table](#download-size) shows how leaving out views, animations and resolutions shrinks it. A 32 px sheet is a quarter of
   the 64 px one.
 - **One canvas per sprite**, the displayed size in device pixels × 4 bytes: 256 KB for a 128 × 128 px sprite on a 2x screen.
 - Off-screen sprites keep their decoded sheet and canvas: the 50 off-screen sprites above hold the same memory as
-  10 visible ones.
+  10 visible ones. A sprite with `loading="lazy"` that has not yet come near holds neither (and has downloaded
+  nothing).
 
 ## Keeping it small
 
@@ -177,8 +214,14 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   ([how the variant is chosen](runtime.md#how-the-resolution-variant-is-chosen)). `pixel bundle --res 32` drops the
   others: three quarters of a goose's bundle. Keep two resolutions if the same character appears at very different
   sizes, or on a page that changes `size`.
-- **Drop views you do not use.** Front and back views are for `<pixel-stage>` turning a character to face the reader.
-  A plain `<pixel-sprite>` that only walks sideways does not need them: `--views none` halves a goose.
+- **Bundle only the animations you use.** A `<pixel-sprite>` that idles, waddles on hover and honks on click needs
+  three of a goose's fourteen animations: `pixel bundle goose.json --anims idle,waddle,honk` is under a third of the
+  side-view bundle. For a `<pixel-stage>` actor, `--anims stage` keeps what the stage plays (one animation per role:
+  idle, walk, run, jump, fall, sit, duck, peek, climb, …). Transition clips between kept animations stay, and a state
+  machine loses the nodes whose animation is gone ([details](cli.md#bundle)).
+- **Ship views only for a stage that turns.** Front and back views are for `<pixel-stage>` turning a character to
+  face the reader, and they double a goose. `pixel bundle` leaves them out unless you ask: `--views all` (or
+  `--views front`) for a stage actor that should turn.
 - **Keeping several resolutions? Use `--external`.** The sheets become PNG files next to the bundle and a page downloads
   only the one it shows. Put them on the same origin, or send `Access-Control-Allow-Origin` ([details](runtime.md#loading-errors-and-fallbacks)).
 - **Share one bundle.** Ten sprites of the same character with the same `src` make one request and decode one sheet.
@@ -188,33 +231,35 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   JavaScript, your bundler can minify them too.
 - **Reserve the box before the script runs.** The element is reserved at `size` × `size` once its script has run;
   before that it is an unknown inline element with no size, and the content below it moves when it appears (CLS 0.03
-  for one 64 px sprite in the [load test](#load-impact)). One CSS rule removes most of it (CLS 0.003):
+  for one 64 px sprite in the [load test](#load-impact)). A CSS rule removes it (0.003 on a phone with a fractional
+  device pixel ratio, 0 otherwise), with one line per `size` you use:
 
   ```css
-  pixel-sprite:not(:defined) { display: inline-block; width: 64px; height: 64px; }
+  pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+  pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
   ```
 
-  A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
+  `vertical-align: bottom` matches the element's own style; without it a sprite in a line of text still shifts it
+  a little (0.002) when the script runs. For no shift at all after load, use a `size` that is a whole multiple of
+  the sheet it shows (64 for the 32 px sheet, 128 for the 64 px one). A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
   reserves the space too, and shows the character before the bundle arrives and when JavaScript is off.
 - **Reduced motion and the pause button cost nothing per frame.** They stop drawing, which is where the cost is. The stage's
   pause button is on by default; for sprites that loop for more than five seconds, give readers a way to call
   `pause()` (WCAG 2.2.2, see [accessibility](runtime.md#accessibility)).
-- **Characters far down the page load anyway.** A sprite fetches its bundle and decodes its sheet as soon as it is
-  in the document, even when it is far below the fold; only the drawing waits until it scrolls into view. On a long
-  page with characters near the bottom, set `src` when they get close:
+- **Load characters far down the page lazily.** By default a sprite fetches its bundle and decodes its sheet as
+  soon as it is in the document, even when it is far below the fold; only the drawing waits until it scrolls into
+  view. On a long page with characters near the bottom, add `loading="lazy"`:
 
   ```html
-  <pixel-sprite data-src="fox.bundle.json" size="64" alt="A fox"></pixel-sprite>
-  <script type="module">
-    const near = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { e.target.src = e.target.dataset.src; near.unobserve(e.target); }
-    }, { rootMargin: '800px' });
-    document.querySelectorAll('pixel-sprite[data-src]').forEach((el) => near.observe(el));
-  </script>
+  <pixel-sprite src="fox.bundle.json" size="64" alt="A fox" loading="lazy"></pixel-sprite>
   ```
 
-  Without `src` the element waits quietly with its box reserved. For a stage, add the `<pixel-stage>` element (or
-  its script) once the page has loaded, for example in a `load` event listener.
+  It waits, with its box reserved, until it is within one viewport of being seen, then loads
+  ([details](runtime.md#lazy-loading)). Until then it costs no request, no download (the fox's 44 KB gzip, a goose's
+  75 to 105 KB), no decoded sheet (0.4 MB for the fox at `size` 64; 2 MB for a goose at 64, 8 MB at 128) and no canvas.
+  Sprites that share a bundle with one already loaded have nothing left to save. Stage actors always load at once;
+  for a stage, add the `<pixel-stage>` element (or its script) once the page has loaded, for example in a `load`
+  event listener.
 
 ## How it was measured
 
@@ -224,7 +269,7 @@ this page. Your numbers will differ with the machine; the differences between ro
 
 - **Sizes** (`node scripts/bench/sizes.mjs`, Node only): the runtime files from `packages/runtime/src/`, the bundles
   from `demo/assets/` (`npm run build:demo`), gzip level 9 and brotli quality 11 from `node:zlib`. The goose rows
-  build `goose-root.json` in process with the same `buildBundle` call as `pixel bundle`. "Decoded" is the PNG's
+  build `goose-root.json` in process with the same `buildBundle` options as the `pixel bundle` flags in each row. "Decoded" is the PNG's
   width × height × 4.
 - **Load and runtime** (`scripts/bench/browser.mjs`): a small static page (a heading, three paragraphs, three
   cards; [`scripts/bench/page.html`](../../../scripts/bench/page.html)) with nothing, sprites or a stage added as

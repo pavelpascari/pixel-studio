@@ -476,10 +476,18 @@ function mountWebview() {
 }
 
 // ---------- export ----------
+// Like `pixel bundle`: the side view unless the views are asked for, and only the animations named (if any).
 async function exportBundle() {
   const resolutions = $('#export-res').value.split(',').map(Number).filter((n) => n > 0);
-  const b = await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet });
-  return b;
+  const animations = $('#export-anims').value.split(',').map((s) => s.trim()).filter(Boolean);
+  $('#export-error').textContent = '';
+  try {
+    return await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet,
+      views: $('#export-views').checked ? undefined : [], animations: animations.length ? animations : undefined });
+  } catch (e) {
+    $('#export-error').textContent = e.message;
+    throw e;
+  }
 }
 function openExport() {
   if (!state.compiled) return;
@@ -493,6 +501,8 @@ function openExport() {
               anim="${attr(anims[0])}" size="128"${skin}${anims[1] ? `\n              hover-anim="${attr(anims[1])}"` : ''}${anims[2] ? ` click-anim="${attr(anims[2])}"` : ''}
               alt="${state.compiled.name.replace(/"/g, '&quot;')}"></pixel-sprite>`;
   $('#inline-size').textContent = '';
+  $('#export-error').textContent = '';
+  $('#export-views-row').hidden = !anims.some((n) => n.startsWith('turn@'));
   $('#export-dialog').showModal();
 }
 

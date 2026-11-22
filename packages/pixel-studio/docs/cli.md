@@ -285,15 +285,16 @@ An excerpt of `fox.32.json`:
 ## bundle
 
 ```
-node bin/pixel.mjs bundle <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json] [style flags]
+node bin/pixel.mjs bundle <spec.json> [--res 16,32,64] [--views front,back|all|none] [--anims idle,walk|stage] [--external] [--out file.bundle.json] [style flags]
 ```
 
-Builds a self-contained `pixel-sprite/1` bundle: every animation at every resolution, with each sprite sheet embedded as a PNG data URL. Besides the animation table and the variants, the bundle carries the canvas `size` and the foot line `ground` (both in spec units), the attachment `points` baked per animation and frame, the names of the `skins` and the `states` machine when the spec has them, and, for each skin, one extra variant per resolution tagged with `skin` (stored as a colour swap and overlay of the default sheet when that is smaller). Sheets are indexed PNGs when they have at most 256 colours. The format is described in [runtime.md](runtime.md#bundle-format-pixel-sprite1).
+Builds a self-contained `pixel-sprite/1` bundle: every animation at every resolution (seen from the side; see `--views`), with each sprite sheet embedded as a PNG data URL. Besides the animation table and the variants, the bundle carries the canvas `size` and the foot line `ground` (both in spec units), the attachment `points` baked per animation and frame, the names of the `skins` and the `states` machine when the spec has them, and, for each skin, one extra variant per resolution tagged with `skin` (stored as a colour swap and overlay of the default sheet when that is smaller). Sheets are indexed PNGs when they have at most 256 colours. The format is described in [runtime.md](runtime.md#bundle-format-pixel-sprite1).
 
 | Flag | Default | Description |
 |---|---|---|
 | `--res` | `16,32,64` | Comma-separated resolutions, one variant each. Sorted ascending in the output. |
-| `--views` | every view | Which extra views to ship (`front`, `front,back`); `none` keeps only the main (side) view. Each view adds about a full set of animations. |
+| `--views` | `none` | Which extra views to ship besides the main (side) view: `front`, `front,back`, or `all`. Views are what [`<pixel-stage>`](stage.md) uses to turn a character to the reader (`idle@front`, `turn@front`, …); each adds about a full set of animations. A name the character does not have is an error. When the spec has views and you leave them out, a note on stderr says which. |
+| `--anims` | every animation | Only these animations (`idle,waddle,honk`), plus what they need: their views (`idle@front`, when views are shipped), the views' `turn@`, `unturn@` and `look@` clips, and the transition clips between two kept animations (`waddle>idle`). `stage` keeps what `<pixel-stage>` plays: for each role (idle, walk, run, rush, jump, fall, sit, duck, peek, climb, react) the first animation the character has, as the [stage looks them up](stage.md#elements-and-attributes). Names and `stage` combine: `--anims stage,hack`. An unknown name is an error that lists the character's animations. |
 | `--external` | off | Write each sheet (and skin overlay) as a PNG file next to the bundle (`<name>.32.png`, `<name>.32.party.overlay.png`) instead of embedding it, so a page downloads only the size it shows. |
 | `--out` | `<spec name>.bundle.json` in the current directory | Output file. Parent directories are created. |
 | style flags | | Applied to every variant. `--lod` forces the same tier for all of them. See [Style override flags](#style-override-flags). |
@@ -302,15 +303,41 @@ Prints the output path, the size of the JSON in KB, and the resolution of every 
 
 ```
 $ node bin/pixel.mjs bundle examples/fox.json --out $OUT/fox.bundle.json
-wrote $OUT/fox.bundle.json (60.3 KB, variants: 16, 32, 64)
+wrote $OUT/fox.bundle.json (61.1 KB, variants: 16, 32, 64)
 
 $ node bin/pixel.mjs bundle examples/goose-root.json --res 48,24 --out $OUT/root.bundle.json
-wrote $OUT/root.bundle.json (100.4 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
+note: side view only; --views all (or front, back) adds the character's other views
+wrote $OUT/root.bundle.json (53.5 KB, variants: 24, 48, 24 (party), 48 (party), 24 (redteam), 48 (redteam))
 
-$ node bin/pixel.mjs bundle examples/goose-root.json --views none --res 32 --external --out $OUT/web/root.bundle.json
+$ node bin/pixel.mjs bundle examples/goose-root.json --res 32 --external --out $OUT/web/root.bundle.json
+note: side view only; --views all (or front, back) adds the character's other views
 wrote $OUT/web/root.bundle.json (10.2 KB, variants: 32, 32 (party), 32 (redteam))
 $ ls $OUT/web
 root.32.party.overlay.png  root.32.png  root.32.redteam.overlay.png  root.bundle.json
+```
+
+For a character on a [`<pixel-stage>`](stage.md) that turns to face the reader, ship its views, and only what the stage plays:
+
+```
+$ node bin/pixel.mjs bundle examples/goose-root.json --views all --anims stage --res 32 --out $OUT/root.bundle.json
+note: states: dropped node hack (no animation left to play)
+wrote $OUT/root.bundle.json (42.1 KB, variants: 32, 32 (party), 32 (redteam))
+```
+
+**The state machine follows the animations.** A `states` node whose animation is not in the bundle (left out by
+`--anims`, or a view left out by `--views`) is dropped, with the transitions to it, its `from` entries in other
+transitions, and `random` fidgets that play a missing animation. A node whose `then` was dropped returns to the
+previous node instead, and a dropped `initial` becomes the first node left. With no node left, the bundle has no
+state machine. A note on stderr names the dropped nodes. To keep a node, name its animation in `--anims`.
+
+```
+$ node bin/pixel.mjs bundle examples/goose-root.json --anims idle,waddle,honk --out $OUT/root.bundle.json
+note: side view only; --views all (or front, back) adds the character's other views
+note: states: dropped nodes run, panic, hack (no animation left to play)
+wrote $OUT/root.bundle.json (24.2 KB, variants: 16, 32, 64, 16 (party), 32 (party), 64 (party), 16 (redteam), 32 (redteam), 64 (redteam))
+
+$ node bin/pixel.mjs bundle examples/goose-root.json --anims idle,quack
+error: no animation "quack" in root (hacker goose) (have: idle, waddle, run, rush, honk, jump, fall, sit, duck, peek, climb, flap, fly, hack; or "stage" for what <pixel-stage> uses)
 ```
 
 `--res` must be whole numbers from 1 to 512; anything else is an error:
@@ -487,8 +514,10 @@ Pixel Studio CLI — the agent's hands and eyes.
                                                    sprite sheet PNG + JSON metadata
   pixel export   <spec.json> [--res 32] [--out dir] [--format aseprite]
                                                    sheet PNG + Aseprite JSON (Phaser, PixiJS)
-  pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json]
-                                                   self-contained web bundle for <pixel-sprite> (all skins);
+  pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|all] [--anims idle,walk|stage] [--external]
+                 [--out file.bundle.json]          self-contained web bundle for <pixel-sprite> (all skins);
+                                                   side view only unless --views; --anims keeps only those
+                                                   animations (stage: what <pixel-stage> uses);
                                                    --external writes the sheets as PNG files beside it
   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]

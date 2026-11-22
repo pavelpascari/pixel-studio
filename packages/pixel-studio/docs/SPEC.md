@@ -351,6 +351,8 @@ A side-view character can also be drawn from other angles. Each view dresses its
 - The view's animations are named `<animation>@<view>` (`idle@front`); name them like the side ones. No
   `animations` gives every motion of the view's figure. `turn@front` and `unturn@front` (side ↔ view) are generated.
 - `look` (optional) puts the view's head on the side body: `look@front`, a three-quarter glance.
+- `pixel bundle` ships the side view only; `--views all` (or `--views front`) keeps the views, for a `<pixel-stage>`
+  character that turns to the reader.
 - For a back view, dress `goose-front` the other way round. Variants patch views like the main spec (`"back": null`
   drops one). `examples/goose-base.json` has front and back. Details: [figures.md](figures.md#views-the-same-character-from-other-angles).
 
@@ -455,7 +457,7 @@ node bin/pixel.mjs preview  spec.json --res 32 --cell 384 --out face.png  # zoom
 node bin/pixel.mjs ascii    spec.json --res 24 --anim idle --frame 0   # text view if you can't see images
 node bin/pixel.mjs where    spec.json --anim hack --frame 0            # world positions of pivots (pick reach targets)
 node bin/pixel.mjs resolve  variant.json                               # a variant merged with its base
-node bin/pixel.mjs bundle   spec.json --out site/hero.bundle.json      # ship it
+node bin/pixel.mjs bundle   spec.json --out site/hero.bundle.json      # ship it (side view; --views all, --anims idle,walk)
 ```
 
 Iterate: draw → preview → critique silhouette, proportions, contrast, motion → adjust → preview again.
