@@ -1,0 +1,335 @@
+---
+title: "How characters live on an ordinary web page"
+description: "Inside <pixel-stage>: how a page's own cards become platforms, walls and hiding spots, how characters find their way across them, and how they stay out of the reader's way on every device."
+date: 2026-11-23
+authors: [pavel-pascari]
+tags: [deep-dive, stage]
+draft: true
+---
+
+import { MarginNote } from 'astro-project-site/components';
+
+Most website pets live in a box of their own: a fixed layer, the edges of the window, a character that walks along
+the bottom and never looks at the page. `<pixel-stage>` takes the opposite approach. The page you already have is the
+level. A card's top edge is something to walk on, its side is a wall, a filled box is something to hide behind. The
+characters drop off the end of one card, jump to the next and duck behind a crate, and the page underneath does not
+change.
+
+This post walks through how that works, following
+[`packages/runtime/src/pixel-stage.js`](https://github.com/pavelpascari/pixel-studio/blob/main/packages/runtime/src/pixel-stage.js)
+and the [stage reference](/docs/reference/stage/), including the parts that took more than one attempt.
+
+## Try it first
+
+Below is a small stage: two cards, a crate and a strip of ground, with Moss the beetle living on them. Tap Moss to
+shoo it. Press and hold to pick it up (or drag it with a mouse), then let go to throw it. The buttons give it orders.
+
+<figure class="stage-demo" id="stage-demo" aria-labelledby="stage-demo-caption">
+  <div class="stage-demo-world">
+    <article class="stage-demo-card stage-demo-card--tall" id="stage-demo-tall" data-pixel-surface="" data-pixel-climbable="">
+      <p>Tall card</p>
+      <p class="stage-demo-attr">climbable</p>
+    </article>
+    <div class="stage-demo-crate" id="stage-demo-crate" data-pixel-hide=""></div>
+    <article class="stage-demo-card stage-demo-card--low" id="stage-demo-low" data-pixel-surface="" data-pixel-perch="">
+      <p>Low card</p>
+      <p class="stage-demo-attr">perch</p>
+    </article>
+  </div>
+  <div class="stage-demo-ground" data-pixel-surface=""></div>
+  <pixel-stage controls="none" floor="none" label="beetle">
+    <pixel-actor id="stage-demo-moss" src="/apps/demo/assets/moss.bundle.json" size="64" alt="Moss, a small green beetle" start="#stage-demo-low"></pixel-actor>
+  </pixel-stage>
+  <div class="stage-demo-controls" role="group" aria-label="Give Moss an order">
+    <button type="button" class="site-btn" data-order="climb">Sit on the tall card</button>
+    <button type="button" class="site-btn" data-order="hide">Hide behind the crate</button>
+    <button type="button" class="site-btn" data-order="low">Back to the low card</button>
+    <button type="button" class="site-btn" data-order="pause" aria-pressed="false">Pause Moss</button>
+  </div>
+  <figcaption id="stage-demo-caption">A live <code>&lt;pixel-stage&gt;</code>. The two cards, the crate and the ground are ordinary elements with <code>data-pixel-*</code> attributes. With reduced motion on, Moss stands still.</figcaption>
+</figure>
+
+<style set:html={`
+  .stage-demo { position: relative; isolation: isolate; overflow: clip; max-width: 34rem; margin: 2rem auto; padding: 7.5rem 1.25rem 0;
+    border: 1px solid var(--site-border); border-radius: var(--site-radius, 8px); background: var(--site-surface); }
+  /* Inset from the box's sides: a character falling off a card keeps its whole body inside the stage, so an edge
+     closer than half its width to the side could not be dropped from. */
+  .stage-demo-world { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.75rem; padding: 0 1.5rem; }
+  .stage-demo-card { margin: 0; padding: 0.6rem 0.75rem; width: 36%; border: 1px solid var(--site-border);
+    border-top: 2px solid var(--site-text); border-radius: 6px; background: var(--site-bg); }
+  .stage-demo-card p { margin: 0; font-size: 0.9rem; font-weight: 600; }
+  .stage-demo-card p.stage-demo-attr { margin-top: 0.25rem; font-weight: 400; font-size: 0.75rem; font-family: var(--site-font-mono, monospace); color: var(--site-muted); }
+  .stage-demo-card--tall { height: 10rem; }
+  .stage-demo-card--low { height: 5rem; }
+  .stage-demo-crate { flex: none; align-self: flex-end; width: 3rem; height: 2.4rem; border-radius: 3px 3px 0 0;
+    background: repeating-linear-gradient(90deg, #b07a3c 0 0.55rem, #946431 0.55rem 0.62rem); }
+  .stage-demo-ground { height: 1rem; margin: 0 -1.25rem; border-top: 1px solid var(--site-border);
+    background: color-mix(in oklab, var(--site-accent) 12%, var(--site-surface)); }
+  .stage-demo-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem 0 0.25rem; }
+  .stage-demo-controls .site-btn { min-height: 2.5rem; padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+  .stage-demo-controls button[aria-pressed="true"] { background: var(--site-accent-soft, var(--site-surface)); }
+  .stage-demo figcaption { padding: 0.25rem 0 1rem; color: var(--site-muted); font-size: 0.85rem; }
+`} />
+
+<script type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
+<script type="module" set:html={`
+  const demo = document.getElementById('stage-demo');
+  const stage = demo.querySelector('pixel-stage');
+  const moss = document.getElementById('stage-demo-moss');
+  const tall = document.getElementById('stage-demo-tall');
+  const low = document.getElementById('stage-demo-low');
+  const crate = document.getElementById('stage-demo-crate');
+  const pause = demo.querySelector('[data-order="pause"]');
+  await customElements.whenDefined('pixel-stage');
+  const show = () => pause.setAttribute('aria-pressed', String(!!stage.paused));
+  show();
+  // Moss is a slow beetle: an order is an errand, run at three times its pace (feet still planted), then calm again.
+  let errand = 0;
+  const hurried = async (...order) => {
+    const mine = ++errand;
+    moss.hurry(3);
+    await moss.run(...order);
+    if (mine === errand) moss.hurry(1);
+  };
+  const orders = {
+    climb: () => hurried('goTo', tall, { then: 'sit' }),
+    hide: () => hurried('hideBehind', crate),
+    low: () => hurried('goTo', low),
+  };
+  for (const b of demo.querySelectorAll('[data-order]')) b.addEventListener('click', () => {
+    const o = b.dataset.order;
+    if (o === 'pause') { if (stage.paused) stage.resume(); else stage.pause(); show(); return; }
+    if (stage.paused) { stage.resume(); show(); }
+    if (moss.run) orders[o]();
+  });
+`} />
+
+<MarginNote kind="field">The demo is the whole recipe from the docs, scaled down: <code>floor="none"</code> so the bottom of the page is not a platform, <code>controls="none"</code> with a pause button of its own, and a box with <code>overflow: clip</code> so a thrown beetle never lands on the paragraph you are reading.</MarginNote>
+
+## Opting elements in
+
+The page says what everything is with six attributes and nothing else:
+
+| attribute | the element is |
+|---|---|
+| `data-pixel-surface` | a platform: characters stand and walk on its top edge |
+| `data-pixel-climbable` | a platform whose left and right sides are walls |
+| `data-pixel-perch` | a platform they like to sit on, legs over the edge |
+| `data-pixel-hide` | a hiding spot to duck behind and peek out from |
+| `data-pixel-occluder` | always drawn in front of the characters (a sticky header) |
+| `data-pixel-avoid` | never stood on or hidden behind (the main call to action) |
+
+When a framework re-renders a card, the attribute comes with it.
+
+## Reading the page rarely
+
+The obvious way to know where the cards are is to call `getBoundingClientRect()` on every one of them every frame.
+That forces layout whenever anything on the page has changed, and it would make the stage the most expensive thing on
+the page. Instead the `World` class keeps a dirty flag, and only a handful of things set it:
+
+```js
+observe() {
+  const mark = () => { this.dirty = true; };
+  this._ro = new ResizeObserver(mark);
+  this._ro.observe(document.documentElement);
+  this._mo = new MutationObserver((records) => {
+    if (records.some((r) => !this.stage.contains(r.target))) mark();
+  });
+  // …attributeFilter: the data-pixel-* names and `hidden`
+  this._listeners = [['resize', mark], ['load', mark], ['transitionend', mark], ['animationend', mark]];
+  for (const [t, fn] of this._listeners) addEventListener(t, fn, true);
+  document.fonts?.ready.then(mark);
+}
+```
+
+Each opted-in element also gets the `ResizeObserver` the first time it is read. Fonts are on the list because a web
+font that arrives late reflows every card under it. Mutations inside the stage are ignored: the characters change
+their own attributes all the time.
+
+When the flag is set, the next frame reads every box in one batch and rebuilds the platforms. Each platform is the
+top edge of a surface, pulled in off its rounded corners so a character never stands on a curve:
+
+```js
+x1: it.l + Math.min(it.radius, (it.r - it.l) / 4),
+x2: it.r - Math.min(it.radius, (it.r - it.l) / 4),
+y: it.t,
+```
+
+<MarginNote kind="field">The corner radius is read once per element with <code>getComputedStyle</code> and kept in a <code>WeakMap</code>. A card whose radius changes later keeps its old insets: one <code>getComputedStyle</code> per element, ever, instead of one per read.</MarginNote>
+
+Things that move without changing layout (a CSS animation, a transform) are invisible to every observer. For those
+there is `data-pixel-surface="animated"`: these elements alone are re-read every frame, a character standing on one
+rides along by the platform's `dx`, and a character jumping onto one follows it in the air. It costs a layout read per
+element per frame, so the docs recommend it for a few elements, not a page full.
+
+## A layer that scrolling does not touch
+
+The prior art the [research notes](https://github.com/pavelpascari/pixel-studio/blob/main/docs/research/page-interactions.md)
+looked at, oneko.js among it, uses `position: fixed` and viewport coordinates. On a page that scrolls, that means every
+platform moves on every scroll frame, and since scrolling happens on the compositor, a character repositioned from
+JavaScript trails a frame behind the card it stands on.
+
+`<pixel-stage>` is instead a 0×0 element with `position: absolute; pointer-events: none; overflow: visible`. Its
+characters are placed with `transform: translate()` in document coordinates, so when the page scrolls, the characters
+scroll with it, already in the right place. The scroll listener is passive and only measures speed; scrolling reads
+no boxes and writes no styles.
+
+Each frame then runs in three phases: read boxes if the world is dirty, plan and move in plain JavaScript, and write
+each character's `transform`, `z-index` and `clip-path`, each only when its string changed. The movement uses the same
+shared clock and capped `dt` as the sprites' frame stepping, so a slow frame advances the body and the legs by the same
+amount and the feet do not slide. In [performance.md](/docs/reference/performance/#cost-per-frame), a stage with three
+characters walking adds 0.31 ms of main-thread time per frame in Chrome (1.9% of a 60 Hz frame), and 0.92 ms with the
+CPU slowed four times.
+
+## Finding the way
+
+Platforms become a graph. From each one, a character can drop off either end onto whatever is below, jump to a
+platform within reach (up to 1.8 times its own height, and three of its widths across), or climb a climbable side whose foot
+rests on this platform. A route is a Dijkstra search over that graph where the cost is pixels walked plus a price for
+each action, scaled to the character's height `H`:
+
+```js
+const actionCost = { drop: H * 0.8, jump: H * 1.5, climb: H * 2 };
+// …
+const cost = here.cost + Math.abs(start - here.x) + actionCost[l.kind] + (l.kind === 'climb' ? p.y - l.to.y : 0);
+```
+
+Counting hops would send a character on two jumps to save a short walk. With costs, it usually walks to the end of
+the card and drops, which is what you would do. Climbing is the most expensive move, plus the height climbed, so a
+character only climbs when there is no reasonable way to jump.<MarginNote kind="field">"Usually": the search keeps one arrival point per platform. Sent from the low card to the tall one in the demo above, Moss can first walk to the far end of the low card, because dropping off that end reaches the ground cheapest; the longer walk back along the ground is priced only after that choice is made.</MarginNote>
+
+<MarginNote kind="field">Taking off for a platform that overlaps from above needs care: the jump starts beside it, never under it, or the character would fly up through the card.</MarginNote>
+
+Jumps are where the animation and the movement have to agree. The engine bakes `launch` and `land` events into each
+jump animation, so the stage knows exactly how long the character is off the ground. Rather than pick a gravity and
+let the animation fall out of sync, it fixes the flight time and solves for the gravity that fits:
+
+```js
+export function jumpArc(x0, y0, x1, y1, lift, flight) {
+  const apex = Math.min(y0, y1) - lift;
+  const up = Math.sqrt(y0 - apex), down = Math.sqrt(y1 - apex);
+  const g = 2 * ((up + down) / flight) ** 2;
+  return { vx: (x1 - x0) / flight, vy: -Math.sqrt(2 * g * (y0 - apex)), g, T: flight };
+}
+```
+
+The crouch plays on the ground, the body leaves at `launch` and touches down at `land`, wherever the target is.
+Climbing works the same way with different data: the climb animation carries a `wall` line, where its feet are, and a
+vertical speed `speedY`, so the feet stay on the card's edge and do not slip. Falls run under plain gravity and land on
+the first platform crossed from above between one frame and the next, so a fast fall cannot pass through a thin card.
+
+A physics engine was considered and left out: these characters must not tumble or rotate, and their speed is fixed
+by their gait. A rigid-body simulation would fight both.
+
+## Behind things
+
+Putting a character behind a crate sounds like a job for `z-index`. On an arbitrary page it is not: the character
+would have to move into the crate's stacking context, which can be created by a dozen unrelated properties, and could
+be clipped by an `overflow: hidden` ancestor or break the page's selectors on the way. A cut-out in the sprite's own
+canvas was also rejected, because it is quantised to sprite pixels and misses the element's edge.
+
+So the character stays in the stage layer, above everything, and the stage cuts the hiding spot's box out of it with
+`clip-path: path(evenodd, …)`: the character's box, minus every occluder that overlaps it. Two overlapping occluders
+would cancel each other out under the even-odd rule and leave a visible patch, so the `cells()` helper first splits
+the rectangles into disjoint cells covering their union, rounded to device pixels. Hiding is then a duck animation
+behind the cut, and every few seconds a peek over the top. The page itself is never touched.
+
+The limit is honest and documented: occluders are rectangles. A character behind a heading is cut by the heading's
+whole box, not its letters, so hiding spots work best as opaque things such as cards, images and filled buttons.
+
+## Never in the way
+
+The layer and its characters have `pointer-events: none`, so every click lands on the page as if they were not there.
+To still let the reader poke a character, the stage listens in the capture phase on the document and tests each press
+against the character's opaque pixels, through a hit test in `pixel-sprite.js` that copies one sheet pixel into a
+shared 1×1 canvas and reads its alpha. A press on the transparent space between a beetle's legs reaches the link
+behind it. A press on a part that is cut away behind an occluder does not count either.
+
+Only the click that follows a tap on a character, or a throw, is kept from the page. The characters take nothing
+else: no focus, no tab stop, and their layer is `aria-hidden`. The accessible control is the pause button, a real `<button>` whose choice is
+remembered in `localStorage`, as WCAG 2.2.2 asks for motion that starts by itself. With `prefers-reduced-motion`, the
+characters are placed and stand still.
+
+## Reacting
+
+A tap shoos a character: it reacts and runs to the farthest place it can reach on screen. Three or more taps, each
+within 450 ms of the last, are rage taps: it panics, a little faster with every tap (up to three times its speed), and
+the actor fires `pixel-burst`. Movement scales with the playback rate, so even a panic keeps the feet planted. Scrolling faster than one and a half screen heights a second fires `pixel-fastscroll`, and
+characters with `keep-in-view` catch up once the scroll settles.
+
+Scripted moments are data. A scene lists steps (go there, say this, wait for a tap) and can carry a trigger, so the
+page arms it without code:
+
+```json
+{
+  "cast": { "goose": "#goose" },
+  "trigger": { "event": "submit", "on": "#signup", "preventDefault": true },
+  "steps": [
+    { "actor": "goose", "pickUp": "$trigger .letter", "speed": 1.7 },
+    { "actor": "goose", "exit": "right", "speed": 1.9 },
+    { "emit": "delivered" }
+  ]
+}
+```
+
+Triggers can be any DOM event (`submit`, `click`), a character's own events, or `visible`, half of an element scrolled
+into view. A step that cannot happen is skipped rather than jamming the scene, because the reader may be poking the
+characters while it runs. The "It notices you" section of the
+[landing page](/) is two of these scenes.
+
+## Every device, and what that costs
+
+Until recently, only a mouse or a pen could pick a character up. A finger could only tap, because a drag that
+starts on a character is, on a phone, a scroll, and the stage must not take scrolling away from the page.
+
+`touch-action` cannot help here: it is decided when a gesture begins, and later changes do nothing. The research
+notes weighed a long press that switches the character to `touch-action: none` for the *next* gesture, which means
+pressing twice, and shipped tap-only touch instead. What replaced it in the latest work is a
+`Gesture` class, kept free of the DOM so tap, hold, swipe and drag are unit-tested, with the rule that a finger must
+hold still first:
+
+```js
+// A finger that moves before the hold completes is scrolling the page: let it.
+if (this.pointerType === 'touch') { if (this.far > GESTURE.holdSlop) { this.mode = 'none'; return 'scroll'; } return null; }
+if (this.far > GESTURE.dragSlop) { this._grab(p); return 'grab'; }
+```
+
+A press that stays within 10 px for 400 ms picks the character up; a mouse or pen also picks it up as soon as it moves
+6 px. Nothing calls `preventDefault` on a touch's `pointerdown`, and `touch-action` is never set. Only once a hold has
+completed does a `touchmove` listener cancel the page's scroll, so the finger carries the character instead. While a
+finger rests on a character, the page's `user-select` and `-webkit-touch-callout` are set to `none`, so iOS shows no
+magnifier or link callout, and the page's own inline values come back afterwards.
+
+That listener has to be non-passive, and a non-passive `touchmove` on the document makes the browser wait for it
+before it scrolls. It was measured on the stage demo in Chrome, with a Pixel 7 profile and real touch input, 15 swipes
+per case started away from the characters ([performance.md](/docs/reference/performance/#touch-scrolling)):
+
+| Case | Swipe to first scroll (median) | 4x CPU |
+|---|--:|--:|
+| Stage, `grab="on"` (touch listener) | 66 ms | 64 ms |
+| Stage, `grab="off"` (no touch listener) | 49 ms | 47 ms |
+| Same page without a stage | 32 ms | 31 ms |
+
+One frame, and no long frames in the fling that follows. The natural fix would be to add the listener only once a hold
+begins. Chrome honours that, but WebKit decides when a touch starts whether its moves can be cancelled, so on an
+iPhone the page would scroll away under a held character.<MarginNote kind="field" numbered>That WebKit behaviour is by its design, and the measurement page says plainly that it was not tested there. The listener stays page-wide on that evidence.</MarginNote>
+So the listener stays, but exists only while a finger could actually pick something up: not while paused, not under
+reduced motion. Pages that would rather keep that frame can say `grab="mouse"` (the previous behaviour) or
+`grab="off"`, and the stage registers no touch listener at all.
+
+The last bug was the smallest and took three tries. After a tap on a character, the stage swallows the click that
+follows, so the page does not also follow a link under it. The first version swallowed any click within 500 ms, which
+ate a quick tap somewhere else. The second only swallowed a click at the same spot. Then WebKit turned out to move a
+tap's click onto a nearby link, so the click arrived somewhere else and went through. The current rule is not about
+time or position: it is the click of that press, and the next press clears it.
+
+## What it does not do yet
+
+Occluders are boxes. Sticky and fixed elements are treated as if they stayed put, so they should be occluders rather
+than surfaces; the research notes sketched a second, fixed layer for them, which was not built. Nested scroll
+containers and iframes are not supported, and top-layer elements such as modal dialogs always paint above the
+characters. The touch gestures were checked in Chromium with real touch input and in WebKit with synthesised pointer
+events; a real iPhone is still on the list.
+
+The [stage reference](/docs/reference/stage/) has every attribute, event and scene step, and the
+[full stage demo](/apps/demo/stage.html) has four characters, a drifting cloud to ride and a scene to play.
