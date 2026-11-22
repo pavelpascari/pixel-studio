@@ -2,9 +2,18 @@
 
 What changed in Pixel Studio, written for the people who use it: the npm packages `@pixel-studio/core` (the
 engine, the `pixel` CLI and the example characters) and `@pixel-studio/runtime` (`<pixel-sprite>`, `<pixel-stage>`
-and `<pixel-actor>`), and the studio, playground and website at [pixel-studio.sh](https://pixel-studio.sh), which
-change between releases. This page is also at [pixel-studio.sh/changelog](https://pixel-studio.sh/changelog/), with an
+and `<pixel-actor>`), and the studio, playground and website at [pixel-studio.sh](https://pixel-studio.sh). This page
+is also at [pixel-studio.sh/changelog](https://pixel-studio.sh/changelog/), as a timeline, with an
 [RSS feed](https://pixel-studio.sh/changelog/rss.xml).
+
+Newest first, there are three kinds of section:
+
+- **`## [Unreleased]`**: package changes that are in the repository but not on npm yet. They come with the next
+  release, and move under its version when it is made.
+- **`## [version] - date`**: a release of both packages on npm (before 0.2.0-alpha.1, a tag on GitHub).
+- **`## Site update - date`**: what went live on pixel-studio.sh that day: the studio, the docs and the website are
+  deployed as they change, between releases. The site plays characters with the runtime and examples in the
+  repository, so it also shows the Unreleased runtime and example changes before they are on npm.
 
 Each entry starts with the part it concerns:
 
@@ -16,12 +25,12 @@ Each entry starts with the part it concerns:
 - **Studio**: the studio, playground, figure library and goose workbench on pixel-studio.sh.
 - **Docs** and **Website**: the documentation and the rest of pixel-studio.sh.
 
-**Upgrading** lists what to change in your code or commands when you update. The studio and the website are
-deployed as they change; their entries are listed under the release that follows.
+**Upgrading** lists what to change in your code or commands when you update.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/). Until 1.0, minor versions may change the spec format, and pre-releases
-(`-alpha`) may change anything; each such change is listed under Upgrading.
+[Semantic Versioning](https://semver.org/). Site updates are not versions: tools that read only `## [version]`
+sections skip them. Until 1.0, minor versions may change the spec format, and pre-releases (`-alpha`) may change
+anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
@@ -55,6 +64,33 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   A goose with three animations is 16 KB instead of 57 KB. An unknown name is an error that lists the character's
   animations. In code: `buildBundle(character, {animations: [...]})`.
   [CLI docs](https://pixel-studio.sh/docs/reference/cli/)
+
+### Changed
+- **Runtime:** while a finger or pen rests on a stage character, the page's text selection, callout and context menu
+  are held off. A cancelled touch drops a held character where it is instead of leaving it hanging. A throw uses
+  the last 100 ms of movement, so resting before letting go drops the character rather than throwing it. A quick
+  tap elsewhere just after touching a character now reaches the page.
+- **Examples:** the fox's ears swap places: the near ear is drawn in front, with its cream inner; the far ear is
+  shaded, behind the head.
+- **Examples:** goose-root's `party` hat sits on the crown of the head instead of over the shades.
+
+### Fixed
+- **Runtime:** a character held when the browser cancelled the gesture stayed stuck in the air; it now drops where it
+  is.
+- **Runtime:** after a tap shooed a character, a tap anywhere on the page within half a second was swallowed; only
+  the click of the tap on the character is now kept from the page.
+- **Runtime:** on iPhones, a tap on a character could open a link underneath it.
+- **Engine:** a bundle whose state machine played a view that was left out (`--views`) was rejected by the runtime.
+  States whose animation is not in the bundle are now dropped, with the transitions to them, and `pixel bundle` names
+  them.
+
+## Site update - 2026-11-22
+
+Live on pixel-studio.sh. The characters on the site already play with the runtime and example changes listed under
+Unreleased (lazy loading, picking up and throwing on touch screens, the fox's ears, the party hat); they reach npm
+with the next release.
+
+### Added
 - **Studio:** open any example from a link, in a simple view:
   `/apps/studio/?c=goose-root&skin=party&anim=waddle` shows the character large, with a few animations, its looks
   and four sizes, then Customise (the full editor), Create with Claude or Export. `&edit` opens the full editor
@@ -81,25 +117,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   footer, the docs and the studio.
 
 ### Changed
-- **Runtime:** while a finger or pen rests on a stage character, the page's text selection, callout and context menu
-  are held off. A cancelled touch drops a held character where it is instead of leaving it hanging. A throw uses
-  the last 100 ms of movement, so resting before letting go drops the character rather than throwing it. A quick
-  tap elsewhere just after touching a character now reaches the page.
-- **Examples:** the fox's ears swap places: the near ear is drawn in front, with its cream inner; the far ear is
-  shaded, behind the head.
-- **Examples:** goose-root's `party` hat sits on the crown of the head instead of over the shades.
 - **Website:** the [examples](https://pixel-studio.sh/gallery/) have posters cropped to the characters, and the site
   takes the studio's colours. The header is shorter: Examples, Docs, Blog, Studio.
 
-### Fixed
-- **Runtime:** a character held when the browser cancelled the gesture stayed stuck in the air; it now drops where it
-  is.
-- **Runtime:** after a tap shooed a character, a tap anywhere on the page within half a second was swallowed; only
-  the click of the tap on the character is now kept from the page.
-- **Runtime:** on iPhones, a tap on a character could open a link underneath it.
-- **Engine:** a bundle whose state machine played a view that was left out (`--views`) was rejected by the runtime.
-  States whose animation is not in the bundle are now dropped, with the transitions to them, and `pixel bundle` names
-  them.
+## Site update - 2026-11-21
+
+### Added
+- **Website:** a home page that shows Pixel Studio working: a line-up of live characters, the two packages, one
+  bundle at four sizes, characters walking on the page's own cards, the studio, and five minutes to a goose on your
+  page. One button pauses every character on the page.
 
 ## [0.2.0-alpha.2] - 2026-11-21
 

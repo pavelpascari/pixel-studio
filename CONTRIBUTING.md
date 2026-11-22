@@ -89,8 +89,15 @@ and is read by people deciding whether to update. Write each entry so they can a
 - **Leave out what users don't see**: refactors, tests, CI, the benchmark scripts' internals, the site's styling,
   TODO.md. Studio and website changes count when they change what visitors can do (a new page, a new tool, a new
   option in the studio), not when they restyle it.
+- **Put it where it is true.** Changes to the packages (Runtime, Engine, CLI, Examples, Packages, and Docs that
+  ship in the package) go under `## [Unreleased]`: they reach users with the next npm release, and
+  `npm run version:set` moves them under its version. Studio, Docs and Website changes are live as soon as the site
+  is deployed, so they go under `## Site update - YYYY-MM-DD`, dated the day they went live (if that day has no
+  section yet, add one right under `## [Unreleased]`). The site's build fails on a Runtime entry in a site
+  update or a Studio or Website entry under Unreleased, so nothing is announced as coming that is already out.
 - One entry per change, a few lines at most; continuation lines are indented by two spaces. Don't add headings
-  other than `## [version] - YYYY-MM-DD` and the `###` sections: the release workflow and the site read them.
+  other than `## [Unreleased]`, `## [version] - YYYY-MM-DD`, `## Site update - YYYY-MM-DD` and the `###` sections:
+  the release workflow and the site read them. Keep `## [Unreleased]` at the top, even when it is empty.
 
 New figures, examples and motion presets are very welcome: see "Writing a new figure" in
 [docs/figures.md](packages/pixel-studio/docs/figures.md). Characters you contribute must be your own designs, not
