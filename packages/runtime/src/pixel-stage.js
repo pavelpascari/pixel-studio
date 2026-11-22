@@ -22,9 +22,12 @@
 // The stage is a 0×0 layer that never takes clicks (pointer-events: none). Characters move in the
 // document's coordinates, so scrolling costs nothing. Element boxes are read only when something
 // changes (resize, DOM changes, fonts, transitions). Occlusion cuts the occluder's box out of the
-// character with clip-path. Tapping or clicking a character's opaque pixels shoos it away (that
-// click does not reach the page); with a mouse or pen, drag one to pick it up and throw it. A real button pauses all characters (WCAG 2.2.2) and remembers
-// the choice. With prefers-reduced-motion the characters stand still.
+// character with clip-path. The same gestures work with a mouse, a pen and a finger (see Gesture): tapping or
+// clicking a character's opaque pixels shoos it away (that click does not reach the page); a still press of 400 ms
+// picks it up (a mouse or pen can also just drag it), and letting go throws it with the pointer's speed. A swipe
+// that starts on a character still scrolls the page: only a completed hold takes the finger. The characters are
+// decorative (aria-hidden) and take no focus; a real button pauses all of them (WCAG 2.2.2) and remembers the
+// choice. With prefers-reduced-motion the characters stand still.
 //
 // Stage attributes:  controls = bottom-right (default) | bottom-left | top-right | top-left | none
 //                    floor    = document (default: the bottom of the page) | none
@@ -36,8 +39,10 @@
 //      stage events 'pixel-fastscroll' {speed} and 'pixel-scrollsettle'
 //      actor.goTo(element | {x, y}, {then: 'sit' | 'hide' | 'idle'}), actor.hideBehind(el), actor.say(text, ms),
 //      actor.shoo(), actor.catchUp(), actor.activity; events on the actor: 'pixel-activity' {from, to}, 'pixel-land',
-//      'pixel-arrive', 'pixel-tap' {count}, 'pixel-burst' {count, rate} (rage taps: it panics) and 'pixel-calm',
-//      'pixel-catchup', 'pixel-enter', 'pixel-exit', 'pixel-pickup' / 'pixel-drop' / 'pixel-deliver' {prop}.
+//      'pixel-arrive', 'pixel-tap' {count, pointerType}, 'pixel-burst' {count, rate, pointerType} (rage taps: it
+//      panics) and 'pixel-calm', 'pixel-grab' {pointerType} / 'pixel-throw' {vx, vy, pointerType} (picked up and
+//      let go by the reader), 'pixel-catchup', 'pixel-enter', 'pixel-exit', 'pixel-pickup' / 'pixel-drop' /
+//      'pixel-deliver' {prop} (a page element the character carries). Module: GESTURE, Gesture, throwVelocity.
 //      Every event bubbles and is composed. Renamed in 0.2.0-alpha: the old names (tap, burst, actorstate, …,
 //      sceneevent, fastscroll, …) and actor.state still work for one alpha release.
 
@@ -62,9 +67,90 @@ function emit(el, name, detail) {
 export function sceneEventName(name, onPixelElement) {
   if (!onPixelElement) return name;
   if (name === 'actorstate') return 'pixel-activity';   // legacy name, remove after 0.2.0-alpha
-  return Object.hasOwn(LEGACY_EVENTS, name) ? `pixel-${name}` : name;
+  return Object.hasOwn(LEGACY_EVENTS, name) || NEW_EVENTS.has(name) ? `pixel-${name}` : name;
 }
 const isPixelEl = (el) => el instanceof PixelActor || el instanceof PixelStage;
+// Events added after 0.2.0-alpha: no legacy alias, but scenes still use their short names.
+const NEW_EVENTS = new Set(['grab', 'throw']);
+
+// ---------- gestures: one pointer's press on a character, without the DOM ----------
+
+/**
+ * Timings and distances (CSS px) of the gestures. A touch picks a character up only after a still hold, so a
+ * swipe that starts on it stays a scroll; a mouse or pen picks it up as soon as it drags (or after the same hold).
+ */
+export const GESTURE = Object.freeze({ holdMs: 400, holdSlop: 10, dragSlop: 6, tapSlop: 12, tapMs: 600, throwWindowMs: 100 });
+
+/**
+ * Throw velocity (px/s) from pointer samples [{x, y, t}] (each a move) and the release time: the movement over
+ * the last `throwWindowMs` of moves, each axis capped to ±cap. A pointer that rested for longer than that before
+ * letting go throws nothing.
+ */
+export function throwVelocity(track, cap = Infinity, releaseT = track[track.length - 1]?.t) {
+  const end = track[track.length - 1];
+  if (!end || releaseT - end.t > GESTURE.throwWindowMs) return { vx: 0, vy: 0 };
+  const recent = track.filter((p) => end.t - p.t <= GESTURE.throwWindowMs);
+  const a = recent[0], dt = Math.max(16, end.t - a.t) / 1000;
+  const v = (k) => (recent.length < 2 ? 0 : Math.max(-cap, Math.min(cap, (end[k] - a[k]) / dt)));
+  return { vx: v('x'), vy: v('y') };
+}
+
+/**
+ * The gesture of one press: feed it the pointer's points ({x, y, t}, client px and ms) and it says what they mean.
+ *   mode: 'pending' (pressed on a character, may become a pick-up) → 'grabbed' → 'done';
+ *         'none' (not a pick-up: a press elsewhere, a touch that moved, so a scroll) → 'done'.
+ * move() → 'grab' (picked up now), 'drag' (moving it), 'scroll' (a touch gave up the hold) or null.
+ * hold(t) → true if the still hold just picked it up. up() → {type: 'throw', vx, vy} | {type: 'tap'} | null.
+ * cancel() → {type: 'drop'} if it was holding the character, else null.
+ */
+export class Gesture {
+  constructor(p, { pointerType = 'mouse', id = 1, onActor = false, canGrab = true } = {}) {
+    this.pointerType = pointerType; this.id = id;
+    this.start = p; this.last = p; this.far = 0;
+    this.mode = onActor && canGrab ? 'pending' : 'none';
+    this.track = [];
+  }
+  get grabbed() { return this.mode === 'grabbed'; }
+  get pending() { return this.mode === 'pending'; }
+  _see(p) { this.last = p; this.far = Math.max(this.far, Math.hypot(p.x - this.start.x, p.y - this.start.y)); }
+  _grab(p) { this.mode = 'grabbed'; this.track = [p]; }
+  move(p) {
+    this._see(p);
+    if (this.mode === 'grabbed') {
+      this.track.push(p);
+      if (this.track.length > 12) this.track.shift();
+      return 'drag';
+    }
+    if (this.mode !== 'pending') return null;
+    // A finger that moves before the hold completes is scrolling the page: let it.
+    if (this.pointerType === 'touch') { if (this.far > GESTURE.holdSlop) { this.mode = 'none'; return 'scroll'; } return null; }
+    if (this.far > GESTURE.dragSlop) { this._grab(p); return 'grab'; }
+    return null;
+  }
+  hold(t) {
+    if (this.mode !== 'pending' || t - this.start.t < GESTURE.holdMs - 1) return false;
+    this._grab({ ...this.last, t });
+    return true;
+  }
+  up(p, cap) {
+    const was = this.mode;
+    this._see(p);
+    this.mode = 'done';
+    if (was === 'grabbed') {
+      // The release usually repeats the last move's position: only a new position is a sample.
+      const end = this.track[this.track.length - 1];
+      if (p.x !== end.x || p.y !== end.y) this.track.push(p);
+      return { type: 'throw', ...throwVelocity(this.track, cap, p.t) };
+    }
+    if (this.far <= GESTURE.tapSlop && p.t - this.start.t <= GESTURE.tapMs) return { type: 'tap' };
+    return null;
+  }
+  cancel() {
+    const was = this.mode;
+    this.mode = 'done';
+    return was === 'grabbed' ? { type: 'drop' } : null;
+  }
+}
 
 const FLAGS = ['surface', 'climbable', 'perch', 'hide', 'occluder', 'avoid'];
 const SELECTOR = FLAGS.map((f) => `[data-pixel-${f}]`).join(',');
@@ -373,6 +459,7 @@ export class PixelStage extends Base {
     this._rm?.removeEventListener?.('change', this._onRm);
     this._unscroll?.();
     for (const [t, fn] of this._inputs || []) document.removeEventListener(t, fn, true);
+    this._endInput?.();
   }
 
   pause() { this._paused = true; store.set('pixel-stage:paused', '1'); this._label(); this._sync(); }
@@ -430,58 +517,105 @@ export class PixelStage extends Base {
     this._unscroll = () => removeEventListener('scroll', onScroll);
   }
 
-  // ----- input: tap or click a character to shoo it; never block other clicks -----
+  // ----- input: tap or click a character to shoo it; hold or drag it to pick it up; never block other clicks -----
+  //
+  // The same gestures for every pointer (see Gesture): a tap or click shoos, quick taps are rage taps, a still
+  // press of GESTURE.holdMs picks the character up, and letting go throws it. A mouse or pen also picks it up by
+  // dragging at once; a finger must hold first, because a swipe that starts on a character is a scroll.
   _input() {
-    let down = null, drag = null, swallow = 0;
+    let g = null, actor = null, off = null, holdTimer = 0, swallow = null, unlock = null;
     const hit = (e) => this.actors.find((a) => a._ready && a._hit(e.clientX, e.clientY, this.world));
     const local = (e) => ({ x: e.clientX + scrollX - this.world.origin.x, y: e.clientY + scrollY - this.world.origin.y });
-    const onDown = (e) => {
-      down = { x: e.clientX, y: e.clientY, t: performance.now() };
-      // Mouse and pen can pick a character up. Touch never does: a drag there must stay a scroll.
-      if (e.pointerType === 'touch' || e.button !== 0 || this._paused || reducedMotion()) return;
-      const a = hit(e);
-      if (!a) return;
-      e.preventDefault();   // no text selection or native drag while holding a character
+    const pt = (e) => ({ x: e.clientX, y: e.clientY, t: performance.now() });
+    const finish = () => { clearTimeout(holdTimer); unlock?.(); unlock = null; g = null; actor = null; off = null; };
+    // While a finger or pen rests on a character: no text selection, callout or magnifier (iOS) from the
+    // long press. Scrolling is untouched; the page's own inline styles come back when the press ends.
+    const lock = () => {
+      const s = document.documentElement.style, keys = ['-webkit-user-select', 'user-select', '-webkit-touch-callout'];
+      const was = keys.map((k) => [k, s.getPropertyValue(k), s.getPropertyPriority(k)]);
+      for (const k of keys) s.setProperty(k, 'none');
+      return () => { for (const [k, v, p] of was) if (v) s.setProperty(k, v, p); else s.removeProperty(k); };
+    };
+    const grab = (e) => {
       const p = local(e);
-      drag = { a, id: e.pointerId, dx: a.x - p.x, dy: a.y - p.y, moved: false, track: [{ ...p, t: performance.now() }] };
+      off = { dx: actor.x - p.x, dy: actor.y - p.y };
+      actor._grab();
+      // A short buzz where supported (Android; not iOS). Chrome refuses it, with a console note, before the first tap.
+      if (g.pointerType !== 'mouse' && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate?.(10);
+      emit(actor, 'grab', { pointerType: g.pointerType });
+    };
+    const onDown = (e) => {
+      if (g && e.pointerId !== g.id) {
+        // A second finger: while waiting for a hold it is a pinch (a zoom, not a pick-up); while holding, ignored.
+        if (g.grabbed) return;
+        if (g.pending) { finish(); return; }
+      }
+      if (g) onCancel({ pointerId: g.id });   // a press whose end never arrived (released outside the window)
+      if (e.button !== 0) return;
+      actor = hit(e) ?? null;
+      const canGrab = !!actor && !this._paused && !reducedMotion();
+      g = new Gesture(pt(e), { pointerType: e.pointerType || 'mouse', id: e.pointerId, onActor: !!actor, canGrab });
+      if (!g.pending) return;
+      // Never preventDefault here for touch: until the hold completes, a swipe must scroll the page.
+      if (g.pointerType !== 'touch') e.preventDefault();   // no text selection or native drag while holding a character
+      if (g.pointerType !== 'mouse') unlock = lock();
+      holdTimer = setTimeout(() => {
+        if (g?.hold(performance.now())) grab({ clientX: g.last.x, clientY: g.last.y });
+      }, GESTURE.holdMs);
     };
     const onMove = (e) => {
-      if (!drag || e.pointerId !== drag.id) return;
-      const p = local(e);
-      if (!drag.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) { drag.moved = true; drag.a._grab(); }
-      if (!drag.moved) return;
-      drag.track.push({ ...p, t: performance.now() });
-      if (drag.track.length > 6) drag.track.shift();
-      drag.a._dragTo(p.x + drag.dx, p.y + drag.dy);
+      if (!g || e.pointerId !== g.id) return;
+      const r = g.move(pt(e));
+      if (r === 'grab') { clearTimeout(holdTimer); grab(e); }
+      else if (r === 'scroll') { clearTimeout(holdTimer); unlock?.(); unlock = null; }
+      if (g.grabbed && off) { const p = local(e); actor._dragTo(p.x + off.dx, p.y + off.dy); }
     };
     const onUp = (e) => {
-      if (drag && e.pointerId === drag.id) {
-        const d = drag;
-        drag = null;
-        if (d.moved) {
-          // Throw with the pointer's recent velocity (px/s), capped so it stays on the page.
-          const a0 = d.track[0], a1 = d.track[d.track.length - 1], dt = Math.max(16, a1.t - a0.t) / 1000;
-          const cap = d.a.H * 30;
-          const v = (k) => Math.max(-cap, Math.min(cap, (a1[k] - a0[k]) / dt));
-          d.a._throw(v('x'), v('y'));
-          swallow = performance.now() + 500;
-          return;
-        }
+      if (!g || e.pointerId !== g.id) return;
+      const a0 = actor, type = g.pointerType;
+      const r = g.up(pt(e), (a0?.H ?? 64) * 30);   // capped so a throw stays on the page
+      finish();
+      if (r?.type === 'throw') {
+        a0._throw(r.vx, r.vy);
+        emit(a0, 'throw', { vx: Math.round(r.vx), vy: Math.round(r.vy), pointerType: type });
+        swallow = pt(e);
+        return;
       }
-      if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12 || performance.now() - down.t > 600) return (down = null);
-      down = null;
+      if (r?.type !== 'tap') return;
       const a = hit(e);
       if (!a) return;
-      swallow = performance.now() + 500;
+      swallow = pt(e);
       // Taps in quick succession are a burst (rage taps): the character panics instead.
       const det = (a._bursts ??= new BurstDetector());
       const b = det.hit(performance.now());
-      emit(a, 'tap', { count: b.count });
-      if (b.burst) a._rage({ ...b, min: det.min }, local(e)); else a.shoo(local(e));
+      emit(a, 'tap', { count: b.count, pointerType: type });
+      if (b.burst) a._rage({ ...b, min: det.min, pointerType: type }, local(e)); else a.shoo(local(e));
     };
-    const onClick = (e) => { if (performance.now() < swallow) { e.preventDefault(); e.stopPropagation(); swallow = 0; } };
-    this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['click', onClick]];
-    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' });
+    // The browser took the pointer (a scroll began, a system gesture): a held character drops where it is.
+    const onCancel = (e) => {
+      if (!g || e.pointerId !== g.id) return;
+      const a0 = actor, type = g.pointerType;
+      const r = g.cancel();
+      finish();
+      if (r) { a0._throw(0, 0); emit(a0, 'throw', { vx: 0, vy: 0, pointerType: type }); }
+    };
+    // Once a character is held, the finger moves it instead of the page. This listener is not passive because
+    // the decision has to be possible on the first move after the hold; it does nothing otherwise.
+    const onTouchMove = (e) => { if (g?.grabbed && e.cancelable) e.preventDefault(); };
+    // A long press on a character (held or waiting for the hold) opens no context menu (Android, desktop touch).
+    const onMenu = (e) => { if (g && g.mode !== 'none' && g.pointerType !== 'mouse') e.preventDefault(); };
+    // The click that follows a tap on a character or a throw does not reach the page; later clicks, or clicks
+    // somewhere else, do.
+    const onClick = (e) => {
+      const s = swallow;
+      if (!s || performance.now() - s.t > 500 || !(Math.hypot(e.clientX - s.x, e.clientY - s.y) <= GESTURE.tapSlop)) return;
+      swallow = null;
+      e.preventDefault(); e.stopPropagation();
+    };
+    this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['pointercancel', onCancel],
+      ['touchmove', onTouchMove], ['contextmenu', onMenu], ['click', onClick]];
+    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' ? true : t === 'touchmove' ? false : undefined });
+    this._endInput = finish;
   }
 }
 
@@ -918,7 +1052,7 @@ export class PixelActor extends Base {
    * event {count, rate} lets pages react. When the taps stop, a 'calm' event, and back to normal speed.
    */
   _rage(b, from) {
-    emit(this, 'burst', { count: b.count, rate: b.rate });
+    emit(this, 'burst', { count: b.count, rate: b.rate, pointerType: b.pointerType });
     this._boost(b.rate, 'rage');
     if (this.anims.react && b.count % 3 === 0) this.say(['!!', 'HONK!!', '?!'][(b.count / 3) % 3 | 0], 700);
     // Already panicking: keep running (re-planned away from the latest tap) rather than reacting again.
