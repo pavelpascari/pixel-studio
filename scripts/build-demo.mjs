@@ -1,4 +1,5 @@
 // Builds demo/assets/*.bundle.json from examples/*.json (and, with --previews, contact sheets in previews/).
+// Characters in LEAN also get a side-view-only build, *.lean.bundle.json, for the landing page.
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,13 @@ import { encodePNG } from '../packages/pixel-studio/src/node/png.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const previews = process.argv.includes('--previews');
+// Lean builds: every resolution, no front and back views (a sprite that only plays side-view moves never shows them).
+// Only for characters whose every use on the landing page is side-view: the gosling (the stage's 64 px actor, which
+// then loses only its idle gaze at the reader, and the details' 112 px sprite, which needs the 64 px sheet). Its
+// lean bundle is half the size. root, Ember and Pip play the default bundles in the hero too: the "Small" row and
+// "Make it yours" download those anyway, and the runtime fetches a URL once, so a lean copy would be an extra file.
+// scripts/bench/sizes.mjs leaves the lean files out of its table.
+const LEAN = new Set(['goose-kiddie']);
 const encode = (w, h, rgba) => 'data:image/png;base64,' + encodePNG(w, h, rgba).toString('base64');
 
 mkdirSync(join(ROOT, 'demo/assets'), { recursive: true });
@@ -24,6 +32,11 @@ for (const f of readdirSync(join(ROOT, 'packages/pixel-studio/examples')).filter
   const json = JSON.stringify(bundle);
   writeFileSync(join(ROOT, 'demo/assets', `${name}.bundle.json`), json);
   console.log(`demo/assets/${name}.bundle.json  ${(json.length / 1024).toFixed(1)} KB  [${Object.keys(bundle.animations).join(', ')}]`);
+  if (LEAN.has(name)) {
+    const lean = JSON.stringify(await buildBundle(c, { resolutions: [16, 32, 64], views: [], encode }));
+    writeFileSync(join(ROOT, 'demo/assets', `${name}.lean.bundle.json`), lean);
+    console.log(`demo/assets/${name}.lean.bundle.json  ${(lean.length / 1024).toFixed(1)} KB`);
+  }
   // A poster (first frame at 64 px) for <pixel-sprite> fallbacks.
   const first = Object.values(c.animations)[0];
   const fr = renderFrame(c, { res: 64, anim: first, frame: 0, style: resolveStyle(c, 64) });

@@ -14,6 +14,19 @@ pixel-sprite {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
+/* The arrow after a link's text (components/Arrow.astro). */
+.ps-arrow {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* Segmented controls (a fieldset of radios, drawn as the studio's chips) and the move buttons. */
 .ps-seg {
@@ -176,8 +189,9 @@ pixel-sprite {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1.25rem, 6vw, 3rem);
   align-items: end;
-  /* Room above the higher card for a 72 px character standing on it. */
-  padding-top: 6.5rem;
+  /* Room above the higher card for the character standing on it: 96 px here, 64 px on narrow screens (heroSize in
+     index.astro), with a little air for its jumps and speech bubble. */
+  padding-top: 8.5rem;
 }
 .ps-mini {
   position: relative;
@@ -189,7 +203,7 @@ pixel-sprite {
   box-shadow: var(--site-shadow);
 }
 .ps-mini--b {
-  margin-bottom: 3.75rem;
+  margin-bottom: 5rem;
 }
 .ps-mini h3 {
   margin: 0 0 0.8rem;
@@ -212,9 +226,10 @@ pixel-sprite {
 .ps-crate {
   position: absolute;
   right: 0.75rem;
-  top: -2.2rem;
-  width: 2.6rem;
-  height: 2.2rem;
+  /* Big enough to hide the character crouching behind it (and scaled with it on narrow screens). */
+  top: -2.9rem;
+  width: 3.4rem;
+  height: 2.9rem;
   border-radius: 3px 3px 0 0;
   background: repeating-linear-gradient(90deg, #b07a3c 0 0.55rem, #946431 0.55rem 0.62rem);
   border: 2px solid #6e4a24;
@@ -242,6 +257,19 @@ pixel-sprite {
 .ps-moves button:active {
   background: var(--site-accent-soft);
 }
+/* Who it is, and the next step with that character: customizing it in the studio. */
+.ps-demo-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1.25rem;
+}
+.ps-customize {
+  flex: none;
+  padding-block: 0.6rem;   /* a 44 px tall target on touch screens, without moving the line */
+  margin-block: -0.6rem;
+}
 .ps-who,
 .ps-still {
   margin: 0;
@@ -249,112 +277,6 @@ pixel-sprite {
 }
 .ps-still {
   font-size: 0.9rem;
-}
-
-/* ---------- it notices you ---------- */
-
-#react {
-  overflow-x: clip;   /* the full-width ground must not make the page scroll sideways */
-}
-
-.ps-react {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(1.5rem, 4vw, 3rem);
-  align-items: end;
-  /* Room above the card for the gosling standing on it. */
-  padding-top: 4.5rem;
-}
-.ps-react-page {
-  display: grid;
-  justify-items: start;
-  gap: 1rem;
-}
-.ps-react-card {
-  justify-self: stretch;
-  padding: 1.1rem 1.25rem 1.2rem;
-  border: 1px solid var(--site-border);
-  border-top: 2px solid var(--site-text);
-  border-radius: 4px;
-  background: var(--site-surface);
-  box-shadow: var(--site-shadow);
-}
-.ps-react-card h3 {
-  margin: 0 0 0.3rem;
-  font-size: 1.1rem;
-}
-.ps-react-card > p {
-  margin: 0 0 0.9rem;
-  color: var(--site-muted);
-}
-.ps-react-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-}
-.ps-react-form input {
-  flex: 1 1 12rem;
-  min-width: 0;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius-sm);
-  background: var(--site-bg);
-  color: var(--site-text);
-  font: inherit;
-}
-.ps-react-form input:focus-visible {
-  outline: 2px solid var(--site-focus);
-  outline-offset: 1px;
-}
-.ps-react-form .site-btn {
-  min-height: 2.75rem;
-}
-/* The letter the gosling carries: a small envelope that appears beside the button on submit. */
-.ps-letter {
-  width: 1.5rem;
-  height: 1.05rem;
-  border: 2px solid #6e4a24;
-  border-radius: 2px;
-  background:
-    linear-gradient(to bottom right, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 0 0 / 50% 60% no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 100% 0 / 50% 60% no-repeat,
-    #f4ecd8;
-}
-.ps-letter:not([hidden]) {
-  display: inline-block;
-}
-.ps-react-status {
-  margin: 0.75rem 0 0 !important;
-  font-size: 0.88rem;
-}
-.ps-react-list {
-  display: grid;
-  gap: 0.6rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  line-height: 1.5;
-}
-.ps-react-list strong {
-  color: var(--site-text);
-}
-.ps-react-list li {
-  color: var(--site-muted);
-}
-/* The ground runs the full width of the window, so the gosling can walk off the screen and back. */
-.ps-react-ground {
-  height: 1rem;
-  margin: 2rem calc(50% - 50vw) 2.5rem;
-  border-top: 1px solid var(--site-border);
-  background: color-mix(in oklab, var(--site-accent) 10%, var(--site-surface));
-}
-.ps-react-code {
-  max-width: 48rem;
-}
-.ps-more {
-  margin: 1.25rem 0 0;
 }
 
 /* ---------- make it yours ---------- */
@@ -455,6 +377,153 @@ pixel-sprite {
   align-items: center;
   gap: 1rem 1.5rem;
   margin-top: 1.5rem;
+}
+
+/* ---------- it notices you ---------- */
+
+#react {
+  overflow-x: clip;   /* the full-width ground must not make the page scroll sideways */
+}
+
+.ps-react {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: end;
+  /* Room above the card for the gosling standing on it. */
+  padding-top: 4.5rem;
+}
+.ps-react-page {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+.ps-react-card {
+  justify-self: stretch;
+  padding: 1.1rem 1.25rem 1.2rem;
+  border: 1px solid var(--site-border);
+  border-top: 2px solid var(--site-text);
+  border-radius: 4px;
+  background: var(--site-bg);   /* on the section's surface tone */
+  box-shadow: var(--site-shadow);
+}
+.ps-react-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.1rem;
+}
+.ps-react-card > p {
+  margin: 0 0 0.9rem;
+  color: var(--site-muted);
+}
+.ps-react-send {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+/* The letter the gosling carries: a small envelope that appears beside the button when it is pressed. */
+.ps-letter {
+  width: 1.5rem;
+  height: 1.05rem;
+  border: 2px solid #6e4a24;
+  border-radius: 2px;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 0 0 / 50% 60% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 100% 0 / 50% 60% no-repeat,
+    #f4ecd8;
+}
+.ps-letter:not([hidden]) {
+  display: inline-block;
+}
+/* At the far end of the card, towards the right edge of the window the gosling leaves by: it heads off from there. */
+.ps-react-send .ps-letter {
+  margin-left: auto;
+  margin-right: 0.25rem;
+}
+.ps-react-status {
+  min-height: 1.5em;   /* empty until the button is pressed: keep the card from growing */
+  margin: 0.75rem 0 0 !important;
+  font-size: 0.88rem;
+}
+.ps-react-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.5;
+}
+.ps-react-list strong {
+  color: var(--site-text);
+}
+.ps-react-list li {
+  color: var(--site-muted);
+}
+/* The ground runs the full width of the window, so the gosling can walk off the screen and back. */
+.ps-react-ground {
+  height: 1rem;
+  margin: 2rem calc(50% - 50vw) 2.5rem;
+  border-top: 1px solid var(--site-border);
+  background: color-mix(in oklab, var(--site-accent) 10%, var(--site-surface));
+}
+/* The scene's code, folded away: a native <details>, so the keyboard and screen readers get a disclosure. Drawn as
+   the page's links rather than the template's boxed one (markdown.css), as it sits among them. */
+.ps-reveal {
+  max-width: 48rem;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.ps-reveal summary,
+.ps-reveal[open] summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--site-text);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.ps-reveal summary::-webkit-details-marker {
+  display: none;
+}
+.ps-reveal summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.ps-reveal summary:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.ps-reveal-icon {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: rotate 0.15s;
+}
+.ps-reveal[open] .ps-reveal-icon {
+  rotate: 90deg;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-reveal-icon {
+    transition: none;
+  }
+}
+.ps-reveal .ps-code {
+  margin-top: 0.5rem;
+}
+.ps-more {
+  margin: 0.5rem 0 0;
 }
 
 /* ---------- studio ---------- */
@@ -662,6 +731,9 @@ pixel-sprite {
   right: 1rem;
   bottom: 1rem;
   z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.45rem 0.85rem;
   border: 1px solid var(--site-border);
   border-radius: 999px;
@@ -672,9 +744,54 @@ pixel-sprite {
   box-shadow: var(--site-shadow);
   cursor: pointer;
 }
+.ps-pause[aria-pressed='true'] {
+  border-color: var(--site-accent);
+  background: var(--site-accent-soft);
+}
 .ps-pause:focus-visible {
   outline: 2px solid var(--site-focus);
   outline-offset: 2px;
+}
+.ps-pause-icon {
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+}
+.ps-pause-play,
+.ps-pause[aria-pressed='true'] .ps-pause-bars {
+  display: none;
+}
+.ps-pause[aria-pressed='true'] .ps-pause-play {
+  display: inline;
+}
+/* Phones (and phones held sideways): a 44 px icon button in the corner (inside the safe area), instead of
+   a pill that covered a corner of the hero's demo. Its name is still "Pause characters" (the label, visually hidden). */
+@media (max-width: 40rem), (max-height: 30rem) {
+  .ps-pause {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    background: color-mix(in oklab, var(--site-bg) 88%, transparent);
+  }
+  .ps-pause[aria-pressed='true'] {
+    background: var(--site-accent-soft);
+  }
+  .ps-pause-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+  .ps-pause-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* ---------- narrow screens ---------- */
@@ -731,6 +848,11 @@ pixel-sprite {
   }
   .ps-mini--b {
     margin-bottom: 3rem;
+  }
+  .ps-crate {
+    top: -2.2rem;
+    width: 2.6rem;
+    height: 2.2rem;
   }
   .ps-embed {
     grid-template-columns: minmax(0, 1fr);

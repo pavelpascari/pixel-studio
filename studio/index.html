@@ -9,19 +9,22 @@
 </head>
 <body>
   <header class="bar">
-    <div class="brand"><span class="logo"></span>Pixel&nbsp;Studio <small>PoC</small></div>
-    <label class="field inline">Example
+    <!-- Back to the website. The hrefs are the live site; site.js makes them / and /docs/ when served under /apps/. -->
+    <a class="brand" href="https://pixel-studio.sh/" data-site="/" title="Pixel Studio website"><span class="logo"></span>Pixel&nbsp;Studio <small>PoC</small></a>
+    <label class="field inline full-only">Example
       <select id="example"></select>
     </label>
-    <a class="field inline" href="figures.html" style="color:inherit">Figures ↗</a>
-    <a class="field inline" href="goose.html" style="color:inherit">Goose workbench ↗</a>
-    <a class="field inline" href="play.html" style="color:inherit">Playground ↗</a>
+    <a class="field inline" href="https://pixel-studio.sh/docs/" data-site="/docs/" style="color:inherit">Docs</a>
+    <a class="field inline full-only" href="figures.html" style="color:inherit">Figures ↗</a>
+    <a class="field inline full-only" href="goose.html" style="color:inherit">Goose workbench ↗</a>
+    <a class="field inline full-only" href="play.html" style="color:inherit">Playground ↗</a>
     <div class="spacer"></div>
-    <button id="btn-new" title="Start from a blank template">New</button>
-    <button id="btn-format" title="Pretty-print the JSON">Format</button>
-    <button id="btn-download-spec">Spec ⤓</button>
-    <button id="btn-download-png">Sheet PNG ⤓</button>
-    <button id="btn-export" class="primary">Export for web</button>
+    <button id="btn-simple" class="full-only" type="button" title="Just the character and a few choices">Simple view</button>
+    <button id="btn-new" class="full-only" title="Start from a blank template">New</button>
+    <button id="btn-format" class="full-only" title="Pretty-print the JSON">Format</button>
+    <button id="btn-download-spec" class="full-only">Spec ⤓</button>
+    <button id="btn-download-png" class="full-only">Sheet PNG ⤓</button>
+    <button id="btn-export" class="primary full-only">Export for web</button>
   </header>
 
   <main class="layout">
@@ -70,6 +73,7 @@
     <section class="panel center">
       <div class="stage-toolbar">
         <div id="anim-chips" class="chips" role="radiogroup" aria-label="Animation"></div>
+        <label class="field inline" id="skin-field" hidden>look <select id="skin"></select></label>
         <div class="spacer"></div>
         <button id="btn-play" title="Play / pause (space)">❚❚</button>
         <input id="scrub" type="range" min="0" max="7" value="0" aria-label="Frame" />
@@ -88,6 +92,43 @@
         <canvas id="view"></canvas>
       </div>
       <div class="lod-strip" id="lod-strip" aria-label="Same character at every level of detail"></div>
+    </section>
+
+
+    <!-- The simple view (body.simple): the character, a few choices and the next step. Arrivals with ?c= start here. -->
+    <section class="panel entry" aria-labelledby="entry-title">
+      <h1 id="entry-title" class="entry-name">Your character</h1>
+      <fieldset class="pick" id="pick-anim">
+        <legend>Animation</legend>
+        <div class="pick-row"></div>
+      </fieldset>
+      <fieldset class="pick" id="pick-skin">
+        <legend>Look</legend>
+        <div class="pick-row"></div>
+      </fieldset>
+      <fieldset class="pick" id="pick-size">
+        <legend>Size</legend>
+        <div class="pick-row"></div>
+      </fieldset>
+      <div class="row">
+        <button id="btn-pause" type="button" aria-pressed="false">Pause</button>
+        <button id="btn-all-anims" type="button" class="ghost"></button>
+      </div>
+      <h2 class="entry-next">Next</h2>
+      <ul class="next">
+        <li>
+          <button id="btn-customise" type="button" class="primary">Customise</button>
+          <p class="hint">Edit the spec, see every animation and every size, tune the rendering.</p>
+        </li>
+        <li>
+          <button id="btn-create" type="button">Create with Claude</button>
+          <p class="hint">Describe a character and Claude writes it. Needs your Anthropic API key: it stays in this browser and requests go straight to api.anthropic.com.</p>
+        </li>
+        <li>
+          <button id="btn-export-simple" type="button">Export</button>
+          <p class="hint">One bundle file and a snippet for your page.</p>
+        </li>
+      </ul>
     </section>
 
     <!-- Right: render settings -->
@@ -172,6 +213,7 @@
     </form>
   </dialog>
 
+  <script src="site.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

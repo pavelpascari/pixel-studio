@@ -12,6 +12,10 @@
   header .tag { color: var(--dim); }
   header h1 { font-size: 16px; margin: 0; }
   header a { color: var(--dim); }
+  header .home { display: inline-flex; align-items: center; gap: 7px; align-self: center; color: var(--text); font-weight: 700; text-decoration: none; border-radius: 4px; }
+  header .home:hover { text-decoration: underline; text-underline-offset: 3px; }
+  header .logo { width: 14px; height: 14px; background: var(--accent); box-shadow: inset 0 0 0 4px var(--accent), inset 0 0 0 7px #1b1424; }
+  header a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   main { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 50px); }
   aside { border-right: 1px solid var(--line); padding: 14px; display: flex; flex-direction: column; gap: 14px; }
   aside h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: 0 0 6px; }
@@ -54,9 +58,11 @@
 </head>
 <body>
 <header>
+  <a class="home" href="https://pixel-studio.sh/" data-site="/" title="Pixel Studio website"><span class="logo" aria-hidden="true"></span>Pixel Studio</a>
   <h1>Figure library</h1>
   <span class="tag">skeletons with realistic motion models: pick one, dress its bones in a spec</span>
   <a href="./">← studio</a>
+  <a href="https://pixel-studio.sh/docs/" data-site="/docs/">docs</a>
 </header>
 <main>
   <aside>
@@ -79,6 +85,7 @@
     <div id="info"></div>
   </section>
 </main>
+<script src="site.js"></script>
 <script type="module">
 import { resolveSpec, compile } from '../packages/pixel-studio/src/core/index.js';
 import { samplePoseAt, followOffsets, worldMatrices } from '../packages/pixel-studio/src/core/internal.js';

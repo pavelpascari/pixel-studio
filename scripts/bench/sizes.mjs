@@ -39,10 +39,10 @@ export function runtimeSizes() {
   return ['pixel-sprite.js', 'pixel-stage.js'].map((file) => ({ file, ...sizesOf(readFileSync(join(ROOT, 'packages/runtime/src', file))) }));
 }
 
-/** Every demo bundle: animations, sizes, and the decoded (RGBA) size of each default sheet, by resolution. */
+/** Every demo bundle (not the landing page's *.lean.bundle.json copies): animations, sizes, and the decoded (RGBA) size of each default sheet, by resolution. */
 export function bundleSizes() {
   if (!existsSync(ASSETS)) throw new Error('demo/assets is missing: run `npm run build:demo` first');
-  return readdirSync(ASSETS).filter((f) => f.endsWith('.bundle.json')).sort().map((file) => {
+  return readdirSync(ASSETS).filter((f) => f.endsWith('.bundle.json') && !f.endsWith('.lean.bundle.json')).sort().map((file) => {
     const text = readFileSync(join(ASSETS, file), 'utf8');
     const b = JSON.parse(text);
     const plain = b.variants.filter((v) => !v.skin);

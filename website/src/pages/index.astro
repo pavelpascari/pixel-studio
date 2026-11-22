@@ -4,9 +4,11 @@
 // with the runtime from packages/runtime/src/: the page is its own demo.
 //
 // The order follows a visitor's questions: what is it (a character to direct on a small page), could it be mine (the
-// same goose in other looks), how much work is it (the embed), how do I make my own (the studio), where would I use
-// it (examples), will it behave (sizes, motion, packages).
+// same goose in other looks), how much work is it (the embed), what can it do there (it reacts to the reader and the
+// page), how do I make my own (the studio), where would I use it (examples), will it behave (sizes, motion, packages).
+// Sections alternate plain and surface backgrounds (the gallery strip is always surface).
 import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section } from 'astro-project-site/components';
+import Arrow from '../components/Arrow.astro';
 import '../styles/landing.css';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -43,12 +45,19 @@ const weights = [
   .map((s) => ({ ...s, kb: kb(s.size) }));
 const play = '/apps/studio/play.html';
 
-// The hero's cast; `who` is read out when one is picked.
+// The hero's cast; `who` is read out when one is picked. `studio` opens that character in the studio's simple view
+// (studio/app.js reads ?c=, like the playground): the one place these links are made. Every link to it on the page
+// ("Customize …" under the demo, "Open the studio" further down and in the closing call to action) follows the pick.
 const cast = [
-  { id: 'goose-root', label: 'Goose', alt: 'root, a hacker goose in a hoodie', who: 'Meet root. A goose in a hoodie, never far from a laptop.' },
-  { id: 'fox', label: 'Fox', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
-  { id: 'pip', label: 'Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
-];
+  { id: 'goose-root', label: 'Goose', customize: 'Customize this goose', alt: 'root, a hacker goose in a hoodie', who: 'Meet root. A goose in a hoodie, never far from a laptop.' },
+  { id: 'fox', label: 'Fox', customize: 'Customize Ember', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
+  { id: 'pip', label: 'Pip', customize: 'Customize Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
+].map((c) => ({ ...c, studio: `/apps/studio/?c=${encodeURIComponent(c.id)}` }));
+// How big the hero's character is drawn: bigger where the demo has room, as it was on phones. A bundle holds 16, 32
+// and 64 px frames scaled by whole numbers, so 96 is drawn at exactly 96 px and 64 at 64 px (72 was drawn at 64
+// too). The window's room above its cards (landing.css, .ps-window-cards) is sized for these; `narrow` is the same
+// breakpoint as the stylesheet's narrow layout.
+const heroSize = { wide: 96, narrow: 64, narrowQuery: '(max-width: 52rem)' };
 
 // "Make it yours": goose-root's looks, each an excerpt of packages/pixel-studio/examples/goose-root.json.
 const looks = [
@@ -129,10 +138,10 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
 const sceneLetter = {
   name: 'the letter',
   cast: { gosling: '#ps-gosling' },
-  trigger: { event: 'submit', on: '#ps-signup', preventDefault: true },
+  trigger: { event: 'click', on: '#ps-send' },
   steps: [
     { actor: 'gosling', perform: 'flap', ms: 900 },
-    { actor: 'gosling', pickUp: '$trigger .ps-letter', speed: 1.7 },
+    { actor: 'gosling', pickUp: '.ps-letter', speed: 1.7 },
     { actor: 'gosling', exit: 'right', speed: 1.9 },
     { wait: 1600 },
     { emit: 'delivered' },
@@ -150,15 +159,16 @@ const sceneHello = {
     { actor: 'gosling', say: 'hello!', ms: 1500 },
   ],
 };
-const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></form>
+const reactSnippet = `<button id="send">Send a demo letter</button>
+<span class="letter" hidden></span>
 
 <script type="application/json" data-pixel-scene>
 {
   "cast": { "gosling": "#gosling" },
-  "trigger": { "event": "submit", "on": "#signup", "preventDefault": true },
+  "trigger": { "event": "click", "on": "#send" },
   "steps": [
     { "actor": "gosling", "perform": "flap", "ms": 900 },
-    { "actor": "gosling", "pickUp": "$trigger .letter", "speed": 1.7 },
+    { "actor": "gosling", "pickUp": ".letter", "speed": 1.7 },
     { "actor": "gosling", "exit": "right", "speed": 1.9 },
     { "wait": 1600 },
     { "emit": "delivered" },
@@ -178,8 +188,8 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
         Create animated pixel characters. Give them a home on your website.
       </p>
       <div class="ps-actions">
-        <a class="site-btn site-btn--primary ps-try" href="#try">Try a character <span aria-hidden="true">→</span></a>
-        <a class="ps-link" href="#embed">See the embed <span aria-hidden="true">↘</span></a>
+        <a class="site-btn site-btn--primary ps-try" href="#try">Try a character <Arrow /></a>
+        <a class="ps-link" href="#embed">See the embed <Arrow to="down-right" /></a>
       </div>
       <p class="ps-status">Open source · MIT · Alpha</p>
     </div>
@@ -214,50 +224,13 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
         <button type="button" data-move="jump">Jump</button>
         <button type="button" data-move="hide">Hide</button>
       </div>
-      <p class="ps-who" aria-live="polite">{cast[0].who}</p>
+      <div class="ps-demo-foot">
+        <p class="ps-who" aria-live="polite">{cast[0].who}</p>
+        <a class="ps-link ps-customize" href={cast[0].studio}><span class="ps-customize-label">{cast[0].customize}</span> <Arrow /></a>
+      </div>
       <p class="ps-still" hidden>Your device asks for reduced motion, so the characters stand still.</p>
     </section>
   </section>
-
-  <Section id="react" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click, a form sent, a hurried scroll. The response is a scene written as data, with no animation code.">
-    <div class="ps-react">
-      <div class="ps-react-page">
-        <article class="ps-react-card" data-pixel-surface>
-          <h3>The newsletter</h3>
-          <p>One letter a month, delivered by hand. Or by wing.</p>
-          <form class="ps-react-form" id="ps-signup">
-            <label class="site-visually-hidden" for="ps-email">Email</label>
-            <input id="ps-email" type="email" required placeholder="you@example.com" autocomplete="off" />
-            <button type="submit" class="site-btn site-btn--primary">Subscribe</button>
-            <span class="ps-letter" hidden aria-hidden="true"></span>
-          </form>
-          <p class="ps-react-status" aria-live="polite">Nothing is sent anywhere: this is a demo.</p>
-        </article>
-        <button type="button" class="site-btn ps-hello">Say hello</button>
-      </div>
-      <ul class="ps-react-list">
-        <li><strong>Tap it.</strong> It startles and runs off.</li>
-        <li><strong>Tap it fast.</strong> It panics, a little faster with every tap.</li>
-        <li><strong>Drag it</strong> with a mouse, and throw it.</li>
-        <li><strong>Scroll fast.</strong> It calls after you.</li>
-        <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
-        <li><strong>Subscribe.</strong> It posts your letter, and comes back.</li>
-      </ul>
-    </div>
-    <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
-    <figure class="ps-code ps-react-code">
-      <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
-      <pre><code>{reactSnippet}</code></pre>
-    </figure>
-    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
-  </Section>
-
-  <pixel-stage label="characters" controls="none" floor="none">
-    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
-    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
-  </pixel-stage>
-  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
-  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
 
   <Section id="make" tone="surface" title="Make it yours" intro="A character is a short description you can change: colours, materials, extra parts, alternative looks. Pick a look, then a move. It is the same goose throughout.">
     <div class="ps-make">
@@ -281,7 +254,7 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
         {looks.map((l, i) => (
           <pre data-look={l.skin} hidden={i !== 0}><code>{l.code}</code></pre>
         ))}
-        <a class="ps-link ps-open" href={`${play}?c=goose-root&anim=waddle`}>Keep editing this goose in the playground <span aria-hidden="true">→</span></a>
+        <a class="ps-link ps-open" href={`${play}?c=goose-root&anim=waddle`}>Keep editing this goose in the playground <Arrow /></a>
       </figure>
     </div>
   </Section>
@@ -296,29 +269,73 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
           <h3>A sprite</h3>
           <p>One element, one bundle file. Its behaviour comes with the bundle: hover and it gets back to hacking, tap and it honks (tap fast and it panics).</p>
           <pre><code>{spriteEmbed}</code></pre>
-          <a class="ps-link" href="/docs/reference/runtime/">The sprite element <span aria-hidden="true">→</span></a>
+          <a class="ps-link" href="/docs/reference/runtime/">The sprite element <Arrow /></a>
         </div>
       </article>
       <article class="ps-embed">
         <div class="ps-embed-result ps-embed-result--stage">
           <p>Mark elements as surfaces and hiding spots. The demo at the top of this page is a stage like this one.</p>
-          <a class="site-btn" href="#try">Back to the demo <span aria-hidden="true">↑</span></a>
+          <a class="site-btn" href="#try">Back to the demo <Arrow to="up" /></a>
         </div>
         <div class="ps-embed-text">
           <h3>A stage</h3>
           <p>Characters walk along the top edges of your elements, jump between them and hide. They never block a click.</p>
           <pre><code>{stageEmbed}</code></pre>
-          <a class="ps-link" href="/docs/reference/stage/">How the stage works <span aria-hidden="true">→</span></a>
+          <a class="ps-link" href="/docs/reference/stage/">How the stage works <Arrow /></a>
         </div>
       </article>
     </div>
     <div class="ps-install">
       <InstallCommand command="npm i @pixel-studio/runtime" />
-      <a class="ps-link" href="/docs/reference/getting-started/">Getting started, step by step <span aria-hidden="true">→</span></a>
+      <a class="ps-link" href="/docs/reference/getting-started/">Getting started, step by step <Arrow /></a>
     </div>
   </Section>
 
-  <Section id="studio" tone="surface" title="Make your own, in the studio or with an agent" intro="Describe a character in a sentence. Claude writes its spec, the engine draws it at every size, and Claude looks at the drawing and refines it. Or start from an example and edit it yourself.">
+  <Section id="react" tone="surface" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click on a button, a hurried scroll. The response is a scene written as data, with no animation code.">
+    <div class="ps-react">
+      <div class="ps-react-page">
+        <article class="ps-react-card" data-pixel-surface>
+          <h3>The newsletter</h3>
+          <p>One letter a month, delivered by hand. Or by wing.</p>
+          {/* One button, no address field: it is plainly a demo, and nothing leaves the page. */}
+          <div class="ps-react-send">
+            <button type="button" class="site-btn site-btn--primary" id="ps-send">Send a demo letter</button>
+            <span class="ps-letter" hidden aria-hidden="true"></span>
+          </div>
+          <p class="ps-react-status" aria-live="polite"></p>
+        </article>
+        <button type="button" class="site-btn ps-hello">Say hello</button>
+      </div>
+      <ul class="ps-react-list">
+        <li><strong>Tap it.</strong> It startles and runs off.</li>
+        <li><strong>Tap it fast.</strong> It panics, a little faster with every tap.</li>
+        <li><strong>Pick it up</strong> and throw it: drag it with a mouse, or press and hold it on a phone.</li>
+        <li><strong>Scroll fast.</strong> It calls after you.</li>
+        <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
+        <li><strong>Send a letter.</strong> It posts it, and comes back.</li>
+      </ul>
+    </div>
+    <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
+    <details class="ps-reveal">
+      <summary><svg class="ps-reveal-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3.5 10.5 8 6 12.5" /></svg>Show scene code</summary>
+      <figure class="ps-code ps-react-code">
+        <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
+        <pre><code>{reactSnippet}</code></pre>
+      </figure>
+    </details>
+    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <Arrow /></a></p>
+  </Section>
+
+  {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
+      hero's cast shares its default bundles with the "Small" row, so the page downloads each of them once. */}
+  <pixel-stage label="characters" controls="none" floor="none">
+    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size={heroSize.wide} alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.lean.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
+  </pixel-stage>
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
+
+  <Section id="studio" title="Make your own, in the studio or with an agent" intro="Describe a character in a sentence. Claude writes its spec, the engine draws it at every size, and Claude looks at the drawing and refines it. Or start from an example and edit it yourself.">
     <div class="ps-split ps-split--studio">
       <ol class="ps-loop">
         <li><span>1</span><div><strong>Ask</strong> for “a small grey robot with an antenna that waves hello”.</div></li>
@@ -332,7 +349,7 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     </div>
     <div class="ps-key">
       <div class="ps-actions">
-        <a class="site-btn site-btn--primary" href="/apps/studio/">Open the studio</a>
+        <a class="site-btn site-btn--primary" href={cast[0].studio}>Open the studio</a>
         <a class="site-btn" href={play}>Try the playground</a>
       </div>
       <p>Creating with Claude needs your Anthropic API key. It stays in your browser, and requests go straight to the API. Without a key, the examples, the editor and the playground all work.</p>
@@ -347,7 +364,7 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
         <h3>Small, and only as big as you make it</h3>
         <p>A whole animated character can be {weights[0].kb} KB. The file grows with the detail it carries: textures like fur and cloth most of all, then more frames, then front and back views for characters that turn around. Every size here is the file that character is playing, compressed as a web server sends it.</p>
         <p class="ps-weight-script">Plus the script, once for every character on the page: <strong>{scriptKB} KB</strong>. An off-screen sprite stops drawing.</p>
-        <a class="ps-link" href="/docs/reference/performance/">Performance in detail <span aria-hidden="true">→</span></a>
+        <a class="ps-link" href="/docs/reference/performance/">Performance in detail <Arrow /></a>
       </div>
       <ol class="ps-ladder" aria-label="Example characters, from the smallest file to the largest">
         {weights.map((s) => (
@@ -379,11 +396,11 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
       <div class="ps-detail-text">
         <h3>Motion with planted feet</h3>
         <p>Each character stands on a skeleton with motion models for walking, running, jumping and climbing. Feet stay planted, heads stay steady, tails follow through. The fox's gallop is measured from Muybridge's photographs of running hounds.</p>
-        <a class="ps-link" href="/apps/studio/figures.html">Explore the figures <span aria-hidden="true">→</span></a>
+        <a class="ps-link" href="/apps/studio/figures.html">Explore the figures <Arrow /></a>
       </div>
       <div class="ps-gaits">
         <figure><pixel-sprite src={`${assets}/fox.bundle.json`} anim="gallop" size="112" alt="the fox galloping" /><figcaption>gallop</figcaption></figure>
-        <figure><pixel-sprite src={`${assets}/goose-kiddie.bundle.json`} anim="waddle" size="112" alt="a gosling waddling" /><figcaption>waddle</figcaption></figure>
+        <figure><pixel-sprite src={`${assets}/goose-kiddie.lean.bundle.json`} anim="waddle" size="112" alt="a gosling waddling" /><figcaption>waddle</figcaption></figure>
         <figure><pixel-sprite src={`${assets}/pip.bundle.json`} anim="run" size="112" alt="Pip running" /><figcaption>run</figcaption></figure>
         <figure><pixel-sprite src={`${assets}/moss.bundle.json`} anim="climb" size="112" alt="Moss climbing" /><figcaption>climb</figcaption></figure>
       </div>
@@ -416,14 +433,22 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
   <CallToAction
     title="Give your project a character"
     body="Free and open source under the MIT licence. Every example on this site is live."
-    primary={{ label: 'Open the studio', href: '/apps/studio/' }}
+    primary={{ label: 'Open the studio', href: cast[0].studio }}
     secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
-  <button type="button" class="ps-pause" aria-pressed="false">Pause characters</button>
+  {/* One control for every character. Its name stays "Pause characters" and aria-pressed says whether they are paused
+      (a name that flipped to "Play" as well would read as "Play characters, pressed"). On phones only the icon shows. */}
+  <button type="button" class="ps-pause" aria-pressed="false">
+    <svg class="ps-pause-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path class="ps-pause-bars" d="M4 3h3v10H4zM9 3h3v10H9z" />
+      <path class="ps-pause-play" d="M4.5 2.5v11l9-5.5z" />
+    </svg>
+    <span class="ps-pause-label">Pause characters</span>
+  </button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
-  <script is:inline define:vars={{ cast, play }}>
+  <script is:inline define:vars={{ cast, play, heroSize, sceneLetterName: sceneLetter.name }}>
     // A classic script (define:vars): everything it touches is in the HTML above it, and it only calls the
     // characters' methods once they exist.
     const $ = (s, root = document) => root.querySelector(s);
@@ -437,7 +462,6 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     // ---- pause: one control for every character (WCAG 2.2.2); the stage's own button is off ----
     const setPaused = (paused) => {
       pauseButton.setAttribute('aria-pressed', String(paused));
-      pauseButton.textContent = paused ? 'Play characters' : 'Pause characters';
       for (const sprite of $$('pixel-sprite')) sprite.toggleAttribute('paused', paused);
       if (stage?.pause) (paused ? stage.pause() : stage.resume());
     };
@@ -490,17 +514,32 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     };
     for (const b of $$('[data-move]')) b.addEventListener('click', () => order(moves[b.dataset.move]));
 
-    segmented('cast', (id) => {
-      const c = cast.find((x) => x.id === id);
+    // The character's size for this screen. The page's own actor gets it here, before the stage's module script
+    // (deferred) brings it to life; a new pick, or a screen that crosses the breakpoint (a phone turned sideways),
+    // puts a new actor on the card the old one stood on.
+    const narrow = matchMedia(heroSize.narrowQuery);
+    const sizeNow = () => String(narrow.matches ? heroSize.narrow : heroSize.wide);
+    actor()?.setAttribute('size', sizeNow());
+    const recast = (c) => {
       const old = actor();
-      if (!c || old?.getAttribute('src')?.endsWith(`/${c.id}.bundle.json`)) return;
       const startOn = old?.platform?.el === cardB ? '.ps-mini--b' : '.ps-mini--a';
       const next = document.createElement('pixel-actor');
-      const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
+      const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: sizeNow(), alt: c.alt, start: startOn, directed: '' };
       for (const [k, v] of Object.entries(attrs)) next.setAttribute(k, v);
       old?.remove();
       stage.append(next);
+    };
+    let picked = cast[0];
+    narrow.addEventListener?.('change', () => recast(picked));
+    segmented('cast', (id) => {
+      const c = cast.find((x) => x.id === id);
+      if (!c || c === picked) return;
+      recast(c);
       who.textContent = c.who;
+      // Every link to the studio follows the pick: "Customize …" under the demo, "Open the studio" further down.
+      for (const a of $$('a[href]')) if (a.getAttribute('href') === picked.studio) a.setAttribute('href', c.studio);
+      $('.ps-customize-label').textContent = c.customize;
+      picked = c;
     });
 
     // "Try a character": go to the demo and put the keyboard on its first control.
@@ -546,18 +585,29 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     });
 
     // ---- it notices you: the scenes are armed by the stage; the page shows the letter and says what happened ----
-    const form = $('#ps-signup'), letter = $('.ps-letter'), status = $('.ps-react-status');
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();   // the scene asks for this too; without the runtime the page must not reload either
+    // The scene's trigger and this listener both hear the click; the stage plays the scene a moment later, once the
+    // letter is showing. Like the stage, the page ignores the button until that scene has ended.
+    const letter = $('.ps-letter'), status = $('.ps-react-status');
+    let posting = false, delivered = false;
+    const clearLetter = () => { letter.hidden = true; letter.style.visibility = ''; };
+    $('#ps-send').addEventListener('click', () => {
+      if (posting) return;
+      posting = true;
+      delivered = false;
       letter.hidden = false;
       status.textContent = 'The gosling is on it.';
     });
     stage.addEventListener('pixel-sceneevent', (e) => {
       if (e.detail?.name !== 'delivered') return;
-      letter.hidden = true;
-      letter.style.visibility = '';
-      form.reset();
-      status.textContent = 'Posted. (Nothing was sent anywhere: this is a demo.)';
+      delivered = true;
+      clearLetter();
+      status.textContent = 'Posted.';
+    });
+    // Cut short (by another scene, say): put things back so the button works again.
+    stage.addEventListener('pixel-sceneend', (e) => {
+      if (e.detail?.scene !== sceneLetterName) return;
+      posting = false;
+      if (!delivered) { clearLetter(); status.textContent = ''; }
     });
     // A fast scroll: once it settles, whoever is on screen calls after the reader (at most every few seconds).
     let hurriedScroll = false, called = -Infinity;
