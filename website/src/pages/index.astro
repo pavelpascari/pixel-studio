@@ -43,16 +43,15 @@ const weights = [
   .sort((a, b) => a.size - b.size)
   .map((s) => ({ ...s, kb: kb(s.size) }));
 const play = '/apps/studio/play.html';
-// The studio opens the character picked in the hero in its simple view (studio/app.js reads ?c=, like the
-// playground); the script below keeps these links on the current pick.
-const studio = (c: string) => `/apps/studio/?c=${c}`;
 
-// The hero's cast; `who` is read out when one is picked.
+// The hero's cast; `who` is read out when one is picked. `studio` opens that character in the studio's simple view
+// (studio/app.js reads ?c=, like the playground): the one place these links are made. Every link to it on the page
+// ("Customize …" under the demo, "Open the studio" further down and in the closing call to action) follows the pick.
 const cast = [
-  { id: 'goose-root', label: 'Goose', alt: 'root, a hacker goose in a hoodie', who: 'Meet root. A goose in a hoodie, never far from a laptop.' },
-  { id: 'fox', label: 'Fox', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
-  { id: 'pip', label: 'Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
-];
+  { id: 'goose-root', label: 'Goose', customize: 'Customize this goose', alt: 'root, a hacker goose in a hoodie', who: 'Meet root. A goose in a hoodie, never far from a laptop.' },
+  { id: 'fox', label: 'Fox', customize: 'Customize Ember', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
+  { id: 'pip', label: 'Pip', customize: 'Customize Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
+].map((c) => ({ ...c, studio: `/apps/studio/?c=${encodeURIComponent(c.id)}` }));
 
 // "Make it yours": goose-root's looks, each an excerpt of packages/pixel-studio/examples/goose-root.json.
 const looks = [
@@ -219,7 +218,10 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         <button type="button" data-move="jump">Jump</button>
         <button type="button" data-move="hide">Hide</button>
       </div>
-      <p class="ps-who" aria-live="polite">{cast[0].who}</p>
+      <div class="ps-demo-foot">
+        <p class="ps-who" aria-live="polite">{cast[0].who}</p>
+        <a class="ps-link ps-customize" href={cast[0].studio}><span class="ps-customize-label">{cast[0].customize}</span> <span aria-hidden="true">→</span></a>
+      </div>
       <p class="ps-still" hidden>Your device asks for reduced motion, so the characters stand still.</p>
     </section>
   </section>
@@ -341,7 +343,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
     </div>
     <div class="ps-key">
       <div class="ps-actions">
-        <a class="site-btn site-btn--primary" href={studio(cast[0].id)}>Open the studio</a>
+        <a class="site-btn site-btn--primary" href={cast[0].studio}>Open the studio</a>
         <a class="site-btn" href={play}>Try the playground</a>
       </div>
       <p>Creating with Claude needs your Anthropic API key. It stays in your browser, and requests go straight to the API. Without a key, the examples, the editor and the playground all work.</p>
@@ -425,7 +427,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
   <CallToAction
     title="Give your project a character"
     body="Free and open source under the MIT licence. Every example on this site is live."
-    primary={{ label: 'Open the studio', href: studio(cast[0].id) }}
+    primary={{ label: 'Open the studio', href: cast[0].studio }}
     secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
@@ -506,10 +508,11 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
     };
     for (const b of $$('[data-move]')) b.addEventListener('click', () => order(moves[b.dataset.move]));
 
+    let picked = cast[0];
     segmented('cast', (id) => {
       const c = cast.find((x) => x.id === id);
+      if (!c || c === picked) return;
       const old = actor();
-      if (!c || old?.getAttribute('src')?.endsWith(`/${c.id}.bundle.json`)) return;
       const startOn = old?.platform?.el === cardB ? '.ps-mini--b' : '.ps-mini--a';
       const next = document.createElement('pixel-actor');
       const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
@@ -517,8 +520,10 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
       old?.remove();
       stage.append(next);
       who.textContent = c.who;
-      // "Open the studio" (here and in the closing call to action) opens the character picked.
-      for (const a of $$('a[href^="/apps/studio/?c="]')) a.href = `/apps/studio/?c=${encodeURIComponent(c.id)}`;
+      // Every link to the studio follows the pick: "Customize …" under the demo, "Open the studio" further down.
+      for (const a of $$('a[href]')) if (a.getAttribute('href') === picked.studio) a.setAttribute('href', c.studio);
+      $('.ps-customize-label').textContent = c.customize;
+      picked = c;
     });
 
     // "Try a character": go to the demo and put the keyboard on its first control.

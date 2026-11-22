@@ -242,6 +242,19 @@ pixel-sprite {
 .ps-moves button:active {
   background: var(--site-accent-soft);
 }
+/* Who it is, and the next step with that character: customizing it in the studio. */
+.ps-demo-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1.25rem;
+}
+.ps-customize {
+  flex: none;
+  padding-block: 0.6rem;   /* a 44 px tall target on touch screens, without moving the line */
+  margin-block: -0.6rem;
+}
 .ps-who,
 .ps-still {
   margin: 0;
