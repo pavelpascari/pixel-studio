@@ -117,6 +117,8 @@ with the next release.
   page.
 - **Website:** this changelog at [/changelog](https://pixel-studio.sh/changelog/), with an RSS feed, linked from the
   footer, the docs and the studio.
+- **Website:** the [blog](https://pixel-studio.sh/blog/) opens with the launch post, the 0.2.0-alpha.3 release notes and
+  deep dives into how the characters move, how they live on a web page and how they stay sharp and small.
 
 ### Changed
 - **Website:** the [examples](https://pixel-studio.sh/gallery/) have posters cropped to the characters, and the site

@@ -178,6 +178,7 @@ and frames over 50 ms during the fling that follows.
   stage at all.
 - The listener cannot wait for a hold to begin: Chrome honours one added mid-gesture, but WebKit (by its design; not tested here) decides when a
   touch starts whether its moves can be cancelled, so on iPhones the page would scroll away under a held character.
+  Pick-up as shipped (the listener registered up front) has been checked by hand on a real iPhone in Safari.
 - The test driver sends each touch point and waits for the browser to acknowledge it, so these are upper bounds
   measured in whole frames; a real finger's swipe overlaps them. The script is not in `scripts/bench/` yet.
 
