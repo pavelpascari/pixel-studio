@@ -15,7 +15,7 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 
 ## In short
 
-- **Download:** 14 KB of script for `<pixel-sprite>`, 39 KB for `<pixel-stage>` (brotli; 16 and 44 KB gzip), plus
+- **Download:** 14 KB of script for `<pixel-sprite>`, 42 KB for `<pixel-stage>` (brotli; 16 and 48 KB gzip), plus
   one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
   resolution, 55 KB for the same goose as `pixel bundle` builds it by default (the side view only), and 14 KB with
   `--res 32` (4 KB with only the three animations a page plays, `--anims idle,waddle,honk`).
@@ -44,9 +44,9 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 <!-- gen:sizes table=runtime -->
 | File | Raw | gzip | brotli |
 |---|--:|--:|--:|
-| `pixel-sprite.js` | 47.3 KB | 15.7 KB | 13.8 KB |
-| `pixel-stage.js` | 89.2 KB | 28.4 KB | 24.8 KB |
-| both (a page with `<pixel-stage>`) | 136.6 KB | 44.1 KB | 38.6 KB |
+| `pixel-sprite.js` | 48.6 KB | 16.1 KB | 14.1 KB |
+| `pixel-stage.js` | 98.5 KB | 31.4 KB | 27.4 KB |
+| both (a page with `<pixel-stage>`) | 147.1 KB | 47.5 KB | 41.5 KB |
 <!-- /gen -->
 
 The example characters as built for the demos (16, 32 and 64 px, every view, every skin: `buildBundle`'s defaults, or
