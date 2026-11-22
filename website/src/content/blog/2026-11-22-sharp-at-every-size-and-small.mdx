@@ -1,0 +1,297 @@
+---
+title: "Sharp at every size, and small: from a JSON character to pixels on a page"
+description: "How Pixel Studio draws a character described in JSON as pixel art at three levels of detail, packs it into one bundle, scales it in whole device pixels so it never blurs, and what all of that costs a page."
+date: 2026-11-22T15:00:00Z
+authors: [pavel-pascari]
+tags: [deep-dive, rendering, performance]
+draft: false
+---
+
+import { MarginNote } from 'astro-project-site/components';
+
+<script type="module" src="/apps/packages/runtime/src/pixel-sprite.js"></script>
+
+<style>{`
+  pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+  pixel-sprite:not(:defined)[size="32"] { width: 32px; height: 32px; }
+  pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
+  pixel-sprite:not(:defined)[size="192"] { width: 192px; height: 192px; }
+  .px-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1.25rem 1rem; margin: 1.5rem 0; }
+  .px-row figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .px-row figcaption { font-size: 0.875rem; line-height: 1.4; text-align: center; max-width: 7rem; }
+  .px-row--wide figcaption { max-width: 9.5rem; }
+  .px-skins { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1.5rem; }
+  .px-skins button { font: inherit; font-size: 0.875rem; padding: 0.3rem 0.8rem; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
+  .px-skins button[aria-pressed="true"] { background: var(--sl-color-text-accent, #b45309); border-color: var(--sl-color-text-accent, #b45309); color: var(--sl-color-black, #fff); }
+`}</style>
+
+Pixel art on the web has two old problems. A drawing made at one size does not give you the others: shrink a 64 px
+character to 16 px and you get mush. And a phone with a device pixel ratio of 2.625 scales almost anything by a
+fraction of a pixel, which leaves a sprite's pixels uneven or blurred. Before you put anything animated on a page,
+you also want to know what it weighs.
+
+Below, Ember the fox travels through [Pixel Studio](/docs/) from JSON to a renderer that draws three levels of
+detail, into a bundle, and onto a page, where `<pixel-sprite>` picks a sheet and scales it. A goose and a beetle
+join in, and the costs come from the [performance page](/docs/reference/performance/).
+
+## A character is a description
+
+The first decision, recorded in `packages/pixel-studio/docs/DESIGN.md`: nobody paints pixels. Language models
+lose their way in long pixel grids (coordinates drift, symmetry breaks, and a 64 × 64 frame is 4,096 cells), and a
+hand-painted grid gives you one size. Models do well with a structured description: shapes on parts, parts on bones,
+materials with a colour and a texture.
+
+```json
+"materials": {
+  "fur":   { "color": "#e0702a", "texture": "fur", "textureStrength": 0.5 },
+  "eye":   { "color": "#1c1630", "flat": true, "outline": false },
+  "glint": { "color": "#ffffff", "flat": true, "outline": false }
+},
+"parts": [
+  { "id": "eye", "bone": "head", "pivot": [72, 42], "shapes": [
+    { "type": "ellipse", "cx": 72, "cy": 42, "rx": 2.6, "ry": 3.6, "material": "eye" },
+    { "type": "circle", "cx": 72.8, "cy": 40.6, "r": 1, "material": "glint", "minDetail": 3 }
+  ] }
+]
+```
+
+That excerpt of the fox (`examples/fox.json`) holds three of its materials and its eye, a part riding the head bone
+of a dog skeleton. All coordinates are canvas units in a 100 × 100 space. The renderer (`src/core/render.js`)
+rasterises each frame at each resolution from scratch: every shape is a signed distance field, and the renderer
+samples each pixel once, at its centre. A rotated arm is a rotated distance field, so nothing smears.
+
+## Three tiers of detail
+
+The renderer never resamples a bitmap, so a 16 px render can be a different drawing from a 64 px one. It has three
+detail tiers, chosen by resolution (`lodForRes`: up to 20 px is 1, up to 40 px is 2, above that 3), and each tier is
+a preset of shader settings:
+
+```js
+export const DETAIL_PRESETS = Object.freeze({
+  1: { tones: 2, texture: 0,   dither: false, outline: 'dark',      innerLines: false, contactShadow: false, ambientBoost: 0.25 },
+  2: { tones: 3, texture: 0.6, dither: false, outline: 'selective', innerLines: false, contactShadow: true,  ambientBoost: 0 },
+  3: { tones: 5, texture: 1,   dither: true,  outline: 'selective', innerLines: true,  contactShadow: true,  ambientBoost: 0 },
+});
+```
+
+Shapes opt in or out with `minDetail` and `maxDetail`. The fox's eye glint exists at tier 3 alone: at 16 px a
+one-unit glint would claim a whole pixel and read as a stray mark. Below, the fox appears three times at 128 CSS px,
+with the `res` attribute forcing each tier:
+
+<div class="px-row px-row--wide" role="group" aria-label="The fox drawn at three levels of detail, shown at the same size">
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="idle" size="128" res="16" alt="The fox drawn at 16 px, with two tones per colour and no texture"></pixel-sprite>
+    <figcaption>16 px, tier 1: two tones, no texture (×8)</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="idle" size="128" res="32" alt="The fox drawn at 32 px, three tones and some fur texture"></pixel-sprite>
+    <figcaption>32 px, tier 2: three tones, fur at 60% (×4)</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="idle" size="128" res="64" alt="The fox drawn at 64 px, five tones, dithering, full fur texture and the eye glint"></pixel-sprite>
+    <figcaption>64 px, tier 3: five tones, dither, glint (×2)</figcaption>
+  </figure>
+</div>
+
+Two smaller rules protect the small tiers. The renderer widens a shape thinner than a pixel until it claims the
+nearest pixel centre, so a thin eye still shows at 16 px. It also snaps part motion to whole pixels at each
+resolution: an offset under 0.35 px becomes zero, and anything larger rounds to at least one pixel.<MarginNote kind="field" numbered>Snapping can erase a gentle idle bob that reads at 64 px once the same fox is 16 px. The spec guide calls that intentional and tells authors to give any motion that must read at icon size at least 6 units.</MarginNote>
+
+## Light, tones, dither and outlines
+
+For each pixel, the shader takes a normal from the gradient of the distance field, lights it from the top left by
+default, and quantises the result into a short ramp of tones built around the material's colour. `buildRamp` in
+`color.js` hue-shifts each ramp, the classic pixel-art trick: shadows drift towards blue-violet, highlights towards
+yellow. Then, in order: textures add a brightness offset, `shine` can push a pixel to the top tone, and at tier 3 a
+4 × 4 Bayer matrix dithers values that fall between two tones.
+
+The shader evaluates textures (`fur`, `cloth`, `scales`, `metal` and five more, in `textures.js`) and the dither
+pattern in each part's own pixel coordinates, so fur sticks to a moving leg instead of swimming across it. Lines come
+last: an inner line where a front part overlaps a back one (tier 3), and an outline around the silhouette, in a dark
+colour or, with `selective`, a darkened tone of the neighbouring material.
+
+## The bundle: sheets, and skins as small changes
+
+`buildBundle` in `src/core/bundle.js` renders one sheet per resolution (one row per animation, one column per frame)
+and writes everything a page needs into one JSON file: the animation table, attachment points, the foot line, any
+state machine, and the sheets as PNG data URLs. It writes sheets with at most 256 colours as indexed PNGs (`png.js`);
+the commit that introduced them measured those at 35 to 45% smaller.
+
+Skins cost the most. A skin is a patch to the spec (a party hat, a team colour), and the obvious bundle holds a second
+full set of sheets per skin. `skinDelta` instead compares the skin's sheet with the default one, swaps each default
+colour for the colour it most often becomes, and keeps an overlay of the pixels that still differ:
+
+```js
+const delta = deltas && skinDelta(sheets.get(res), sheet);
+if (delta) {
+  const overlay = delta.overlay && await encode(sheet.width, sheet.height, delta.overlay);
+  const size = JSON.stringify(delta.recolor).length + (overlay?.length ?? 0);
+  if (size < full.length) { /* store recolor + overlay, no image of its own */ }
+}
+```
+
+The bundler keeps the delta only when it comes out smaller. An overlay can only draw over the default sheet, so a skin
+that erases a pixel falls back to a full sheet. In the demo build of the hacker goose, `party` is an overlay alone
+(the hat), and `redteam` is four to eight colour swaps plus a small overlay per resolution. The first time a page
+shows a skin, the runtime rebuilds its sheet: it swaps the colours, then copies the overlay pixels over the default
+sheet. The [runtime docs](/docs/reference/runtime/#skins) put the two skins at about 14 KB of a 161 KB bundle. The commit that
+introduced deltas, indexed PNGs and optional views took that goose's bundle from 609 KB to 156 KB.
+
+<pixel-sprite id="px-skin-goose" src="/apps/demo/assets/goose-root.bundle.json" anim="idle" states="off" size="128" loading="lazy" alt="root, a goose in a hoodie, in its default look"></pixel-sprite>
+
+<div class="px-skins" role="group" aria-label="The goose's skin">
+  <button type="button" data-skin="" aria-pressed="true">Default</button>
+  <button type="button" data-skin="party" aria-pressed="false">party</button>
+  <button type="button" data-skin="redteam" aria-pressed="false">redteam</button>
+</div>
+
+<script type="module">{`
+  const goose = document.getElementById('px-skin-goose');
+  const alts = { '': 'in its default look', party: 'in a party hat', redteam: 'in a red hoodie' };
+  for (const button of document.querySelectorAll('.px-skins button')) {
+    button.addEventListener('click', () => {
+      const skin = button.dataset.skin;
+      if (skin) goose.setAttribute('skin', skin); else goose.removeAttribute('skin');
+      goose.setAttribute('alt', 'root, a goose ' + alts[skin]);
+      for (const b of document.querySelectorAll('.px-skins button')) b.setAttribute('aria-pressed', String(b === button));
+    });
+  }
+`}</script>
+
+Switching the `skin` attribute swaps the sheet without restarting the animation.
+
+## Picking a sheet, then scaling it in device pixels
+
+On the page, `<pixel-sprite>` (`packages/runtime/src/pixel-sprite.js`) picks one sheet from the bundle, the way
+`srcset` picks an image, but it decides from the CSS `size` alone. It wants each sprite pixel to cover a whole block
+of at least 2 × 2 CSS pixels, so the sprite reads as pixel art:
+
+```js
+export function pickVariant(variants, size) {
+  const scored = variants.map((v) => {
+    const k = Math.max(1, Math.round(size / v.frameH));
+    return { v, k, err: Math.abs(v.frameH * k - size) / size };
+  });
+  const good = scored.filter((c) => c.k >= 2 && c.err <= 0.2);
+  if (good.length) return good.reduce((a, b) => (b.v.res > a.v.res ? b : a)).v;
+  // otherwise the closest fit, preferring k ≥ 2
+}
+```
+
+Among the sheets that land within 20% of `size` at a scale of 2 or more, the most detailed wins. The same fox at four sizes:
+
+<div class="px-row" role="group" aria-label="The same fox at four sizes">
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="trot" size="32" alt="The fox trotting at 32 px"></pixel-sprite>
+    <figcaption>size 32: 16 px sheet ×2</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="trot" size="64" alt="The fox trotting at 64 px"></pixel-sprite>
+    <figcaption>size 64: 32 px sheet ×2</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="trot" size="128" alt="The fox trotting at 128 px"></pixel-sprite>
+    <figcaption>size 128: 64 px sheet ×2</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="trot" size="192" alt="The fox trotting at 192 px"></pixel-sprite>
+    <figcaption>size 192: 64 px sheet ×3</figcaption>
+  </figure>
+</div>
+
+The screen's device pixel ratio plays no part in that choice. It sets the second step, the scale. A whole-number
+scale in CSS pixels becomes a fractional one in device pixels on most phones, so `deviceScale` rounds in device
+pixels instead: `m = round(k × devicePixelRatio)`. The canvas gets `frameW·m × frameH·m` real pixels, drawn with
+smoothing off, and a CSS size of that divided by the ratio. At a ratio of 2.625 and `size="128"`, `m` is 5: a
+320 × 320 canvas shown at 121.9 CSS px. The sprite comes out a little smaller than you asked for, and each of its
+pixels covers 5 × 5 screen pixels. The element lays itself out again when the ratio changes, on zoom or when you
+drag the window to another screen.<MarginNote kind="note">At the same `size`, a 3× phone and a 1× laptop show the same sheet. The phone gives each sprite pixel more screen pixels.</MarginNote>
+
+## What it costs a page
+
+The [performance page](/docs/reference/performance/) has the full tables. In short:
+
+- **Script:** `pixel-sprite.js` is 14.1 KB with brotli (16.1 KB gzip). It ships as commented, unminified source.
+- **Characters:** one bundle each, from 9.1 KB (the robot) to 105.4 KB (a goose with every view and resolution),
+  brotli.
+- **Loading:** no measurable change to LCP or TBT on Lighthouse's throttled mobile profile.
+- **Playing:** under 0.1 ms of main thread per frame for one sprite, 0.43 ms for fifty. Off-screen, paused and
+  reduced-motion sprites leave the frame loop.
+
+A bundle grows with the detail it carries, and texture costs more than frames. Moss, a beetle, has 12 animations
+and 120 frames, all in flat colours (each of its materials is `flat`, one exact colour): 9.8 KB gzip. The fox has 9
+animations and 78 frames, in fur: 43.6 KB.
+
+<div class="px-row px-row--wide" role="group" aria-label="Two characters and what their files weigh">
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/moss.bundle.json" anim="walk" size="128" loading="lazy" alt="Moss, a green beetle, walking"></pixel-sprite>
+    <figcaption>Moss: 120 frames, flat colour, 9.8 KB gzip</figcaption>
+  </figure>
+  <figure>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="walk" size="128" loading="lazy" alt="The fox walking"></pixel-sprite>
+    <figcaption>The fox: 78 frames, fur, 43.6 KB gzip</figcaption>
+  </figure>
+</div>
+
+Most of a bundle is its largest sheet, and PNG data is already compressed. Gzip and brotli save 30 to 45% on a
+bundle, most of it base64 overhead, against the two thirds they save on script.
+
+## Making a bundle smaller
+
+`pixel bundle` has three knobs. `--res` keeps only the resolutions you show (a sprite at `size="64"` uses the 32 px
+sheet). `--anims` keeps only the animations a page plays, plus their transition clips; `--anims stage` keeps what a
+`<pixel-stage>` actor needs. `--views` adds the front and back views a stage uses to turn a character towards the
+reader. For the hacker goose, gzip:
+
+| `pixel bundle goose-root.json` with | Animations | gzip |
+|---|--:|--:|
+| `--views all` (as built for the demos) | 42 | 104.9 KB |
+| (default: side view only) | 17 | 56.8 KB |
+| `--anims idle,waddle,honk` | 5 | 16.4 KB |
+| `--res 32` | 17 | 15.0 KB |
+| `--res 32 --anims idle,waddle,honk` | 5 | 4.6 KB |
+
+The default changed on the way.<MarginNote kind="field" numbered>Leaving views out used to break a bundle whose state machine had a node that played one: the runtime rejected it. `--anims` brought `pruneStates`, which drops nodes whose animation is gone, and that fixed the older bug too.</MarginNote>
+`pixel bundle` used to ship every view, which doubled a goose for pages that never turn it. It now ships the side
+view unless you ask for more, a breaking change for stage pages that the changelog calls out. The landing page tried
+the same idea from the other side: a side-view-only copy of the gosling took the page's bundles from 285.2 to
+244.4 KB gzip. Lean copies of the hero's characters would have cost more than they saved: other sections of the page
+already download the full bundles, and the runtime fetches each URL once.
+
+## Loading late, and holding the page still
+
+By default a sprite fetches and decodes as soon as it enters the document, even far below the fold. With
+`loading="lazy"` it reserves its box and waits until a second shared `IntersectionObserver`, with a one-viewport
+margin, sees it come near. Until then it costs no request, download or decoded sheet. The goose and the two
+characters above load late. Stage actors never do: the stage needs their size to place them.
+
+The other cost was layout shift. Before its script runs, `<pixel-sprite>` is an unknown inline element with no size.
+When it upgrades, it takes its box and pushes the content below down: CLS 0.031 for one sprite. Page CSS is the only
+thing that acts before the script, so the fix is a rule with one line per `size` (this page uses it):
+
+```css
+pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
+```
+
+With the rule, a `layout-shift` observer in Chrome measured 0 at device pixel ratios of 1, 2 and 3, but Lighthouse
+reported 0.003. Its emulated phone has a ratio of 1.75, where whole device pixels make a 64 px fox 73 px tall once
+loaded, so the box grows a little after all.<MarginNote kind="field" numbered>`vertical-align: bottom` is there for the same reason: without it, a sprite in a line of text still shifted the line by 0.002 when the script ran.</MarginNote>
+That last 0.003 is the whole-device-pixel rounding itself. Removing it means changing how the runtime rounds the scale on such screens, which is on the to-do list.
+
+## Where the numbers come from
+
+Each number above comes from a script in `scripts/bench/`. `sizes.mjs` uses Node alone: it reads the runtime and
+the demo bundles and compresses them with gzip at level 9 and brotli at quality 11, as static hosts do. The website
+build generates its tables into the performance page and fails when they no longer match the files, so the page
+cannot go stale unnoticed.
+
+`browser.mjs` serves a small test page and drives Chrome with Lighthouse and Playwright. Lighthouse ran twice per
+page, once with its default simulated throttling and once with throttling applied in the browser, and the two
+disagree. For a stage with three actors, simulated LCP was 1,085 ms and applied 700 ms. The simulation counts
+requests that start before the first paint (here the two runtime files) as if they delayed it, although a module
+script does not block rendering. A Lighthouse report shows the simulated number by default, so the performance page
+gives both.
+
+The numbers are medians of five runs on one laptop in headless Chrome. The runs did not cover Firefox, Safari or real
+phones. The [performance page](/docs/reference/performance/#how-it-was-measured) says how to rerun everything.
