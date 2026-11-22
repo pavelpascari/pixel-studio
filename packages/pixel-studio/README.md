@@ -89,6 +89,7 @@ Start with [docs/getting-started.md](docs/getting-started.md), or read everythin
 | [docs/figures.md](docs/figures.md) | Figures, motion models, follow-through, writing a new figure. |
 | [docs/runtime.md](docs/runtime.md) | `<pixel-sprite>`, the bundle format, events, attachment points, state machines, skins, moving sprites on a page. |
 | [docs/stage.md](docs/stage.md) | `<pixel-stage>`: characters that walk, jump, climb, sit and hide on a real page. |
+| [docs/performance.md](docs/performance.md) | What characters cost a page: sizes, load impact, time per frame, memory, measured. |
 | [docs/cli.md](docs/cli.md) | Every CLI command and flag. |
 | [docs/api.md](docs/api.md) | The JavaScript API. |
 | [docs/playground.md](docs/playground.md) | The playground page: a character set up entirely by its URL, for people and browser agents. |

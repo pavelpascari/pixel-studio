@@ -520,6 +520,53 @@ pixel-sprite {
 
 /* ---------- details ---------- */
 
+/* "Small": characters with different levels of detail, smallest file first, each with its size. */
+.ps-weight {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1.5rem clamp(1.25rem, 4vw, 3rem);
+  align-items: center;
+  margin-bottom: 3rem;
+}
+.ps-weight-script {
+  font-size: 0.95rem;
+}
+.ps-weight-script strong {
+  color: var(--site-text);
+}
+.ps-ladder {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 1.25rem 0.75rem;
+  list-style: none;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-bg);
+}
+.ps-ladder li {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.3rem;
+  text-align: center;
+}
+.ps-ladder strong {
+  font-family: var(--site-font-mono);
+  font-size: 1.15rem;
+  color: var(--site-accent-strong);
+}
+.ps-ladder span {
+  color: var(--site-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.ps-ladder code {
+  font-size: 0.72rem;
+  color: var(--site-muted);
+}
+
 .ps-detail {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
@@ -655,8 +702,13 @@ pixel-sprite {
   .ps-react {
     gap: 2rem;
   }
-  .ps-react {
+  .ps-react,
+  .ps-weight {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .ps-ladder {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 1.25rem;
   }
   .ps-detail {
     margin-bottom: 3rem;

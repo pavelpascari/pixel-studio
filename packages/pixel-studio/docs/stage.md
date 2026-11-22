@@ -385,6 +385,8 @@ goose.addEventListener('pixel-burst', (e) => { if (e.detail.count >= 8) goose.sa
 - With `prefers-reduced-motion: reduce` the characters are placed and stand still; the setting is watched live.
 - The characters' layer is `aria-hidden`; the button is not.
 - Checked in desktop Chromium and in iOS 18.1 Safari (iPhone 16 simulator).
+- What a stage costs (the two runtime files, each actor's bundle, main-thread time per frame while they walk, memory)
+  is measured in [performance.md](performance.md), with ways to make bundles smaller.
 
 ## Limits
 

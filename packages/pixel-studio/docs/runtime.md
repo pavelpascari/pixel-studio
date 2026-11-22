@@ -381,6 +381,7 @@ To keep the pixels aligned when you move a sprite, round positions to device pix
 - **Reduced motion.** While `prefers-reduced-motion: reduce` matches, no sprite steps through frames: looping animations show frame 0. One-shots and non-looping animations are not left hanging: a one-shot shows its middle frame, a non-looping animation its last frame, and after the animation's nominal duration (`frames / fps`) the element fires `pixel-end` and moves on as usual. The setting is watched live: turning it on or off takes effect immediately.
 - **Off-screen.** One shared `IntersectionObserver` (with a 50 px margin, so sprites start just before they scroll in) takes sprites out of the frame loop while they are off-screen. They resume from the same frame. A one-shot started off-screen still ends (and fires `pixel-end`) after its duration, as under reduced motion.
 - **Removed from the document.** The sprite leaves the frame loop and the observer. If it is put back (for example, moved to another container), it resumes where it was instead of reloading.
+- **Loading is not deferred.** Off-screen sprites stop drawing, but a sprite fetches its bundle and decodes its sheet as soon as it is connected, even far below the fold. [performance.md](performance.md) has the measured costs (download, time per frame, memory) and how to load a character only when it comes near the viewport.
 
 ## Touch screens
 
