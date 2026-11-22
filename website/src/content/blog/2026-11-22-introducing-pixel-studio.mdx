@@ -1,0 +1,162 @@
+---
+title: Introducing Pixel Studio
+description: "Small animated pixel characters for the web. Describe one as JSON, or ask Claude to; the engine draws it at every size, and one tag puts it on your page."
+date: 2026-11-22
+authors: [pavel-pascari]
+tags: [announcement]
+draft: true
+---
+
+import { MarginNote } from 'astro-project-site/components';
+
+{/*
+  The characters in this post are live: <pixel-sprite> elements playing the demo bundles from the /apps/ mirror,
+  with the runtime from packages/runtime/src/ (the same files the home page plays). The script, the pause button's
+  handler and the few styles are at the end of the post.
+*/}
+
+Pixel Studio makes small animated pixel characters for websites. You describe a character, the engine draws it as
+pixel art at three sizes, and one HTML element plays it on your page. These six are running in this post:
+
+<figure class="ps-post-figure">
+  <div class="ps-post-row">
+    <pixel-sprite src="/apps/demo/assets/goose-root.bundle.json" size="64" alt="root, a hacker goose in a hoodie: tap it and it honks"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" size="64" click-anim="leap" alt="Ember the fox"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/pip.bundle.json" size="64" click-anim="wave" alt="Pip the adventurer"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/moss.bundle.json" size="64" anim="think" click-anim="wave" alt="Moss, thinking"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/slime.bundle.json" size="64" click-anim="hop" alt="Gloop the slime"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/robot.bundle.json" size="64" click-anim="wave" alt="Bolt the robot"></pixel-sprite>
+  </div>
+  <figcaption>The example characters that ship with the engine. Tap one: the goose honks, and if you tap it fast, it panics.</figcaption>
+</figure>
+
+<p class="ps-post-pause"><button type="button" class="site-btn" data-ps-pause>Pause characters</button></p>
+
+Each is one file, and this page plays all six with one script.
+
+## A character is a description
+
+You write a Pixel Studio character as a JSON spec: shapes on a skeleton, the materials they are made of, and the
+animations it plays. The engine turns that into pixel art at 16, 32 and 64 px, with shading, texture, dithering and
+outlines suited to each size. At 16 px it keeps the silhouette, and at 64 px it draws the fur.
+
+<figure class="ps-post-figure">
+  <div class="ps-post-row">
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" size="128" res="16" alt="Ember the fox, drawn at 16 px and enlarged"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" size="128" res="32" alt="Ember the fox, drawn at 32 px and enlarged"></pixel-sprite>
+    <pixel-sprite src="/apps/demo/assets/fox.bundle.json" size="128" res="64" alt="Ember the fox, drawn at 64 px and enlarged"></pixel-sprite>
+  </div>
+  <figcaption>One spec, three levels of detail: the same fox drawn at 16, 32 and 64 px.</figcaption>
+</figure>
+
+A spec can stand on a figure (a goose, a human, a dog, a chibi or a blob), and the figure brings most of the
+motion: its motion models make the character walk, run, jump and climb. Feet stay planted, heads stay steady and
+tails follow through, without a keyframe from you.<MarginNote kind="field" numbered>The fox's gallop follows measurements from Muybridge's photographs of running hounds. Each source of motion data is public domain or openly licensed, and the repository credits each one.</MarginNote>
+
+A new character can take a few lines. This file is the whole of Marigold, a new golden goose:
+
+```json
+{
+  "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
+  "name": "Marigold",
+  "materials": {
+    "feather": { "color": "#e8b04a" },
+    "beak": { "color": "#d94b32" }
+  }
+}
+```
+
+Marigold inherits all of the base goose's motions, from idle and waddle to flap and fly. A character can also carry
+other looks, called skins: root, the goose in the hoodie, has a party hat and a red-team colour scheme in the same
+file.
+
+## Written so an agent can write it
+
+The tagline says "agents describe characters". A language model is good at writing a precise description and poor
+at placing pixels, so Pixel Studio asks it for the description. The spec reference reads as a brief for an agent.
+The validator answers a mistake with a JSON path and a did-you-mean, and `pixel ascii` prints a character as text
+for an agent that can't see images.
+
+In the studio, you describe a character in a sentence. Claude writes the spec, the engine draws it in each
+animation at each size, and Claude looks at the drawing and revises the spec. You ask for changes in plain words
+("make the antenna blink") and the loop runs again. Once the character looks right, you export one bundle file.<MarginNote kind="field" numbered>If a spec from Claude fails validation, the studio sends the errors back for Claude to fix, up to twice, before it draws anything. The first thing you see is a drawn character.</MarginNote>
+
+Create with Claude runs on your own Anthropic API key. The key stays in your browser, which sends requests to the
+API with no server in between. Without a key you still get the examples, the editor and the playground, and you can
+edit the JSON yourself.
+
+## One tag on the page
+
+```html
+<script type="module" src="pixel-sprite.js"></script>
+
+<pixel-sprite src="goose-root.bundle.json"
+  size="128" skin="party"
+  alt="root, a goose in a party hat"></pixel-sprite>
+```
+
+<figure class="ps-post-figure">
+  <div class="ps-post-row">
+    <pixel-sprite src="/apps/demo/assets/goose-root.bundle.json" size="128" skin="party" alt="root, a goose in a party hat: hover or tap it"></pixel-sprite>
+  </div>
+  <figcaption>The snippet above, running: hover and root goes back to hacking, tap and it honks.</figcaption>
+</figure>
+
+The behaviour ships in the bundle. This goose carries a small state machine, so your page needs no code for the
+honk. The script weighs 14 KB over the wire, with no dependencies and no build step. The smaller example characters
+weigh 9 to 43 KB each, and a goose with front and back views and two skins about 100 KB.
+
+`<pixel-sprite>` stops drawing when it is off-screen and shows a still frame to readers who ask for reduced motion.
+You can pause it, and screen readers read out its `alt`.
+
+## Characters that live on the page
+
+A sprite plays where you put it. With `<pixel-stage>`, characters move around your layout: mark elements as
+surfaces, and the characters walk along their top edges, jump between them, sit on an edge and hide behind anything
+you mark as a hiding spot. Clicks pass through them to the page.<MarginNote kind="field" label="The goose">I walk on your cards and leave your buttons alone. Mostly.</MarginNote>
+
+They react to you as well: tap one and it startles and runs off, scroll fast and it calls after you. You can also
+give them a job. You write a scene as a short list of steps, in data with no animation code, and a click on any
+element starts it. On the [home page](/), a gosling picks up a letter, hurries off to post it and comes back.
+
+## Where it stands
+
+Pixel Studio is an alpha, open source under the MIT licence. It ships as two npm packages that share one version
+and release together:
+
+- **`@pixel-studio/runtime`** plays characters: `<pixel-sprite>` and `<pixel-stage>`, all a website needs.
+- **`@pixel-studio/core`** makes them: the engine, the `pixel` command, the figures, the example characters and the
+  reference docs.
+
+The spec format may change before 1.0. The [changelog](/changelog/) lists each change and what you need to
+update. The [guide](/docs/guide/) shows each feature running next to its code, and
+[getting started](/docs/reference/getting-started/) takes you from an empty folder to your own goose on a page in
+five steps. The source, issues and discussions are on [GitHub](https://github.com/pavelpascari/pixel-studio).
+
+## Try one
+
+Start on the [home page](/): pick a goose, a fox or Pip, make it walk, jump and hide on a small page, then follow
+"Customize" into the studio and make it yours.
+
+<style>{`
+  .ps-post-figure { margin: 1.75rem 0; text-align: center; }
+  .ps-post-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.5rem 0.75rem; }
+  .ps-post-figure figcaption { margin-top: 0.6rem; font-size: 0.9rem; color: var(--site-muted); }
+  .ps-post-pause { text-align: center; }
+`}</style>
+
+<script type="module" src="/apps/packages/runtime/src/pixel-sprite.js"></script>
+<script>{`
+  (() => {
+    // One control for every character in the post (WCAG 2.2.2). Its label says what it will do: "Pause
+    // characters" while they play, "Play characters" while they are paused.
+    const button = document.querySelector('[data-ps-pause]');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      const paused = !button.hasAttribute('data-paused');
+      button.toggleAttribute('data-paused', paused);
+      button.textContent = paused ? 'Play characters' : 'Pause characters';
+      for (const sprite of document.querySelectorAll('pixel-sprite')) sprite.toggleAttribute('paused', paused);
+    });
+  })();
+`}</script>
