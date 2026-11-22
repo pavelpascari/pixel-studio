@@ -1,0 +1,249 @@
+---
+title: "Planted feet: how a pixel fox walks without sliding"
+description: "Pixel Studio characters stand on skeletons with procedural motion: feet pinned by inverse kinematics, a speed in pixels per second, and a gallop timed from Muybridge's photographs of racing hounds."
+date: 2026-11-23
+authors: [pavel-pascari]
+tags: [deep-dive, motion]
+draft: true
+---
+
+import { MarginNote } from 'astro-project-site/components';
+
+Put a walking sprite on a web page and move it from left to right, and you will usually see it skate. The legs say
+one speed, the movement says another, and the feet slide over the ground like socks on a polished floor. Animators
+fix this by hand, frame by frame. Pixel Studio has no frames to fix: a character is a JSON description, and its walk
+is computed. So the engine has to get the feet right by construction, and tell the page exactly how fast to move the
+sprite.
+
+This post follows one character, Ember the fox, from a skeleton to a gallop on this page.
+
+<figure class="pf-demo">
+  <div class="pf-lane"><pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="walk" size="96" states="off" alt="Ember the fox walking"></pixel-sprite><div class="pf-ground"></div><span class="pf-out" data-label="walk"></span></div>
+  <div class="pf-lane"><pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="trot" size="96" states="off" alt="Ember the fox trotting"></pixel-sprite><div class="pf-ground"></div><span class="pf-out" data-label="trot"></span></div>
+  <div class="pf-lane"><pixel-sprite src="/apps/demo/assets/fox.bundle.json" anim="gallop" size="96" states="off" alt="Ember the fox galloping"></pixel-sprite><div class="pf-ground"></div><span class="pf-out" data-label="gallop"></span></div>
+  <div class="pf-lane"><pixel-sprite src="/apps/demo/assets/goose-kiddie.bundle.json" anim="waddle" size="96" states="off" alt="A gosling in a cap waddling"></pixel-sprite><div class="pf-ground"></div><span class="pf-out" data-label="waddle"></span></div>
+  <figcaption>
+    Each ground strip scrolls at the speed the bundle asks for, so a planted foot should stay on its tick until it
+    lifts. <label>Playback rate <select id="pf-rate"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+  </figcaption>
+</figure>
+
+## A skeleton with roles
+
+Ember is dressed on a **figure**, a reusable skeleton in `figures/dog.json`. Bones are dots and lines in a 100×100
+canvas, drawn in a rest pose standing on the ground. A `rig` then says what each bone is for:
+
+```json title="figures/dog.json (abridged)"
+{"id": "thighHindNear", "parent": "body", "from": [33, 60], "to": [39, 71], "limits": [-60, 45]},
+...
+"rig": {
+  "root": "body",
+  "legs": [
+    {"chain": ["thighHindNear", "shinHindNear", "hockHindNear", "pawHindNear"], "phase": 0, "group": "hind"},
+    {"chain": ["armForeNear", "forearmForeNear", "pasternForeNear", "pawForeNear"], "phase": 0.25, "group": "fore"},
+    ...
+  ],
+  "neck": ["neck"], "head": "head", "tail": ["tail", "tail2"]
+}
+```
+
+The character spec draws shapes on those bones and asks for a motion by name, `{"motion": "gallop"}`. The motion
+models in `src/core/motion.js` then turn the figure's parameters into ordinary keyframe tracks. Nothing downstream
+knows a figure was involved: by the time the spec is validated, the gallop is plain arrays of angles.
+
+## Walking on a treadmill
+
+The central decision is that the character never leaves its canvas. It walks on a treadmill: the ground moves
+backwards under it, and the page moves the sprite. For every sample of the cycle, each leg works out where its toe
+should be. While the foot is planted (the first `duty` fraction of its cycle) the toe slides backwards at a constant
+rate, exactly as fast as the treadmill:
+
+```js title="src/core/motion.js"
+if (s < duty) {
+  const k = s / duty;
+  return { toe: [l.toe0[0] + stride * (0.5 - k), l.toe0[1]], /* … */ };
+}
+const k = (s - duty) / (1 - duty);
+const lift = (m.lift ?? 3) * Math.sin(Math.PI * Math.pow(k, 0.75));
+return { toe: [l.toe0[0] + stride * (-0.5 + minJerk(k)), l.toe0[1] - lift], /* … */ };
+```
+
+In the air the foot travels forward on a minimum-jerk curve (`10k³ − 15k⁴ + 6k⁵`), which starts and stops gently, and
+lifts on a sine skewed toward the start of the swing. Once the toe targets are known, the speed falls out of the
+arithmetic: a planted foot sweeps `stride` units in `duty × cycle time` seconds, so
+
+```js
+const speed = stride / (duty * cycleT);   // canvas units per second
+```
+
+Ember's walk sweeps 27 units in 0.65 of a 0.8 s cycle: 51.92 units per second, which is the number baked into the
+bundle.
+
+## Solving the body around the feet
+
+Toes on targets are only the start. Each sample is solved from scratch, in this order:
+
+1. **Hips.** Each leg group (`hind`, `fore`) raises or lowers its end of the body with the support its planted feet
+   give. A walk is highest mid-stance, like vaulting over a stiff leg; a run (`bounce: "spring"`) is lowest
+   mid-stance. With two groups, the difference becomes pitch, so the fox's back rocks as its front and hind legs
+   alternate.
+2. **Reach.** If a leg cannot reach its toe at `reach` (0.97) of its length, that group's hips are lowered just enough,
+   up to three times. Wide steps bend the body down, as they do in life.
+3. **Head.** The head is pulled back toward its rest position by `steady`, and the neck is solved to put it there.
+   That is why the fox's head glides while its body bobs.
+4. **Legs.** Two-bone legs (the goose, the human) are solved exactly with the law of cosines, with the knee kept on
+   the side it bends to in the rest pose. The dog's four-bone legs use CCD, an iterative solver that turns one joint at
+   a time toward the target, for 64 iterations within each joint's `limits`.
+
+<MarginNote kind="field" numbered>CCD can wedge a leg against a joint limit and stop short. The fix in `motion.js` is blunt: if the toe misses by more than 0.05 units, try again from a seed with every joint bent to the middle of its limits, and keep whichever result is closer.</MarginNote>
+The whole cycle runs twice and only the second pass is recorded. CCD starts from its previous answer, so the first pass
+is a warm-up that makes the recorded loop end where it begins.
+
+When a parameter asks for the impossible, say a stride longer than the legs, expansion does not fail quietly. It
+warns with the leg and frame: `thighHindNear: foot misses its mark by 0.8 units at frame 3.25`. The test suite runs
+every figure in `figures/` and fails on any such miss.
+
+## From canvas units to CSS pixels
+
+A bundle stores speed in canvas units (the figures' canvas is 100 units tall). The runtime converts to CSS pixels on
+request, using the height the sprite is actually drawn at:
+
+```js title="packages/runtime/src/pixel-sprite.js"
+pxPerSecond(name = this._anim) {
+  const a = this._bundle?.animations[name];
+  if (!a?.speed || !this._css) return null;
+  return (a.speed * this._css.height) / (this._bundle.size?.[1] ?? 100);
+}
+```
+
+`_css.height` is not always the `size` attribute: the runtime scales each sprite pixel to a whole number of device
+pixels, so a sprite may not draw at exactly the size requested. Converting from the drawn height keeps the feet
+honest anyway.
+
+Speed also has to follow playback speed. A sprite has a `rate` attribute, and `effectiveRate` multiplies in the current
+state-machine node's rate and the burst of speed it gets from rapid clicks. `<pixel-stage>`, which walks characters around a
+page, scales every movement by it:
+
+```js title="packages/runtime/src/pixel-stage.js"
+// Faster playback (a boost, a burst) means proportionally faster movement: the feet stay planted.
+return ((name && this.sprite.pxPerSecond(name)) || this.H * (role === 'run' ? 1.4 : 0.5)) * this.sprite.effectiveRate;
+```
+
+The rate control under the demo above does the same, and the strips speed up with the legs.
+
+The speed is a contract, not a by-product of the solver. Moss, the beetle, is keyed by hand on a 16-cell grid, and
+declares its own: a foot moves one cell (6.25 units) back over four frames at 14 fps, so its walk says
+`"speed": 21.875`. Pip, below, stands on a front-view figure. Walking toward the viewer has no sideways travel, so
+its `stride` is forced to 0 and its bundle has no speed at all.
+
+<figure class="pf-demo pf-row">
+  <pixel-sprite src="/apps/demo/assets/pip.bundle.json" anim="run" size="96" states="off" alt="Pip the adventurer running toward the viewer"></pixel-sprite>
+  <pixel-sprite src="/apps/demo/assets/moss.bundle.json" anim="climb" size="96" states="off" alt="Moss the beetle climbing"></pixel-sprite>
+  <figcaption>Pip runs in place (front view, no speed). Moss climbs: a <code>climb</code> has an upward
+  <code>speedY</code> and a <code>wall</code> line where its feet meet the wall.</figcaption>
+</figure>
+
+## A gallop measured from 1887
+
+Ember's walk and trot are tuned from published numbers: the cycle time, duty factor and stride fits in Maes et al.
+(2008), which measured five dogs from 0.4 to 10 m/s. The gallop comes from older photographs. In 1887 Eadweard
+Muybridge published *Animal Locomotion*, sequences of exposures with the interval between them recorded by a
+chronograph. The Boston Public Library's scans carry "No known copyright restrictions".
+
+<svg viewBox="0 0 560 204" role="img" aria-labelledby="pf-ff-t pf-ff-d" class="pf-ff"><title id="pf-ff-t">When each of the fox's feet is on the ground, per gait</title><desc id="pf-ff-d">One cycle of each dog.json gait, from 0 to 1; a filled bar means the foot is planted. Walk, duty 0.65: feet land at 0, 0.16, 0.5 and 0.66 of the cycle, so two or three are always down. Trot, duty 0.46: diagonal pairs land together at 0 and 0.5, with a short flight between. Gallop, duty 0.22: the hinds land at 0 and 0.12, the fores at 0.5 and 0.62, with two flights per cycle.</desc><line x1="150" x2="150" y1="0" y2="186" class="pf-t"/><line x1="250" x2="250" y1="0" y2="186" class="pf-t"/><line x1="350" x2="350" y1="0" y2="186" class="pf-t"/><line x1="450" x2="450" y1="0" y2="186" class="pf-t"/><line x1="550" x2="550" y1="0" y2="186" class="pf-t"/><text x="0" y="13" class="pf-g">walk</text><text x="0" y="27" class="pf-s">duty 0.65</text><text x="144" y="13" text-anchor="end" class="pf-s">hind near</text><rect x="150" y="4" width="400" height="10" class="pf-bg"/><rect x="150.0" y="4" width="260.0" height="10" class="pf-on"/><text x="144" y="26" text-anchor="end" class="pf-s">fore near</text><rect x="150" y="17" width="400" height="10" class="pf-bg"/><rect x="214.0" y="17" width="260.0" height="10" class="pf-on"/><text x="144" y="39" text-anchor="end" class="pf-s">hind far</text><rect x="150" y="30" width="400" height="10" class="pf-bg"/><rect x="350.0" y="30" width="200.0" height="10" class="pf-on"/><rect x="150.0" y="30" width="60.0" height="10" class="pf-on"/><text x="144" y="52" text-anchor="end" class="pf-s">fore far</text><rect x="150" y="43" width="400" height="10" class="pf-bg"/><rect x="414.0" y="43" width="136.0" height="10" class="pf-on"/><rect x="150.0" y="43" width="124.0" height="10" class="pf-on"/><text x="0" y="77" class="pf-g">trot</text><text x="0" y="91" class="pf-s">duty 0.46</text><text x="144" y="77" text-anchor="end" class="pf-s">hind near</text><rect x="150" y="68" width="400" height="10" class="pf-bg"/><rect x="150.0" y="68" width="184.0" height="10" class="pf-on"/><text x="144" y="90" text-anchor="end" class="pf-s">fore near</text><rect x="150" y="81" width="400" height="10" class="pf-bg"/><rect x="350.0" y="81" width="184.0" height="10" class="pf-on"/><text x="144" y="103" text-anchor="end" class="pf-s">hind far</text><rect x="150" y="94" width="400" height="10" class="pf-bg"/><rect x="350.0" y="94" width="184.0" height="10" class="pf-on"/><text x="144" y="116" text-anchor="end" class="pf-s">fore far</text><rect x="150" y="107" width="400" height="10" class="pf-bg"/><rect x="150.0" y="107" width="184.0" height="10" class="pf-on"/><text x="0" y="141" class="pf-g">gallop</text><text x="0" y="155" class="pf-s">duty 0.22</text><text x="144" y="141" text-anchor="end" class="pf-s">hind near</text><rect x="150" y="132" width="400" height="10" class="pf-bg"/><rect x="198.0" y="132" width="88.0" height="10" class="pf-on"/><text x="144" y="154" text-anchor="end" class="pf-s">fore near</text><rect x="150" y="145" width="400" height="10" class="pf-bg"/><rect x="350.0" y="145" width="88.0" height="10" class="pf-on"/><text x="144" y="167" text-anchor="end" class="pf-s">hind far</text><rect x="150" y="158" width="400" height="10" class="pf-bg"/><rect x="150.0" y="158" width="88.0" height="10" class="pf-on"/><text x="144" y="180" text-anchor="end" class="pf-s">fore far</text><rect x="150" y="171" width="400" height="10" class="pf-bg"/><rect x="398.0" y="171" width="88.0" height="10" class="pf-on"/><text x="150" y="198" text-anchor="middle" class="pf-s">0</text><text x="350" y="198" text-anchor="middle" class="pf-s">0.5</text><text x="550" y="198" text-anchor="middle" class="pf-s">1</text></svg>
+
+Plates 708 to 710 show racing hounds galloping. On plate 710 every phase recurs exactly five frames later, and the
+catalogue gives 49 ms between exposures: a 0.245 s stride. Ember's gallop is 6 frames at 24 fps, 0.25 s. In each
+cycle a paw is down in one frame of five, so the duty is about 0.2 (the preset uses 0.22, the mean of the three
+plates rounded). Both hinds land close together, the fores about half a cycle later, one frame apart, and there are two
+flights: legs stretched out, then gathered under the body.
+
+<MarginNote kind="field">At those exposures the legs are blurred, and the near and far legs cannot be told apart. The measurement file says which side leads was not seen, and that the rotary order of the fores was assumed, not verified.</MarginNote>
+The plates give times, not distances, so the gallop's stride comes from the Maes fit for stride length at 6.5 m/s,
+times the duty. Each value is logged in `references/dog.json` with its source and the exact table, frame or
+formula it came from, and `npm test` fails if a figure drifts from its log.
+
+Measuring also corrected the record. Plate 706 is catalogued as a mastiff trotting, but its support pattern is a
+slow lateral walk, so it now checks `dog.walk` instead. And the published numbers showed that the old trot moved at
+56.7 units per second, about walking pace for a dog of that size.
+
+## Sources with no strings
+
+The rule for motion data is strict. Poses may come only from public-domain, CC0 or CC BY images and video.
+Measured numbers may also come from copyrighted papers, because facts are not protected, but no figure or text is
+copied. Share-alike, non-commercial and no-derivatives licences fail, and so do the motion-capture libraries whose
+terms restrict redistribution (Mixamo, ActorCore, Rokoko).
+
+<MarginNote kind="warning">The best gallop clip the research found, a slow-motion greyhound on Wikimedia Commons, is CC BY-SA 4.0, so it was ruled out. The notes point to Muybridge's plates 708 to 710 instead, which also come with exposure times.</MarginNote>
+That rule is why the research went to 1887 plates and journal tables rather than motion capture. An open
+alternative, Mesh2Motion's CC0 animated clips, was measured against the figures too. Its leg motion projects well
+onto a side view, but keyed clips do not share a ground plane, and the prototype's foot-contact detection read the
+hind-foot duty of its fox gallop as 0.07.
+
+## Jumps, climbs and what trails behind
+
+The other models use the same treadmill idea. A `jump` jumps in place and reports `launch` and `land` events, so the
+page carries the sprite. `<pixel-stage>` reads the flight time between those frames, divided by `effectiveRate`, and
+`jumpArc()` solves the gravity that lands exactly on target in exactly that time. A `climb` plants the feet on a wall
+and sweeps them down, while the page moves the sprite up at `speedY`.
+
+The models have limits, and the warnings find them. The gosling in the demo is built on the goose figure, but with
+the climb left in, its feet miss the wall by up to 6.1 units and expansion says so on every sample. Its spec sets
+`"climb": null` instead.
+
+Tails and ears are not driven by the motion at all. A bone with `follow` is a damped spring hanging from its pivot,
+pushed when its pivot accelerates or its parent turns. `animate.js` simulates it with 8 substeps per frame, runs a
+looping animation four times and keeps the last, so the loop is seamless. The dog's tail has a natural frequency of
+2 Hz, its tip 2.6 Hz and its ear 4 Hz, so the tail lags behind the body's bounce instead of copying it.
+
+## Seeing it
+
+The figure viewer, `studio/figures.html`, scrolls the ground at each motion's speed and leaves a trail where the feet
+touch down. A planted foot should leave one short dotted line that moves away at exactly the ground's speed. If it
+smears, the stride is wrong, and the tuning advice in the docs starts there: set the stride by eye with the trails
+on, then let the validator confirm it. The reference for every parameter is in [figures.md](/docs/reference/figures/),
+and [Moving sprites](/docs/guide/moving/) shows how to move a sprite at its own speed.
+
+<style>{`
+  .pf-demo { margin: 1.5rem 0; }
+  .pf-lane { position: relative; height: 104px; overflow: hidden; border-radius: 6px; background: color-mix(in srgb, currentColor 5%, transparent); margin-bottom: 0.5rem; }
+  .pf-lane pixel-sprite { position: absolute; left: 30%; top: 4px; z-index: 1; }
+  .pf-ground { position: absolute; left: 0; right: 0; top: 90px; height: 8px; border-top: 2px solid color-mix(in srgb, currentColor 45%, transparent);
+    background-image: repeating-linear-gradient(90deg, color-mix(in srgb, currentColor 45%, transparent) 0 2px, transparent 2px 24px); }
+  .pf-out { position: absolute; right: 0.6rem; top: 0.4rem; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+  .pf-demo figcaption { font-size: 0.9rem; }
+  .pf-demo select { margin-left: 0.3rem; }
+  .pf-row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: end; }
+  .pf-row figcaption { flex-basis: 100%; }
+  .pf-ff { width: 100%; max-width: 560px; height: auto; margin: 1.5rem 0; }
+  .pf-ff .pf-g { font: 600 12px system-ui, sans-serif; fill: currentColor; }
+  .pf-ff .pf-s { font: 11px system-ui, sans-serif; fill: currentColor; }
+  .pf-ff .pf-bg { fill: currentColor; fill-opacity: 0.08; }
+  .pf-ff .pf-on { fill: #d97706; }
+  .pf-ff .pf-t { stroke: currentColor; stroke-opacity: 0.2; }
+  @media (max-width: 40rem) { .pf-lane pixel-sprite { left: 8%; } }
+`}</style>
+
+<script type="module">{`
+  import { clock } from '/apps/packages/runtime/src/pixel-sprite.js';
+  const lanes = [...document.querySelectorAll('.pf-lane')].map((el) => ({
+    sprite: el.querySelector('pixel-sprite'), ground: el.querySelector('.pf-ground'), out: el.querySelector('.pf-out'), x: 0,
+  }));
+  const still = matchMedia('(prefers-reduced-motion: reduce)');
+  document.getElementById('pf-rate')?.addEventListener('change', (e) => {
+    for (const l of lanes) l.sprite.rate = Number(e.target.value);
+  });
+  clock.add((dt) => {
+    for (const l of lanes) {
+      const s = l.sprite, anim = s.getAttribute('anim');
+      const v = s.pxPerSecond(anim);
+      if (!v || !s.displaySize) continue;
+      l.ground.style.top = (4 + s.groundOffset) + 'px';
+      const u = s.bundle.animations[anim].speed;
+      l.out.textContent = l.out.dataset.label + ': ' + u + ' units/s = ' + (v * s.effectiveRate).toFixed(0) + ' px/s';
+      if (still.matches) continue;
+      l.x = (l.x + (v * s.effectiveRate * dt) / 1000) % 24;
+      l.ground.style.backgroundPositionX = (-l.x).toFixed(2) + 'px';
+    }
+  });
+`}</script>
