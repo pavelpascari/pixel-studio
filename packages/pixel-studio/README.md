@@ -21,7 +21,7 @@ Docs and live demos: **[pixel-studio.sh](https://pixel-studio.sh)**.
 
 > **Status: alpha.** The engine, CLI and web components work and are tested, and every page of pixel-studio.sh runs
 > on them. The spec and bundle formats may still change before 1.0; each change is listed in the
-> [changelog](../../CHANGELOG.md).
+> [changelog](https://pixel-studio.sh/changelog/).
 
 ## Five minutes to a goose on your page
 

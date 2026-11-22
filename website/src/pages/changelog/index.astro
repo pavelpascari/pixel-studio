@@ -1,0 +1,314 @@
+---
+// /changelog/: the repository's CHANGELOG.md, read at build time (src/lib/changelog.mjs), so the page is never a
+// second copy to keep in step. Releases newest first, each with an anchor (/changelog/#0.2.0-alpha.2); every entry
+// shows the part it concerns as a small label. "Unreleased" is shown first as "Coming next": its Studio and Website
+// entries are already live on this site (it is built from the same commit), its package entries come with the next
+// npm release. The feed (rss.xml) has the released versions only.
+import { BaseLayout } from 'astro-project-site/components';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { PARTS, parseChangelog } from '../../lib/changelog.mjs';
+
+const releases = parseChangelog(readFileSync(resolve(process.cwd(), '..', 'CHANGELOG.md'), 'utf8'));
+const repo = 'https://github.com/pavelpascari/pixel-studio';
+
+const partInfo: Record<string, { group: 'package' | 'site'; about: string }> = {
+  Runtime: { group: 'package', about: '@pixel-studio/runtime: the tags that play characters on a page' },
+  Engine: { group: 'package', about: '@pixel-studio/core in code: spec, figures, motion, bundles, API' },
+  CLI: { group: 'package', about: 'the pixel command' },
+  Examples: { group: 'package', about: 'the characters that ship with @pixel-studio/core' },
+  Packages: { group: 'package', about: 'installing, package names, what they contain' },
+  Studio: { group: 'site', about: 'the studio, playground, figure library and goose workbench' },
+  Docs: { group: 'site', about: 'the documentation' },
+  Website: { group: 'site', about: 'the rest of pixel-studio.sh' },
+};
+const label = (r: (typeof releases)[number]) => (r.unreleased ? 'Coming next' : r.version);
+const longDate = (d: string) =>
+  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+---
+
+<BaseLayout
+  title="Changelog"
+  description="What changed in each release of Pixel Studio: the packages, the pixel CLI, the studio and the website, with upgrade notes."
+>
+  <link slot="head" rel="alternate" type="application/rss+xml" title="Pixel Studio: changelog" href="/changelog/rss.xml" />
+
+  <div class="cl">
+    <header class="cl-head">
+      <h1>Changelog</h1>
+      <p class="cl-lead">
+        What changed in Pixel Studio: the npm packages <code>@pixel-studio/core</code> and
+        <code>@pixel-studio/runtime</code>, the <code>pixel</code> CLI, and the studio and website on this site. When
+        an update needs something from you, <strong>Upgrading</strong> says what.
+      </p>
+      <p class="cl-links">
+        <a href="/changelog/rss.xml">RSS feed</a>
+        <a href={`${repo}/blob/main/CHANGELOG.md`}>CHANGELOG.md on GitHub</a>
+        <a href="https://www.npmjs.com/package/@pixel-studio/core">npm</a>
+      </p>
+
+      <details class="cl-legend">
+        <summary>What the labels mean</summary>
+        <dl>
+          {
+            PARTS.map((p) => (
+              <div>
+                <dt>
+                  <span class="cl-part" data-group={partInfo[p].group}>{p}</span>
+                </dt>
+                <dd>{partInfo[p].about}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p>Studio, Docs and Website changes go live on pixel-studio.sh as they are made; the others arrive with a release on npm.</p>
+      </details>
+
+      <nav class="cl-toc" aria-labelledby="cl-toc-title">
+        <h2 id="cl-toc-title">Releases</h2>
+        <ul>
+          {
+            releases.map((r) => (
+              <li>
+                <a href={`#${r.id}`}>{label(r)}</a>
+                {r.date && <span class="cl-toc-date">{longDate(r.date)}</span>}
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+
+    {
+      releases.map((r) => (
+        <article class="cl-release" aria-labelledby={r.id} data-unreleased={r.unreleased ? '' : undefined}>
+          <header class="cl-release-head">
+            <h2 id={r.id}>
+              <a href={`#${r.id}`}>{label(r)}</a>
+            </h2>
+            <p class="cl-meta">
+              {r.date && <time datetime={r.date}>{longDate(r.date)}</time>}
+              {r.prerelease && <span class="cl-tag">pre-release</span>}
+              {r.unreleased && <span>Studio and website changes are live here already; package changes come with the next release.</span>}
+            </p>
+          </header>
+          {r.summary.map((p) => <p class="cl-summary" set:html={p} />)}
+          {r.sections.map((s) => (
+            <div class="cl-section" data-kind={s.title.toLowerCase()}>
+              <h3 id={sectionId(r, s.title)}>{s.title}</h3>
+              <ul>
+                {s.items.map((i) => (
+                  <li>
+                    {i.part && (
+                      <span class="cl-part" data-group={partInfo[i.part].group}>
+                        {i.part}
+                      </span>
+                    )}{' '}
+                    <Fragment set:html={i.html} />
+                    {i.children.length > 0 && (
+                      <ul>
+                        {i.children.map((c) => (
+                          <li set:html={c.html} />
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </article>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .cl {
+    max-width: 48rem;
+    margin-inline: auto;
+    padding: calc(var(--site-space) * 2.5) var(--site-space) calc(var(--site-space) * 4);
+    line-height: 1.6;
+  }
+  .cl-head h1 {
+    font-family: var(--site-font-heading);
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    line-height: 1.1;
+    margin: 0 0 0.75rem;
+  }
+  .cl-lead {
+    font-size: 1.125rem;
+    color: var(--site-muted);
+    margin: 0;
+  }
+  .cl-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 1rem 0 0;
+  }
+  .cl a {
+    color: var(--site-link);
+  }
+  .cl-links a,
+  .cl-toc a {
+    display: inline-block;
+    padding-block: 0.2rem;
+  }
+  .cl a:focus-visible,
+  .cl summary:focus-visible {
+    outline: 2px solid var(--site-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  .cl code {
+    font-family: var(--site-font-mono);
+    font-size: 0.875em;
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: 0.3rem;
+    padding: 0.05em 0.3em;
+    overflow-wrap: anywhere;
+  }
+
+  .cl-legend {
+    margin-top: 1.5rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--site-radius-sm);
+    background: var(--site-surface);
+    padding: 0.5rem 1rem;
+  }
+  .cl-legend summary {
+    cursor: pointer;
+    padding-block: 0.25rem;
+    font-weight: 600;
+  }
+  .cl-legend dl {
+    margin: 0.75rem 0 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .cl-legend dl div {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+  .cl-legend dd {
+    margin: 0;
+    color: var(--site-muted);
+  }
+  .cl-legend p {
+    margin: 0.75rem 0 0.25rem;
+    color: var(--site-muted);
+    font-size: 0.9375rem;
+  }
+
+  .cl-toc {
+    margin-top: 1.5rem;
+  }
+  .cl-toc h2 {
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--site-muted);
+    margin: 0 0 0.25rem;
+  }
+  .cl-toc ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+  }
+  .cl-toc-date {
+    color: var(--site-muted);
+    font-size: 0.875rem;
+    margin-inline-start: 0.4rem;
+  }
+
+  .cl-release {
+    margin-top: calc(var(--site-space) * 3);
+    padding-top: calc(var(--site-space) * 2);
+    border-top: 1px solid var(--site-border);
+  }
+  .cl-release-head h2 {
+    font-family: var(--site-font-heading);
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin: 0;
+    scroll-margin-top: calc(var(--site-header-height) + 1rem);
+  }
+  .cl-release-head h2 a {
+    color: var(--site-text);
+    text-decoration: none;
+  }
+  .cl-release-head h2 a:hover {
+    text-decoration: underline;
+  }
+  .cl-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin: 0.35rem 0 0;
+    color: var(--site-muted);
+  }
+  .cl-tag {
+    font-size: 0.8125rem;
+    border: 1px solid var(--site-border);
+    border-radius: 999px;
+    padding: 0 0.55rem;
+  }
+  .cl-summary {
+    margin: 1rem 0 0;
+  }
+
+  .cl-section h3 {
+    font-size: 1.125rem;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .cl-section > ul {
+    margin: 0;
+    padding-inline-start: 1.25rem;
+  }
+  .cl-section li {
+    margin-block: 0.5rem;
+  }
+  .cl-section li ul {
+    padding-inline-start: 1.25rem;
+  }
+  .cl-section li li {
+    margin-block: 0.25rem;
+  }
+  .cl-section[data-kind='upgrading'] {
+    margin-top: 1.25rem;
+    border-inline-start: 3px solid var(--site-accent);
+    background: var(--site-accent-soft);
+    border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
+    padding: 0.25rem 1rem 0.5rem;
+  }
+  .cl-section[data-kind='upgrading'] h3 {
+    margin-top: 0.75rem;
+  }
+
+  .cl-part {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    padding: 0 0.45rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--site-border);
+    background: var(--site-surface);
+    color: var(--site-text);
+    vertical-align: 0.1em;
+  }
+  .cl-part[data-group='package'] {
+    border-color: color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
+    background: var(--site-accent-soft);
+  }
+</style>

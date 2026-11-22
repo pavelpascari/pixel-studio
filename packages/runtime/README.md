@@ -46,6 +46,6 @@ No npm at all: copy `src/pixel-sprite.js` (and `src/pixel-stage.js`, into the sa
   attachment points, state machines, skins.
 - [`<pixel-stage>`](https://pixel-studio.sh/docs/reference/stage/): surfaces, routes, hiding, scenes.
 - [Getting started](https://pixel-studio.sh/docs/reference/getting-started/): from a character to a page.
-- [Demos](https://pixel-studio.sh/gallery/) and the [changelog](https://github.com/pavelpascari/pixel-studio/blob/main/CHANGELOG.md).
+- [Demos](https://pixel-studio.sh/gallery/) and the [changelog](https://pixel-studio.sh/changelog/).
 
 MIT licensed.
