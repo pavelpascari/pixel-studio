@@ -77,8 +77,7 @@ const moves = [
 const spriteEmbed = `<script type="module" src="pixel-sprite.js"></script>
 
 <pixel-sprite src="goose-root.bundle.json"
-  anim="idle" size="128" skin="party"
-  hover-anim="waddle" click-anim="honk"
+  size="128" skin="party"
   alt="root, a goose in a party hat"></pixel-sprite>`;
 
 const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
@@ -152,7 +151,7 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
   <Section id="make" tone="surface" title="Make it yours" intro="A character is a short description you can change: colours, materials, extra parts, alternative looks. Pick a look, then a move. It is the same goose throughout.">
     <div class="ps-make">
       <div class="ps-make-preview">
-        <pixel-sprite class="ps-make-sprite" src={`${assets}/goose-root.bundle.json`} anim="waddle" size="192" alt="root, a hacker goose in a hoodie, waddling"></pixel-sprite>
+        <pixel-sprite class="ps-make-sprite" src={`${assets}/goose-root.bundle.json`} anim="waddle" size="192" states="off" alt="root, a hacker goose in a hoodie, waddling"></pixel-sprite>
         <fieldset class="ps-seg" data-group="skin">
           <legend class="site-visually-hidden">Look</legend>
           {looks.map((l, i) => (
@@ -180,11 +179,11 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
     <div class="ps-embeds">
       <article class="ps-embed">
         <div class="ps-embed-result">
-          <pixel-sprite src={`${assets}/goose-root.bundle.json`} anim="idle" size="128" skin="party" hover-anim="waddle" click-anim="honk" alt="root, a goose in a party hat: hover or tap it"></pixel-sprite>
+          <pixel-sprite src={`${assets}/goose-root.bundle.json`} anim="idle" size="128" skin="party" alt="root, a goose in a party hat: hover or tap it"></pixel-sprite>
         </div>
         <div class="ps-embed-text">
           <h3>A sprite</h3>
-          <p>One element, one bundle file. Hover and tap it.</p>
+          <p>One element, one bundle file. Its behaviour comes with the bundle: hover and it gets back to hacking, tap and it honks (tap fast and it panics).</p>
           <pre><code>{spriteEmbed}</code></pre>
           <a class="ps-link" href="/docs/reference/runtime/">The sprite element <span aria-hidden="true">→</span></a>
         </div>
@@ -406,6 +405,15 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
       look.anim = anim;
       sprite.setAttribute('anim', look.anim);
       describe();
+    });
+    // A one-shot (the honk) would stop on its last frame: while it is the chosen move, play it again after a beat.
+    // (This sprite has states="off": goose-root's own state machine would otherwise ignore the move picked.)
+    sprite.addEventListener('pixel-end', (e) => {
+      const anim = e.detail?.anim;
+      if (anim !== look.anim) return;
+      setTimeout(() => {
+        if (look.anim === anim && !sprite.hasAttribute('paused')) sprite.play(anim, { restart: true });
+      }, 900);
     });
 
     customElements.whenDefined('pixel-stage').then(() => { if (stage?.paused) setPaused(true); });
