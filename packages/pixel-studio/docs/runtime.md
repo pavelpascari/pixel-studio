@@ -67,6 +67,7 @@ The module exports:
 | `parseCondition(when)` | Parses a transition's `when` into a function `(inputs, triggers) → boolean`; throws on bad syntax. |
 | `BUNDLE_FORMAT` | `"pixel-sprite/1"`. |
 | `SPRITE_EVENTS` | The events the element fires, without the `pixel-` prefix: `ready`, `error`, `statechange`, `end`, `event`, `burst`, `calm` (frozen). |
+| `TOUCH_HOVER_MS` | How long a tap on a touch screen counts as hovering for a state machine's `enter` / `leave`: 3000 ([Touch screens](#touch-screens)). |
 
 It can be imported in Node: without `HTMLElement`, the class extends an empty class and the element is not registered. The tests use this for the helpers and the clock.
 
@@ -140,7 +141,7 @@ listeners outside it). Names start with `pixel-`.
 | `pixel-end` | `{ anim }` | A one-shot animation (`play(name, { once: true })`, `click-anim`, or a tap) reached its end, or a non-looping animation (`loop: false`) played as a normal animation reached its last frame. Also fired under reduced motion and while off-screen, after the animation's duration, so code waiting for it never hangs. |
 | `pixel-event` | `{ anim, frame, name, data }` | A frame with a baked event is shown: `footstep`, `land`, `launch`, an author's `honk` (see [Events](#events-attachment-points-and-the-foot-line)). |
 | `pixel-statechange` | `{ from, to }` | The state machine moved to another node. |
-| `pixel-burst` | `{ count, rate }` | The third and every further click (or tap) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
+| `pixel-burst` | `{ count, rate }` | The third and every further click (or tap: the same on every device) that comes within 450 ms of the previous one. `rate` is a suggested speed-up: 1.35, then +0.35 per click, up to 3. |
 | `pixel-calm` | `{ count }` | The clicking stopped (450 ms after the last burst click). Any burst speed-up ends. |
 
 Because events bubble, one listener can watch every sprite on a page (from `demo/index.html`). The sprites
@@ -345,7 +346,7 @@ goose.addEventListener('pixel-statechange', (e) => console.log(e.detail.from, '�
 | `transitions[].from` / `to` | A node, a list of nodes, or `"*"`. The first matching transition wins. |
 | `transitions[].when` | `name`, `!name`, or `name op value` (`== != > < >= <=`), joined with `&&` or `and`. A value is a number, `true`, `false`, or a word, quoted or not (`mood == happy`, `mood == 'happy'`). No `when`: always true. |
 | `transitions[].at` | When to switch: `now` (default), `end` (when the animation finishes or loops), `sync` (keep the cycle's phase: walk → run without a hitch), or an event name such as `footstep`. A waiting switch is dropped if its condition stops being true. |
-| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
+| `interactions` | `on`: `click` (taps too), `enter`, `leave` (mouse and pen; on touch screens a tap enters and leaves 3 s after the last tap, see [Touch screens](#touch-screens)), `burst` (a quick run of clicks), `calm` (the run is over); then `fire` a trigger and/or `set` inputs (`"$count"`, `"$rate"` take the burst's values). They replace `hover-anim` and `click-anim`. |
 
 `play()` still works and overrides the machine until its next transition. While the machine runs, changes to the
 `anim` attribute are ignored. `states="off"` turns the machine off. The machine is a plain class, exported as
@@ -422,11 +423,21 @@ To keep the pixels aligned when you move a sprite, round positions to device pix
 
 ## Touch screens
 
-On touch screens `pointerenter` and `pointerleave` fire around every tap, so a hover animation would only flash while the finger is down. The element therefore:
+On touch screens `pointerenter` and `pointerleave` fire around every tap, so a hover animation would only flash while the finger is down. The element therefore gives every interaction a touch equivalent:
 
-- runs `hover-anim` on hover only for mouse and pen pointers;
-- on a tap, plays `click-anim` once, or, if there is none, plays `hover-anim` once, so touch users see it too;
-- never calls `preventDefault` and does not set `touch-action`, so sprites never block scrolling.
+| interaction | mouse and pen | touch |
+|---|---|---|
+| `hover-anim` | plays while the pointer is over the sprite | a tap plays it once (when there is no `click-anim`) |
+| `click-anim` | a click plays it once | a tap plays it once |
+| state machine `enter` / `leave` | the pointer comes over the sprite / leaves it | a tap is `enter` (then `click`); `leave` follows 3 s after the last tap (`TOUCH_HOVER_MS`), so a state like goose-root's `hovered` (it hacks) lasts long enough to see |
+| state machine `click` | a click | a tap |
+| bursts (`pixel-burst`, `pixel-calm`, `burst` / `calm` interactions) | quick clicks | quick taps, the same counts and timing |
+
+- The sprite never calls `preventDefault` and does not set `touch-action`, so sprites never block scrolling or zooming.
+- A sprite is an image (`role="img"`, or `aria-hidden` when decorative) and takes no keyboard focus. If an animation is
+  something a reader should be able to trigger, put the sprite in a `<button>` and call `play()` from its click handler:
+  the button gets keyboard, screen reader and touch support for free.
+- Characters on a [`<pixel-stage>`](stage.md#interactions-on-every-device) can also be picked up and thrown by touch: press and hold.
 
 Make tappable sprites at least 44 × 44 CSS px, or give them padding.
 

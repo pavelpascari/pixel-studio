@@ -28,16 +28,19 @@
 //             instead of restarting it. burst="off" turns detection off.
 // States:     if the bundle has a state machine ("states"), the element runs it: el.set(input, value),
 //             el.fire(trigger), el.stateNode, and a 'pixel-statechange' event (detail: {from, to}). Its
-//             interactions replace hover-anim / click-anim. states="off" disables it (pixel-stage does).
+//             interactions replace hover-anim / click-anim (on touch: a tap enters, clicks, and leaves 3 s
+//             later). states="off" disables it (pixel-stage does).
 // Skins:      skin="winter" picks a skin baked into the bundle (variants with that skin).
-// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT, SPRITE_EVENTS }. `clock.add(fn)` runs fn(dt, now) on the
+// Module:     export { clock, pickVariant, deviceScale, checkBundle, StateMachine, parseCondition, PixelSprite, BUNDLE_FORMAT, SPRITE_EVENTS, TOUCH_HOVER_MS }. `clock.add(fn)` runs fn(dt, now) on the
 //             same frame loop and clamped dt the sprites use, so page movement stays in step with the legs.
 //
 // Playback is robust by design: one shared frame loop that a failing sprite cannot stop; one load path
 // guarded by a token (src changes cannot race); the box is reserved from `size` before the bundle
 // arrives; decoded sheets are shared between sprites; scale is chosen in *device* pixels so every
 // sprite pixel is a whole number of screen pixels on any devicePixelRatio; hover animations are for
-// mouse and pen only (a tap plays them once on touch screens). Respects prefers-reduced-motion (live)
+// mouse and pen only (a tap plays them once on touch screens; for a state machine a tap is "enter", then
+// "click", and "leave" TOUCH_HOVER_MS later). Never blocks scrolling. Not focusable: a sprite is an image, and
+// a page that wants a keyboard action puts it in a <button> and calls play(). Respects prefers-reduced-motion (live)
 // and pauses while off-screen. loading="lazy" waits to fetch and decode until the sprite is within about
 // one viewport of being seen.
 
@@ -455,6 +458,9 @@ canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
 :host([status=ready]) slot{display:none}
 ::slotted(img){display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}`;
 
+/** How long a tap on a touch screen counts as hovering, for a state machine's "enter" / "leave" (ms). */
+export const TOUCH_HOVER_MS = 3000;
+
 const clampRate = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.min(4, Math.max(0.25, n)) : 1; };
 
 // (Base class guard lets Node import the helpers for tests.)
@@ -501,6 +507,7 @@ export class PixelSprite extends Base {
     live.delete(this);
     observe(this, false);
     if (this._waiting) watchNear(this, false);
+    if (this._touchHovered) { clearTimeout(this._touchLeave); this._touchHovered = false; this._sm?.interact('leave'); }
     this._sync();
   }
 
@@ -849,14 +856,28 @@ export class PixelSprite extends Base {
   }
 
   /**
-   * Pointer input → state machine interactions: "click" (also taps), "enter" / "leave" (mouse, pen),
+   * Pointer input → state machine interactions: "click" (also taps), "enter" / "leave" (mouse and pen; a tap
+   * on a touch screen enters, and leaves a few seconds later),
    * "burst" (a quick run of clicks: "$count" and "$rate" in `set`) and "calm" (the burst is over).
    */
   _interact(e, burst) {
-    if (e.type === 'pointerdown') return;
-    const on = e.type === 'click' ? 'click' : e.pointerType === 'touch' ? null : e.type === 'pointerenter' ? 'enter' : 'leave';
-    if (on) this._sm.interact(on);
+    if (e.type === 'pointerdown') { this._pointer = e.pointerType; return; }
+    if (e.type === 'click') {
+      if (this._pointer === 'touch') this._touchHover();
+      this._pointer = null;
+      this._sm.interact('click');
+    } else if (e.pointerType !== 'touch') this._sm.interact(e.type === 'pointerenter' ? 'enter' : 'leave');
     if (burst) this._sm.interact('burst', burst);
+  }
+
+  /**
+   * Touch has no hover (enter and leave bracket every tap), so a tap stands in for it: "enter" before the tap's
+   * "click", and "leave" TOUCH_HOVER_MS after the last tap. A state like "hovered" then lasts long enough to see.
+   */
+  _touchHover() {
+    if (!this._touchHovered) { this._touchHovered = true; this._sm.interact('enter'); }
+    clearTimeout(this._touchLeave);
+    this._touchLeave = setTimeout(() => { this._touchHovered = false; this._sm?.interact('leave'); }, TOUCH_HOVER_MS);
   }
 
   // ----- playback -----

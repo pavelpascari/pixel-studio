@@ -18,6 +18,8 @@ Demo: `npm run studio` and open `http://localhost:5173/demo/stage.html`. The des
 - [What the characters do](#what-the-characters-do)
 - [What a character needs from its bundle](#what-a-character-needs-from-its-bundle)
 - [How it works](#how-it-works)
+- [Rage taps and fast scrolls](#rage-taps-and-fast-scrolls)
+- [Interactions on every device](#interactions-on-every-device)
 - [Phones, accessibility and performance](#phones-accessibility-and-performance)
 - [Limits](#limits)
 
@@ -72,6 +74,7 @@ Layout tips, learned building the demo:
 | `label` | `character` or `characters` | The word on the button: "Pause characters" / "Play characters". Without it, the button says `character` when the stage has one actor. |
 | `floor` | `document` | `none`: no floor at the bottom of the page. |
 | `roam` | `viewport` | `page`: wander anywhere, not just near what is on screen. |
+| `grab` | `on` | Who can pick characters up ([Interactions](#interactions-on-every-device)): `on` (a hold, or a mouse or pen drag), `mouse` (mouse and pen only, as in 0.2.0-alpha: a finger only taps, and the stage adds no touch listener), `off` (nobody; taps still shoo). Also `stage.grab`. |
 
 `<pixel-actor>`
 
@@ -135,7 +138,9 @@ stage.world.invalidate();                                          // after movi
 
 The module also exports `World`, `PixelStage`, `PixelActor`, `checkScene(scene, castNames?)`, `runScene(scene, env)`,
 `sceneEventName(name, onActorOrStage)` (a scene's short event name → the DOM event it listens to),
-`jumpArc(x0, y0, x1, y1, lift, seconds)` and `cells(rects, w, h)`.
+`jumpArc(x0, y0, x1, y1, lift, seconds)`, `cells(rects, w, h)`, and the gesture logic behind
+[Interactions](#interactions-on-every-device): `GESTURE` (its timings and distances), `Gesture` (one press, without the DOM)
+and `throwVelocity(samples, cap?, releaseT?)`.
 
 ### Events
 
@@ -145,9 +150,11 @@ with `pixel-`; `e.target` is the actor (or the stage).
 | on | event | `detail` | when |
 |---|---|---|---|
 | actor | `pixel-activity` | `{from, to}` | `actor.activity` changed (`idle` → `walking`, …). |
-| actor | `pixel-tap` | `{count}` | Tapped or clicked on its opaque pixels; `count` counts quick taps. |
-| actor | `pixel-burst` | `{count, rate}` | Rage taps (the third quick tap on): it panics. |
+| actor | `pixel-tap` | `{count, pointerType}` | Tapped or clicked on its opaque pixels; `count` counts quick taps; `pointerType` is `mouse`, `pen` or `touch`. |
+| actor | `pixel-burst` | `{count, rate, pointerType}` | Rage taps (the third quick tap on): it panics. |
 | actor | `pixel-calm` | none | The rage taps stopped. |
+| actor | `pixel-grab` | `{pointerType}` | The reader picked it up (a hold, or a mouse or pen drag; see [Interactions](#interactions-on-every-device)). |
+| actor | `pixel-throw` | `{vx, vy, pointerType}` | The reader let go: it flies at `vx`, `vy` px/s (0, 0 when it was let go still, or when the browser took the pointer). |
 | actor | `pixel-arrive` | none | The end of a `goTo`. |
 | actor | `pixel-land` | none | Landed from a jump or a fall. |
 | actor | `pixel-catchup` | `{from: {x, y}}` | Coming back into view (`keep-in-view`, `catchUp()`); `from` is where it was. |
@@ -168,6 +175,7 @@ actor's shadow root, so a listener on the actor (or above it) hears each thing o
 
 The old names still fire for one alpha release (without bubbling, as before) and will be removed after 0.2.0-alpha.
 Scenes keep their short names (`"waitFor": "tap"`, `"event": "arrive"`): they are mapped to the `pixel-` events.
+`grab` and `throw` (added later) have no old name, but scenes can use them too.
 
 | Old | New |
 |---|---|
@@ -365,15 +373,15 @@ names a scene plays itself (`--anims stage,hack`). Without `--views` the charact
   character's `transform`, `z-index` and `clip-path`, only when they changed.
 - **Occlusion** is a `clip-path: path(evenodd, …)` on the character: its box minus every occluder that overlaps it,
   split into disjoint cells so overlapping occluders don't cancel out, and rounded to device pixels. The page is not touched.
-- **Clicks go through.** The stage and its characters have `pointer-events: none`. A capture-phase listener tests taps
-  against the character's opaque pixels (`hitTest`); only a tap on the character itself shoos it, and that one click does
-  not reach the page.
+- **Clicks go through.** The stage and its characters have `pointer-events: none`. Capture-phase listeners on the
+  document test presses against the character's opaque pixels (`hitTest`); only a tap on the character itself shoos it,
+  and that one click (the click of that press) does not reach the page.
 - **One clock.** Movement uses the same frame clock and `dt` as the sprites' frame stepping (see [runtime.md](runtime.md)).
 
 ## Rage taps and fast scrolls
 
-- **Rage taps.** Three or more quick taps or clicks on a character (each within 450 ms of the last) are a burst: the
-  character panics. It plays and moves faster with every tap (1.35×, then +0.35 per tap, up to 3×), keeps running away
+- **Rage taps.** Three or more quick taps or clicks on a character (each within 450 ms of the last, with a finger, a
+  mouse or a pen alike) are a burst: the character panics. It plays and moves faster with every tap (1.35×, then +0.35 per tap, up to 3×), keeps running away
   from the latest tap, and the actor fires `pixel-burst` `{count, rate}`. When the taps stop, it fires `pixel-calm` and slows down.
   Movement always scales with the playback rate, so the feet stay planted at any speed.
 - **Fast scrolls.** The stage tracks scroll speed (`stage.scrollSpeed`) and fires `pixel-fastscroll` and `pixel-scrollsettle`.
@@ -384,19 +392,60 @@ stage.addEventListener('pixel-fastscroll', () => goose.say('wait for me!'));
 goose.addEventListener('pixel-burst', (e) => { if (e.detail.count >= 8) goose.say('OK OK OK'); });
 ```
 
+## Interactions on every device
+
+Every interaction works with a mouse, a pen and a finger, and fires the same events (with `pointerType` in the detail).
+Only presses on a character's opaque pixels count; everything else reaches the page as usual.
+
+| action | mouse | pen | touch | keyboard, screen reader | events |
+|---|---|---|---|---|---|
+| shoo | click | tap | tap | none (decorative) | `pixel-tap` |
+| rage taps | 3+ quick clicks | 3+ quick taps | 3+ quick taps | none | `pixel-tap`, `pixel-burst`, `pixel-calm` |
+| pick up | press and drag 6 px, or press still for 400 ms | same as mouse | press still for 400 ms (it may wobble 10 px) | none | `pixel-grab` |
+| carry | move | move | move the finger (the page does not scroll) | none | `pixel-activity` (`dragged`) |
+| throw | let go | let go | lift the finger | none | `pixel-throw` `{vx, vy}` |
+| scroll the page | wheel | as the device does | swipe, also one that starts on a character | as usual | none |
+| pause everything | the pause button | the pause button | the pause button | the pause button (a `<button>` in the tab order) | none |
+
+- **Picking up.** Press on a character and keep still for 400 ms (`GESTURE.holdMs`), or with a mouse or pen just drag it:
+  it is lifted (it dangles, using its `fall` animation), and on Android phones the device gives a short buzz
+  (`navigator.vibrate`; iOS has none). Then it follows the pointer, and letting go throws it with the speed of the last
+  100 ms of movement (capped at 30 of its heights a second): it flies, falls and lands on the first surface below. Let go
+  without moving and it simply drops. A press that is neither a tap nor a hold does nothing.
+- **Why touch waits.** A finger that moves more than 10 px before the 400 ms are up is scrolling: the stage lets it go and
+  the page scrolls as it always does. Only after a completed hold does the stage cancel `touchmove`, so the finger carries
+  the character instead of the page. Nothing calls `preventDefault` on `pointerdown` or `touchstart` for touch, and
+  `touch-action` is never set. For this the stage keeps one non-passive `touchmove` listener on the document, which does
+  nothing unless a character is held. It is there only while a finger can pick a character up (`grab="on"`, not paused,
+  no reduced motion), and it has a small cost: in Chrome a swipe anywhere on the page starts scrolling about one frame
+  (16 ms) later (measured in [performance.md](performance.md#touch-scrolling)). It cannot be added only once a hold
+  begins, because WebKit decides when a touch starts whether its moves can be cancelled (by its design; Chrome does
+  honour a listener added mid-gesture). `grab="mouse"` or
+  `grab="off"` removes it.
+- **No long-press side effects.** While a finger or pen rests on a character, the page's `user-select` and
+  `-webkit-touch-callout` are `none` (no text selection, magnifier or link callout on iOS), and the context menu of a long
+  press is suppressed. The page's own inline values come back when the press ends or turns into a scroll. Mouse
+  right-clicks are never touched.
+- **When the browser takes the pointer** (`pointercancel`: a system gesture, a scroll that began), a held character
+  drops where it is (`pixel-throw` with 0, 0). A second finger while waiting for a hold is a pinch: no pick-up.
+- **Off while paused, under reduced motion, or with `grab="off"`** (and for fingers with `grab="mouse"`): picking up
+  is off, nothing special happens on a long press, and taps still shoo.
+- **Keyboard and screen readers.** The characters are decorative: their layer is `aria-hidden`, and they take no focus,
+  because a moving focus target that runs away when activated would be a trap, not a control. The accessible control is
+  the pause button. If a character's reaction matters to your page, give the page a real button that calls
+  `actor.shoo()` or `actor.say()`.
+
 ## Phones, accessibility and performance
 
-- Touch works like a mouse click: a tap on a character shoos it. Characters never call `preventDefault` on touch and never
-  set `touch-action`, so scrolling and zooming are unaffected.
-- With a mouse or pen, press on a character and drag to pick it up (it dangles, using its `fall` animation); let go to
-  throw it with the pointer's speed. It flies, falls and lands on the first surface below. A press without a drag is a
-  click, which shoos it. Dragging is off while paused or under reduced motion. Touch never drags, so a finger on a
-  character still scrolls the page.
+- Every interaction works by touch (see [Interactions on every device](#interactions-on-every-device)); scrolling and
+  zooming are unaffected, also when a swipe starts on a character.
 - The pause button is a real `<button>` in the tab order, above the characters, clear of the iPhone home indicator. The
   choice is stored in `localStorage` (`pixel-stage:paused`). This is what WCAG 2.2.2 (Pause, Stop, Hide) asks for.
 - With `prefers-reduced-motion: reduce` the characters are placed and stand still; the setting is watched live.
 - The characters' layer is `aria-hidden`; the button is not.
-- Checked in desktop Chromium and in iOS 18.1 Safari (iPhone 16 simulator).
+- Checked in desktop Chromium and in iOS 18.1 Safari (iPhone 16 simulator). The touch gestures were checked with real
+  touch input in Chromium (Pixel 7 emulation: a swipe from a character scrolls, a hold picks up and does not scroll) and
+  in WebKit (iPhone 13 emulation: taps; a hold, drag and throw from synthesized pointer events).
 - What a stage costs (the two runtime files, each actor's bundle, main-thread time per frame while they walk, memory)
   is measured in [performance.md](performance.md), with ways to make bundles smaller.
 

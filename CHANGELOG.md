@@ -30,12 +30,31 @@ Until 1.0, minor versions may change the spec format.
   `views`) are dropped with the transitions to them; `pixel bundle` names them on stderr. Before, leaving out a view
   that a node played made a bundle the runtime rejected.
 
+- Touch screens can pick up and throw `<pixel-stage>` characters: press and hold one still for 400 ms (it may
+  wobble 10 px), move the finger to carry it, lift to throw it with the finger's speed. A quick tap still shoos it,
+  and a swipe that starts on a character still scrolls the page: the stage only takes the finger once the hold is
+  complete. On Android the pick-up gives a short buzz. Mice and pens can use the same hold (or drag at once, as before).
+- `<pixel-stage grab="mouse">` keeps picking up to the mouse and pen, and `grab="off"` turns it off; either way the
+  stage adds no touch listener, so swipes start scrolling a frame sooner.
+- Actor events `pixel-grab` `{pointerType}` and `pixel-throw` `{vx, vy, pointerType}` (scenes: `grab`, `throw`), and
+  `pointerType` in `pixel-tap` and `pixel-burst`, so pages can tell how a character was touched and react the same
+  way on every device.
+- `<pixel-sprite>` state machines on touch screens: a tap is `enter`, then `click`, and `leave` follows 3 s after the
+  last tap (`TOUCH_HOVER_MS`), so hover states such as goose-root's `hovered` are reachable on a phone.
+- `GESTURE`, `Gesture` and `throwVelocity` exported from `pixel-stage.js` (the gesture logic, without the DOM), and an
+  "Interactions on every device" table in `docs/stage.md` (input × action, with the keyboard and screen reader column).
+
 ### Changed
 - **`pixel bundle` ships the side view only.** Front and back views are for a `<pixel-stage>` character that turns to
   the reader, and they double a goose's bundle (105 → 57 KB gzip for `goose-root`). Add `--views all` (or
   `--views front`) to keep them; `--views none` still works. A note on stderr says when a character's views were
   left out, and a view name the character does not have is now an error. `buildBundle` still ships every view by
   default (the demos use it), and the studio's export dialog has a checkbox for them, off by default.
+- `<pixel-stage>`: while a finger or pen rests on a character, the long-press text selection, iOS callout and
+  context menu are suppressed (the page's own styles come back after). A `pointercancel` now drops a held character
+  where it is instead of leaving it stuck in the air. Only the click of the press that tapped a character or threw it
+  is kept from the page, so a quick tap elsewhere right after reaches it. A throw uses the last 100 ms of
+  movement, and a pointer that rests before letting go drops the character instead of throwing it.
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
   (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
 - `examples/goose-root.json`: the `party` skin's hat sits on the crown of the head instead of over the shades and
