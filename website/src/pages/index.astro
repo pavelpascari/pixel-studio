@@ -8,6 +8,7 @@
 // page), how do I make my own (the studio), where would I use it (examples), will it behave (sizes, motion, packages).
 // Sections alternate plain and surface backgrounds (the gallery strip is always surface).
 import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section } from 'astro-project-site/components';
+import Arrow from '../components/Arrow.astro';
 import '../styles/landing.css';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -187,8 +188,8 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         Create animated pixel characters. Give them a home on your website.
       </p>
       <div class="ps-actions">
-        <a class="site-btn site-btn--primary ps-try" href="#try">Try a character <span aria-hidden="true">→</span></a>
-        <a class="ps-link" href="#embed">See the embed <span aria-hidden="true">↘</span></a>
+        <a class="site-btn site-btn--primary ps-try" href="#try">Try a character <Arrow /></a>
+        <a class="ps-link" href="#embed">See the embed <Arrow to="down-right" /></a>
       </div>
       <p class="ps-status">Open source · MIT · Alpha</p>
     </div>
@@ -225,7 +226,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
       </div>
       <div class="ps-demo-foot">
         <p class="ps-who" aria-live="polite">{cast[0].who}</p>
-        <a class="ps-link ps-customize" href={cast[0].studio}><span class="ps-customize-label">{cast[0].customize}</span> <span aria-hidden="true">→</span></a>
+        <a class="ps-link ps-customize" href={cast[0].studio}><span class="ps-customize-label">{cast[0].customize}</span> <Arrow /></a>
       </div>
       <p class="ps-still" hidden>Your device asks for reduced motion, so the characters stand still.</p>
     </section>
@@ -253,7 +254,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         {looks.map((l, i) => (
           <pre data-look={l.skin} hidden={i !== 0}><code>{l.code}</code></pre>
         ))}
-        <a class="ps-link ps-open" href={`${play}?c=goose-root&anim=waddle`}>Keep editing this goose in the playground <span aria-hidden="true">→</span></a>
+        <a class="ps-link ps-open" href={`${play}?c=goose-root&anim=waddle`}>Keep editing this goose in the playground <Arrow /></a>
       </figure>
     </div>
   </Section>
@@ -268,25 +269,25 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
           <h3>A sprite</h3>
           <p>One element, one bundle file. Its behaviour comes with the bundle: hover and it gets back to hacking, tap and it honks (tap fast and it panics).</p>
           <pre><code>{spriteEmbed}</code></pre>
-          <a class="ps-link" href="/docs/reference/runtime/">The sprite element <span aria-hidden="true">→</span></a>
+          <a class="ps-link" href="/docs/reference/runtime/">The sprite element <Arrow /></a>
         </div>
       </article>
       <article class="ps-embed">
         <div class="ps-embed-result ps-embed-result--stage">
           <p>Mark elements as surfaces and hiding spots. The demo at the top of this page is a stage like this one.</p>
-          <a class="site-btn" href="#try">Back to the demo <span aria-hidden="true">↑</span></a>
+          <a class="site-btn" href="#try">Back to the demo <Arrow to="up" /></a>
         </div>
         <div class="ps-embed-text">
           <h3>A stage</h3>
           <p>Characters walk along the top edges of your elements, jump between them and hide. They never block a click.</p>
           <pre><code>{stageEmbed}</code></pre>
-          <a class="ps-link" href="/docs/reference/stage/">How the stage works <span aria-hidden="true">→</span></a>
+          <a class="ps-link" href="/docs/reference/stage/">How the stage works <Arrow /></a>
         </div>
       </article>
     </div>
     <div class="ps-install">
       <InstallCommand command="npm i @pixel-studio/runtime" />
-      <a class="ps-link" href="/docs/reference/getting-started/">Getting started, step by step <span aria-hidden="true">→</span></a>
+      <a class="ps-link" href="/docs/reference/getting-started/">Getting started, step by step <Arrow /></a>
     </div>
   </Section>
 
@@ -322,7 +323,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         <pre><code>{reactSnippet}</code></pre>
       </figure>
     </details>
-    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
+    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <Arrow /></a></p>
   </Section>
 
   {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
@@ -363,7 +364,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         <h3>Small, and only as big as you make it</h3>
         <p>A whole animated character can be {weights[0].kb} KB. The file grows with the detail it carries: textures like fur and cloth most of all, then more frames, then front and back views for characters that turn around. Every size here is the file that character is playing, compressed as a web server sends it.</p>
         <p class="ps-weight-script">Plus the script, once for every character on the page: <strong>{scriptKB} KB</strong>. An off-screen sprite stops drawing.</p>
-        <a class="ps-link" href="/docs/reference/performance/">Performance in detail <span aria-hidden="true">→</span></a>
+        <a class="ps-link" href="/docs/reference/performance/">Performance in detail <Arrow /></a>
       </div>
       <ol class="ps-ladder" aria-label="Example characters, from the smallest file to the largest">
         {weights.map((s) => (
@@ -395,7 +396,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
       <div class="ps-detail-text">
         <h3>Motion with planted feet</h3>
         <p>Each character stands on a skeleton with motion models for walking, running, jumping and climbing. Feet stay planted, heads stay steady, tails follow through. The fox's gallop is measured from Muybridge's photographs of running hounds.</p>
-        <a class="ps-link" href="/apps/studio/figures.html">Explore the figures <span aria-hidden="true">→</span></a>
+        <a class="ps-link" href="/apps/studio/figures.html">Explore the figures <Arrow /></a>
       </div>
       <div class="ps-gaits">
         <figure><pixel-sprite src={`${assets}/fox.bundle.json`} anim="gallop" size="112" alt="the fox galloping" /><figcaption>gallop</figcaption></figure>

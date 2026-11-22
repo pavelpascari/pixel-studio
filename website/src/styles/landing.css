@@ -14,6 +14,19 @@ pixel-sprite {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
+/* The arrow after a link's text (components/Arrow.astro). */
+.ps-arrow {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* Segmented controls (a fieldset of radios, drawn as the studio's chips) and the move buttons. */
 .ps-seg {

@@ -1,0 +1,12 @@
+---
+// A small arrow after a link's text, drawn as an SVG in the text colour rather than an arrow character: ↘ shows as
+// a missing-glyph box in some browsers' fonts, and → ↑ ↘ come from different fonts and sit at different heights.
+// Decorative (aria-hidden): the link's text says where it goes. Styled by .ps-arrow in styles/landing.css.
+interface Props {
+  to?: 'right' | 'up' | 'down-right';
+}
+const { to = 'right' } = Astro.props;
+const turn = { right: 0, up: -90, 'down-right': 45 }[to];
+---
+
+<svg class="ps-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 8h10.5M9 4l4 4-4 4" transform={turn ? `rotate(${turn} 8 8)` : undefined} /></svg>
