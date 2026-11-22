@@ -535,8 +535,24 @@ pixel-sprite {
   }
   /* Phones: headline, one line of explanation, the action, and the demo right below. */
   .ps-hero {
-    gap: 1.5rem;
+    gap: 2.75rem;
     padding-top: 1.5rem;
+    padding-bottom: 3.5rem;
+  }
+  /* More air between sections than the template's 2.5rem on phones (its rule is scoped, hence the [class]). */
+  section.landing-section[class] {
+    padding-block: 3.75rem;
+  }
+  .ps-make,
+  .ps-embeds,
+  .ps-split {
+    gap: 2rem;
+  }
+  .ps-detail {
+    margin-bottom: 3rem;
+  }
+  .ps-key {
+    margin-top: 2.5rem;
   }
   .ps-eyebrow {
     margin-bottom: 0.6rem;
