@@ -11,7 +11,7 @@ Docs, demos and the playground: **[pixel-studio.sh](https://pixel-studio.sh)**.
 
 The two are always released together, with the same version; `@pixel-studio/core` depends on exactly that runtime.
 Start with [getting started](packages/pixel-studio/docs/getting-started.md). Changes are in the
-[changelog](CHANGELOG.md).
+[changelog](https://pixel-studio.sh/changelog/).
 
 ## This repository
 

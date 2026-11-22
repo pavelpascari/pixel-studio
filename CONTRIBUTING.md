@@ -68,7 +68,29 @@ JSON spec to pixels. The other references:
 4. If you changed a format or behaviour, update `packages/pixel-studio/docs/` (and `docs/SPEC.md` there if agents
    need to know).
    If example output changed, run `npm run build:demo` (and `npm run previews`).
-5. Add a line to `CHANGELOG.md` under *Unreleased*.
+5. Add an entry to `CHANGELOG.md` under *Unreleased* if users will notice the change (see below).
+
+### Changelog entries
+
+`CHANGELOG.md` is for the people who use Pixel Studio: it is published at
+[pixel-studio.sh/changelog](https://pixel-studio.sh/changelog/) (and its RSS feed), becomes the GitHub release notes,
+and is read by people deciding whether to update. Write each entry so they can act on it:
+
+- **Say what users can now do, or what changed for them**, not how it was built. "`<pixel-sprite loading="lazy">`
+  waits to download a character until it is near the screen" rather than "a second IntersectionObserver". Name the
+  attribute, option, command or page, and link the docs with a full `https://pixel-studio.sh/docs/...` URL (it
+  works on GitHub, on npm and on the site).
+- **Start with the part it concerns**, in bold with a colon: `**Runtime:**`, `**Engine:**`, `**CLI:**`,
+  `**Examples:**`, `**Packages:**`, `**Studio:**`, `**Docs:**` or `**Website:**` (the list at the top of the file
+  says what each covers; the site shows them as labels, and its build fails on an entry without one).
+- **Pick the Keep a Changelog section**: Added, Changed, Deprecated, Removed, Fixed or Security. If users must change
+  their code, commands or files when they update, also add an entry under **Upgrading** (the first section) that
+  says exactly what to do, with the old and new spelling.
+- **Leave out what users don't see**: refactors, tests, CI, the benchmark scripts' internals, the site's styling,
+  TODO.md. Studio and website changes count when they change what visitors can do (a new page, a new tool, a new
+  option in the studio), not when they restyle it.
+- One entry per change, a few lines at most; continuation lines are indented by two spaces. Don't add headings
+  other than `## [version] - YYYY-MM-DD` and the `###` sections: the release workflow and the site read them.
 
 New figures, examples and motion presets are very welcome: see "Writing a new figure" in
 [docs/figures.md](packages/pixel-studio/docs/figures.md). Characters you contribute must be your own designs, not

@@ -6,6 +6,8 @@ import { defineConfig } from 'astro/config';
 import projectSite from 'astro-project-site';
 
 export default defineConfig({
+  // The changelog used to be mounted with the project's docs; it is its own page now (src/pages/changelog/).
+  redirects: { '/docs/project/changelog': '/changelog/' },
   integrations: [
     projectSite({
       // from README.md
@@ -20,11 +22,13 @@ export default defineConfig({
       versionFrom: '../packages/pixel-studio/package.json',
       // from README.md
       install: 'npm i @pixel-studio/core',
-      // Short: the guide is the first section of the docs, and the source link is the header's GitHub icon.
+      // Short: the guide is the first section of the docs, and the source link is the header's GitHub icon. The
+      // footer repeats these (it has no links of its own), which is where most visitors look for the changelog.
       nav: [
         { label: 'Examples', href: '/gallery/' },
         { label: 'Docs', href: '/docs/' },
         { label: 'Blog', href: '/blog/' },
+        { label: 'Changelog', href: '/changelog/' },
         { label: 'Studio', href: '/apps/studio/' },
       ],
       // The studio's palette on every page (warm yellow / amber); see the file for the contrast figures.
@@ -43,8 +47,9 @@ export default defineConfig({
           dir: '..',
           route: 'project',
           label: 'Project',
-          description: 'The README, what changed in each release, and how to contribute.',
-          include: ['README.md', 'CHANGELOG.md', 'CONTRIBUTING.md'],
+          description: 'The README and how to contribute. What changed in each release is on the changelog page.',
+          // CHANGELOG.md is not mounted: /changelog/ renders it (src/pages/changelog/), linked from the sidebar below.
+          include: ['README.md', 'CONTRIBUTING.md'],
         },
       ],
       // The guide (src/content/docs/docs/guide/) before the mounted sections, in the sidebar and the docs cards.
@@ -71,6 +76,10 @@ export default defineConfig({
       // The blog at /blog/: one file per post in src/content/blog/ (title, description, date, authors, tags, draft).
       // Authors from package.json.
       blog: { authors: { 'pavel-pascari': { name: 'Pavel Pascari' } } },
+      // The docs sidebar ends with the changelog, after the Project section it used to be part of.
+      starlight: { sidebar: [{ label: 'Changelog', link: '/changelog/' }] },
+      // starlight-links-validator only knows docs pages: the changelog page and its feed are site pages.
+      linksValidator: { exclude: ['/changelog', '/changelog/', '/changelog/#*', '/changelog/rss.xml'] },
       // from LICENSE
       footer: { note: 'Released under the MIT licence.' },
       // A default social image (1200×630) in public/:

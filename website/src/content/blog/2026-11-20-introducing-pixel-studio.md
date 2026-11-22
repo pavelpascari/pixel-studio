@@ -46,7 +46,7 @@ feature live, and the [documentation](/docs/reference/getting-started/) has the 
 
 ## What's next
 
-- What changed in each release is in the [changelog](/docs/project/changelog/).
+- What changed in each release is in the [changelog](/changelog/).
 - The source, issues and discussions are on [github.com/pavelpascari/pixel-studio](https://github.com/pavelpascari/pixel-studio).
 - Contributions are welcome: see [contributing](/docs/project/contributing/).
 

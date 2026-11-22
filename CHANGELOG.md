@@ -1,479 +1,263 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
-Until 1.0, minor versions may change the spec format.
+What changed in Pixel Studio, written for the people who use it: the npm packages `@pixel-studio/core` (the
+engine, the `pixel` CLI and the example characters) and `@pixel-studio/runtime` (`<pixel-sprite>`, `<pixel-stage>`
+and `<pixel-actor>`), and the studio, playground and website at [pixel-studio.sh](https://pixel-studio.sh), which
+change between releases. This page is also at [pixel-studio.sh/changelog](https://pixel-studio.sh/changelog/), with an
+[RSS feed](https://pixel-studio.sh/changelog/rss.xml).
+
+Each entry starts with the part it concerns:
+
+- **Runtime**: `@pixel-studio/runtime`, the web components that play characters on a page.
+- **Engine**: `@pixel-studio/core` in code: the spec format, figures, motion, bundles and the JavaScript API.
+- **CLI**: the `pixel` command.
+- **Examples**: the characters that ship with `@pixel-studio/core`.
+- **Packages**: installing, package names, what the packages contain.
+- **Studio**: the studio, playground, figure library and goose workbench on pixel-studio.sh.
+- **Docs** and **Website**: the documentation and the rest of pixel-studio.sh.
+
+**Upgrading** lists what to change in your code or commands when you update. The studio and the website are
+deployed as they change; their entries are listed under the release that follows.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
+[Semantic Versioning](https://semver.org/). Until 1.0, minor versions may change the spec format, and pre-releases
+(`-alpha`) may change anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
-### Added
-- The studio opens a character from its link: `studio/?c=<example>&skin=<skin>&anim=<anim>&res=<px>` (the
-  playground's names) shows that example in a simple view: the preview large, a few animations, its looks and four
-  sizes, then Customise (the full editor), Create with Claude (the Agent tab) or Export. `&edit` opens it in the full
-  editor instead, and "Simple view" in the toolbar goes back. An example opened this way is not saved over the spec
-  kept in the browser until it is edited. The full editor gains a "look" picker for characters with skins, and the
-  export snippets carry the skin picked. Without `?c=` the studio opens as before.
-- Every studio page (studio, playground, figures, goose workbench) links back to the website: the Pixel Studio name
-  goes to the home page, and a Docs link to the docs.
-- The landing page's "Open the studio" buttons open the character picked in the hero, in the simple view.
-- A performance page (`docs/performance.md`, pixel-studio.sh/docs/reference/performance/): download sizes of the
-  runtime and every example bundle, load impact (Lighthouse, mobile profile), main-thread time per frame for 1, 10
-  and 50 sprites and a stage with three actors, memory, and how to keep each small. The size tables are generated
-  (docs-gen), so the website build fails when they go stale.
-- `scripts/bench/`: the benchmark behind those numbers. `node scripts/bench/sizes.mjs` measures sizes with Node
-  alone; `scripts/bench/browser.mjs` measures load and frame costs in Chrome with Lighthouse and Playwright
-  (installed outside the project, like `scripts/browser-check.mjs`).
-- `<pixel-sprite loading="lazy">` (and `el.loading`): the sprite waits to fetch its bundle and decode its sheet
-  until it comes within one viewport of being seen, like `<img loading="lazy">`. A character far down a long page
-  then costs nothing until the reader gets near it (the fox: 44 KB gzip and a 0.4 MB decoded sheet; a goose up to
-  105 KB and 8 MB). The default stays eager; `<pixel-actor>` always loads at once (the stage needs its size).
-- Docs: the CSS rule that reserves a sprite's box before its script runs now has `vertical-align: bottom` and one
-  line per `size`, and is in the getting-started page. It takes the layout shift of one sprite from 0.031 to 0
-  (0.003 on a phone with a device pixel ratio of 1.75, where whole device pixels make the sprite a little larger).
-- `pixel bundle --anims idle,waddle,honk`: a bundle with only those animations, plus what they need to play: their
-  views, the views' turns, and the transition clips between two kept animations. `--anims stage` keeps what
-  `<pixel-stage>` plays (for each role, the first animation the character has). An unknown name is an error that
-  lists the character's animations. A goose with three animations is 16 KB gzip instead of 57. The same as
-  `buildBundle(c, {animations: [...]})`, and in the studio's export dialog.
-- A bundle's state machine follows its animations: `states` nodes whose animation was left out (by `animations` or
-  `views`) are dropped with the transitions to them; `pixel bundle` names them on stderr. Before, leaving out a view
-  that a node played made a bundle the runtime rejected.
+### Upgrading
+- **CLI:** `pixel bundle` now writes the side view only. If a page turns a character towards the reader (a
+  `<pixel-stage>` character's `face('viewer')`, its glances at the reader, or an animation such as `idle@front`),
+  rebuild its bundle with `--views all`, or name the views it needs (`--views front`). Bundles made in code with
+  `buildBundle()` still keep every view. A view name the character does not have is now an error.
 
-- Touch screens can pick up and throw `<pixel-stage>` characters: press and hold one still for 400 ms (it may
-  wobble 10 px), move the finger to carry it, lift to throw it with the finger's speed. A quick tap still shoos it,
-  and a swipe that starts on a character still scrolls the page: the stage only takes the finger once the hold is
-  complete. On Android the pick-up gives a short buzz. Mice and pens can use the same hold (or drag at once, as before).
-- `<pixel-stage grab="mouse">` keeps picking up to the mouse and pen, and `grab="off"` turns it off; either way the
-  stage adds no touch listener, so swipes start scrolling a frame sooner.
-- Actor events `pixel-grab` `{pointerType}` and `pixel-throw` `{vx, vy, pointerType}` (scenes: `grab`, `throw`), and
-  `pointerType` in `pixel-tap` and `pixel-burst`, so pages can tell how a character was touched and react the same
-  way on every device.
-- `<pixel-sprite>` state machines on touch screens: a tap is `enter`, then `click`, and `leave` follows 3 s after the
-  last tap (`TOUCH_HOVER_MS`), so hover states such as goose-root's `hovered` are reachable on a phone.
-- `GESTURE`, `Gesture` and `throwVelocity` exported from `pixel-stage.js` (the gesture logic, without the DOM), and an
-  "Interactions on every device" table in `docs/stage.md` (input × action, with the keyboard and screen reader column).
+### Added
+- **Runtime:** `<pixel-sprite loading="lazy">` (and `el.loading`) waits to download and unpack a character until it
+  is about one screen away from being seen, like `<img loading="lazy">`. A character far down a long page costs
+  nothing until the reader gets near it (a goose is up to 105 KB to download and 8 MB or more of memory once
+  unpacked). The default stays eager; `<pixel-actor>` always loads at once, because the stage needs its size to
+  place it.
+  [Runtime docs](https://pixel-studio.sh/docs/reference/runtime/)
+- **Runtime:** pick up and throw `<pixel-stage>` characters on touch screens. Press and hold one for 400 ms, carry it
+  with your finger, and let go to throw it. A quick tap still shoos it, and a swipe that starts on a character still
+  scrolls the page. On Android the pick-up gives a short buzz. Mice and pens can use the same hold, or drag at once
+  as before.
+- **Runtime:** `<pixel-stage grab="mouse">` keeps picking up to the mouse and pen, and `grab="off"` turns it off.
+  Either way the stage adds no touch listener, so swipes on the page start scrolling a frame sooner (the measured cost
+  of touch pick-up is in the [performance docs](https://pixel-studio.sh/docs/reference/performance/)).
+- **Runtime:** new actor events `pixel-grab` and `pixel-throw` (in scenes: `grab` and `throw`), and `pointerType` in
+  `pixel-tap` and `pixel-burst`, so a page can tell how a character was touched and react the same way on every
+  device.
+- **Runtime:** `<pixel-sprite>` state machines work on touch screens: a tap counts as hovering, then a click, and the
+  hover ends 3 s after the last tap. Hover states such as goose-root's are now reachable on a phone.
+- **CLI:** `pixel bundle --anims idle,waddle,honk` makes a bundle with only those animations, plus what they need to
+  play (their views and turns, and the transitions between them). `--anims stage` keeps what `<pixel-stage>` uses.
+  A goose with three animations is 16 KB instead of 57 KB. An unknown name is an error that lists the character's
+  animations. In code: `buildBundle(character, {animations: [...]})`.
+  [CLI docs](https://pixel-studio.sh/docs/reference/cli/)
+- **Studio:** open any example from a link, in a simple view:
+  `/apps/studio/?c=goose-root&skin=party&anim=waddle` shows the character large, with a few animations, its looks
+  and four sizes, then Customise (the full editor), Create with Claude or Export. `&edit` opens the full editor
+  directly, and "Simple view" in the toolbar goes back. An example opened this way does not replace the character
+  saved in your browser until you edit it.
+- **Studio:** looks (skins). The full editor has a picker for a character's looks, the preview and sheets show the
+  look picked, and the export snippets include it (`skin="party"`).
+- **Studio:** the export dialog can leave out animations and front and back views, like `pixel bundle --anims` and
+  `--views` (views are off by default).
+- **Studio:** every studio page (studio, playground, figure library, goose workbench) links back to the website, its
+  docs and this changelog.
+- **Docs:** a [performance page](https://pixel-studio.sh/docs/reference/performance/): the download size of the
+  runtime and of every example, the effect on page load, the time each frame takes for 1, 10 and 50 characters and on
+  a stage, memory, and how to keep each one small.
+- **Docs:** an [interactions table](https://pixel-studio.sh/docs/reference/stage/) for mouse, pen, touch and keyboard:
+  what each input does to a sprite and a stage character, and what to offer keyboard and screen reader users.
+- **Docs:** lazy loading, and a CSS rule that reserves a sprite's space before its script runs, so the page does not
+  move when it appears. It is in [getting started](https://pixel-studio.sh/docs/reference/getting-started/).
+- **Website:** a new home page that starts with a character to direct: pick a goose, a fox or Pip, make it walk,
+  jump and hide on a small page, then change its look, copy its embed, see how characters react to the reader, open
+  it in the studio ("Customize this goose"), and see real download sizes. One button pauses every character on the
+  page.
+- **Website:** this changelog at [/changelog](https://pixel-studio.sh/changelog/), with an RSS feed, linked from the
+  footer, the docs and the studio.
 
 ### Changed
-- **`pixel bundle` ships the side view only.** Front and back views are for a `<pixel-stage>` character that turns to
-  the reader, and they double a goose's bundle (105 → 57 KB gzip for `goose-root`). Add `--views all` (or
-  `--views front`) to keep them; `--views none` still works. A note on stderr says when a character's views were
-  left out, and a view name the character does not have is now an error. `buildBundle` still ships every view by
-  default (the demos use it), and the studio's export dialog has a checkbox for them, off by default.
-- `<pixel-stage>`: while a finger or pen rests on a character, the long-press text selection, iOS callout and
-  context menu are suppressed (the page's own styles come back after). A `pointercancel` now drops a held character
-  where it is instead of leaving it stuck in the air. Only the click of the press that tapped a character or threw it
-  is kept from the page, so a quick tap elsewhere right after reaches it. A throw uses the last 100 ms of
-  movement, and a pointer that rests before letting go drops the character instead of throwing it.
-- `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
-  (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
-- `examples/goose-root.json`: the `party` skin's hat sits on the crown of the head instead of over the shades and
-  eyes (its base moves up from y 20 to 17.5 and back over the skull).
+- **Runtime:** while a finger or pen rests on a stage character, the page's text selection, callout and context menu
+  are held off. A cancelled touch drops a held character where it is instead of leaving it hanging. A throw uses
+  the last 100 ms of movement, so resting before letting go drops the character rather than throwing it. A quick
+  tap elsewhere just after touching a character now reaches the page.
+- **Examples:** the fox's ears swap places: the near ear is drawn in front, with its cream inner; the far ear is
+  shaded, behind the head.
+- **Examples:** goose-root's `party` hat sits on the crown of the head instead of over the shades.
+- **Website:** the [examples](https://pixel-studio.sh/gallery/) have posters cropped to the characters, and the site
+  takes the studio's colours. The header is shorter: Examples, Docs, Blog, Studio.
+
+### Fixed
+- **Runtime:** a character held when the browser cancelled the gesture stayed stuck in the air; it now drops where it
+  is.
+- **Runtime:** after a tap shooed a character, a tap anywhere on the page within half a second was swallowed; only
+  the click of the tap on the character is now kept from the page.
+- **Runtime:** on iPhones, a tap on a character could open a link underneath it.
+- **Engine:** a bundle whose state machine played a view that was left out (`--views`) was rejected by the runtime.
+  States whose animation is not in the bundle are now dropped, with the transitions to them, and `pixel bundle` names
+  them.
 
 ## [0.2.0-alpha.2] - 2026-11-21
 
-### Renamed: `pixel-studio` is now `@pixel-studio/core`
-- The engine package moves into the `@pixel-studio` organisation, next to `@pixel-studio/runtime`:
-  `npm i @pixel-studio/core`. Imports change with it: `@pixel-studio/core`, `@pixel-studio/core/internal`,
-  `@pixel-studio/core/runtime`, `@pixel-studio/core/stage`, `@pixel-studio/core/node/png`; the example paths become
+### Upgrading
+- **Packages:** the engine is now **`@pixel-studio/core`**, next to `@pixel-studio/runtime`. Replace the package:
+  `npm uninstall pixel-studio && npm i @pixel-studio/core`, and the imports: `pixel-studio` becomes
+  `@pixel-studio/core` (likewise `/internal`, `/runtime`, `/stage` and `/node/png`). Paths to the examples become
   `node_modules/@pixel-studio/core/examples/`. The `pixel` command is unchanged.
-- `pixel-studio` on npm stays at 0.2.0-alpha.1 and is deprecated, pointing here.
+
+### Deprecated
+- **Packages:** `pixel-studio` on npm stays at 0.2.0-alpha.1 and is deprecated, pointing to `@pixel-studio/core`.
 
 ## [0.2.0-alpha.1] - 2026-11-21
 
-### On npm, as two packages
-- **`pixel-studio`** (the engine, the `pixel` CLI, figures, examples, motion references and the reference docs) and
-  **`@pixel-studio/runtime`** (`<pixel-sprite>`, `<pixel-stage>` and `<pixel-actor>`) are published on npm, always
-  with the same version: `npm i pixel-studio`, or `npm i @pixel-studio/runtime` for a site that only plays sprites.
-  The runtime has no dependencies and never imports the engine; `pixel-studio` depends on exactly its version.
-- `pixel-studio/runtime` and `pixel-studio/stage` keep working: they re-export the runtime package. In the runtime
-  package the files are `src/pixel-sprite.js` and `src/pixel-stage.js` (were `src/runtime/` in `pixel-studio`), and
-  the imports are `@pixel-studio/runtime` and `@pixel-studio/runtime/stage`.
-- The `pixel-studio` package no longer ships the research notes (`docs/research/`); they stay in the repository.
+### Upgrading
+- **Packages:** the web components have their own package. A site that only plays characters can install
+  `@pixel-studio/runtime` alone (no dependencies) and import `@pixel-studio/runtime` and
+  `@pixel-studio/runtime/stage`. Imports of `pixel-studio/runtime` and `pixel-studio/stage` keep working. If you
+  linked the files directly, they are now `src/pixel-sprite.js` and `src/pixel-stage.js` in the runtime package
+  (they were `src/runtime/` in `pixel-studio`).
 
-### Guide
-- The hand-written guide pages (`site/`) move into pixel-studio.sh as the **Guide** (`/docs/guide/`): the same nine
-  topics, every live example running next to its code (now with the site's highlighting, copy button and themes) and
-  every editable character redrawn by the engine as you type. `site/` is gone; `scripts/browser-check.mjs` checks
-  the guide's pages instead.
-
-### Repository
-- Laid out as npm workspaces: `packages/pixel-studio/`, `packages/runtime/`, with the studio, demos, guide pages
-  and website around them. `npm install` links the two packages; there are still no third-party dependencies.
-- Generated files are no longer committed: `demo/assets/` (built by `npm run build:demo`, and by the website's build)
-  and `previews/` (which still held a contact sheet of a character that no longer exists).
-- CI on every push and pull request: both packages' tests on Node 20 and 24, Markdown links, the packed packages
-  installed and used from a fresh folder, and the website build. Releases are staged on npm from a signed tag and
-  approved by a maintainer with 2FA (see CONTRIBUTING.md).
+### Added
+- **Packages:** Pixel Studio is on npm: `pixel-studio` (the engine, the `pixel` CLI, figures, examples, motion
+  references and the reference docs) and `@pixel-studio/runtime` (`<pixel-sprite>`, `<pixel-stage>` and
+  `<pixel-actor>`). Both always have the same version, and the engine depends on exactly that runtime. Releases are
+  built from a signed tag by CI and each one is approved by a maintainer with two-factor authentication.
+- **Docs:** the [Guide](https://pixel-studio.sh/docs/guide/) on pixel-studio.sh: nine topics, each live example
+  running next to its code, and each editable character redrawn by the engine as you type.
 
 ### Removed
-- `demo/pp.html`, the P/P studio site sketch: it is a personal site, not an engine demo, so it no longer ships here.
+- **Packages:** the research notes are no longer in the package; they stay in the repository.
+- **Website:** the P/P site sketch (`demo/pp.html`), a personal site rather than a Pixel Studio demo.
 
 ## [0.2.0-alpha.0] - 2026-11-15
 
-The first alpha. Install from GitHub: `npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0`.
-Old event names, the `state` attribute and `actor.state` still work in this alpha and go away after it.
+The first alpha: characters that live on a page with `<pixel-stage>`, scenes, state machines, skins, front and back
+views, motion measured from real animals and people, much smaller bundles, and a stricter, smaller API. It was
+installed from GitHub: `npm i github:pavelpascari/pixel-studio#v0.2.0-alpha.0`.
 
-### Breaking: event names, load status, exports
-- **One event naming scheme.** Every event the runtime fires is now `pixel-<name>`, and every one bubbles and is
-  composed (it crosses shadow roots). The details are unchanged. The old names still fire, with their old options, for
-  one alpha release and will be removed after 0.2.0-alpha.
+### Upgrading
+- **Runtime:** every event is now named `pixel-<name>`, and every one bubbles and crosses shadow roots. The details
+  are unchanged. The old names still fire for now (see Deprecated).
   - `<pixel-sprite>`: `ready` → `pixel-ready`, `error` → `pixel-error`, `statechange` → `pixel-statechange`,
-    `spriteend` → `pixel-end`, `spriteevent` → `pixel-event`, `spriteburst` → `pixel-burst`, `spritecalm` → `pixel-calm`.
-  - `<pixel-actor>`: `tap`, `burst`, `calm`, `enter`, `exit`, `land`, `arrive`, `drop`, `pickup`, `deliver`, `catchup`
-    → `pixel-tap`, `pixel-burst`, …; `actorstate` → `pixel-activity`.
+    `spriteend` → `pixel-end`, `spriteevent` → `pixel-event`, `spriteburst` → `pixel-burst`, `spritecalm` →
+    `pixel-calm`.
+  - `<pixel-actor>`: `tap`, `burst`, `calm`, `enter`, `exit`, `land`, `arrive`, `drop`, `pickup`, `deliver`,
+    `catchup` → `pixel-tap`, `pixel-burst`, …; `actorstate` → `pixel-activity`.
   - `<pixel-stage>`: `sceneevent`, `scenestep`, `sceneend`, `scrollsettle`, `fastscroll` → `pixel-sceneevent`, ….
-  - An actor's inner `<pixel-sprite>` keeps its events inside the actor (and no longer counts clicks itself), so a
-    listener on an actor hears each burst once, from the actor.
-  - Scenes keep their short names (`"waitFor": "tap"`, `"trigger": {"event": "arrive"}`); on actors and the stage they
-    listen for the `pixel-` events. Because those bubble, `"on": "stage"` now hears every character's events.
-- **"State" means the state machine.** `<pixel-sprite>`'s load status is the `status` attribute and `el.status`
-  (`loading`, `ready`, `error`); `state` stays as an alias (both attributes are set) for one alpha. `<pixel-actor>`'s
-  behaviour is `actor.activity` (event `pixel-activity`); `actor.state` stays as an alias for one alpha.
-- **A smaller, safer engine API.** `pixel-studio` no longer exports internal building blocks or live registries:
-  - `createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`, `frameTime`, `followOffsets`,
-    `worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`, `expandFigure`, `paletteOf` and
-    `buildMixes` moved to `pixel-studio/internal` (`src/core/internal.js`), which carries no compatibility promise.
-    `pngBytes` stays public: it is how a browser makes the `encode` that `buildBundle` needs.
-  - `SHAPE_TYPES`, `TEXTURES`, `MOTION_MODELS` and `LEGGED_MODELS` are replaced by `shapeTypes()`, `textures()`,
-    `motionModels()` and `leggedModels()`, which return fresh frozen arrays (`SHAPE_TYPES.push('blob')` used to make
-    `validate` crash). `TRACK_PROPS`, `DETAIL_PRESETS` and `DETAIL_NAMES` are frozen.
-  - Registering the same plug-in definition again under its name is a no-op (a dev server re-running a plug-in's
-    setup); a different definition under a taken name still throws.
+  - Scenes keep the short names (`"waitFor": "tap"`). Because events bubble, `"on": "stage"` now hears every
+    character's events, and a listener on an actor hears each burst once.
+- **Runtime:** a sprite's load status is the `status` attribute and `el.status` (`loading`, `ready`, `error`), and an
+  actor's behaviour is `actor.activity`. The word "state" now only means the state machine.
+- **Engine:** internal building blocks moved to `pixel-studio/internal` (now `@pixel-studio/core/internal`), which
+  carries no compatibility promise: `createImage`, `blit`, `bakePoints`, `samplePose`, `samplePoseAt`, `sampleValue`,
+  `frameTime`, `followOffsets`, `worldMatrices`, `solveReach`, `overflowForPose`, `resolveExtends`, `mergeVariant`,
+  `expandFigure`, `paletteOf` and `buildMixes`. `pngBytes` stays public.
+- **Engine:** `SHAPE_TYPES`, `TEXTURES`, `MOTION_MODELS` and `LEGGED_MODELS` are replaced by the functions
+  `shapeTypes()`, `textures()`, `motionModels()` and `leggedModels()`. `TRACK_PROPS`, `DETAIL_PRESETS` and
+  `DETAIL_NAMES` are frozen.
+- **Engine:** specs are checked more strictly, so a typo fails with its JSON path instead of rendering blank. A spec
+  that rendered before may now be rejected: part `x`, `y`, `rot` and `shade` must be numbers, `sx`/`sy` within ±16,
+  shape sizes at least 0, `minDetail`/`maxDetail` 1, 2 or 3, coordinates within 4 canvas sizes, `size` at most 1000
+  units, renders at most 512 px, and names such as `toString` or `constructor` are not allowed.
+- **Engine:** walks, trots, runs and goose head-bobs are re-timed from measurements of real animals and people (see
+  Changed), so characters on the dog, goose and human figures move at different speeds. Pages that move them with
+  `pxPerSecond` or the bundle's `speed` follow automatically.
 
-### Getting ready for the alpha
-- **Moss replaces Clawd.** Clawd was drawn after another company's mascot, which this project does not do. Moss is an
-  original character on the same 16-cell rig and with the same twelve animations: a moss-green shield beetle with a
-  domed, banded shell, a sand belly, amber-tipped antennae and round eyes (`examples/moss.json`, generated by
-  `scripts/gen-moss.mjs`). It takes Clawd's place in the stage demo, the docs site, the playground and the docs.
-- **Fixed:** a `<pixel-stage>` scene with `"loop": true` whose steps all finished at once (every actor missing, or only
-  `emit` steps) froze the tab. Each pass of a loop now takes at least 100 ms, `checkScene` rejects a forever-loop with
-  no step that takes time, and a long-running scene no longer piles up stop listeners.
-- **Validation is stricter**, so typos fail with a JSON path instead of rendering a blank or hanging:
-  - part `x`, `y`, `rot`, `shade` are numbers; `sx`/`sy` are within ±16; `show` is a boolean or a number;
-  - shape sizes are ≥ 0, `minDetail`/`maxDetail` are 1, 2 or 3, and coordinates stay within 4 canvas sizes;
-  - `size` is at most 1000 units a side, and renders are at most 512 px (`MAX_RES`);
-  - names that are built-in object keys (`toString`, `constructor`, …) are rejected for materials, points, skins,
-    state nodes and inputs, as they already were for parts and animations.
-- **Style overrides** (`resolveStyle`, and the CLI's `--tones`, `--light`, `--outline`, …) follow the same rules as a
-  spec's `style`, with a readable error.
-- **CLI:** errors print as one `error:` line with exit code 1 (`PIXEL_DEBUG=1` adds the stack); `pixel help`,
-  `--help` and `-h` print the usage and exit 0; `--frame -1` is the last frame; `--out=a=b.png` keeps its `=`;
-  closing the pipe early (`| head`) is not an error.
-- **Runtime:** `checkBundle` type-checks animations, loops, points, size, ground, states and frame sizes; it accepts
-  later minor versions of the format (`pixel-sprite/1.x`); name lookups cannot hit built-in keys; a bundle URL that
-  serves an HTML page gets an error that says so; sheets on another origin load with `crossOrigin="anonymous"`.
-- **Docs:** a new [getting-started guide](packages/pixel-studio/docs/getting-started.md); the README leads with install and a five-minute
-  path; every reference doc re-checked against the code (stale outputs re-run, fixed "known issues" removed, views
-  documented in the agent brief, skins described as the deltas they are).
+### Added
+- **Runtime:** `<pixel-stage>`: characters that live on the page. They walk along `data-pixel-surface` elements,
+  drop and jump between them, climb, sit on edges, duck and peek behind elements, pass behind cut-outs and avoid
+  areas you mark. Tap one to shoo it; drag and throw it with a mouse or pen. Moving surfaces carry them. A pause
+  button is remembered, and reduced motion is respected. [Stage docs](https://pixel-studio.sh/docs/reference/stage/)
+- **Runtime:** actors you can direct: `goTo`, `hideBehind`, `say` (a speech bubble above the head), `face`, `shoo`,
+  `perform`, `pickUp` and `drop` (carry an element in the beak or hand), `exit` and `enter` (by the screen's edge),
+  `hurry`, `catchUp`, and `run(action)`, which returns a promise. A `directed` mode stops wandering between orders.
+- **Runtime:** scenes: short scripts as JSON, played with `stage.playScene()` or `<pixel-stage scene="#intro">`, with
+  steps that move, talk, wait for events, run in parallel and loop. A scene can have a `trigger` (a click, a form
+  submit, an element scrolled into view, a tap on a character), and `<script type="application/json"
+  data-pixel-scene>` scenes are armed when the page loads. Scenes are checked first, with JSON paths in the errors.
+- **Runtime:** reactions to the reader: bursts of quick clicks (`pixel-burst`, `pixel-calm`) speed a character up and
+  make stage characters panic; fast scrolls (`pixel-fastscroll`, `pixel-scrollsettle`) make `keep-in-view` characters
+  catch up. A `rate` attribute sets the playback speed.
+- **Runtime:** `<pixel-sprite>`: state machines, skins (`skin="party"`), attachment points (`el.point(name)`), events
+  from animations (`pixel-event`, such as footsteps), `el.topAt()`, `el.pxPerSecond()`, `el.displaySize`,
+  `el.currentAnim`, `el.frame`, `el.reload()`, a shared `clock`, fallback content (such as a poster image) before
+  load, and sharp scaling in whole device pixels at any pixel density.
+- **Engine:** front and back views: a spec's `views` dress the same character on other figures, with generated turns
+  and a three-quarter `look`. Stage characters turn to the reader (`actor.face('viewer')`) and now and then glance
+  at them. New figure `goose-front`.
+- **Engine:** state machines (`states`: inputs, nodes, random fidgets, transitions on conditions and events, click
+  and hover), skins (`skins`), attachment points (`points`), frame holds (`holds`), animation events (`events`) and
+  transition clips (`mixes`) that blend one animation into the next, so stops and starts no longer pop.
+- **Engine:** new motion models `jump`, `climb`, `fall` and `sit`, `duck` and `peek` presets, a `wings` rig role, and
+  motions measured from photographs and studies: `dog.gallop`, `human.sprint`, `human.sitDown`, `human.standUp` and
+  `goose.fly`. Each value is credited in `references/` (and `references/CREDITS.md`, in the package).
+- **Engine:** plug-ins: `registerShape`, `registerTexture` and `registerMotion` add shapes, textures and motion models
+  that validate, render and animate like the built-in ones. CLI: `--plugin`.
+- **CLI:** `pixel export` writes a PNG sheet with Aseprite-format JSON and a PixiJS animations map (loaded by PixiJS
+  8.6 and Phaser 3.88). `pixel bundle --views` and `--external` (sheets as separate PNG files, so a page downloads
+  only the size it shows). `pixel preview --anim a,b`. `--skin` and `--plugin`. `pixel help`.
+- **Examples:** Moss, a moss-green shield beetle with twelve hand-keyed animations, and greylag, a natural greylag
+  goose. Every goose has front and back views and flies; the fox gallops.
+- **Studio:** the playground (`/apps/studio/play.html`): one character set up entirely by its link, with panels for
+  colours, textures and style, and a Copy link button. Agents can drive it: see the
+  [playground docs](https://pixel-studio.sh/docs/reference/playground/).
+- **Studio:** the goose workbench: the goose large, every part switchable, realistic features to try on, a rendering
+  panel, every view, exported as a spec.
+- **Studio:** the studio, the figure library and the workbench work on phones and tablets.
+- **Docs:** a [getting started guide](https://pixel-studio.sh/docs/reference/getting-started/) and a guide of live
+  examples (sprites, events, state machines, moving, the stage, writing a character, motions, exporting to game
+  engines).
+- **Website:** demos: the stage demo with scenes and a newsletter form the goose delivers, Fox Trail (an endless
+  runner played by the fox), and the P/P site sketch.
 
-### P/P site sketch: a goose that follows the scroll
-- `demo/pp.html`: a one-page studio site (field-guide direction: paper, ink, stamp red) where the greylag goose starts on
-  the logo's baseline, takes off on the first scroll and flies between "perches" (any element with `data-perch`,
-  standing on its top edge at `data-at`, in `data-pose`) as you read down. Pointing at a product card sends it over;
-  pressing the footer stamp makes it come and honk. Landings stamp footprints; only the last 7 stay. Decorative only:
-  under reduced motion it stays home in a still pose, and the page reads the same with it hidden.
-- A sketch panel picks the goose (greylag, plain, sudo, kiddie, root, phreak) and its size (40–128 px; phones get 3/4),
-  kept in the URL (`?goose=sudo&size=96`) so a setup can be shared; `?ui=0` hides the panel. Spacing around the logo
-  and the product row grows with the goose.
-- Scenes (short scripts that take the goose over, then hand it back): it flies in from off-screen on arrival; in-page
-  links scroll a little slower and the goose lags ~0.6 s behind, so it flies into the frame and lands (on the logo when
-  going to the top); subscribing (sketch form) makes it honk, carry the letter off one edge and return from the other.
-- Portals: a hole opens under the goose, it sinks in and rises out of another hole elsewhere, flaps, then does one thing
-  (peck, sit, honk). After a quiet spell it portals to an annotation in view (at most every 45 s). Click it and it honks;
-  four clicks in 3 s and it puffs up, rushes at the cursor, honks, dives, and comes out on the far side from the cursor.
-- Ambient life: when scrolling stops, the goose paces a few steps (leaving prints), turns, pecks, or sits where it is.
-- Talking: a field-note tag over the goose's head (beside it where there is no room) says a line as things happen: a
-  greeting by time of day on arrival, "Ooh, a letter." when taking a subscription and "Signed for." back at the form
-  after delivering it, a word per poke ("Honk?", "Honk.", "Oi.", then "RIGHT."), "Watch it! Honk!" out of the angry
-  portal, a remark when it pops up at an annotation. Left alone on the logo for 7 s it sits down and snores ("z… zzz",
-  dashed tag) until anything moves. Decorative and aria-hidden, like the goose; off under reduced motion.
+### Changed
+- **Engine:** bundles are much smaller: sheets are written as indexed PNGs (35–45% smaller), and skins are stored as
+  the difference from the default look (root's two skins: 290 KB → 10 KB). All demo bundles together went from
+  1.6 MB to 0.85 MB.
+- **Engine:** motion re-timed from published measurements: dogs walk with real strides and trot at a real trot,
+  geese bob their heads and keep a foot down when they run, people take real-length steps.
+- **Examples:** the geese have transition clips, `flap`, `rush` and `climb`, and every example gained `jump`, `fall`,
+  `sit`, `duck` and `peek` where they make sense.
+- **Runtime:** on touch screens a sprite's `hover-anim` no longer flashes during a tap; a tap plays it once when
+  there is no `click-anim`.
+- **CLI:** errors print as one `error:` line with exit code 1 (`PIXEL_DEBUG=1` adds the stack). `--frame -1` is the
+  last frame.
 
-### Views: front, back and a three-quarter look
-- Specs can have `views`: the same character dressed on other figures (`"front": {"figure": "goose-front", "parts":
-  [...]}`). View parts join as `front.*`, shown only in that view's animations (`idle@front`, `waddle@back`); turns are
-  generated (`turn@front`, `unturn@front`), and `look` puts the view's head on the side body for a three-quarter
-  `look@front` that the turn passes through. Attachment points follow the view. Variants patch views like the main
-  spec, and their `materialMap` reaches every view.
-- New figure `goose-front` (head-on, or from behind); front-view wings flap outward on both sides.
-- `examples/goose-base.json` (and so the whole flock) has front and back views.
-- Stage: `actor.face('viewer' | 'away' | 'side')` turns the character (a promise; scenes wait for it). It idles, talks
-  and performs in that view and turns back to the side by itself before walking. New `gaze` behaviour (on by default):
-  now and then it looks at the reader. The demo's goose turns to you when it has delivered the mail.
-- Workbench: side / ¾ look / front / back, with each view's parts switchable and exported as `views` patches. Hiding a
-  part that is not a bone exports as `remove`.
-- The flock is dressed in every view: root's shades, hood and drawstrings; sudo's headphones, bandana and cheek
-  strap; phreak's ski mask, eye slit and pompom; kiddie's proportions and cap. The workbench's 17 features have front
-  and back versions where they show.
-- Fixed: a prop hidden by default (root's server rack) appeared during turns.
+### Deprecated
+- **Runtime:** the old event names (`ready`, `spriteend`, `tap`, `actorstate`, …), the `state` attribute of
+  `<pixel-sprite>` and `actor.state` still work, and will be removed in a later release.
 
-### A game: Fox Trail
-
-- New `demo/runner.html`: an endless runner played by the fox (gallop measured from Muybridge's hounds, a new in-place
-  `leap`, pixel-accurate collisions with `hitTest`, speed ramp through `rate`, best distance kept locally). Linked from
-  the demo site.
-- `docs/runtime.md` has a "Games" section: what `<pixel-sprite>` offers a game loop, why `<pixel-stage>` scenes are for
-  choreography rather than play, and three gaps worth closing (rectangle overlap, frame seek, reduced-motion opt-in).
-
-### New motions measured from photographs
-
-- All 26 relevant Muybridge plates (1887, public domain, full-resolution BPL scans) measured into
-  `references/measurements/` — dogs 706–710, human walks, runs, stairs, ladders, jumps, sitting and rising, and pigeon,
-  cockatoo, vulture, ostrich and adjutant — with per-frame contacts, verified joint points, timing, and what could not be
-  measured and why. All 28 plates are in the registry (ids zero-padded: `muybridge-1887-pl001`); the references check now
-  also validates measurement files.
-- New figure motions: `dog.gallop` (hound plates: 0.25 s, duty 0.22, hind–hind–fore–fore), `human.sprint` (full-speed
-  runs: 0.5 s, duty 0.29), `human.sitDown` and `human.standUp` (one frame per plate frame of plates 236 and 249, hip
-  height and trunk lean as measured), `goose.fly` (level flight at 5 Hz, Meir et al. 2019, with the full wingstroke the
-  bird plates show). Each value — and each frame of the sit-down and stand-up — is logged in `references/`.
-- The fox gallops and every goose flies (`fly` in goose-base and the greylag). The figure library and the motions page
-  show them; the motions page has a "Measured from photographs" section with playgrounds.
-
-### Motion re-timed from real animals (every change cited in `references/`)
-
-- **Dog** (fox and anything on `figures/dog.json`), from Maes et al. 2008: `walk` takes real dog-sized steps
-  (`stride` 15 → 27, 0.8 s cycle) with each forefoot landing 16% of a cycle after its hindfoot (Table 2, was 25%);
-  `trot` is a real trot instead of a walking-speed jog (0.5 s cycle, `duty` 0.46, `stride` 17 → 30; 8 frames at
-  16 fps). Speeds: walk 23 → 52, trot 57 → 130 units/s.
-- **Goose** (every goose), from Wang et al. 2025 and Han et al. 2023: the walk and sneak head-bob, holding the head
-  still for 38% of each step (`head.hold`); walking `duty` 0.62 → 0.7; `run` and `rush` are grounded runs (`duty`
-  0.42 → 0.58: waterfowl keep a foot down when they run), so they are slower (run 76 → 55, rush 100 → 72 units/s).
-  The greylag's own waddle gets the same duty and head-bob.
-- **Human**, from Fukuchi et al. 2018/2017: walk `stride` 26 → 36 (real step length), run `duty` 0.38 → 0.35,
-  `stride` 26 → 30, 11 fps (0.73 s cycle).
-- Muybridge plate 706 measured (`references/measurements/dog-pl706.json`): the mastiff is walking, not trotting
-  (support switches between a same-side and a diagonal pair; 0.88 s cycle), which agrees with the new `dog.walk`; it
-  is not used for the trot.
-- Wings are unchanged: 6–7 Hz matches a goose taking off (Meir et al. 2019, Marey 1890).
-- Each value is logged with its source and exact location (table, equation, plate) in `references/dog.json`,
-  `goose.json`, `human.json` and `goose-greylag.json`, and `npm test` fails if a value drifts from its log.
-
-### Where our motion comes from
-
-- New `references/`: a registry of motion sources (`sources.json`: Muybridge plates with record IDs, frame layout and
-  exposure intervals, papers with DOIs, videos), each cited in full with its rights statement word for word, and one
-  log per figure saying which source each tuned parameter and each derived frame comes from. The format is in
-  `references/README.md`.
-- `scripts/references.mjs` checks the logs (part of `npm test`): unknown sources, licences outside the rule (public
-  domain, CC0, CC BY with credit, or numbers only from copyrighted papers), values that drifted from the figure, and
-  frames measured from a source whose images we may not use. `node scripts/references.mjs credits` writes
-  `references/CREDITS.md`, which ships with the package.
-- Research notes behind it: `docs/research/motion-references.md` (public-domain photo plates, published gait and
-  flight numbers, our presets against them), `mit-libraries.md`, `motion-data-sources.md`, `mesh2motion.md`.
-
-### Every page on a phone
-
-- The studio works on phones and tablets: one column with the character first, a wrapping toolbar, the spec editor in
-  its own scroll area, and the animation chips in one row you swipe (goose-base has 40).
-- Trailmark's nav links drop to a swipeable row of pills instead of squeezing into one-word columns (the page was 12 px
-  too wide on a phone).
-- On touch screens every page (studio, workbench, figures, playground, docs, demos) makes buttons, selects, sliders,
-  checkboxes and the parts list's toggles big enough to tap, and fields use 16 px text so iOS doesn't zoom in on focus.
-  Desktop is unchanged.
-
-### A wild one joins the flock: greylag
-
-- New `examples/goose-greylag.json`: a natural greylag goose (heavy grey-brown body, slim neck, buff-edged coverts,
-  pink legs, orange-pink bill) on the goose figure with its own proportions. Contributed through the playground, then
-  tuned to read at sprite sizes: a selective outline and rounder shading, the flank streaks and covert edge strokes
-  dropped (a comb below ~100 px), a paler belly only underneath (it showed as a white goose when the wing lifted), a
-  bigger honk, every flock move (run, rush, jump, fall, sit, duck, peek, climb, flap) and goose-base's front and back
-  views in greylag colours. `rush` leans less so the longer bill stays in the frame.
-- It walks the flock lawn and has a roster card (hover: peek); the playground, the studio and the goose workbench list
-  it. The workbench's features are drawn on goose-base's body, so for a goose with its own proportions they are off
-  (with a note saying why); picks come back on switching to a flock goose.
-- The workbench's skeleton overlay draws only the bones shown in the frame. It used to draw every view's skeleton at
-  once, so the side view had the front view's spine and wings standing through the body.
-
-### Playground
-
-- New `studio/play.html`: one character, animated, set up entirely by its URL: `?c=goose-root&view=front&anim=waddle&skin=party&res=64`
-  plus `#spec=` with changes to materials, style and parts (URL-encoded JSON, or deflate-raw + base64url; a whole goose is about 2 KB).
-  Panels for colours, textures and style write into the link; **Copy link** shares it.
-- For agents: [docs/playground.md](packages/pixel-studio/docs/playground.md) (URL options, payload rules, examples), `studio/play.schema.json` (JSON
-  Schema of the payload), and `window.playground` (`ready`, `options()`, `set()`, `link()`, `frame()`) in the page.
-- `llms.txt` at the site root points agents to the playground, its guide and the spec.
-- `scripts/serve.mjs` no longer serves dotfiles or dot-folders (`.git` was reachable through a tunnel) and answers
-  `/robots.txt` with "allow everything".
-
-### Speech bubbles above the head
-
-- `actor.say()` puts its bubble just above the highest pixel over the head and beak (a hat or hood included), not at the beak, where it covered the head. The flock demo's HONK! does the same.
-- New `el.topAt(x0, x1)` on `<pixel-sprite>`: the highest opaque pixel in a strip of the frame showing now.
-
-### Smaller bundles
-- Sheets are written as indexed PNGs (palette, 1–8 bits per pixel) when they have at most 256 colours, which pixel
-  art nearly always does: 35–45% smaller. New `pngBytes(w, h, rgba, deflate)` in the core works in any host; the
-  studio uses it with `CompressionStream`, Node's `encodePNG` with zlib.
-- Skins are stored as a change to the default sheet (`recolor`: colours swapped; `overlay`: the pixels still
-  different) when that is smaller: root's two skins went from 290 KB to 10 KB. `<pixel-sprite>` rebuilds the sheet
-  on load (checked pixel-exact in Chromium, Firefox and WebKit). `buildBundle(..., {deltas: false})` turns it off.
-- `buildBundle(..., {views})` / `pixel bundle --views front|none` ship only some views.
-- `pixel bundle --external` writes the sheets as PNG files next to the bundle, so a page downloads only the size it
-  shows.
-- Root's bundle: 609 KB → 156 KB with every view, 80 KB side-only; 22 KB of JSON + one 18–71 KB sheet with
-  `--external`. All demo bundles together: 1.6 MB → 0.85 MB.
-
-### Goose workbench
-- `studio/goose.html`: the goose large (32–192 px, whole-pixel zoom, skeleton and pixel-grid overlays, actual-size
-  previews at 16/32/64), any of the flock, every animation, frame stepping. Every part and every shape can be
-  switched off; 17 realistic features (`studio/goose-features.json`: beak nail, nostril, bill line, eye ring and
-  glint, Chinese knob, neck furrows, pale throat and belly, white stern, flank barring, far wing, wing coverts, dark
-  flight feathers, layered tail, webbed toes, scaly shins) can be tried on. The look is kept in the URL and exported
-  as a variant spec (checked to build). Works on phones.
-- Workbench "Rendering" panel: tones, outline, texture, roundness, fill light, dithering and inner lines over the
-  goose's own style; a "clean" preset (no texture or dithering, 3 tones, no inner lines, softer light) for a calmer,
-  more natural look at large sizes. Exported as the spec's `style`.
-
-### Figure library page on phones; more goose moves in the library
-- `studio/figures.html` works on phones: the animation first (square, sharp at any pixel density), figures and
-  motions as rows of chips to swipe, view options in a grid. Desktop layout unchanged.
-- Figure library motions can carry their own `tracks`, `events` and `holds` (a spec's tracks override them). The goose
-  figure's library gains `rush`, `flap` and `honk`, so every goose spec can use them; the flock's bundles are unchanged.
-
-### Triggers, carrying, leaving the screen
-- Scenes can have a `trigger` (`{"event", "on", "once", "preventDefault"}`): a form submit, a click, an element scrolled
-  into view (`visible`), a tap on a character. `<script type="application/json" data-pixel-scene>` scenes are armed when
-  the page loads; `stage.arm(scene)` from code. Steps can name the triggering element `"$trigger"` (or `"$trigger .x"`).
-- Actors: `pickUp(el)` (a styled copy rides at the beak or hand; `carrying`), `drop('here' | 'back')`,
-  `exit('left' | 'right' | 'auto')` (off the screen's edge, delivering what it carries; `offstage`), and
-  `enter(...)` (walk in from a side or drop in from the top); the same as scene steps and `run()` orders. Events
-  `pickup`, `drop`, `deliver`, `exit`, `enter`.
-- Leaving or entering by the page's right edge never widens the page; a speech bubble stays inside it.
-- The stage demo's newsletter form: subscribe and the goose posts your letter.
-- Movement steps take a `speed` (`actor.hurry(rate)`): faster, running, feet planted. The geese have `flap` (from the
-  kiddie goose) and a `rush` gait (running with wings beating and neck out, after footage of running geese), used
-  when hurrying. In the newsletter scene the goose flaps the moment you subscribe and rushes the letter off.
-- Carried things hang from the beak tip (or hand) by their near corner, tipped a little and behind the character,
-  so the beak stays in view.
-
-### Scenes
-- `stage.playScene(scene)`: scripted moments as JSON (in a `<script type="application/json">`, as text or an object).
-  Steps `goTo` (selector, cast name or point; `then`, `at`), `hideBehind`, `perform`, `say`, `face`, `shoo`, `wait`,
-  `together` (parallel), `waitFor` (an event on a character, element or the stage), `emit`; `async` on any step; `loop`.
-  Returns `{finished, stop()}`; `scenestep`, `sceneevent` and `sceneend` events; `<pixel-stage scene="#intro">` autoplays.
-  Scenes are checked first, with JSON paths in the errors (`checkScene`). Steps that cannot happen are skipped.
-- Actors: `run(action, ...args)` returns a promise (true when done, false if impossible or interrupted); `say()` returns
-  a promise; `face()`; a `directed` mode (no wandering between orders, stays seated or hidden); a `tap` event.
-- The stage demo plays "The plan" (goose, Clawd and Pip); the docs site's stage page plays a race.
-
-### Clawd
-- New example character `examples/clawd.json`, a blocky orange critter after the Claude Code mascot: 12 animations
-  (idle, a "thinking" shuffle, a sideways scuttle walk and run, hop, wave, jump, fall, climb, sit, duck, peek), all
-  hand-keyed on a 16-cell grid so it stays crisp at every size. Generated by `scripts/gen-clawd.mjs`. On the stage demo,
-  the docs home page and the motions gallery.
-- Stage: `actor.perform(name)`; a live character's `size` can change (speed, jumps and hit area follow). The stage
-  demo has a character-size slider (50–200%, remembered).
-
-### Rage clicks, playback rate, fast scrolls
-- `<pixel-sprite>`: bursts of quick clicks fire `spriteburst` {count, rate} and `spritecalm`; a burst speeds up a
-  playing click animation; a `rate` attribute (0.25..4) and `effectiveRate`; state machines get `burst`/`calm`
-  interactions (`$count`, `$rate`) and node rates from inputs. The goose honks faster with each quick click and panics.
-- `<pixel-stage>`: rage taps make a character panic (faster, fleeing) with `burst`/`calm` events; `fastscroll` and
-  `scrollsettle` events and `stage.scrollSpeed`; `keep-in-view` characters catch up after a scroll (run at 2.5×, or
-  drop in from the top of the screen); `actor.catchUp()`. Movement scales with playback rate everywhere.
-
-### Stage
-- Drag and throw characters with a mouse or pen (touch keeps tap-to-shoo, so scrolling is never hijacked).
-- `data-pixel-surface="animated"`: moving surfaces are re-read every frame; characters ride them, and jumps onto them
-  follow them in the air. The stage demo has a drifting cloud.
-
-### Plug-ins
-- `registerShape`, `registerTexture`, `registerMotion` (and `usePlugin`, `registeredPlugins`): new shapes, textures
-  and motion models validate, render and animate like built-ins, and `pixel brief` lists them. CLI `--plugin`.
-  Example: `examples/plugins/extras.mjs` (star shape, feathers texture, float motion) and `starfish.json`.
-
-### Transition clips
-- `mixes` in specs (`"waddle>idle": {"frames": 3}`) bake in-between frames that blend the end of one animation
-  into the start of another. `<pixel-sprite>` plays them when a switch happens at a boundary (loop end or after a
-  one-shot), so stops and starts no longer pop; `play(name, {mix: false})` skips them. The geese have them.
-
-### Docs site
-- `site/`: nine pages where every feature is a live example next to its code (copyable, highlighted), and spec
-  playgrounds that render a character with the real engine as you edit it. Overview, sprites, events and points,
-  state machines and skins, moving sprites, the stage, writing a character, figures and motions, bundles and game
-  engines (with a live PixiJS example). Works on phones.
-- `npm run build:demo` also writes a poster PNG per character and an exported goose sheet for the PixiJS example.
-
-### Runtime (`<pixel-sprite>`)
-- Fixed: one sprite that threw stopped every sprite on the page. The shared frame loop now requests
-  the next frame first and isolates each sprite; a failing sprite goes to `state="error"`.
-- Fixed: elements upgraded after parsing loaded their bundle twice.
-- Fixed: before load (and after a failure) a sprite was 300 × 150 px. The box is now reserved from `size`.
-- Fixed: overlapping `src` changes could race and show the wrong bundle or throw. Loads carry a token
-  and commit atomically.
-- Fixed: a failed fetch was cached forever. Failures are evicted; `reload()` retries.
-- Fixed: `alt=""` was announced with the bundle's name. It now marks the sprite decorative.
-- Fixed: under reduced motion, one-shots never fired `spriteend`. They now hold a frame and end on time,
-  and the setting is watched live.
-- Added: scaling in whole device pixels (even pixels at DPR 2.625, 1.5 and with zoom), re-run when the DPR changes.
-- Added: `error` event and `state` attribute (`loading`/`ready`/`error`); light-DOM fallback content (a poster `<img>`).
-- Added: the shared `clock` export for page code, `el.pxPerSecond(name)`, `el.displaySize`, `el.currentAnim`,
-  `el.frame`, `el.reload()`, `play(name, {restart})` (re-playing the current animation no longer restarts it).
-- Added: bundle validation (`checkBundle`), decoded sheets shared between sprites (`ImageBitmap`), one shared
-  `IntersectionObserver`, `fps` observed.
-- Changed: on touch screens `hover-anim` no longer flashes during a tap; a tap plays it once when there is no `click-anim`.
-- Added: `test/browser/runtime.html`, 24 in-browser checks to run on real devices (pass in Chromium, Firefox, WebKit and iOS Safari),
-  and `scripts/browser-check.mjs`, which runs them and every docs-site page in Firefox and WebKit with Playwright
-  (installed outside the project; no dependency).
-- Fixed: a one-shot started while off-screen never fired `spriteend`; it now ends on time, as under reduced motion.
-
-### Bundles and specs
-- Bundles record the spec canvas `size` and the foot line `ground` (units), so pages can convert `speed` to px/s and
-  stand a character exactly on an element.
-- Animation events: motion models emit `footstep` (with the leg), `takeoff`/`land` (hop) and `launch`/`land` (jump);
-  authors add `"events": [{"frame", "name", "data"}]`. The runtime fires them as `spriteevent`.
-- Attachment points: `points` in specs and figures (`beak`, `head`, hands, …), baked per frame; `el.point(name)`.
-- Frame holds: `"holds": {"3": 2}` → per-frame `durations` in the bundle.
-- Skins: named patches (`skins`) baked as extra variants; `<pixel-sprite skin="party">`. CLI `--skin`.
-- State machines: `states` (inputs, nodes with one-shots and random fidgets, transitions with conditions and `at`
-  now / end / sync / an event name, click and hover interactions). Runtime `el.set`, `el.fire`, `el.stateNode`,
-  `statechange`; exported `StateMachine` and `parseCondition`.
-- Validation for all of the above, with JSON paths and did-you-mean.
-
-### Figures and motion
-- New motion models: `jump` (legged, one-shot, timed by `launch`/`land`), `climb` (feet on a wall, exports
-  `speedY` and the `wall` line), `fall`, `sit` (on an edge); `duck` and `peek` presets. New rig role `wings`.
-- Presets for them in every figure where they make sense; examples gained `jump`, `fall`, `sit`, `duck`, `peek` and
-  (geese) `climb`.
-- Figures define attachment points and their foot line.
-
-### Page interactions: `<pixel-stage>` (new)
-- Characters live on a real page: walk along `data-pixel-surface` elements, drop and jump between them, climb
-  `data-pixel-climbable` sides, sit on edges and `data-pixel-perch`es, duck and peek behind `data-pixel-hide`
-  elements, pass behind `data-pixel-occluder`s (clip-path cut-outs), avoid `data-pixel-avoid`.
-- Cost-based route planning; layout read only when the page changes; tap or click a character to shoo it (only its
-  opaque pixels, and that click does not reach the page); a pause button that is remembered; reduced motion.
-- `actor.goTo()`, `hideBehind()`, `say()`, `shoo()`, `actorstate` / `land` / `arrive` events.
-- Demo: `demo/stage.html`. Checked in desktop Chromium and iOS 18.1 Safari (simulator).
-
-### Export
-- `pixel export` writes a PNG sheet with Aseprite-format JSON (frames named by index, frame tags, slices for points,
-  per-frame durations) plus a PixiJS `animations` map. Loaded successfully by PixiJS 8.6 and Phaser 3.88.
-- `pixel preview --anim a,b` limits the rows.
-
-### Demo
-- The flock moves its geese on the runtime's clock with `pxPerSecond`, snaps to device pixels, and stops while off-screen.
+### Fixed
+- **Runtime:** one sprite that failed stopped every sprite on the page.
+- **Runtime:** before load, or after a failure, a sprite was 300 × 150 px; its space is now reserved from `size`.
+- **Runtime:** changing `src` quickly could show the wrong character; a failed download was never retried
+  (`reload()` retries).
+- **Runtime:** `alt=""` was read out with the bundle's name; it now marks the sprite as decorative.
+- **Runtime:** under reduced motion, or off-screen, a one-shot animation never ended.
+- **Runtime:** a looping scene whose steps all finished at once froze the tab.
+- **Runtime:** a bundle URL that serves an HTML page now gets an error that says so, and sheets from another origin
+  load.
 
 ## [0.1.0] - 2026-11-08
 
 First public version.
 
-### Engine
-- JSON character spec: materials, parts with pivots and parents, SDF shapes (rect, ellipse, circle, capsule,
-  polygon), animation tracks (keyframes, eased keys, waves). Validation with JSON paths and did-you-mean.
-- Pixel-art renderer at any resolution with three detail tiers: hue-shifted colour ramps, lighting,
-  textures in part space, dithering, selective outlines, inner lines, contact shadows.
-- Sprite sheets, contact sheets, ASCII frames, and self-contained web bundles (`pixel-sprite/1`).
-- `reach` constraints (IK), bounds and reach warnings, `extends` variants.
-
-### Figures and motion
-- Figure library: `goose`, `human`, `dog` (side view), `chibi` (front view), `blob` (soft body).
-- Motion models: `gait` (planted feet, body bob and pitch, steady head, arm swing), `idle`, `pose`, `hop`
-  (gravity arc, volume-preserving squash and stretch). Front-view walking. Exported `speed` for
-  slide-free movement on a page.
-- Follow-through springs for tails, ears, scarves and antennae.
-
-### Tools
-- `pixel` CLI (validate, preview, ascii, render, bundle, resolve, where, figures, brief).
-- Studio with live editing, rig overlay, detail-level strip and an Agent tab; figure viewer.
-- `<pixel-sprite>` web component: resolution variants, hover/click animations, reduced motion, off-screen pause.
+### Added
+- **Engine:** the JSON character spec: materials, parts with pivots and parents, shapes (rect, ellipse, circle,
+  capsule, polygon) and animation tracks, with validation that gives JSON paths and did-you-mean.
+- **Engine:** a pixel-art renderer at any resolution with three levels of detail: hue-shifted colour ramps, lighting,
+  textures, dithering, selective outlines, inner lines and contact shadows.
+- **Engine:** sprite sheets, contact sheets, ASCII frames and self-contained web bundles; reach constraints (IK) and
+  variants that extend another spec.
+- **Engine:** figures `goose`, `human`, `dog`, `chibi` and `blob`, and motion models `gait`, `idle`, `pose` and `hop`,
+  with planted feet, squash and stretch, follow-through for tails and ears, and a `speed` for moving on a page
+  without sliding.
+- **CLI:** `pixel` with `validate`, `preview`, `ascii`, `render`, `bundle`, `resolve`, `where`, `figures` and `brief`.
+- **Runtime:** `<pixel-sprite>`: one tag that plays a bundle, with sizes, hover and click animations, reduced motion
+  and pausing off-screen.
+- **Studio:** the studio, with live editing, a rig overlay, the levels of detail side by side and an Agent tab, and a
+  figure viewer.
