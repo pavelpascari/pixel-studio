@@ -14,6 +14,13 @@ Until 1.0, minor versions may change the spec format.
 - `scripts/bench/`: the benchmark behind those numbers. `node scripts/bench/sizes.mjs` measures sizes with Node
   alone; `scripts/bench/browser.mjs` measures load and frame costs in Chrome with Lighthouse and Playwright
   (installed outside the project, like `scripts/browser-check.mjs`).
+- `<pixel-sprite loading="lazy">` (and `el.loading`): the sprite waits to fetch its bundle and decode its sheet
+  until it comes within one viewport of being seen, like `<img loading="lazy">`. A character far down a long page
+  then costs nothing until the reader gets near it (the fox: 44 KB gzip and a 0.4 MB decoded sheet; a goose up to
+  105 KB and 8 MB). The default stays eager; `<pixel-actor>` always loads at once (the stage needs its size).
+- Docs: the CSS rule that reserves a sprite's box before its script runs now has `vertical-align: bottom` and one
+  line per `size`, and is in the getting-started page. It takes the layout shift of one sprite from 0.031 to 0
+  (0.003 on a phone with a device pixel ratio of 1.75, where whole device pixels make the sprite a little larger).
 
 ### Changed
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner

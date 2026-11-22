@@ -61,6 +61,7 @@ attachment points (the beak) and the foot line. It is the only thing the page ne
 ```html
 <!doctype html>
 <meta charset="utf-8">
+<style>pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px }</style>
 <script type="module" src="node_modules/@pixel-studio/runtime/src/pixel-sprite.js"></script>
 <pixel-sprite src="my-goose.bundle.json" anim="idle" size="128"
               hover-anim="waddle" click-anim="honk" alt="Marigold, a yellow goose"></pixel-sprite>
@@ -69,6 +70,8 @@ attachment points (the beak) and the foot line. It is the only thing the page ne
 Serve the folder (modules and `fetch` need http, not `file://`), for example `python3 -m http.server`, and open it.
 The goose idles, waddles while the mouse is over it, and honks when clicked. The runtime picks the sharpest sheet
 for the size and the screen, scales in whole device pixels, pauses off-screen and respects reduced motion.
+The `<style>` line gives the goose its 128 × 128 box before the script has run, so the page does not jump when it
+appears. For a character far down a long page, add `loading="lazy"`: it loads when it comes near.
 
 In production, copy `pixel-sprite.js` and the bundle next to your page; the runtime is one file with no imports.
 
