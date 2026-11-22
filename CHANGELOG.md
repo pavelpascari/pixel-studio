@@ -9,6 +9,8 @@ Until 1.0, minor versions may change the spec format.
 ### Changed
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
   (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
+- `examples/goose-root.json`: the `party` skin's hat sits on the crown of the head instead of over the shades and
+  eyes (its base moves up from y 20 to 17.5 and back over the skull).
 
 ## [0.2.0-alpha.2] - 2026-11-21
 
