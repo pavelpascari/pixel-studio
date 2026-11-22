@@ -2,114 +2,242 @@
 // The landing page: Pixel Studio's own page at /, replacing the one astro-project-site injects. Every character on
 // it is a live <pixel-sprite> or <pixel-actor> playing a bundle from demo/assets/ (served from the /apps/ mirror),
 // with the runtime from packages/runtime/src/: the page is its own demo.
-import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section, Steps } from 'astro-project-site/components';
+//
+// The order follows a visitor's questions: what is it (a character to direct on a small page), could it be mine (the
+// same goose in other looks), how much work is it (the embed), how do I make my own (the studio), where would I use
+// it (examples), will it behave (sizes, motion, packages).
+import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section } from 'astro-project-site/components';
 import '../styles/landing.css';
 
 const assets = '/apps/demo/assets';
+const play = '/apps/studio/play.html';
 
-// The hero line-up: hover and click animations are each bundle's own (see `npx pixel preview`).
-const lineup = [
-  { src: 'goose-root', alt: 'root, a hacker goose in a hoodie', hover: 'waddle', click: 'hack' },
-  { src: 'fox', alt: 'Ember the fox', hover: 'trot', click: 'leap' },
-  { src: 'pip', alt: 'Pip the adventurer', hover: 'walk', click: 'wave' },
-  { src: 'robot', alt: 'Bolt the robot', hover: 'walk', click: 'wave' },
-  { src: 'slime', alt: 'Gloop the slime', hover: 'hop', click: 'hop' },
-  { src: 'moss', alt: 'Moss', hover: 'think', click: 'wave' },
-  { src: 'goose-sudo', alt: 'sudo, a loud canada goose', hover: 'waddle', click: 'headbang' },
+// The hero's cast; `who` is read out when one is picked.
+const cast = [
+  { id: 'goose-root', label: 'Goose', alt: 'root, a hacker goose in a hoodie', who: 'Meet root. A goose in a hoodie, never far from a laptop.' },
+  { id: 'fox', label: 'Fox', alt: 'Ember the fox', who: 'Meet Ember. A fox with a curious streak.' },
+  { id: 'pip', label: 'Pip', alt: 'Pip the adventurer', who: 'Meet Pip. Small, brave, always packing for a trip.' },
 ];
 
-const steps = [
+// "Make it yours": goose-root's looks, each an excerpt of packages/pixel-studio/examples/goose-root.json.
+const looks = [
   {
-    title: 'Install',
-    body: 'The engine and the pixel command. A site that only plays sprites needs just @pixel-studio/runtime.',
-    code: 'npm i @pixel-studio/core',
-    lang: 'sh',
+    skin: '',
+    label: 'Hoodie',
+    code: `{
+  "extends": "goose-base.json",
+  "name": "root (hacker goose)",
+  "materials": {
+    "hoodie": { "color": "#4a5272", "texture": "cloth" },
+    "shades": { "color": "#16161e", "shine": 0.6 },
+    "lens":   { "color": "#46ff7a" }
+  },
+  "materialMap": { "plumage": "hoodie" }
+}`,
   },
   {
-    title: 'Describe a character',
-    body: 'Start from an example and change what differs; every motion of its figure comes with it.',
-    code: `{ "extends": "./node_modules/@pixel-studio/core/examples/goose-base.json",
-  "name": "Marigold",
-  "materials": { "feather": { "color": "#e8b04a" }, "beak": { "color": "#d94b32" } } }`,
-    lang: 'json',
+    skin: 'party',
+    label: 'Party hat',
+    code: `"skins": {
+  "party": {
+    "materials": {
+      "partyHat": { "color": "#ff5fa2", "texture": "stripes" },
+      "pompom":   { "color": "#ffd84a" }
+    },
+    "parts": [{ "id": "hat", "parent": "head", "shapes": [
+      { "type": "polygon", "points": [[59.5,17.5], [68.5,17.5], [64.5,4]],
+        "material": "partyHat" },
+      { "type": "circle", "cx": 64.5, "cy": 4, "r": 2.4, "material": "pompom" }
+    ] }]
+  }
+}`,
   },
   {
-    title: 'Check it, look at it, bundle it',
-    body: 'Errors carry a JSON path and a did-you-mean; the preview shows every animation at 16, 32 and 64 px.',
-    code: `npx pixel validate my-goose.json
-npx pixel preview  my-goose.json --out my-goose.png
-npx pixel bundle   my-goose.json --out my-goose.bundle.json`,
-    lang: 'sh',
-  },
-  {
-    title: 'Put it on a page',
-    body: 'One module, one tag.',
-    code: `<script type="module" src="pixel-sprite.js"></script>
-<pixel-sprite src="my-goose.bundle.json" anim="idle" size="128"
-              hover-anim="waddle" click-anim="honk" alt="Marigold"></pixel-sprite>`,
-    lang: 'html',
+    skin: 'redteam',
+    label: 'Red team',
+    code: `"skins": {
+  "redteam": {
+    "materials": {
+      "hoodie": { "color": "#8e2b3a" },
+      "lens":   { "color": "#ff4d5e" },
+      "code":   { "color": "#ff4d5e" }
+    }
+  }
+}`,
   },
 ];
+const moves = [
+  { anim: 'waddle', label: 'Waddle' },
+  { anim: 'honk', label: 'Honk' },
+  { anim: 'hack', label: 'Hack' },
+  { anim: 'flap', label: 'Flap' },
+  { anim: 'idle', label: 'Stand' },
+];
+
+const spriteEmbed = `<script type="module" src="pixel-sprite.js"></script>
+
+<pixel-sprite src="goose-root.bundle.json"
+  anim="idle" size="128" skin="party"
+  hover-anim="waddle" click-anim="honk"
+  alt="root, a goose in a party hat"></pixel-sprite>`;
+
+const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
+
+<article class="card" data-pixel-surface>…</article>
+<article class="card" data-pixel-surface>
+  …
+  <div class="crate" data-pixel-hide></div>
+</article>
+
+<pixel-stage>
+  <pixel-actor src="goose-root.bundle.json" size="72"
+    alt="root, a hacker goose"></pixel-actor>
+</pixel-stage>`;
 ---
 
 <BaseLayout>
   <section class="ps-hero" aria-labelledby="ps-hero-title">
     <div class="ps-hero-text">
-      <p class="ps-eyebrow">Pixel-art characters for the web</p>
+      <p class="ps-eyebrow">Pixel characters for the web</p>
       <h1 id="ps-hero-title">Characters that live on your page.</h1>
       <p class="ps-lead">
-        Describe a character in JSON, or ask Claude to. Pixel Studio draws it as crisp pixel art at every size, with
-        motion that keeps its feet on the ground, and one tag plays it on any website.
+        Create animated pixel characters. Give them a home on your website.
       </p>
       <div class="ps-actions">
-        <a class="site-btn site-btn--primary" href="/docs/reference/getting-started/">Get started</a>
-        <a class="site-btn" href="/apps/studio/">Open the studio</a>
+        <a class="site-btn site-btn--primary ps-try" href="#try">Try a character <span aria-hidden="true">→</span></a>
+        <a class="ps-link" href="#embed">See the embed <span aria-hidden="true">↘</span></a>
       </div>
-      <InstallCommand command="npm i @pixel-studio/core" />
+      <p class="ps-status">Open source · MIT · Alpha</p>
     </div>
-    <div class="ps-lineup" role="group" aria-label="Characters made with Pixel Studio: hover or tap them">
-      {lineup.map((c) => (
-        <pixel-sprite
-          src={`${assets}/${c.src}.bundle.json`}
-          anim="idle"
-          size="96"
-          hover-anim={c.hover}
-          click-anim={c.click}
-          alt={c.alt}
-        />
-      ))}
-      <p class="ps-hint" aria-hidden="true">Hover them. Click them.</p>
-    </div>
+
+    <section class="ps-demo" id="try" aria-labelledby="ps-demo-title">
+      <div class="ps-demo-head">
+        <h2 id="ps-demo-title">Your layout is their playground.</h2>
+        <fieldset class="ps-seg" data-group="cast">
+          <legend class="site-visually-hidden">Character</legend>
+          {cast.map((c, i) => (
+            <label><input type="radio" name="cast" value={c.id} checked={i === 0} /><span>{c.label}</span></label>
+          ))}
+        </fieldset>
+      </div>
+      <div class="ps-window">
+        <p class="ps-window-bar" aria-hidden="true"><span>your next project</span><i></i></p>
+        <div class="ps-window-cards">
+          <article class="ps-mini ps-mini--a" data-pixel-surface>
+            <h3>A small idea.</h3>
+            <p class="ps-lines" aria-hidden="true"><i></i><i></i></p>
+          </article>
+          <article class="ps-mini ps-mini--b" data-pixel-surface>
+            <h3>A little life.</h3>
+            <p class="ps-lines" aria-hidden="true"><i></i><i></i></p>
+            <div class="ps-crate" data-pixel-hide aria-hidden="true"></div>
+          </article>
+        </div>
+        <div class="ps-window-ground" data-pixel-surface aria-hidden="true"></div>
+      </div>
+      <div class="ps-moves" role="group" aria-label="Make it move">
+        <button type="button" data-move="walk">Walk</button>
+        <button type="button" data-move="jump">Jump</button>
+        <button type="button" data-move="hide">Hide</button>
+      </div>
+      <p class="ps-who" aria-live="polite">{cast[0].who}</p>
+      <p class="ps-still" hidden>Your device asks for reduced motion, so the characters stand still.</p>
+    </section>
   </section>
 
-  <Section id="packages" title="Two packages, one version" intro="Make characters with one; play them anywhere with the other. They are always released together.">
-    <div class="ps-packages">
-      <article class="ps-package">
-        <p class="ps-tag">@pixel-studio/runtime</p>
-        <h3>Play them</h3>
-        <p>
-          <code>&lt;pixel-sprite&gt;</code> plays a character on any page; <code>&lt;pixel-stage&gt;</code> lets characters
-          walk, climb and hide on your page's own elements. One ES module each, no dependencies, no build step.
-        </p>
-        <InstallCommand command="npm i @pixel-studio/runtime" />
-        <a href="/docs/reference/runtime/">The runtime <span aria-hidden="true">→</span></a>
-      </article>
-      <article class="ps-package">
-        <p class="ps-tag">@pixel-studio/core</p>
-        <h3>Make them</h3>
-        <p>
-          The engine, the <code>pixel</code> command, a library of figures with realistic motion, and example
-          characters. The studio puts it in a browser, with Claude as your co-author.
-        </p>
-        <InstallCommand command="npm i @pixel-studio/core" />
-        <a href="/docs/reference/spec/">The spec format <span aria-hidden="true">→</span></a>
-      </article>
+  <pixel-stage label="characters" controls="none" floor="none">
+    <pixel-actor src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+  </pixel-stage>
+
+  <Section id="make" tone="surface" title="Make it yours" intro="A character is a short description you can change: colours, materials, extra parts, alternative looks. Pick a look, then a move. It is the same goose throughout.">
+    <div class="ps-make">
+      <div class="ps-make-preview">
+        <pixel-sprite class="ps-make-sprite" src={`${assets}/goose-root.bundle.json`} anim="waddle" size="192" alt="root, a hacker goose in a hoodie, waddling"></pixel-sprite>
+        <fieldset class="ps-seg" data-group="skin">
+          <legend class="site-visually-hidden">Look</legend>
+          {looks.map((l, i) => (
+            <label><input type="radio" name="skin" value={l.skin} checked={i === 0} /><span>{l.label}</span></label>
+          ))}
+        </fieldset>
+        <fieldset class="ps-seg ps-seg--small" data-group="anim">
+          <legend class="site-visually-hidden">Move</legend>
+          {moves.map((m, i) => (
+            <label><input type="radio" name="anim" value={m.anim} checked={i === 0} /><span>{m.label}</span></label>
+          ))}
+        </fieldset>
+      </div>
+      <figure class="ps-code">
+        <figcaption>From <a href="/apps/packages/pixel-studio/examples/goose-root.json"><code>examples/goose-root.json</code></a></figcaption>
+        {looks.map((l, i) => (
+          <pre data-look={l.skin} hidden={i !== 0}><code>{l.code}</code></pre>
+        ))}
+        <a class="ps-link ps-open" href={`${play}?c=goose-root&anim=waddle`}>Keep editing this goose in the playground <span aria-hidden="true">→</span></a>
+      </figure>
     </div>
   </Section>
 
-  <Section id="runtime" tone="surface" title="One tag. Sharp on every screen." intro="A bundle is one JSON file with the character's sprite sheets at 16, 32 and 64 px. The runtime picks the sharpest sheet for the size and the screen, and scales it in whole device pixels: no blur, at any size.">
-    <div class="ps-split">
-      <div class="ps-sizes" role="group" aria-label="The same bundle at four sizes">
+  <Section id="embed" title="Put it on a page" intro="Two files from @pixel-studio/runtime, no build step and no dependencies. A sprite plays where you put it; a stage lets characters move around your layout.">
+    <div class="ps-embeds">
+      <article class="ps-embed">
+        <div class="ps-embed-result">
+          <pixel-sprite src={`${assets}/goose-root.bundle.json`} anim="idle" size="128" skin="party" hover-anim="waddle" click-anim="honk" alt="root, a goose in a party hat: hover or tap it"></pixel-sprite>
+        </div>
+        <div class="ps-embed-text">
+          <h3>A sprite</h3>
+          <p>One element, one bundle file. Hover and tap it.</p>
+          <pre><code>{spriteEmbed}</code></pre>
+          <a class="ps-link" href="/docs/reference/runtime/">The sprite element <span aria-hidden="true">→</span></a>
+        </div>
+      </article>
+      <article class="ps-embed">
+        <div class="ps-embed-result ps-embed-result--stage">
+          <p>Mark elements as surfaces and hiding spots. The demo at the top of this page is a stage like this one.</p>
+          <a class="site-btn" href="#try">Back to the demo <span aria-hidden="true">↑</span></a>
+        </div>
+        <div class="ps-embed-text">
+          <h3>A stage</h3>
+          <p>Characters walk along the top edges of your elements, jump between them and hide. They never block a click.</p>
+          <pre><code>{stageEmbed}</code></pre>
+          <a class="ps-link" href="/docs/reference/stage/">How the stage works <span aria-hidden="true">→</span></a>
+        </div>
+      </article>
+    </div>
+    <div class="ps-install">
+      <InstallCommand command="npm i @pixel-studio/runtime" />
+      <a class="ps-link" href="/docs/reference/getting-started/">Getting started, step by step <span aria-hidden="true">→</span></a>
+    </div>
+  </Section>
+
+  <Section id="studio" tone="surface" title="Make your own, in the studio or with an agent" intro="Describe a character in a sentence. Claude writes its spec, the engine draws it at every size, and Claude looks at the drawing and refines it. Or start from an example and edit it yourself.">
+    <div class="ps-split ps-split--studio">
+      <ol class="ps-loop">
+        <li><span>1</span><div><strong>Ask</strong> for “a small grey robot with an antenna that waves hello”.</div></li>
+        <li><span>2</span><div><strong>See it</strong> drawn at 16, 32 and 64 px, in every animation.</div></li>
+        <li><span>3</span><div><strong>Refine it</strong>: “make the antenna blink”. Claude edits the spec and checks the new drawing.</div></li>
+        <li><span>4</span><div><strong>Export</strong> one bundle file for your page.</div></li>
+      </ol>
+      <figure class="ps-shot">
+        <img src="/landing/studio.webp" width="1280" height="800" alt="The studio: the JSON spec on the left; the goose large in the middle, its animations above and the same goose at 16 to 64 px below; rendering settings on the right" loading="lazy" decoding="async" />
+      </figure>
+    </div>
+    <div class="ps-key">
+      <div class="ps-actions">
+        <a class="site-btn site-btn--primary" href="/apps/studio/">Open the studio</a>
+        <a class="site-btn" href={play}>Try the playground</a>
+      </div>
+      <p>Creating with Claude needs your Anthropic API key. It stays in your browser, and requests go straight to the API. Without a key, the examples, the editor and the playground all work.</p>
+    </div>
+  </Section>
+
+  <GalleryStrip title="See it in context" intro="A demo site, a stage, a small game and the studio's tools, all built with the same two packages." limit={3} />
+
+  <Section id="details" tone="surface" title="Built to behave" intro="The details that make a character feel at home on a page, and keep it out of the way.">
+    <div class="ps-detail">
+      <div class="ps-detail-text">
+        <h3>Sharp at every size</h3>
+        <p>A bundle holds the character at 16, 32 and 64 px. The runtime picks the sharpest one for the size and the screen and scales it in whole device pixels, so it never blurs.</p>
+      </div>
+      <div class="ps-sizes" role="group" aria-label="The same fox at four sizes">
         {[32, 64, 128, 192].map((size) => (
           <figure>
             <pixel-sprite src={`${assets}/fox.bundle.json`} anim="idle" size={size} hover-anim="trot" alt={`Ember the fox at ${size} px`} />
@@ -117,103 +245,169 @@ npx pixel bundle   my-goose.json --out my-goose.bundle.json`,
           </figure>
         ))}
       </div>
-      <ul class="ps-points">
-        <li><strong>Interactive.</strong> <code>hover-anim</code> and <code>click-anim</code>, events for footsteps and landings, attachment points (where its mouth is), state machines and skins.</li>
-        <li><strong>Moves at the right speed.</strong> Each walk knows its pixels per second, so a sprite moved across the page keeps its feet planted.</li>
-        <li><strong>Polite.</strong> Pauses off-screen, respects reduced motion, and reads its <code>alt</code> to screen readers.</li>
-        <li><strong>Small.</strong> One file with no imports. Need a game engine instead? <code>pixel export</code> writes sheets Phaser and PixiJS load.</li>
-      </ul>
     </div>
-  </Section>
 
-  <Section id="stage" title="Let them loose on your layout" intro="<pixel-stage> turns ordinary elements into ground: mark a card as a surface, and characters walk along it, jump to the next, climb its side, sit on its edge and hide behind things. They never block a click.">
-    <div class="ps-playground">
-      <div class="ps-cards">
-        <article class="ps-card" data-pixel-surface data-pixel-climbable>
-          <h3>Surfaces</h3>
-          <p><code>data-pixel-surface</code>: the element's top edge is a platform.</p>
-        </article>
-        <article class="ps-card ps-card--high" data-pixel-surface data-pixel-climbable>
-          <h3>Walls</h3>
-          <p><code>data-pixel-climbable</code>: its sides can be climbed.</p>
-        </article>
-        <article class="ps-card" data-pixel-surface data-pixel-climbable>
-          <h3>Hiding spots</h3>
-          <p><code>data-pixel-hide</code>: duck behind it and peek out.</p>
-          <div class="ps-crate" data-pixel-hide aria-hidden="true"></div>
-        </article>
+    <div class="ps-detail">
+      <div class="ps-detail-text">
+        <h3>Motion with planted feet</h3>
+        <p>Each character stands on a skeleton with motion models for walking, running, jumping and climbing. Feet stay planted, heads stay steady, tails follow through. The fox's gallop is measured from Muybridge's photographs of running hounds.</p>
+        <a class="ps-link" href="/apps/studio/figures.html">Explore the figures <span aria-hidden="true">→</span></a>
       </div>
-      <div class="ps-ground" data-pixel-surface aria-hidden="true"></div>
-      <p class="ps-caption">These cards are plain HTML. Tap a character to shoo it.</p>
+      <div class="ps-gaits">
+        <figure><pixel-sprite src={`${assets}/fox.bundle.json`} anim="gallop" size="112" alt="the fox galloping" /><figcaption>gallop</figcaption></figure>
+        <figure><pixel-sprite src={`${assets}/goose-kiddie.bundle.json`} anim="waddle" size="112" alt="a gosling waddling" /><figcaption>waddle</figcaption></figure>
+        <figure><pixel-sprite src={`${assets}/pip.bundle.json`} anim="run" size="112" alt="Pip running" /><figcaption>run</figcaption></figure>
+        <figure><pixel-sprite src={`${assets}/moss.bundle.json`} anim="climb" size="112" alt="Moss climbing" /><figcaption>climb</figcaption></figure>
+      </div>
     </div>
-    <pixel-stage label="characters" controls="none">
-      <pixel-actor src={`${assets}/goose-root.bundle.json`} size="56" alt="root, a hacker goose" start=".ps-card--high"></pixel-actor>
-      <pixel-actor src={`${assets}/fox.bundle.json`} size="56" alt="Ember the fox" start=".ps-ground"></pixel-actor>
-      <pixel-actor src={`${assets}/pip.bundle.json`} size="56" alt="Pip the adventurer" start=".ps-card"></pixel-actor>
-    </pixel-stage>
-    <p class="ps-more"><a href="/apps/demo/stage.html">The full stage demo <span aria-hidden="true">→</span></a> · <a href="/docs/reference/stage/">How it works <span aria-hidden="true">→</span></a></p>
-  </Section>
 
-  <Section id="studio" tone="surface" title="The studio: describe it, and Claude draws it" intro="Write what you want in a sentence. Claude writes the spec, the engine renders it at every size, and the render goes back to Claude to look at and refine, until it is right. Or edit the JSON yourself, with the preview beside it.">
-    <div class="ps-split ps-split--studio">
-      <ol class="ps-loop">
-        <li><span>1</span><div><strong>Describe</strong> “a small grey robot with an antenna that waves hello”.</div></li>
-        <li><span>2</span><div><strong>Claude writes the spec</strong>, from the same brief the CLI prints with <code>pixel brief</code>; validation errors go straight back to it.</div></li>
-        <li><span>3</span><div><strong>The engine renders</strong> a contact sheet: every animation at 16, 32 and 64 px.</div></li>
-        <li><span>4</span><div><strong>Claude looks at the render</strong> and revises. Then export a bundle for the web.</div></li>
-      </ol>
-      <figure class="ps-shot">
-        <img src="/landing/studio.webp" width="1280" height="800" alt="The studio: the JSON spec on the left; the goose large in the middle, its animations above and the same goose at 16 to 64 px below; rendering settings on the right" loading="lazy" decoding="async" />
-      </figure>
+    <ul class="ps-facts">
+      <li><strong>Polite.</strong> Pauses off-screen, respects reduced motion, has a pause button, and reads its <code>alt</code> to screen readers.</li>
+      <li><strong>Interactive.</strong> Hover and click animations, events for footsteps and landings, attachment points, state machines and skins.</li>
+      <li><strong>Small.</strong> One ES module per element, with no imports. For a game engine, <code>pixel export</code> writes sheets Phaser and PixiJS load.</li>
+      <li><strong>Checked.</strong> A JSON schema, a spec reference, and errors with a JSON path and a did-you-mean.</li>
+    </ul>
+
+    <div class="ps-packages">
+      <article class="ps-package">
+        <p class="ps-tag">@pixel-studio/runtime</p>
+        <h3>Play them</h3>
+        <p><code>&lt;pixel-sprite&gt;</code> and <code>&lt;pixel-stage&gt;</code>: everything a website needs.</p>
+        <InstallCommand command="npm i @pixel-studio/runtime" />
+      </article>
+      <article class="ps-package">
+        <p class="ps-tag">@pixel-studio/core</p>
+        <h3>Make them</h3>
+        <p>The engine, the <code>pixel</code> command, the figures and the example characters.</p>
+        <InstallCommand command="npm i @pixel-studio/core" />
+      </article>
     </div>
-    <p class="ps-note">Bring your own Anthropic API key: it stays in your browser, and requests go straight to the API. Without one, the studio is a spec editor with a live preview.</p>
-    <div class="ps-actions">
-      <a class="site-btn site-btn--primary" href="/apps/studio/">Open the studio</a>
-      <a class="site-btn" href="/apps/studio/play.html">Try the playground</a>
-    </div>
+    <p class="ps-note">Both packages are released together, under one version.</p>
   </Section>
-
-  <Section id="motion" title="Motion that looks measured, because it is" intro="A character stands on a figure: a skeleton with motion models for walking, running, jumping, climbing and more. Feet stay planted, heads stay steady, tails follow through. The fox's gallop is measured from Muybridge's photographs of running hounds: all motion data comes from public-domain and openly licensed sources.">
-    <div class="ps-gaits">
-      <figure><pixel-sprite src={`${assets}/fox.bundle.json`} anim="gallop" size="128" alt="the fox galloping" /><figcaption><code>dog</code> figure · gallop</figcaption></figure>
-      <figure><pixel-sprite src={`${assets}/goose-kiddie.bundle.json`} anim="waddle" size="128" alt="a gosling waddling" /><figcaption><code>goose</code> figure · waddle</figcaption></figure>
-      <figure><pixel-sprite src={`${assets}/pip.bundle.json`} anim="run" size="128" alt="Pip running" /><figcaption><code>human</code> figure · run</figcaption></figure>
-      <figure><pixel-sprite src={`${assets}/moss.bundle.json`} anim="climb" size="128" alt="Moss climbing" /><figcaption>climb</figcaption></figure>
-    </div>
-    <p class="ps-more"><a href="/apps/studio/figures.html">Explore the figures <span aria-hidden="true">→</span></a> · <a href="/docs/reference/figures/">Figures and motion models <span aria-hidden="true">→</span></a></p>
-  </Section>
-
-  <Section id="start" tone="surface" title="Five minutes to a goose on your page">
-    <Steps items={steps} />
-  </Section>
-
-  <GalleryStrip title="See it running" intro="Demo sites, a game and the studio's tools, all built with the two packages." limit={3} />
 
   <CallToAction
     title="Give your project a character"
     body="Free and open source under the MIT licence. Every example on this site is live."
-    primary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
-    secondary={{ label: 'Read the guide', href: '/docs/guide/' }}
+    primary={{ label: 'Open the studio', href: '/apps/studio/' }}
+    secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
   <button type="button" class="ps-pause" aria-pressed="false">Pause characters</button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
-  <script>
-    // One control for every character on the page (WCAG 2.2.2: moving content needs a way to pause it): the
-    // sprites, and the stage, whose own button is turned off (controls="none"). The stage remembers its state.
-    const button = document.querySelector<HTMLButtonElement>('.ps-pause')!;
-    const set = (paused: boolean) => {
-      button.setAttribute('aria-pressed', String(paused));
-      button.textContent = paused ? 'Play characters' : 'Pause characters';
-      for (const sprite of document.querySelectorAll('pixel-sprite')) sprite.toggleAttribute('paused', paused);
-      const stage = document.querySelector('pixel-stage') as (HTMLElement & { pause(): void; resume(): void }) | null;
+  <script is:inline define:vars={{ cast, play }}>
+    // A classic script (define:vars): everything it touches is in the HTML above it, and it only calls the
+    // characters' methods once they exist.
+    const $ = (s, root = document) => root.querySelector(s);
+    const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+    const stage = $('pixel-stage');
+    const pauseButton = $('.ps-pause');
+
+    /** A segmented control (a fieldset of radios): call onPick with the value picked. */
+    const segmented = (group, onPick) => $(`[data-group="${group}"]`).addEventListener('change', (e) => onPick(e.target.value));
+
+    // ---- pause: one control for every character (WCAG 2.2.2); the stage's own button is off ----
+    const setPaused = (paused) => {
+      pauseButton.setAttribute('aria-pressed', String(paused));
+      pauseButton.textContent = paused ? 'Play characters' : 'Pause characters';
+      for (const sprite of $$('pixel-sprite')) sprite.toggleAttribute('paused', paused);
       if (stage?.pause) (paused ? stage.pause() : stage.resume());
     };
-    button.addEventListener('click', () => set(button.getAttribute('aria-pressed') !== 'true'));
-    customElements.whenDefined('pixel-stage').then(() => {
-      const stage = document.querySelector('pixel-stage') as (HTMLElement & { paused?: boolean }) | null;
-      if (stage?.paused) set(true);
+    pauseButton.addEventListener('click', () => setPaused(pauseButton.getAttribute('aria-pressed') !== 'true'));
+
+    // ---- the hero: pick a character, then walk, jump or hide ----
+    const cardA = $('.ps-mini--a'), cardB = $('.ps-mini--b'), crate = $('.ps-crate');
+    const who = $('.ps-who');
+    const actor = () => $('pixel-actor', stage);
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const showStill = () => { $('.ps-still').hidden = !reduced.matches; };
+    showStill();
+    reduced.addEventListener?.('change', showStill);
+
+    // A button press asks for motion: if the characters are paused, play them.
+    const order = (fn) => {
+      const a = actor();
+      if (!a?.run) return;
+      if (stage.paused) setPaused(false);
+      fn(a);
+    };
+    // Walk shows the gait at its own speed. Jump and hide are errands: it hurries (runs, feet still planted) and
+    // calms down when it gets there, unless a newer order has started meanwhile.
+    let errand = 0;
+    const hurried = async (a, action, ...args) => {
+      const mine = ++errand;
+      a.hurry(1.6);
+      await a.run(action, ...args);
+      if (mine === errand) a.hurry(1);
+    };
+    // The end of platform p nearest to (or farthest from) the character, a little way in.
+    const end = (a, p, nearest) => {
+      const left = Math.abs(a.x - p.x1) < Math.abs(a.x - p.x2) === nearest;
+      return left ? p.x1 + a.W * 0.6 : p.x2 - a.W * 0.6;
+    };
+    const moves = {
+      walk: (a) => {
+        const p = a.platform;
+        if (!p) return;
+        errand++;
+        a.hurry(1);
+        a.run('goTo', { x: end(a, p, false), y: p.y - 1 });
+      },
+      // Over to the near end of the other card (from the ground: up to the first).
+      jump: (a) => {
+        const p = stage.world.platformOf(a.platform?.el === cardA ? cardB : cardA);
+        if (p) hurried(a, 'goTo', { x: end(a, p, true), y: p.y - 1 });
+      },
+      hide: (a) => hurried(a, 'hideBehind', crate),
+    };
+    for (const b of $$('[data-move]')) b.addEventListener('click', () => order(moves[b.dataset.move]));
+
+    segmented('cast', (id) => {
+      const c = cast.find((x) => x.id === id);
+      const old = actor();
+      if (!c || old?.getAttribute('src')?.endsWith(`/${c.id}.bundle.json`)) return;
+      const startOn = old?.platform?.el === cardB ? '.ps-mini--b' : '.ps-mini--a';
+      const next = document.createElement('pixel-actor');
+      const attrs = { src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
+      for (const [k, v] of Object.entries(attrs)) next.setAttribute(k, v);
+      old?.remove();
+      stage.append(next);
+      who.textContent = c.who;
     });
+
+    // "Try a character": go to the demo and put the keyboard on its first control.
+    $('.ps-try').addEventListener('click', (e) => {
+      e.preventDefault();
+      const demo = $('#try');
+      demo.scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth', block: 'center' });
+      $('input:checked', demo).focus({ preventScroll: true });
+      history.replaceState(null, '', '#try');
+    });
+
+    // ---- make it yours: one goose, three looks, five moves ----
+    const sprite = $('.ps-make-sprite');
+    const open = $('.ps-open');
+    const look = { skin: '', anim: 'waddle' };
+    const describe = () => {
+      const dress = { '': 'in a hoodie', party: 'in a party hat', redteam: 'in a red hoodie' }[look.skin];
+      const doing = { waddle: 'waddling', honk: 'honking', hack: 'hacking on a laptop', flap: 'flapping', idle: 'standing' }[look.anim];
+      sprite.setAttribute('alt', `root, a hacker goose ${dress}, ${doing}`);
+      const q = new URLSearchParams({ c: 'goose-root', anim: look.anim });
+      if (look.skin) q.set('skin', look.skin);
+      open.href = `${play}?${q}`;
+    };
+    segmented('skin', (skin) => {
+      look.skin = skin;
+      if (look.skin) sprite.setAttribute('skin', look.skin); else sprite.removeAttribute('skin');
+      for (const pre of $$('#make pre[data-look]')) pre.hidden = pre.dataset.look !== look.skin;
+      describe();
+    });
+    segmented('anim', (anim) => {
+      look.anim = anim;
+      sprite.setAttribute('anim', look.anim);
+      describe();
+    });
+
+    customElements.whenDefined('pixel-stage').then(() => { if (stage?.paused) setPaused(true); });
   </script>
 </BaseLayout>

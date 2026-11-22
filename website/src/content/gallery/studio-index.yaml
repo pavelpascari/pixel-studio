@@ -6,3 +6,5 @@ href: "/apps/studio/"
 kind: demo
 tags: ["studio"]
 order: 70
+poster: studio-index.jpg
+posterAlt: "The studio: the goose spec in JSON on the left, the goose large in the middle with its animations above, rendering settings on the right"

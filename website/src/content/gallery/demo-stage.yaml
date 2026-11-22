@@ -6,3 +6,5 @@ href: "/apps/demo/stage.html"
 kind: demo
 tags: ["demo"]
 order: 40
+poster: demo-stage.jpg
+posterAlt: "The Trailhead demo: trail cards on a page, with a goose, a boy, a slime and a green robot standing on and between them, and a crate"

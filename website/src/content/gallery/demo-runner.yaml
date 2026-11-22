@@ -6,3 +6,5 @@ href: "/apps/demo/runner.html"
 kind: demo
 tags: ["demo"]
 order: 30
+poster: demo-runner.jpg
+posterAlt: "Fox Trail: a pixel fox at the start of a dusk forest trail, with a Run button"

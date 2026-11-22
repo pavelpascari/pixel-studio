@@ -6,3 +6,5 @@ href: "/apps/studio/figures.html"
 kind: demo
 tags: ["studio"]
 order: 50
+poster: studio-figures.jpg
+posterAlt: "The figure library: a list of figures and motion models beside the goose skeleton mid-walk"
