@@ -422,7 +422,15 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
-  <button type="button" class="ps-pause" aria-pressed="false">Pause characters</button>
+  {/* One control for every character. Its name stays "Pause characters" and aria-pressed says whether they are paused
+      (a name that flipped to "Play" as well would read as "Play characters, pressed"). On phones only the icon shows. */}
+  <button type="button" class="ps-pause" aria-pressed="false">
+    <svg class="ps-pause-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path class="ps-pause-bars" d="M4 3h3v10H4zM9 3h3v10H9z" />
+      <path class="ps-pause-play" d="M4.5 2.5v11l9-5.5z" />
+    </svg>
+    <span class="ps-pause-label">Pause characters</span>
+  </button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
   <script is:inline define:vars={{ cast, play }}>
@@ -439,7 +447,6 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     // ---- pause: one control for every character (WCAG 2.2.2); the stage's own button is off ----
     const setPaused = (paused) => {
       pauseButton.setAttribute('aria-pressed', String(paused));
-      pauseButton.textContent = paused ? 'Play characters' : 'Pause characters';
       for (const sprite of $$('pixel-sprite')) sprite.toggleAttribute('paused', paused);
       if (stage?.pause) (paused ? stage.pause() : stage.resume());
     };
