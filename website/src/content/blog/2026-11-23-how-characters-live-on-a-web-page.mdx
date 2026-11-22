@@ -9,20 +9,19 @@ draft: true
 
 import { MarginNote } from 'astro-project-site/components';
 
-Most website pets live in a box of their own: a fixed layer, the edges of the window, a character that walks along
-the bottom and never looks at the page. `<pixel-stage>` takes the opposite approach. The page you already have is the
-level. A card's top edge is something to walk on, its side is a wall, a filled box is something to hide behind. The
-characters drop off the end of one card, jump to the next and duck behind a crate, and the page underneath does not
-change.
+Most website pets live in a fixed layer of their own, walking along the bottom of the window and ignoring the
+page. `<pixel-stage>` makes the page you already have the level. A card's top edge is
+ground, its side a wall, a filled box cover. The characters drop off one card, jump to the next and duck behind a
+crate, and the page underneath stays as it was.
 
-This post walks through how that works, following
-[`packages/runtime/src/pixel-stage.js`](https://github.com/pavelpascari/pixel-studio/blob/main/packages/runtime/src/pixel-stage.js)
-and the [stage reference](/docs/reference/stage/), including the parts that took more than one attempt.
+The source is
+[`packages/runtime/src/pixel-stage.js`](https://github.com/pavelpascari/pixel-studio/blob/main/packages/runtime/src/pixel-stage.js),
+documented in the [stage reference](/docs/reference/stage/). Some of it took more than one attempt.
 
 ## Try it first
 
-Below is a small stage: two cards, a crate and a strip of ground, with Moss the beetle living on them. Tap Moss to
-shoo it. Press and hold to pick it up (or drag it with a mouse), then let go to throw it. The buttons give it orders.
+Moss the beetle lives on the stage below: two cards, a crate and a strip of ground. Tap Moss to shoo it. Press and
+hold to pick it up (or drag it with a mouse), then let go to throw it. The buttons give it orders.
 
 <figure class="stage-demo" id="stage-demo" aria-labelledby="stage-demo-caption">
   <div class="stage-demo-world">
@@ -104,11 +103,12 @@ shoo it. Press and hold to pick it up (or drag it with a mouse), then let go to 
   });
 `} />
 
-<MarginNote kind="field">The demo is the whole recipe from the docs, scaled down: <code>floor="none"</code> so the bottom of the page is not a platform, <code>controls="none"</code> with a pause button of its own, and a box with <code>overflow: clip</code> so a thrown beetle never lands on the paragraph you are reading.</MarginNote>
+<MarginNote kind="field">The demo is the docs' recipe, scaled down: <code>floor="none"</code> so the bottom of the page is not a platform, <code>controls="none"</code> with a pause button of its own, and a box with <code>overflow: clip</code> so a thrown beetle never lands on the paragraph you are reading.</MarginNote>
 
 ## Opting elements in
 
-The page says what everything is with six attributes and nothing else:
+Six attributes tell the stage what each element is:
+
 
 | attribute | the element is |
 |---|---|
@@ -119,13 +119,13 @@ The page says what everything is with six attributes and nothing else:
 | `data-pixel-occluder` | always drawn in front of the characters (a sticky header) |
 | `data-pixel-avoid` | never stood on or hidden behind (the main call to action) |
 
-When a framework re-renders a card, the attribute comes with it.
+A framework that re-renders a card renders the attribute with it.
 
 ## Reading the page rarely
 
-The obvious way to know where the cards are is to call `getBoundingClientRect()` on every one of them every frame.
-That forces layout whenever anything on the page has changed, and it would make the stage the most expensive thing on
-the page. Instead the `World` class keeps a dirty flag, and only a handful of things set it:
+Calling `getBoundingClientRect()` on every card every frame forces layout whenever the page has changed, and would
+make the stage the most expensive thing on it. The `World` class keeps a dirty flag instead, set by a handful of
+events:
 
 ```js
 observe() {
@@ -142,12 +142,12 @@ observe() {
 }
 ```
 
-Each opted-in element also gets the `ResizeObserver` the first time it is read. Fonts are on the list because a web
-font that arrives late reflows every card under it. Mutations inside the stage are ignored: the characters change
-their own attributes all the time.
+Each opted-in element also joins the `ResizeObserver` on its first read. Fonts are on the list because a late web
+font reflows every card under it. Mutations inside the stage don't count: the characters change their own attributes
+all the time.
 
-When the flag is set, the next frame reads every box in one batch and rebuilds the platforms. Each platform is the
-top edge of a surface, pulled in off its rounded corners so a character never stands on a curve:
+Once the flag is set, the next frame reads every box in one batch and rebuilds the platforms. A platform is a
+surface's top edge, pulled in off its rounded corners so a character never stands on a curve:
 
 ```js
 x1: it.l + Math.min(it.radius, (it.r - it.l) / 4),
@@ -155,37 +155,34 @@ x2: it.r - Math.min(it.radius, (it.r - it.l) / 4),
 y: it.t,
 ```
 
-<MarginNote kind="field">The corner radius is read once per element with <code>getComputedStyle</code> and kept in a <code>WeakMap</code>. A card whose radius changes later keeps its old insets: one <code>getComputedStyle</code> per element, ever, instead of one per read.</MarginNote>
+<MarginNote kind="field">The stage reads each corner radius once with <code>getComputedStyle</code> and keeps it in a <code>WeakMap</code>. A card whose radius changes later keeps its old insets, in exchange for one <code>getComputedStyle</code> per element, ever, instead of one per read.</MarginNote>
 
-Things that move without changing layout (a CSS animation, a transform) are invisible to every observer. For those
-there is `data-pixel-surface="animated"`: these elements alone are re-read every frame, a character standing on one
-rides along by the platform's `dx`, and a character jumping onto one follows it in the air. It costs a layout read per
-element per frame, so the docs recommend it for a few elements, not a page full.
+Observers miss movement that leaves layout alone, such as a CSS animation or a transform. The stage re-reads
+elements marked `data-pixel-surface="animated"` every frame: a character standing on one rides along by the
+platform's `dx`, and one jumping onto it follows it in the air. At a layout read per element per frame, the docs
+recommend it for a few elements, not a page full.
 
 ## A layer that scrolling does not touch
 
-The prior art the [research notes](https://github.com/pavelpascari/pixel-studio/blob/main/docs/research/page-interactions.md)
-looked at, oneko.js among it, uses `position: fixed` and viewport coordinates. On a page that scrolls, that means every
-platform moves on every scroll frame, and since scrolling happens on the compositor, a character repositioned from
-JavaScript trails a frame behind the card it stands on.
+oneko.js and the other prior art in the [research notes](https://github.com/pavelpascari/pixel-studio/blob/main/docs/research/page-interactions.md)
+use `position: fixed` and viewport coordinates, so on a scrolling page every platform moves on every scroll frame.
+The compositor does the scrolling, and a character placed from JavaScript trails a frame behind its card.
 
-`<pixel-stage>` is instead a 0×0 element with `position: absolute; pointer-events: none; overflow: visible`. Its
-characters are placed with `transform: translate()` in document coordinates, so when the page scrolls, the characters
-scroll with it, already in the right place. The scroll listener is passive and only measures speed; scrolling reads
-no boxes and writes no styles.
+`<pixel-stage>` is a 0×0 element with `position: absolute; pointer-events: none; overflow: visible`. It places its
+characters with `transform: translate()` in document coordinates, so they scroll with the page, already in place. The
+passive scroll listener measures speed and nothing else: scrolling reads no boxes and writes no styles.
 
-Each frame then runs in three phases: read boxes if the world is dirty, plan and move in plain JavaScript, and write
-each character's `transform`, `z-index` and `clip-path`, each only when its string changed. The movement uses the same
-shared clock and capped `dt` as the sprites' frame stepping, so a slow frame advances the body and the legs by the same
-amount and the feet do not slide. In [performance.md](/docs/reference/performance/#cost-per-frame), a stage with three
-characters walking adds 0.31 ms of main-thread time per frame in Chrome (1.9% of a 60 Hz frame), and 0.92 ms with the
-CPU slowed four times.
+Each frame runs in three phases: read boxes if the world is dirty, plan and move in plain JavaScript, then write each
+character's `transform`, `z-index` and `clip-path` where the string changed. Movement shares the sprites' clock and
+capped `dt`, so a slow frame advances body and legs alike and the feet do not slide. Per
+[performance.md](/docs/reference/performance/#cost-per-frame), three walking characters add 0.31 ms of main-thread
+time per frame in Chrome (1.9% of a 60 Hz frame), and 0.92 ms with the CPU slowed four times.
 
 ## Finding the way
 
-Platforms become a graph. From each one, a character can drop off either end onto whatever is below, jump to a
-platform within reach (up to 1.8 times its own height, and three of its widths across), or climb a climbable side whose foot
-rests on this platform. A route is a Dijkstra search over that graph where the cost is pixels walked plus a price for
+The platforms form a graph. From each one, a character can drop off either end onto whatever lies below, jump to a
+platform within reach (up to 1.8 times its own height, and three of its widths across), or climb a climbable side
+whose foot rests on this platform. Routes come from a Dijkstra search where the cost is pixels walked plus a price for
 each action, scaled to the character's height `H`:
 
 ```js
@@ -194,15 +191,15 @@ const actionCost = { drop: H * 0.8, jump: H * 1.5, climb: H * 2 };
 const cost = here.cost + Math.abs(start - here.x) + actionCost[l.kind] + (l.kind === 'climb' ? p.y - l.to.y : 0);
 ```
 
-Counting hops would send a character on two jumps to save a short walk. With costs, it usually walks to the end of
-the card and drops, which is what you would do. Climbing is the most expensive move, plus the height climbed, so a
-character only climbs when there is no reasonable way to jump.<MarginNote kind="field">"Usually": the search keeps one arrival point per platform. Sent from the low card to the tall one in the demo above, Moss can first walk to the far end of the low card, because dropping off that end reaches the ground cheapest; the longer walk back along the ground is priced only after that choice is made.</MarginNote>
+Counting hops would send a character on two jumps to save a short walk; with costs, it usually walks to the end of
+the card and drops, as you would. Climbing costs the most, plus the height climbed, so a character climbs when no
+reasonable jump exists.<MarginNote kind="field">"Usually": the search keeps one arrival point per platform. Sent from the low card to the tall one in the demo above, Moss may first walk to the far end of the low card, because dropping off there reaches the ground cheapest. The search prices the longer walk back along the ground after that choice.</MarginNote>
 
-<MarginNote kind="field">Taking off for a platform that overlaps from above needs care: the jump starts beside it, never under it, or the character would fly up through the card.</MarginNote>
+<MarginNote kind="field">A jump onto a platform that overlaps from above has to take off beside it, never under it, or the character flies up through the card.</MarginNote>
 
-Jumps are where the animation and the movement have to agree. The engine bakes `launch` and `land` events into each
-jump animation, so the stage knows exactly how long the character is off the ground. Rather than pick a gravity and
-let the animation fall out of sync, it fixes the flight time and solves for the gravity that fits:
+The engine bakes `launch` and `land` events into each jump animation, so the stage knows how long the character is
+off the ground. It fixes that flight time and solves for the gravity that fits, which keeps the animation and the
+movement in step:
 
 ```js
 export function jumpArc(x0, y0, x1, y1, lift, flight) {
@@ -213,49 +210,50 @@ export function jumpArc(x0, y0, x1, y1, lift, flight) {
 }
 ```
 
-The crouch plays on the ground, the body leaves at `launch` and touches down at `land`, wherever the target is.
-Climbing works the same way with different data: the climb animation carries a `wall` line, where its feet are, and a
-vertical speed `speedY`, so the feet stay on the card's edge and do not slip. Falls run under plain gravity and land on
-the first platform crossed from above between one frame and the next, so a fast fall cannot pass through a thin card.
+The crouch plays on the ground; the body leaves at `launch` and touches down at `land`, wherever the target is.
+Climbing works the same way: the climb animation carries a `wall` line, where its feet are, and a vertical speed
+`speedY`, so the feet stay on the card's edge. Falls run under plain gravity and land on the first platform crossed
+from above between one frame and the next, so a fast fall cannot pass through a thin card.
 
-A physics engine was considered and left out: these characters must not tumble or rotate, and their speed is fixed
-by their gait. A rigid-body simulation would fight both.
+I considered a physics engine and left it out. These characters must not tumble or rotate, and their gait fixes their
+speed; a rigid-body simulation would fight both.
 
 ## Behind things
 
-Putting a character behind a crate sounds like a job for `z-index`. On an arbitrary page it is not: the character
-would have to move into the crate's stacking context, which can be created by a dozen unrelated properties, and could
-be clipped by an `overflow: hidden` ancestor or break the page's selectors on the way. A cut-out in the sprite's own
-canvas was also rejected, because it is quantised to sprite pixels and misses the element's edge.
+`z-index` cannot put a character behind a crate on an arbitrary page. The character would have to join the crate's
+stacking context, which a dozen unrelated properties can create, where an `overflow: hidden` ancestor could clip it
+and the page's selectors could break. A cut-out in the sprite's own canvas fails too: it is quantised to sprite pixels
+and misses the element's edge.
 
-So the character stays in the stage layer, above everything, and the stage cuts the hiding spot's box out of it with
-`clip-path: path(evenodd, …)`: the character's box, minus every occluder that overlaps it. Two overlapping occluders
-would cancel each other out under the even-odd rule and leave a visible patch, so the `cells()` helper first splits
-the rectangles into disjoint cells covering their union, rounded to device pixels. Hiding is then a duck animation
-behind the cut, and every few seconds a peek over the top. The page itself is never touched.
+The character stays in the stage layer, above everything, and the stage cuts the hiding spot out of it with
+`clip-path: path(evenodd, …)`: the character's box minus every occluder that overlaps it. Under the even-odd rule two
+overlapping occluders cancel out and leave a visible patch, so the `cells()` helper first splits the rectangles into
+disjoint cells covering their union, rounded to device pixels. Hiding is a duck animation behind the cut, with a peek
+over the top every few seconds. The page itself stays untouched.
 
-The limit is honest and documented: occluders are rectangles. A character behind a heading is cut by the heading's
-whole box, not its letters, so hiding spots work best as opaque things such as cards, images and filled buttons.
+Occluders are rectangles, and the docs say so: a heading cuts a character with its whole box, not its letters, so
+opaque cards, images and filled buttons make the best hiding spots.
 
 ## Never in the way
 
 The layer and its characters have `pointer-events: none`, so every click lands on the page as if they were not there.
-To still let the reader poke a character, the stage listens in the capture phase on the document and tests each press
-against the character's opaque pixels, through a hit test in `pixel-sprite.js` that copies one sheet pixel into a
-shared 1×1 canvas and reads its alpha. A press on the transparent space between a beetle's legs reaches the link
-behind it. A press on a part that is cut away behind an occluder does not count either.
+To let you poke a character anyway, the stage listens in the capture phase on the document and tests each press
+against the character's opaque pixels: a hit test in `pixel-sprite.js` copies one sheet pixel into a shared 1×1 canvas
+and reads its alpha. A press between a beetle's legs reaches the link behind it, as does a press on a part cut away
+behind an occluder.
 
-Only the click that follows a tap on a character, or a throw, is kept from the page. The characters take nothing
-else: no focus, no tab stop, and their layer is `aria-hidden`. The accessible control is the pause button, a real `<button>` whose choice is
-remembered in `localStorage`, as WCAG 2.2.2 asks for motion that starts by itself. With `prefers-reduced-motion`, the
-characters are placed and stand still.
+The page loses one thing: the click that follows a tap on a character, or a throw. The characters take no focus and no
+tab stop, and their layer is `aria-hidden`. The accessible control is the pause button, a real `<button>` that
+remembers its choice in `localStorage`, as WCAG 2.2.2 asks for motion that starts by itself. Under
+`prefers-reduced-motion`, the stage places the characters and they stand still.
 
 ## Reacting
 
 A tap shoos a character: it reacts and runs to the farthest place it can reach on screen. Three or more taps, each
 within 450 ms of the last, are rage taps: it panics, a little faster with every tap (up to three times its speed), and
-the actor fires `pixel-burst`. Movement scales with the playback rate, so even a panic keeps the feet planted. Scrolling faster than one and a half screen heights a second fires `pixel-fastscroll`, and
-characters with `keep-in-view` catch up once the scroll settles.
+the actor fires `pixel-burst`. Movement scales with the playback rate, so even a panic keeps the feet planted.
+Scrolling faster than one and a half screen heights a second fires `pixel-fastscroll`, and characters with
+`keep-in-view` catch up once the scroll settles.
 
 Scripted moments are data. A scene lists steps (go there, say this, wait for a tap) and can carry a trigger, so the
 page arms it without code:
@@ -272,21 +270,19 @@ page arms it without code:
 }
 ```
 
-Triggers can be any DOM event (`submit`, `click`), a character's own events, or `visible`, half of an element scrolled
-into view. A step that cannot happen is skipped rather than jamming the scene, because the reader may be poking the
-characters while it runs. The "It notices you" section of the
-[landing page](/) is two of these scenes.
+A trigger can be any DOM event (`submit`, `click`), a character's own events, or `visible`, half of an element
+scrolled into view. The scene skips a step that cannot happen instead of jamming, since the reader may be poking the
+characters mid-scene. The "It notices you" section of the [landing page](/) is two of these scenes.
 
 ## Every device, and what that costs
 
-Until recently, only a mouse or a pen could pick a character up. A finger could only tap, because a drag that
-starts on a character is, on a phone, a scroll, and the stage must not take scrolling away from the page.
+Until the latest work, only a mouse or a pen could pick a character up. On a phone, a drag that starts on a character
+is a scroll, which the stage must leave to the page, so a finger could only tap.
 
-`touch-action` cannot help here: it is decided when a gesture begins, and later changes do nothing. The research
-notes weighed a long press that switches the character to `touch-action: none` for the *next* gesture, which means
-pressing twice, and shipped tap-only touch instead. What replaced it in the latest work is a
-`Gesture` class, kept free of the DOM so tap, hold, swipe and drag are unit-tested, with the rule that a finger must
-hold still first:
+`touch-action` cannot help: the browser reads it when a gesture begins and ignores later changes. The research notes
+weighed a long press that switches the character to `touch-action: none` for the *next* gesture, which means pressing
+twice, and shipped tap-only touch instead. Its replacement is a `Gesture` class, kept free of the DOM so tap, hold,
+swipe and drag are unit-tested, which makes a finger hold still first:
 
 ```js
 // A finger that moves before the hold completes is scrolling the page: let it.
@@ -294,15 +290,21 @@ if (this.pointerType === 'touch') { if (this.far > GESTURE.holdSlop) { this.mode
 if (this.far > GESTURE.dragSlop) { this._grab(p); return 'grab'; }
 ```
 
-A press that stays within 10 px for 400 ms picks the character up; a mouse or pen also picks it up as soon as it moves
-6 px. Nothing calls `preventDefault` on a touch's `pointerdown`, and `touch-action` is never set. Only once a hold has
-completed does a `touchmove` listener cancel the page's scroll, so the finger carries the character instead. While a
-finger rests on a character, the page's `user-select` and `-webkit-touch-callout` are set to `none`, so iOS shows no
-magnifier or link callout, and the page's own inline values come back afterwards.
+A press that stays within 10 px for 400 ms picks the character up; a mouse or pen also picks it up once it moves 6 px.
+Nothing calls `preventDefault` on a touch's `pointerdown`, and the stage never sets `touch-action`. Once a hold has
+completed, a `touchmove` listener cancels the page's scroll, so the finger carries the character. While a finger rests
+on a character, the stage sets the page's `user-select` and `-webkit-touch-callout` to `none`, so iOS shows no
+magnifier or link callout, then restores the page's own inline values.
 
-That listener has to be non-passive, and a non-passive `touchmove` on the document makes the browser wait for it
-before it scrolls. It was measured on the stage demo in Chrome, with a Pixel 7 profile and real touch input, 15 swipes
-per case started away from the characters ([performance.md](/docs/reference/performance/#touch-scrolling)):
+iOS starts its own long-press about half a second into a resting touch, after the stage's 400 ms hold, and cancels
+the pointer stream, which used to drop a character the moment you picked it up. Touch events for that finger keep
+coming, so when iOS cancels the pointer during a hold (or as one is about to complete), the stage carries the gesture
+on from `touchmove` and `touchend`: the character follows the finger and flies when it lifts. A `touchcancel` still
+drops it.
+
+That `touchmove` listener is non-passive, and a non-passive `touchmove` on the document makes the browser wait for it
+before scrolling. [performance.md](/docs/reference/performance/#touch-scrolling) measured the cost on the stage
+demo in Chrome, with a Pixel 7 profile and real touch input, 15 swipes per case started away from the characters:
 
 | Case | Swipe to first scroll (median) | 4x CPU |
 |---|--:|--:|
@@ -310,26 +312,26 @@ per case started away from the characters ([performance.md](/docs/reference/perf
 | Stage, `grab="off"` (no touch listener) | 49 ms | 47 ms |
 | Same page without a stage | 32 ms | 31 ms |
 
-One frame, and no long frames in the fling that follows. The natural fix would be to add the listener only once a hold
-begins. Chrome honours that, but WebKit decides when a touch starts whether its moves can be cancelled, so on an
-iPhone the page would scroll away under a held character.<MarginNote kind="field" numbered>That WebKit behaviour is by its design, and the measurement page says plainly that it was not tested there. The listener stays page-wide on that evidence.</MarginNote>
-So the listener stays, but exists only while a finger could actually pick something up: not while paused, not under
-reduced motion. Pages that would rather keep that frame can say `grab="mouse"` (the previous behaviour) or
-`grab="off"`, and the stage registers no touch listener at all.
+That is one frame, with no long frames in the fling that follows. Adding the listener once a hold begins would save
+it, and Chrome honours that, but WebKit decides when a touch starts whether its moves can be cancelled, so on an iPhone
+the page would scroll away under a held character.<MarginNote kind="field" numbered>WebKit does this by design. The measurement page did not test it there; I have since tried the touch gestures on a real iPhone, with the listener page-wide.</MarginNote>
+The listener stays, but exists only while a finger could pick something up: not while paused, not under reduced
+motion. Pages that would rather keep that frame can say `grab="mouse"` (the previous behaviour) or `grab="off"`, and
+the stage registers no touch listener at all.
 
 The last bug was the smallest and took three tries. After a tap on a character, the stage swallows the click that
 follows, so the page does not also follow a link under it. The first version swallowed any click within 500 ms, which
-ate a quick tap somewhere else. The second only swallowed a click at the same spot. Then WebKit turned out to move a
-tap's click onto a nearby link, so the click arrived somewhere else and went through. The current rule is not about
-time or position: it is the click of that press, and the next press clears it.
+ate quick taps elsewhere. The second swallowed a click at the same spot, until WebKit moved a tap's click onto a nearby
+link and it went through. The current rule ties the swallow to the press: the stage swallows that press's click, and
+the next press clears it.
 
 ## What it does not do yet
 
-Occluders are boxes. Sticky and fixed elements are treated as if they stayed put, so they should be occluders rather
-than surfaces; the research notes sketched a second, fixed layer for them, which was not built. Nested scroll
+Occluders are boxes. The stage treats sticky and fixed elements as if they stayed put, so make them occluders rather
+than surfaces; the research notes sketched a second, fixed layer for them, which does not exist yet. Nested scroll
 containers and iframes are not supported, and top-layer elements such as modal dialogs always paint above the
-characters. The touch gestures were checked in Chromium with real touch input and in WebKit with synthesised pointer
-events; a real iPhone is still on the list.
+characters. The touch gestures have run in Chromium with real touch input, in WebKit with synthesised pointer events,
+and on a real iPhone.
 
 The [stage reference](/docs/reference/stage/) has every attribute, event and scene step, and the
 [full stage demo](/apps/demo/stage.html) has four characters, a drifting cloud to ride and a scene to play.
