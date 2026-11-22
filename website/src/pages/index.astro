@@ -92,6 +92,50 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
   <pixel-actor src="goose-root.bundle.json" size="72"
     alt="root, a hacker goose"></pixel-actor>
 </pixel-stage>`;
+
+// "It notices you": triggered scenes (packages/pixel-studio/docs/stage.md#triggers), armed by the stage because
+// their scripts are marked data-pixel-scene. reactSnippet shows the first one with shorter ids: keep them in step.
+const sceneLetter = {
+  name: 'the letter',
+  cast: { gosling: '#ps-gosling' },
+  trigger: { event: 'submit', on: '#ps-signup', preventDefault: true },
+  steps: [
+    { actor: 'gosling', perform: 'flap', ms: 900 },
+    { actor: 'gosling', pickUp: '$trigger .ps-letter', speed: 1.7 },
+    { actor: 'gosling', exit: 'right', speed: 1.9 },
+    { wait: 1600 },
+    { emit: 'delivered' },
+    { actor: 'gosling', enter: 'right' },
+    { actor: 'gosling', say: 'posted!', ms: 1800 },
+  ],
+};
+const sceneHello = {
+  name: 'hello',
+  cast: { gosling: '#ps-gosling' },
+  trigger: { event: 'click', on: '.ps-hello' },
+  steps: [
+    { actor: 'gosling', face: '$trigger' },
+    { actor: 'gosling', perform: 'honk' },
+    { actor: 'gosling', say: 'hello!', ms: 1500 },
+  ],
+};
+const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></form>
+
+<script type="application/json" data-pixel-scene>
+{
+  "cast": { "gosling": "#gosling" },
+  "trigger": { "event": "submit", "on": "#signup", "preventDefault": true },
+  "steps": [
+    { "actor": "gosling", "perform": "flap", "ms": 900 },
+    { "actor": "gosling", "pickUp": "$trigger .letter", "speed": 1.7 },
+    { "actor": "gosling", "exit": "right", "speed": 1.9 },
+    { "wait": 1600 },
+    { "emit": "delivered" },
+    { "actor": "gosling", "enter": "right" },
+    { "actor": "gosling", "say": "posted!" }
+  ]
+}
+</script>`;
 ---
 
 <BaseLayout>
@@ -144,9 +188,45 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
     </section>
   </section>
 
+  <Section id="react" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click, a form sent, a hurried scroll. The response is a scene written as data, with no animation code.">
+    <div class="ps-react">
+      <div class="ps-react-page">
+        <article class="ps-react-card" data-pixel-surface>
+          <h3>The newsletter</h3>
+          <p>One letter a month, delivered by hand. Or by wing.</p>
+          <form class="ps-react-form" id="ps-signup">
+            <label class="site-visually-hidden" for="ps-email">Email</label>
+            <input id="ps-email" type="email" required placeholder="you@example.com" autocomplete="off" />
+            <button type="submit" class="site-btn site-btn--primary">Subscribe</button>
+            <span class="ps-letter" hidden aria-hidden="true"></span>
+          </form>
+          <p class="ps-react-status" aria-live="polite">Nothing is sent anywhere: this is a demo.</p>
+        </article>
+        <button type="button" class="site-btn ps-hello">Say hello</button>
+      </div>
+      <ul class="ps-react-list">
+        <li><strong>Tap it.</strong> It startles and runs off.</li>
+        <li><strong>Tap it fast.</strong> It panics, a little faster with every tap.</li>
+        <li><strong>Drag it</strong> with a mouse, and throw it.</li>
+        <li><strong>Scroll fast.</strong> It calls after you.</li>
+        <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
+        <li><strong>Subscribe.</strong> It posts your letter, and comes back.</li>
+      </ul>
+    </div>
+    <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
+    <figure class="ps-code ps-react-code">
+      <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
+      <pre><code>{reactSnippet}</code></pre>
+    </figure>
+    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
+  </Section>
+
   <pixel-stage label="characters" controls="none" floor="none">
-    <pixel-actor src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
   </pixel-stage>
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
 
   <Section id="make" tone="surface" title="Make it yours" intro="A character is a short description you can change: colours, materials, extra parts, alternative looks. Pick a look, then a move. It is the same goose throughout.">
     <div class="ps-make">
@@ -317,7 +397,7 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
     // ---- the hero: pick a character, then walk, jump or hide ----
     const cardA = $('.ps-mini--a'), cardB = $('.ps-mini--b'), crate = $('.ps-crate');
     const who = $('.ps-who');
-    const actor = () => $('pixel-actor', stage);
+    const actor = () => $('.ps-hero-actor', stage);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const showStill = () => { $('.ps-still').hidden = !reduced.matches; };
     showStill();
@@ -367,7 +447,7 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
       if (!c || old?.getAttribute('src')?.endsWith(`/${c.id}.bundle.json`)) return;
       const startOn = old?.platform?.el === cardB ? '.ps-mini--b' : '.ps-mini--a';
       const next = document.createElement('pixel-actor');
-      const attrs = { src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
+      const attrs = { class: 'ps-hero-actor', src: `/apps/demo/assets/${c.id}.bundle.json`, size: '72', alt: c.alt, start: startOn, directed: '' };
       for (const [k, v] of Object.entries(attrs)) next.setAttribute(k, v);
       old?.remove();
       stage.append(next);
@@ -414,6 +494,34 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
       setTimeout(() => {
         if (look.anim === anim && !sprite.hasAttribute('paused')) sprite.play(anim, { restart: true });
       }, 900);
+    });
+
+    // ---- it notices you: the scenes are armed by the stage; the page shows the letter and says what happened ----
+    const form = $('#ps-signup'), letter = $('.ps-letter'), status = $('.ps-react-status');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();   // the scene asks for this too; without the runtime the page must not reload either
+      letter.hidden = false;
+      status.textContent = 'The gosling is on it.';
+    });
+    stage.addEventListener('pixel-sceneevent', (e) => {
+      if (e.detail?.name !== 'delivered') return;
+      letter.hidden = true;
+      letter.style.visibility = '';
+      form.reset();
+      status.textContent = 'Posted. (Nothing was sent anywhere: this is a demo.)';
+    });
+    // A fast scroll: once it settles, whoever is on screen calls after the reader (at most every few seconds).
+    let hurriedScroll = false, called = -Infinity;
+    stage.addEventListener('pixel-fastscroll', () => { hurriedScroll = true; });
+    stage.addEventListener('pixel-scrollsettle', () => {
+      if (!hurriedScroll) return;
+      hurriedScroll = false;
+      if (performance.now() - called < 4000) return;
+      called = performance.now();
+      for (const a of $$('pixel-actor', stage)) {
+        const r = a.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < innerHeight && a.say) a.say('wait for me!', 1600);
+      }
     });
 
     customElements.whenDefined('pixel-stage').then(() => { if (stage?.paused) setPaused(true); });

@@ -251,6 +251,112 @@ pixel-sprite {
   font-size: 0.9rem;
 }
 
+/* ---------- it notices you ---------- */
+
+#react {
+  overflow-x: clip;   /* the full-width ground must not make the page scroll sideways */
+}
+
+.ps-react {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: end;
+  /* Room above the card for the gosling standing on it. */
+  padding-top: 4.5rem;
+}
+.ps-react-page {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+.ps-react-card {
+  justify-self: stretch;
+  padding: 1.1rem 1.25rem 1.2rem;
+  border: 1px solid var(--site-border);
+  border-top: 2px solid var(--site-text);
+  border-radius: 4px;
+  background: var(--site-surface);
+  box-shadow: var(--site-shadow);
+}
+.ps-react-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.1rem;
+}
+.ps-react-card > p {
+  margin: 0 0 0.9rem;
+  color: var(--site-muted);
+}
+.ps-react-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.ps-react-form input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-bg);
+  color: var(--site-text);
+  font: inherit;
+}
+.ps-react-form input:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 1px;
+}
+.ps-react-form .site-btn {
+  min-height: 2.75rem;
+}
+/* The letter the gosling carries: a small envelope that appears beside the button on submit. */
+.ps-letter {
+  width: 1.5rem;
+  height: 1.05rem;
+  border: 2px solid #6e4a24;
+  border-radius: 2px;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 0 0 / 50% 60% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 1px), #6e4a24 50%, transparent calc(50% + 1px)) 100% 0 / 50% 60% no-repeat,
+    #f4ecd8;
+}
+.ps-letter:not([hidden]) {
+  display: inline-block;
+}
+.ps-react-status {
+  margin: 0.75rem 0 0 !important;
+  font-size: 0.88rem;
+}
+.ps-react-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.5;
+}
+.ps-react-list strong {
+  color: var(--site-text);
+}
+.ps-react-list li {
+  color: var(--site-muted);
+}
+/* The ground runs the full width of the window, so the gosling can walk off the screen and back. */
+.ps-react-ground {
+  height: 1rem;
+  margin: 2rem calc(50% - 50vw) 2.5rem;
+  border-top: 1px solid var(--site-border);
+  background: color-mix(in oklab, var(--site-accent) 10%, var(--site-surface));
+}
+.ps-react-code {
+  max-width: 48rem;
+}
+.ps-more {
+  margin: 1.25rem 0 0;
+}
+
 /* ---------- make it yours ---------- */
 
 .ps-make {
@@ -545,8 +651,12 @@ pixel-sprite {
   }
   .ps-make,
   .ps-embeds,
-  .ps-split {
+  .ps-split,
+  .ps-react {
     gap: 2rem;
+  }
+  .ps-react {
+    grid-template-columns: minmax(0, 1fr);
   }
   .ps-detail {
     margin-bottom: 3rem;
