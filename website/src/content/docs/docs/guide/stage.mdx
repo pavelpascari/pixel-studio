@@ -105,7 +105,7 @@ Steps: `goTo` (a selector, a cast name, or a point; `then`, `at`), `hideBehind`,
 
 ### Triggers, carrying and leaving
 
-Give a scene a `trigger` and mark its script `data-pixel-scene`: it plays by itself when that happens: a form submitted, a button clicked, a section scrolled into view (`"visible"`), a character tapped. Characters can `pickUp` any element (a copy rides at the beak or hand), `drop` it, `exit` by the side of the screen (delivering what they carry) and `enter` again. A character with front and back views can turn to the reader: `{"face": "viewer"}`, `"away"`, `"side"`. The [demo page's newsletter form](/apps/demo/stage.html#newsletter) hands the goose a letter to post.
+Give a scene a `trigger` and mark its script `data-pixel-scene`: it plays by itself when that happens: a form submitted, a button clicked, a section scrolled into view (`"visible"`), a character tapped. Characters can `pickUp` any element (a copy rides at the beak or hand), `drop` it, `exit` by the side of the screen (delivering what they carry) and `enter` again. A character with front and back views can turn to the reader: `{"face": "viewer"}`, `"away"`, `"side"` (bundle it with `npx pixel bundle goose.json --views all --anims stage`: the views, and only the animations a stage plays). The [demo page's newsletter form](/apps/demo/stage.html#newsletter) hands the goose a letter to post.
 
 ```json
 {"cast": {"goose": "#goose"},

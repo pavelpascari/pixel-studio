@@ -1550,7 +1550,7 @@ The value of `format` in every bundle `buildBundle` produces.
 ### `buildBundle`
 
 ```ts
-buildBundle(compiled: CompiledSpec, options: { resolutions?, overrides?, encode, views?, deltas? }): Promise<Bundle>
+buildBundle(compiled: CompiledSpec, options: { resolutions?, overrides?, encode, views?, animations?, deltas? }): Promise<Bundle>
 ```
 
 Renders one sprite sheet per resolution (and per resolution again for each skin in
@@ -1565,12 +1565,19 @@ described in [runtime.md](runtime.md).
 | `options.resolutions` | number[] | `[16, 32, 64]` | Sheet heights in pixels. Rendered and listed in ascending order. Duplicates are not removed. |
 | `options.overrides` | object | `{}` | Passed to `resolveStyle` for every resolution. |
 | `options.encode` | `(w, h, rgba) => string \| Promise<string>` | required | Turns a sheet into the `image` string: a PNG data URL, or a URL if you store sheets as separate files. Awaited. [`pngBytes`](#pngbytes) makes small (indexed) PNGs in any host. |
-| `options.views` | string[] \| false | all | Which extra views to ship (`["front"]`); `[]` or `false` leaves only the main (side) view. Their animations (`idle@back`, `turn@back`, …) are dropped before rendering. Each view adds about a full set of animations to the sheets. |
+| `options.views` | string[] \| false | all | Which extra views to ship (`["front"]`); `[]` or `false` leaves only the main (side) view. Their animations (`idle@back`, `turn@back`, …) are dropped before rendering. Each view adds about a full set of animations to the sheets. (`pixel bundle` defaults to the side view only; this default is every view.) |
+| `options.animations` | string[] | all | Only these animations (`["idle", "waddle", "honk"]`), plus what they need: their views (`idle@front`, if that view is shipped), the `turn@`, `unturn@` and `look@` clips of each view that keeps an animation, and the transition clips between two kept animations (`waddle>idle`). `"stage"` stands for what `<pixel-stage>` plays: for each role the first animation the character has. Dropped before rendering, like views. |
 | `options.deltas` | boolean | `true` | Store a skin as a change to the default sheet (`recolor`, `overlay`) when that is smaller than its own sheet. See [Bundle](#bundle). |
 
 **Returns** a promise of a bundle. `animations` comes from the smallest resolution's sheet meta. `skins`, `states` and `points` are present only when the compiled spec has them. `skinPoints` holds the baked points of each skin whose table differs from the default one (a skin that moves the parts points ride on); it is absent when no skin does.
 
+A `states` node whose animation is not in the bundle (left out by `animations` or `views`) is dropped with the
+transitions to it, its entries in other transitions' `from` and the `random` fidgets that play a missing animation; a
+`then` that pointed to a dropped node becomes `"previous"`, a dropped `initial` the first node left, and with no node
+left the bundle has no `states`.
+
 **Errors**: a missing `encode` rejects immediately with `buildBundle needs an encode(w, h, rgba) function ...`.
+An `animations` name the character does not have rejects with `no animation "quack" in <name> (have: idle, walk, …)`.
 Rendering errors propagate.
 
 In Node, encode with [`encodePNG`](#encodepng):

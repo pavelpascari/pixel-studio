@@ -601,7 +601,7 @@ sprite.play('honk', { once: true });   // returns to idle (or hover-anim) when d
 
 ## Bundle format `pixel-sprite/1`
 
-A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json`, 161 KB; abridged, images shortened):
+A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bundle.js`](../src/core/bundle.js), by `pixel bundle` ([cli.md](cli.md#bundle)), by `npm run build:demo`, and by the studio's export button. Example (from `pixel bundle examples/goose-root.json --views all`, 160 KB; abridged, images shortened):
 
 ```json
 {
@@ -652,7 +652,8 @@ A bundle is one JSON object. It is produced by `buildBundle()` in [`src/core/bun
 `turn@<view>` and `unturn@<view>` (one-shots from the side to that view and back) and, for views with a `look`,
 `look@<view>` (the side idle with the head turned). They are ordinary animations to the element: `play('idle@front')`.
 [`<pixel-stage>`](stage.md) uses them for `actor.face('viewer')`. Each view adds about a full set of rows to the
-sheets; `pixel bundle --views front` (or `--views none`) ships fewer. See
+sheets, so `pixel bundle` leaves them out unless asked (`--views front`, `--views all`); `buildBundle` keeps them
+all unless given `views`. See
 [figures.md](figures.md#views-the-same-character-from-other-angles).
 
 ### Top level

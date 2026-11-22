@@ -21,8 +21,21 @@ Until 1.0, minor versions may change the spec format.
 - Docs: the CSS rule that reserves a sprite's box before its script runs now has `vertical-align: bottom` and one
   line per `size`, and is in the getting-started page. It takes the layout shift of one sprite from 0.031 to 0
   (0.003 on a phone with a device pixel ratio of 1.75, where whole device pixels make the sprite a little larger).
+- `pixel bundle --anims idle,waddle,honk`: a bundle with only those animations, plus what they need to play: their
+  views, the views' turns, and the transition clips between two kept animations. `--anims stage` keeps what
+  `<pixel-stage>` plays (for each role, the first animation the character has). An unknown name is an error that
+  lists the character's animations. A goose with three animations is 16 KB gzip instead of 57. The same as
+  `buildBundle(c, {animations: [...]})`, and in the studio's export dialog.
+- A bundle's state machine follows its animations: `states` nodes whose animation was left out (by `animations` or
+  `views`) are dropped with the transitions to them; `pixel bundle` names them on stderr. Before, leaving out a view
+  that a node played made a bundle the runtime rejected.
 
 ### Changed
+- **`pixel bundle` ships the side view only.** Front and back views are for a `<pixel-stage>` character that turns to
+  the reader, and they double a goose's bundle (105 → 57 KB gzip for `goose-root`). Add `--views all` (or
+  `--views front`) to keep them; `--views none` still works. A note on stderr says when a character's views were
+  left out, and a view name the character does not have is now an error. `buildBundle` still ships every view by
+  default (the demos use it), and the studio's export dialog has a checkbox for them, off by default.
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
   (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.
 - `examples/goose-root.json`: the `party` skin's hat sits on the crown of the head instead of over the shades and

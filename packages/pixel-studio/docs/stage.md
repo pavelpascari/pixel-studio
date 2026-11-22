@@ -343,6 +343,18 @@ Everything the stage uses is baked into the bundle by the engine (see [runtime.m
 The figure library has presets for all of it (`jump`, `fall`, `sit`, `duck`, `peek`, `climb`; see [figures.md](figures.md)).
 List them in the spec's animations, for example `"jump": {"motion": "jump"}`.
 
+Build an actor's bundle with what the stage uses, and its views if it should turn to the reader (`pixel bundle`
+ships the side view only unless asked):
+
+```sh
+npx pixel bundle goose.json --views all --anims stage --res 32 --out site/goose.bundle.json
+```
+
+`--anims stage` keeps, for each role, the animation the stage plays (the first of the names in
+[the roles table](#elements-and-attributes) the character has), with their views, turns and transitions; add the
+names a scene plays itself (`--anims stage,hack`). Without `--views` the character still does everything except turn
+(`face('viewer')` and `gaze` then do nothing). Sizes: [performance.md](performance.md#keeping-it-small).
+
 ## How it works
 
 - **The world is read rarely.** Element boxes are read in one batch only when something changed: a `ResizeObserver` on

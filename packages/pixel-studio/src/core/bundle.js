@@ -18,11 +18,14 @@ const r2 = (v) => Math.round(v * 100) / 100;
  * encode(w, h, rgba) → PNG data URL. Supplied by the host (canvas in browsers, zlib in Node).
  * views: which extra views to ship (["front"]; [] or false: the side view only; default all): each
  *   view roughly adds a full set of animations to the sheets.
+ * animations: which animations to ship (["idle", "waddle"], or "stage" for what <pixel-stage> uses; default all),
+ *   with what they need (see selectAnimations). States nodes that play a dropped animation are pruned.
  * deltas: store a skin as a change to the default sheet when smaller (default true).
  */
-export async function buildBundle(compiled, { resolutions = [16, 32, 64], overrides = {}, encode, views, deltas = true } = {}) {
-  compiled = keepViews(compiled, views);
+export async function buildBundle(compiled, { resolutions = [16, 32, 64], overrides = {}, encode, views, animations: only, deltas = true } = {}) {
   if (typeof encode !== 'function') throw new Error('buildBundle needs an encode(w, h, rgba) function that returns an image URL (see encodePNG for Node)');
+  if (only != null) compiled = keepAnimations(compiled, selectAnimations(compiled, only));
+  compiled = keepViews(compiled, views);
   const variants = [];
   let animations = null, top = null;
   const sheets = new Map();
@@ -59,7 +62,9 @@ export async function buildBundle(compiled, { resolutions = [16, 32, 64], overri
   const bundle = { format: BUNDLE_FORMAT, name: compiled.name, size: compiled.size,
     ground: compiled.ground ?? groundFromPixels(top, compiled.size), animations };
   if (compiled.skins) bundle.skins = Object.keys(compiled.skins);
-  if (compiled.states) bundle.states = compiled.states;
+  // Fewer animations (or views) can leave state nodes with nothing to play: those go, with the transitions to them.
+  const states = compiled.states && pruneStates(compiled.states, animations);
+  if (states) bundle.states = states;
   const points = bakePoints(compiled);
   if (points) bundle.points = points;
   // A skin that moves the parts points ride on gets its own table (only when it differs).
@@ -104,6 +109,96 @@ export function keepViews(compiled, views) {
   const filter = (c) => ({ ...c, animations: Object.fromEntries(Object.entries(c.animations).filter(([n]) => !drop(n))) });
   const out = filter(compiled);
   if (compiled.skins) out.skins = Object.fromEntries(Object.entries(compiled.skins).map(([k, sc]) => [k, filter(sc)]));
+  return out;
+}
+
+/**
+ * What <pixel-stage> looks up for each role, in order: the first one a character has is the one it plays.
+ * Keep in step with ROLES in packages/runtime/src/pixel-stage.js (a test compares them).
+ */
+export const STAGE_ROLES = Object.freeze({
+  idle: ['idle'], walk: ['walk', 'waddle', 'trot', 'travel'], run: ['run', 'trot', 'travel', 'walk', 'waddle'],
+  rush: ['rush'], jump: ['jump'], fall: ['fall'], sit: ['sit'], duck: ['duck', 'sneak'], peek: ['peek'], climb: ['climb'],
+  react: ['honk', 'wave', 'hop'],
+});
+
+// Generated per view: the turns and the ¾ look. Every other "x@view" is the view's version of "x".
+const VIEW_CLIP = /^((un)?turn|look)@/;
+
+/**
+ * The names of the animations to ship for `wanted` (names, and/or "stage": the one <pixel-stage> plays for each
+ * role the character has), in spec order, with what they need to stay playable: each one's views ("idle@front"),
+ * the turns and look of every view that keeps an animation ("turn@front", "unturn@front", "look@front"), and the
+ * transitions between two kept animations ("waddle>idle"). Throws on a name the character does not have.
+ */
+export function selectAnimations(compiled, wanted) {
+  const all = Object.keys(compiled.animations);
+  const own = all.filter((n) => !n.includes('@') && !n.includes('>'));
+  const list = typeof wanted === 'string' ? wanted.split(',') : wanted;
+  if (!Array.isArray(list)) throw new Error('animations must be a list of names, e.g. ["idle", "walk"] or ["stage"]');
+  const keep = new Set();
+  for (const raw of list) {
+    const w = String(raw).trim();
+    if (!w) continue;
+    if (w === 'stage' && !compiled.animations.stage) {
+      for (const names of Object.values(STAGE_ROLES)) { const n = names.find((x) => compiled.animations[x]); if (n) keep.add(n); }
+      // A stage without an idle stands in the first animation.
+      if (!STAGE_ROLES.idle.some((x) => compiled.animations[x]) && own.length) keep.add(own[0]);
+      continue;
+    }
+    if (!Object.hasOwn(compiled.animations, w)) throw new Error(`no animation "${w}" in ${compiled.name ?? 'this character'} (have: ${own.join(', ')}; or "stage" for what <pixel-stage> uses)`);
+    keep.add(w);
+  }
+  if (!keep.size) throw new Error(`no animations to keep (have: ${own.join(', ')})`);
+  const at = (n) => n.indexOf('@');
+  for (const n of all) if (at(n) > 0 && !n.includes('>') && !VIEW_CLIP.test(n) && keep.has(n.slice(0, at(n)))) keep.add(n);
+  const views = new Set([...keep].filter((n) => at(n) > 0 && !n.includes('>')).map((n) => n.slice(at(n) + 1)));
+  for (const n of all) if (VIEW_CLIP.test(n) && views.has(n.slice(at(n) + 1))) keep.add(n);
+  for (const n of all) if (n.includes('>')) { const [a, b] = n.split('>'); if (keep.has(a) && keep.has(b)) keep.add(n); }
+  return all.filter((n) => keep.has(n));
+}
+
+/** The compiled spec (and its skins) with only the named animations. */
+export function keepAnimations(compiled, names) {
+  const keep = new Set(names);
+  const filter = (c) => ({ ...c, animations: Object.fromEntries(Object.entries(c.animations).filter(([n]) => keep.has(n))) });
+  const out = filter(compiled);
+  if (compiled.skins) out.skins = Object.fromEntries(Object.entries(compiled.skins).map(([k, sc]) => [k, filter(sc)]));
+  return out;
+}
+
+/**
+ * The state machine without the nodes whose animation is not in `animations` (and the transitions to or from only
+ * those, and random fidgets that play one). A node whose `then` was dropped goes back to the previous node instead;
+ * a dropped `initial` becomes the first node left. null when no node is left. Unchanged when nothing is dropped.
+ */
+export function pruneStates(states, animations) {
+  const has = (n) => typeof n === 'string' && Object.hasOwn(animations, n);
+  const entries = Object.entries(states.nodes ?? {});
+  const kept = entries.filter(([, node]) => has(node?.anim));
+  const fidgetsOk = kept.every(([, node]) => !Array.isArray(node.random) || node.random.every((f) => has(f?.anim)));
+  if (kept.length === entries.length && fidgetsOk) return states;
+  if (!kept.length) return null;
+  const names = new Set(kept.map(([n]) => n));
+  const nodes = Object.fromEntries(kept.map(([n, node]) => {
+    const out = { ...node };
+    if (Array.isArray(node.random)) {
+      out.random = node.random.filter((f) => has(f?.anim));
+      if (!out.random.length) delete out.random;
+    }
+    if (out.then != null && out.then !== 'previous' && !names.has(out.then)) out.then = 'previous';
+    return [n, out];
+  }));
+  const out = { ...states, nodes };
+  if (states.initial != null && !names.has(states.initial)) out.initial = kept[0][0];
+  if (Array.isArray(states.transitions)) {
+    out.transitions = states.transitions.flatMap((t) => {
+      if (!names.has(t?.to)) return [];
+      if (t.from == null || t.from === '*') return [t];
+      const from = [].concat(t.from).filter((f) => f === '*' || names.has(f));
+      return from.length ? [{ ...t, from: Array.isArray(t.from) ? from : from[0] }] : [];
+    });
+  }
   return out;
 }
 
