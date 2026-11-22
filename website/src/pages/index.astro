@@ -8,8 +8,39 @@
 // it (examples), will it behave (sizes, motion, packages).
 import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section } from 'astro-project-site/components';
 import '../styles/landing.css';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 const assets = '/apps/demo/assets';
+
+// "Small": download sizes measured from the files at build time (gzip, level 9; the prebuild step makes demo/assets),
+// so the numbers on the page are always the files it plays. KB = 1024 bytes.
+const root = resolve(process.cwd(), '..');
+const gzipKB = (file: string) => gzipSync(readFileSync(resolve(root, file)), { level: 9 }).length / 1024;
+const kb = (n: number) => (n < 10 ? n.toFixed(1) : Math.round(n).toString());
+const scriptKB = kb(gzipKB('packages/runtime/src/pixel-sprite.js'));
+// Characters with different levels of detail, smallest file first. What makes a file bigger is mostly texture (fur
+// and cloth compress far worse than flat colour), then the number of frames, then front and back views. `texture`
+// names the textured materials of each example spec (packages/pixel-studio/examples/); frames and views are read
+// from the bundle.
+const weights = [
+  { file: 'robot', name: 'Bolt the robot', texture: 'metal' },
+  { file: 'moss', name: 'Moss', texture: 'flat colours' },
+  { file: 'slime', name: 'Gloop the slime', texture: 'flat colours' },
+  { file: 'pip', name: 'Pip', texture: 'hair, cloth, leather' },
+  { file: 'fox', name: 'Ember the fox', texture: 'fur' },
+  { file: 'goose-root', name: 'root the goose', texture: 'feathers, cloth, metal' },
+]
+  .map((s) => {
+    const path = `demo/assets/${s.file}.bundle.json`;
+    const anims: Record<string, { frames: number }> = JSON.parse(readFileSync(resolve(root, path), 'utf8')).animations;
+    const frames = Object.values(anims).reduce((sum, a) => sum + a.frames, 0);
+    const turns = Object.keys(anims).some((n) => n.includes('@'));
+    return { ...s, size: gzipKB(path), detail: `${frames} frames · ${s.texture}${turns ? ' · turns around' : ''}` };
+  })
+  .sort((a, b) => a.size - b.size)
+  .map((s) => ({ ...s, kb: kb(s.size) }));
 const play = '/apps/studio/play.html';
 
 // The hero's cast; `who` is read out when one is picked.
@@ -311,6 +342,24 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
   <GalleryStrip title="See it in context" intro="A demo site, a stage, a small game and the studio's tools, all built with the same two packages." limit={3} />
 
   <Section id="details" tone="surface" title="Built to behave" intro="The details that make a character feel at home on a page, and keep it out of the way.">
+    <div class="ps-weight">
+      <div class="ps-detail-text">
+        <h3>Small, and only as big as you make it</h3>
+        <p>A whole animated character can be {weights[0].kb} KB. The file grows with the detail it carries: textures like fur and cloth most of all, then more frames, then front and back views for characters that turn around. Every size here is the file that character is playing, compressed as a web server sends it.</p>
+        <p class="ps-weight-script">Plus the script, once for every character on the page: <strong>{scriptKB} KB</strong>. An off-screen sprite stops drawing.</p>
+        <a class="ps-link" href="/docs/reference/performance/">Performance in detail <span aria-hidden="true">→</span></a>
+      </div>
+      <ol class="ps-ladder" aria-label="Example characters, from the smallest file to the largest">
+        {weights.map((s) => (
+          <li>
+            <pixel-sprite src={`${assets}/${s.file}.bundle.json`} anim="idle" size="72" states="off" alt={s.name} />
+            <strong>{s.kb} KB</strong>
+            <span>{s.detail}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+
     <div class="ps-detail">
       <div class="ps-detail-text">
         <h3>Sharp at every size</h3>
@@ -343,7 +392,6 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     <ul class="ps-facts">
       <li><strong>Polite.</strong> Pauses off-screen, respects reduced motion, has a pause button, and reads its <code>alt</code> to screen readers.</li>
       <li><strong>Interactive.</strong> Hover and click animations, events for footsteps and landings, attachment points, state machines and skins.</li>
-      <li><strong>Small.</strong> 13 KB of script for a sprite, 38 KB with the stage, 9 to 105 KB per character (compressed). An off-screen sprite stops drawing. <a class="ps-link" href="/docs/reference/performance/">Performance in detail <span aria-hidden="true">→</span></a></li>
       <li><strong>Portable.</strong> No dependencies and no build step. For a game engine, <code>pixel export</code> writes sheets Phaser and PixiJS load.</li>
       <li><strong>Checked.</strong> A JSON schema, a spec reference, and errors with a JSON path and a did-you-mean.</li>
     </ul>
