@@ -4,8 +4,9 @@
 // with the runtime from packages/runtime/src/: the page is its own demo.
 //
 // The order follows a visitor's questions: what is it (a character to direct on a small page), could it be mine (the
-// same goose in other looks), how much work is it (the embed), how do I make my own (the studio), where would I use
-// it (examples), will it behave (sizes, motion, packages).
+// same goose in other looks), how much work is it (the embed), what can it do there (it reacts to the reader and the
+// page), how do I make my own (the studio), where would I use it (examples), will it behave (sizes, motion, packages).
+// Sections alternate plain and surface backgrounds (the gallery strip is always surface).
 import { BaseLayout, CallToAction, GalleryStrip, InstallCommand, Section } from 'astro-project-site/components';
 import '../styles/landing.css';
 import { readFileSync } from 'node:fs';
@@ -222,48 +223,6 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     </section>
   </section>
 
-  <Section id="react" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click, a form sent, a hurried scroll. The response is a scene written as data, with no animation code.">
-    <div class="ps-react">
-      <div class="ps-react-page">
-        <article class="ps-react-card" data-pixel-surface>
-          <h3>The newsletter</h3>
-          <p>One letter a month, delivered by hand. Or by wing.</p>
-          <form class="ps-react-form" id="ps-signup">
-            <label class="site-visually-hidden" for="ps-email">Email</label>
-            <input id="ps-email" type="email" required placeholder="you@example.com" autocomplete="off" />
-            <button type="submit" class="site-btn site-btn--primary">Subscribe</button>
-            <span class="ps-letter" hidden aria-hidden="true"></span>
-          </form>
-          <p class="ps-react-status" aria-live="polite">Nothing is sent anywhere: this is a demo.</p>
-        </article>
-        <button type="button" class="site-btn ps-hello">Say hello</button>
-      </div>
-      <ul class="ps-react-list">
-        <li><strong>Tap it.</strong> It startles and runs off.</li>
-        <li><strong>Tap it fast.</strong> It panics, a little faster with every tap.</li>
-        <li><strong>Drag it</strong> with a mouse, and throw it.</li>
-        <li><strong>Scroll fast.</strong> It calls after you.</li>
-        <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
-        <li><strong>Subscribe.</strong> It posts your letter, and comes back.</li>
-      </ul>
-    </div>
-    <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
-    <figure class="ps-code ps-react-code">
-      <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
-      <pre><code>{reactSnippet}</code></pre>
-    </figure>
-    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
-  </Section>
-
-  {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
-      hero's cast shares its default bundles with the "Small" row, so the page downloads each of them once. */}
-  <pixel-stage label="characters" controls="none" floor="none">
-    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
-    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.lean.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
-  </pixel-stage>
-  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
-  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
-
   <Section id="make" tone="surface" title="Make it yours" intro="A character is a short description you can change: colours, materials, extra parts, alternative looks. Pick a look, then a move. It is the same goose throughout.">
     <div class="ps-make">
       <div class="ps-make-preview">
@@ -323,7 +282,49 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     </div>
   </Section>
 
-  <Section id="studio" tone="surface" title="Make your own, in the studio or with an agent" intro="Describe a character in a sentence. Claude writes its spec, the engine draws it at every size, and Claude looks at the drawing and refines it. Or start from an example and edit it yourself.">
+  <Section id="react" tone="surface" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click, a form sent, a hurried scroll. The response is a scene written as data, with no animation code.">
+    <div class="ps-react">
+      <div class="ps-react-page">
+        <article class="ps-react-card" data-pixel-surface>
+          <h3>The newsletter</h3>
+          <p>One letter a month, delivered by hand. Or by wing.</p>
+          <form class="ps-react-form" id="ps-signup">
+            <label class="site-visually-hidden" for="ps-email">Email</label>
+            <input id="ps-email" type="email" required placeholder="you@example.com" autocomplete="off" />
+            <button type="submit" class="site-btn site-btn--primary">Subscribe</button>
+            <span class="ps-letter" hidden aria-hidden="true"></span>
+          </form>
+          <p class="ps-react-status" aria-live="polite">Nothing is sent anywhere: this is a demo.</p>
+        </article>
+        <button type="button" class="site-btn ps-hello">Say hello</button>
+      </div>
+      <ul class="ps-react-list">
+        <li><strong>Tap it.</strong> It startles and runs off.</li>
+        <li><strong>Tap it fast.</strong> It panics, a little faster with every tap.</li>
+        <li><strong>Drag it</strong> with a mouse, and throw it.</li>
+        <li><strong>Scroll fast.</strong> It calls after you.</li>
+        <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
+        <li><strong>Subscribe.</strong> It posts your letter, and comes back.</li>
+      </ul>
+    </div>
+    <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
+    <figure class="ps-code ps-react-code">
+      <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
+      <pre><code>{reactSnippet}</code></pre>
+    </figure>
+    <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
+  </Section>
+
+  {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
+      hero's cast shares its default bundles with the "Small" row, so the page downloads each of them once. */}
+  <pixel-stage label="characters" controls="none" floor="none">
+    <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
+    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.lean.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
+  </pixel-stage>
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
+  <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
+
+  <Section id="studio" title="Make your own, in the studio or with an agent" intro="Describe a character in a sentence. Claude writes its spec, the engine draws it at every size, and Claude looks at the drawing and refines it. Or start from an example and edit it yourself.">
     <div class="ps-split ps-split--studio">
       <ol class="ps-loop">
         <li><span>1</span><div><strong>Ask</strong> for “a small grey robot with an antenna that waves hello”.</div></li>
