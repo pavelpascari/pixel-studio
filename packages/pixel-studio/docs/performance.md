@@ -15,13 +15,13 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 ## In short
 
 - **Download:** 13 KB of script for `<pixel-sprite>`, 38 KB for `<pixel-stage>` (brotli; 15 and 44 KB gzip), plus
-  one bundle per character: 9 to 43 KB for most example characters, 75 to 105 KB for a goose with every view and
+  one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
   resolution, and 14 KB for the same goose built with `--res 32 --views none`.
 - **Loading:** no measurable change to LCP or TBT on a throttled mobile profile. One sprite causes a small layout
   shift (CLS 0.03) unless its box is reserved in CSS.
 - **Playing:** under 0.1 ms of main thread per frame for one sprite, 0.4 ms for 50, 0.3 ms for a stage with three
   actors (under 7% of a frame for 50 sprites with the CPU slowed down four times). Off-screen, paused and
-  reduced-motion characters cost nothing per frame.
+  reduced-motion sprites cost nothing measurable per frame; a playing stage keeps moving its characters off-screen.
 - **Memory:** the decoded sprite sheet is the large part: 0.1 to 2 MB at 32 px for most characters, and about
   8 MB for a goose at 64 px (20 MB for the greylag, whose longest animation has almost three times as many frames).
   It is shared by every sprite of that character.
