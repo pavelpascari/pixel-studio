@@ -1,7 +1,9 @@
 // CHANGELOG.md (the repository's, read at build time) as data for /changelog/ and its RSS feed.
 //
 // It reads the subset of Markdown the changelog is written in (see CONTRIBUTING.md, "Changelog entries"):
-//   ## [version] - YYYY-MM-DD      a release (`## [Unreleased]` for what is coming)
+//   ## [Unreleased]                package changes not on npm yet (they move under the version when it is released)
+//   ## [version] - YYYY-MM-DD      a release on npm (or, before 0.2.0-alpha.1, a tag on GitHub)
+//   ## Site update - YYYY-MM-DD    what went live on pixel-studio.sh that day (Studio, Docs, Website only)
 //   ### Upgrading | Added | …      a Keep a Changelog section
 //   - **Runtime:** text            an entry, starting with the part it concerns; continuation lines are indented,
 //     - nested item                and a nested list is indented by two spaces
@@ -12,6 +14,8 @@
 
 /** The parts an entry can concern, in the order the page's legend shows them. */
 export const PARTS = ['Runtime', 'Engine', 'CLI', 'Examples', 'Packages', 'Studio', 'Docs', 'Website'];
+/** The parts that change on pixel-studio.sh itself, when they are deployed: the only ones a site update can list. */
+export const SITE_PARTS = ['Studio', 'Docs', 'Website'];
 
 const SITE = 'https://pixel-studio.sh';
 const REPO_FILES = 'https://github.com/pavelpascari/pixel-studio/blob/main/';
@@ -44,8 +48,11 @@ export function inline(text, o = {}) {
 /**
  * @typedef {{ part?: string, html: string, children: Item[] }} Item
  * @typedef {{ title: string, items: Item[] }} Section
- * @typedef {{ version: string, date?: string, id: string, unreleased: boolean, prerelease: boolean,
+ * @typedef {'unreleased' | 'release' | 'site'} Kind
+ * @typedef {{ kind: Kind, version: string, date?: string, id: string, unreleased: boolean, prerelease: boolean,
  *   summary: string[], sections: Section[] }} Release
+ * An entry of the changelog: `version` is '' for a site update, and `id` its anchor on /changelog/: the version,
+ * `unreleased`, or `site-YYYY-MM-DD`.
  */
 
 /** `**Runtime:** text` → the part and the rest; parts not in PARTS stay in the text. @param {string} text */
@@ -55,7 +62,7 @@ function splitPart(text) {
 }
 
 /**
- * The releases in CHANGELOG.md, newest first (the file's order). Text before the first release is skipped: the
+ * The releases and site updates in CHANGELOG.md, newest first (the file's order). Text before the first release is skipped: the
  * page has its own introduction.
  * @param {string} markdown @param {{absolute?: boolean}} [o]
  * @returns {Release[]}
@@ -87,8 +94,15 @@ export function parseChangelog(markdown, o = {}) {
     const { part, rest } = splitPart(entry.lines.join(' '));
     // Every entry says which part it concerns (CONTRIBUTING.md, "Changelog entries"): the build fails otherwise, so
     // an entry written the old way is caught in the pull request rather than shown unlabelled.
+    const where = `CHANGELOG.md, ${release?.kind === 'site' ? `Site update - ${release.date}` : release?.version} › ${section.title}`;
     if (!entry.nested && !part)
-      throw new Error(`CHANGELOG.md, ${release?.version} › ${section.title}: an entry must start with one of ${PARTS.map((p) => `**${p}:**`).join(', ')}: "${entry.lines[0]}"`);
+      throw new Error(`${where}: an entry must start with one of ${PARTS.map((p) => `**${p}:**`).join(', ')}: "${entry.lines[0]}"`);
+    // Site updates are live the day they are listed, package changes only once they are on npm: an entry in the
+    // wrong place would tell readers something is out (or still to come) when it is not.
+    if (!entry.nested && part && release?.kind === 'site' && !SITE_PARTS.includes(part))
+      throw new Error(`${where}: a site update lists only ${SITE_PARTS.join(', ')}; **${part}:** changes go under ## [Unreleased] until they are on npm: "${entry.lines[0]}"`);
+    if (!entry.nested && part && release?.kind === 'unreleased' && part !== 'Docs' && SITE_PARTS.includes(part))
+      throw new Error(`${where}: **${part}:** changes are live once deployed; list them under "## Site update - YYYY-MM-DD", not ## [Unreleased]: "${entry.lines[0]}"`);
     /** @type {Item} */
     const item = { part, html: inline(rest, o), children: [] };
     if (entry.nested && parent) parent.children.push(item);
@@ -101,16 +115,25 @@ export function parseChangelog(markdown, o = {}) {
 
   for (const line of markdown.split(/\r?\n/)) {
     const h2 = /^## \[([^\]]+)\](?:\s+-\s+(\d{4}-\d{2}-\d{2}))?\s*$/.exec(line);
-    if (h2) {
+    const site = /^## Site update - (\d{4}-\d{2}-\d{2})\s*$/.exec(line);
+    if (h2 || site) {
       flushEntry();
       flushPara();
-      const unreleased = h2[1].toLowerCase() === 'unreleased';
+      const name = h2 ? h2[1] : '';
+      const date = site ? site[1] : h2?.[2];
+      const unreleased = name.toLowerCase() === 'unreleased';
+      /** @type {Kind} */
+      const kind = site ? 'site' : unreleased ? 'unreleased' : 'release';
+      if (kind === 'release' && !date) throw new Error(`CHANGELOG.md: a release needs its date, "## [version] - YYYY-MM-DD": ${line}`);
+      const id = site ? `site-${date}` : unreleased ? 'unreleased' : name;
+      if (releases.some((r) => r.id === id)) throw new Error(`CHANGELOG.md: "${line}" is there twice; one section per version and per day`);
       release = {
-        version: h2[1],
-        date: h2[2],
-        id: unreleased ? 'unreleased' : h2[1],
+        kind,
+        version: name,
+        date,
+        id,
         unreleased,
-        prerelease: h2[1].includes('-'),
+        prerelease: name.includes('-'),
         summary: [],
         sections: [],
       };
@@ -118,7 +141,8 @@ export function parseChangelog(markdown, o = {}) {
       section = undefined;
       continue;
     }
-    if (/^## /.test(line)) throw new Error(`CHANGELOG.md: a release heading must be "## [version] - YYYY-MM-DD": ${line}`);
+    if (/^## /.test(line))
+      throw new Error(`CHANGELOG.md: a heading must be "## [Unreleased]", "## [version] - YYYY-MM-DD" or "## Site update - YYYY-MM-DD": ${line}`);
     if (!release) continue;
     const h3 = /^### (.+)$/.exec(line);
     if (h3) {

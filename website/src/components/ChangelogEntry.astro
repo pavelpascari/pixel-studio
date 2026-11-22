@@ -1,0 +1,195 @@
+---
+// One card on /changelog/'s timeline: an npm release, a site update or the next npm release, with its status
+// ("On npm", "Live on pixel-studio.sh", "Not on npm yet"), its summary and its Keep a Changelog sections, Upgrading
+// first and set apart. The heading's id is the entry's anchor (/changelog/#0.2.0-alpha.2, #site-2026-11-22).
+import { SITE_PARTS, parseChangelog } from '../lib/changelog.mjs';
+
+type Entry = ReturnType<typeof parseChangelog>[number];
+interface Props {
+  entry: Entry;
+  title: string;
+  status: string;
+  statusKind: 'npm' | 'tag' | 'site' | 'next';
+}
+const { entry, title, status, statusKind } = Astro.props;
+
+const group = (part: string) => (SITE_PARTS.includes(part) ? 'site' : 'package');
+const sectionId = (t: string) => `${entry.id}-${t.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+// Upgrading first: it is what a reader has to act on.
+const sections = [...entry.sections].sort((a, b) => Number(b.title === 'Upgrading') - Number(a.title === 'Upgrading'));
+---
+
+<article class="ev" data-kind={entry.kind} aria-labelledby={entry.id}>
+  <header class="ev-head">
+    <h3 id={entry.id} data-version={entry.kind === 'release' ? '' : undefined}>
+      <a href={`#${entry.id}`}>{title}</a>
+    </h3>
+    <span class="ev-status" data-status={statusKind}>{status}</span>
+    {entry.prerelease && <span class="ev-tag">pre-release</span>}
+  </header>
+  {
+    entry.kind === 'unreleased' && (
+      <p class="ev-summary">
+        In the repository, and coming with the next release of <code>@pixel-studio/core</code> and{' '}
+        <code>@pixel-studio/runtime</code>. The runtime and example changes already play on this site.
+      </p>
+    )
+  }
+  {entry.summary.map((p) => <p class="ev-summary" set:html={p} />)}
+  {
+    sections.map((s) => (
+      <div class="ev-section" data-kind={s.title.toLowerCase()}>
+        <h4 id={sectionId(s.title)}>{s.title}</h4>
+        <ul>
+          {s.items.map((i) => (
+            <li>
+              {i.part && (
+                <span class="cl-part" data-group={group(i.part)}>
+                  {i.part}
+                </span>
+              )}{' '}
+              <Fragment set:html={i.html} />
+              {i.children.length > 0 && (
+                <ul>
+                  {i.children.map((c) => (
+                    <li set:html={c.html} />
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</article>
+
+<style>
+  .ev {
+    min-width: 0;
+    padding: 1rem 1.25rem 1.25rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--site-radius);
+    background: var(--site-surface);
+  }
+  .ev[data-kind='unreleased'] {
+    border-style: dashed;
+    border-color: color-mix(in oklab, var(--site-accent) 45%, var(--site-border));
+    background: transparent;
+  }
+  .ev-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+  }
+  .ev-head h3 {
+    margin: 0 0.25rem 0 0;
+    font-family: var(--site-font-heading);
+    font-size: 1.375rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    scroll-margin-top: calc(var(--site-header-height) + 1rem);
+  }
+  .ev-head h3[data-version] {
+    font-family: var(--site-font-mono);
+    font-size: 1.25rem;
+    letter-spacing: 0;
+  }
+  .ev-head h3 a {
+    color: var(--site-text);
+    text-decoration: none;
+  }
+  .ev-head h3 a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .ev-status,
+  .ev-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--site-font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    padding: 0 0.5rem;
+    border: 1px solid var(--site-border);
+    border-radius: 999px;
+    color: var(--site-muted);
+    white-space: nowrap;
+  }
+  .ev-status {
+    color: var(--site-text);
+  }
+  /* A small square before the status, the same shape and fill as the day's node on the rail. */
+  .ev-status::before {
+    content: '';
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 1px;
+    background: var(--site-muted);
+  }
+  .ev-status[data-status='npm'] {
+    border-color: color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
+    background: var(--site-accent-soft);
+  }
+  .ev-status[data-status='npm']::before {
+    background: var(--site-accent);
+  }
+  .ev-status[data-status='next'] {
+    border-style: dashed;
+    border-color: color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
+  }
+  .ev-status[data-status='next']::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--site-accent);
+  }
+  .ev-summary {
+    margin: 0.75rem 0 0;
+  }
+
+  .ev-section h4 {
+    font-size: 1rem;
+    margin: 1.25rem 0 0.35rem;
+    scroll-margin-top: calc(var(--site-header-height) + 1rem);
+  }
+  /* Square bullets, like the rail's nodes; each entry's label follows its bullet. */
+  .ev-section > ul {
+    margin: 0;
+    padding-inline-start: 1.15rem;
+    list-style: square;
+  }
+  .ev-section li::marker {
+    color: var(--site-muted);
+  }
+  .ev-section li {
+    margin-block: 0.5rem;
+  }
+  .ev-section li ul {
+    padding-inline-start: 1.15rem;
+    list-style: disc;
+  }
+  .ev-section li li {
+    margin-block: 0.25rem;
+  }
+  .ev-section[data-kind='upgrading'] {
+    margin-top: 1rem;
+    border-inline-start: 3px solid var(--site-accent);
+    background: var(--site-accent-soft);
+    border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
+    padding: 0.1rem 1rem 0.4rem;
+  }
+  .ev-section[data-kind='upgrading'] h4 {
+    margin-top: 0.6rem;
+  }
+
+  @media (max-width: 30rem) {
+    .ev {
+      padding: 0.875rem 0.875rem 1rem;
+    }
+    .ev-section[data-kind='upgrading'] {
+      padding-inline: 0.75rem;
+    }
+  }
+</style>

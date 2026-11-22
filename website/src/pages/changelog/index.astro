@@ -1,16 +1,36 @@
 ---
 // /changelog/: the repository's CHANGELOG.md, read at build time (src/lib/changelog.mjs), so the page is never a
-// second copy to keep in step. Releases newest first, each with an anchor (/changelog/#0.2.0-alpha.2); every entry
-// shows the part it concerns as a small label. "Unreleased" is shown first as "Coming next": its Studio and Website
-// entries are already live on this site (it is built from the same commit), its package entries come with the next
-// npm release. The feed (rss.xml) has the released versions only.
+// second copy to keep in step. It is drawn as a timeline, newest first: one node per day, holding what happened
+// that day (npm releases and site updates), with the next npm release on top as the one node still to come.
+//
+// The wording follows where each change is: package changes under `## [Unreleased]` are "in the next npm release"
+// (not on npm yet, though the site already plays with them), Studio, Docs and Website changes are dated
+// `## Site update - YYYY-MM-DD` sections, "live on pixel-studio.sh". Anchors: the version (/changelog/#0.2.0-alpha.2),
+// `#site-YYYY-MM-DD` for a site update and `#unreleased` for the next release.
 import { BaseLayout } from 'astro-project-site/components';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import ChangelogEntry from '../../components/ChangelogEntry.astro';
 import { PARTS, parseChangelog } from '../../lib/changelog.mjs';
 
-const releases = parseChangelog(readFileSync(resolve(process.cwd(), '..', 'CHANGELOG.md'), 'utf8'));
+type Entry = ReturnType<typeof parseChangelog>[number];
+
+const entries = parseChangelog(readFileSync(resolve(process.cwd(), '..', 'CHANGELOG.md'), 'utf8'));
 const repo = 'https://github.com/pavelpascari/pixel-studio';
+
+// An empty `## [Unreleased]` (just after a release) has no node: there is nothing to announce.
+const upcoming = entries.find((e) => e.kind === 'unreleased' && e.sections.length > 0);
+// The dated entries, grouped by day in the file's order (newest first).
+const days: { date: string; entries: Entry[] }[] = [];
+for (const e of entries) {
+  if (!e.date) continue;
+  const last = days.at(-1);
+  if (last?.date === e.date) last.entries.push(e);
+  else days.push({ date: e.date, entries: [e] });
+}
+// The packages have been on npm since 0.2.0-alpha.1; the versions before it were installed from GitHub.
+const firstOnNpm = entries.findIndex((e) => e.id === '0.2.0-alpha.1');
+const onNpm = (e: Entry) => e.kind === 'release' && entries.indexOf(e) <= firstOnNpm;
 
 const partInfo: Record<string, { group: 'package' | 'site'; about: string }> = {
   Runtime: { group: 'package', about: '@pixel-studio/runtime: the tags that play characters on a page' },
@@ -22,25 +42,30 @@ const partInfo: Record<string, { group: 'package' | 'site'; about: string }> = {
   Docs: { group: 'site', about: 'the documentation' },
   Website: { group: 'site', about: 'the rest of pixel-studio.sh' },
 };
-const label = (r: (typeof releases)[number]) => (r.unreleased ? 'Coming next' : r.version);
-const longDate = (d: string) =>
-  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+const title = (e: Entry) => (e.kind === 'unreleased' ? 'In the next npm release' : e.kind === 'site' ? 'Site update' : e.version);
+const status = (e: Entry) =>
+  e.kind === 'unreleased' ? 'Not on npm yet' : e.kind === 'site' ? 'Live on pixel-studio.sh' : onNpm(e) ? 'On npm' : 'From GitHub';
+const statusKind = (e: Entry) => (e.kind === 'unreleased' ? 'next' : e.kind === 'site' ? 'site' : onNpm(e) ? 'npm' : 'tag');
+const dayMonth = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+const shortDate = (d: string) =>
+  new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const toc = [...(upcoming ? [upcoming] : []), ...days.flatMap((d) => d.entries)];
 ---
 
 <BaseLayout
   title="Changelog"
-  description="What changed in each release of Pixel Studio: the packages, the pixel CLI, the studio and the website, with upgrade notes."
+  description="What changed in Pixel Studio, day by day: npm releases of the packages and the pixel CLI with upgrade notes, and updates to the studio and website."
 >
   <link slot="head" rel="alternate" type="application/rss+xml" title="Pixel Studio: changelog" href="/changelog/rss.xml" />
 
   <div class="cl">
     <header class="cl-head">
-      <h1>Changelog</h1>
+      <p class="cl-eyebrow">Changelog</p>
+      <h1>What changed, day by day</h1>
       <p class="cl-lead">
-        What changed in Pixel Studio: the npm packages <code>@pixel-studio/core</code> and
-        <code>@pixel-studio/runtime</code>, the <code>pixel</code> CLI, and the studio and website on this site. When
-        an update needs something from you, <strong>Upgrading</strong> says what.
+        Releases of the npm packages <code>@pixel-studio/core</code> and <code>@pixel-studio/runtime</code> (with the
+        <code>pixel</code> CLI), and updates to the studio, docs and website on this site, which go live the day they
+        are made. When an update needs something from you, <strong>Upgrading</strong> says what.
       </p>
       <p class="cl-links">
         <a href="/changelog/rss.xml">RSS feed</a>
@@ -62,17 +87,21 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
             ))
           }
         </dl>
-        <p>Studio, Docs and Website changes go live on pixel-studio.sh as they are made; the others arrive with a release on npm.</p>
+        <p>
+          Studio, Docs and Website changes are live on pixel-studio.sh the day they are listed. Runtime, Engine, CLI,
+          Examples and Packages changes reach you with a release on npm; the characters on this site play with them a
+          little earlier.
+        </p>
       </details>
 
       <nav class="cl-toc" aria-labelledby="cl-toc-title">
-        <h2 id="cl-toc-title">Releases</h2>
+        <h2 id="cl-toc-title">On this page</h2>
         <ul>
           {
-            releases.map((r) => (
+            toc.map((e) => (
               <li>
-                <a href={`#${r.id}`}>{label(r)}</a>
-                {r.date && <span class="cl-toc-date">{longDate(r.date)}</span>}
+                <a href={`#${e.id}`}>{title(e)}</a>
+                <span class="cl-toc-date">{e.date ? shortDate(e.date) : 'not on npm yet'}</span>
               </li>
             ))
           }
@@ -80,61 +109,61 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
       </nav>
     </header>
 
-    {
-      releases.map((r) => (
-        <article class="cl-release" aria-labelledby={r.id} data-unreleased={r.unreleased ? '' : undefined}>
-          <header class="cl-release-head">
-            <h2 id={r.id}>
-              <a href={`#${r.id}`}>{label(r)}</a>
+    <ol class="tl">
+      {
+        upcoming && (
+          <li class="tl-day" data-kind="next">
+            <span class="tl-dot" aria-hidden="true" />
+            <h2 class="tl-date">
+              <span class="tl-date-main">Next</span> <span class="tl-date-sub">release</span>
             </h2>
-            <p class="cl-meta">
-              {r.date && <time datetime={r.date}>{longDate(r.date)}</time>}
-              {r.prerelease && <span class="cl-tag">pre-release</span>}
-              {r.unreleased && <span>Studio and website changes are live here already; package changes come with the next release.</span>}
-            </p>
-          </header>
-          {r.summary.map((p) => <p class="cl-summary" set:html={p} />)}
-          {r.sections.map((s) => (
-            <div class="cl-section" data-kind={s.title.toLowerCase()}>
-              <h3 id={sectionId(r, s.title)}>{s.title}</h3>
-              <ul>
-                {s.items.map((i) => (
-                  <li>
-                    {i.part && (
-                      <span class="cl-part" data-group={partInfo[i.part].group}>
-                        {i.part}
-                      </span>
-                    )}{' '}
-                    <Fragment set:html={i.html} />
-                    {i.children.length > 0 && (
-                      <ul>
-                        {i.children.map((c) => (
-                          <li set:html={c.html} />
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
+            <div class="tl-events">
+              <ChangelogEntry entry={upcoming} status={status(upcoming)} statusKind="next" title={title(upcoming)} />
             </div>
-          ))}
-        </article>
-      ))
-    }
+          </li>
+        )
+      }
+      {
+        days.map((d) => (
+          <li class="tl-day" data-kind={d.entries.some(onNpm) ? 'npm' : d.entries.some((e) => e.kind === 'release') ? 'release' : 'site'}>
+            <span class="tl-dot" aria-hidden="true" />
+            <h2 class="tl-date">
+              <time datetime={d.date}>
+                <span class="tl-date-main">{dayMonth(d.date)}</span> <span class="tl-date-sub">{d.date.slice(0, 4)}</span>
+              </time>
+            </h2>
+            <div class="tl-events">
+              {d.entries.map((e) => (
+                <ChangelogEntry entry={e} status={status(e)} statusKind={statusKind(e)} title={title(e)} />
+              ))}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
   </div>
 </BaseLayout>
 
 <style>
   .cl {
-    max-width: 48rem;
+    max-width: 50rem;
     margin-inline: auto;
     padding: calc(var(--site-space) * 2.5) var(--site-space) calc(var(--site-space) * 4);
     line-height: 1.6;
+  }
+  .cl-eyebrow {
+    margin: 0 0 0.6rem;
+    color: var(--site-muted);
+    font-family: var(--site-font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
   .cl-head h1 {
     font-family: var(--site-font-heading);
     font-size: clamp(2rem, 5vw, 2.75rem);
     line-height: 1.1;
+    letter-spacing: -0.02em;
     margin: 0 0 0.75rem;
   }
   .cl-lead {
@@ -148,7 +177,7 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
     gap: 0.25rem 1.25rem;
     margin: 1rem 0 0;
   }
-  .cl a {
+  .cl :global(a) {
     color: var(--site-link);
   }
   .cl-links a,
@@ -156,20 +185,42 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
     display: inline-block;
     padding-block: 0.2rem;
   }
-  .cl a:focus-visible,
+  .cl :global(a:focus-visible),
   .cl summary:focus-visible {
     outline: 2px solid var(--site-focus);
     outline-offset: 2px;
     border-radius: 2px;
   }
-  .cl code {
+  .cl :global(code) {
     font-family: var(--site-font-mono);
     font-size: 0.875em;
-    background: var(--site-surface);
+    background: var(--site-bg);
     border: 1px solid var(--site-border);
     border-radius: 0.3rem;
     padding: 0.05em 0.3em;
     overflow-wrap: anywhere;
+  }
+  .cl-head code {
+    background: var(--site-surface);
+  }
+
+  /* The part an entry concerns (also in ChangelogEntry.astro): package parts tinted with the accent. */
+  .cl :global(.cl-part) {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    padding: 0 0.45rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--site-border);
+    background: var(--site-bg);
+    color: var(--site-text);
+    vertical-align: 0.1em;
+  }
+  .cl :global(.cl-part[data-group='package']) {
+    border-color: color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
+    background: var(--site-accent-soft);
   }
 
   .cl-legend {
@@ -209,9 +260,11 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
     margin-top: 1.5rem;
   }
   .cl-toc h2 {
-    font-size: 0.8125rem;
+    font-family: var(--site-font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.12em;
     color: var(--site-muted);
     margin: 0 0 0.25rem;
   }
@@ -221,7 +274,7 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.25rem 1.5rem;
+    gap: 0 1.5rem;
   }
   .cl-toc-date {
     color: var(--site-muted);
@@ -229,86 +282,112 @@ const sectionId = (r: (typeof releases)[number], title: string) => `${r.id}-${ti
     margin-inline-start: 0.4rem;
   }
 
-  .cl-release {
-    margin-top: calc(var(--site-space) * 3);
-    padding-top: calc(var(--site-space) * 2);
-    border-top: 1px solid var(--site-border);
+  /* The timeline: a rail down the left with a square (pixel) node per day. On wide screens the date sits in its own
+     column left of the rail and stays in view while its day scrolls by. --rail is the rail's centre. */
+  .tl {
+    --rail: 0.5rem;
+    --dot: 1rem;
+    list-style: none;
+    margin: calc(var(--site-space) * 2.5) 0 0;
+    padding: 0;
   }
-  .cl-release-head h2 {
-    font-family: var(--site-font-heading);
-    font-size: 1.75rem;
-    line-height: 1.2;
-    margin: 0;
+  .tl-day {
+    position: relative;
+    padding-inline-start: calc(var(--rail) + 1.25rem);
+    padding-bottom: 2.25rem;
+  }
+  .tl-day::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--rail) - 1px);
+    top: 0.75rem;
+    bottom: -0.75rem;
+    width: 2px;
+    background: var(--site-border);
+  }
+  .tl-day:last-child::before {
+    bottom: 0;
+    background: linear-gradient(var(--site-border), transparent);
+  }
+  /* The stretch to the next release is still to come: a dashed rail. */
+  .tl-day[data-kind='next']::before {
+    background: repeating-linear-gradient(to bottom, var(--site-border) 0 5px, transparent 5px 10px);
+  }
+  .tl-dot {
+    position: absolute;
+    inset-inline-start: calc(var(--rail) - var(--dot) / 2);
+    top: 0.35rem;
+    width: var(--dot);
+    height: var(--dot);
+    box-sizing: border-box;
+    border: 2px solid var(--site-muted);
+    border-radius: 2px;
+    background: var(--site-bg);
+  }
+  .tl-day[data-kind='npm'] .tl-dot {
+    border-color: var(--site-accent);
+    background: var(--site-accent);
+  }
+  .tl-day[data-kind='release'] .tl-dot {
+    border-color: var(--site-accent);
+  }
+  .tl-day[data-kind='site'] .tl-dot {
+    background: var(--site-muted);
+  }
+  .tl-day[data-kind='next'] .tl-dot {
+    border-style: dashed;
+    border-color: var(--site-accent);
+  }
+
+  .tl-date {
+    margin: 0 0 0.75rem;
+    font-family: var(--site-font-mono);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.7rem;
+    letter-spacing: 0.02em;
     scroll-margin-top: calc(var(--site-header-height) + 1rem);
   }
-  .cl-release-head h2 a {
-    color: var(--site-text);
-    text-decoration: none;
-  }
-  .cl-release-head h2 a:hover {
-    text-decoration: underline;
-  }
-  .cl-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.75rem;
-    margin: 0.35rem 0 0;
+  .tl-date-sub {
     color: var(--site-muted);
-  }
-  .cl-tag {
-    font-size: 0.8125rem;
-    border: 1px solid var(--site-border);
-    border-radius: 999px;
-    padding: 0 0.55rem;
-  }
-  .cl-summary {
-    margin: 1rem 0 0;
+    font-weight: 400;
   }
 
-  .cl-section h3 {
-    font-size: 1.125rem;
-    margin: 1.5rem 0 0.5rem;
-  }
-  .cl-section > ul {
-    margin: 0;
-    padding-inline-start: 1.25rem;
-  }
-  .cl-section li {
-    margin-block: 0.5rem;
-  }
-  .cl-section li ul {
-    padding-inline-start: 1.25rem;
-  }
-  .cl-section li li {
-    margin-block: 0.25rem;
-  }
-  .cl-section[data-kind='upgrading'] {
-    margin-top: 1.25rem;
-    border-inline-start: 3px solid var(--site-accent);
-    background: var(--site-accent-soft);
-    border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
-    padding: 0.25rem 1rem 0.5rem;
-  }
-  .cl-section[data-kind='upgrading'] h3 {
-    margin-top: 0.75rem;
+  .tl-events {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
   }
 
-  .cl-part {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1.5;
-    letter-spacing: 0.02em;
-    padding: 0 0.45rem;
-    border-radius: 0.3rem;
-    border: 1px solid var(--site-border);
-    background: var(--site-surface);
-    color: var(--site-text);
-    vertical-align: 0.1em;
-  }
-  .cl-part[data-group='package'] {
-    border-color: color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
-    background: var(--site-accent-soft);
+  @media (min-width: 52rem) {
+    .cl {
+      max-width: 60rem;
+    }
+    .cl-head {
+      max-width: 48rem;
+    }
+    .tl {
+      --rail: 10.5rem;
+    }
+    .tl-day {
+      display: grid;
+      grid-template-columns: calc(var(--rail) - 1.5rem) minmax(0, 1fr);
+      column-gap: 3rem;
+      padding-inline-start: 0;
+    }
+    .tl-date {
+      position: sticky;
+      top: calc(var(--site-header-height) + 1rem);
+      align-self: start;
+      margin: 0;
+      text-align: end;
+    }
+    .tl-date-main,
+    .tl-date-sub {
+      display: block;
+    }
+    .tl-date-main {
+      font-size: 1.0625rem;
+    }
   }
 </style>
