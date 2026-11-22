@@ -14,7 +14,7 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 
 ## In short
 
-- **Download:** 13 KB of script for `<pixel-sprite>`, 38 KB for `<pixel-stage>` (brotli; 15 and 44 KB gzip), plus
+- **Download:** 14 KB of script for `<pixel-sprite>`, 39 KB for `<pixel-stage>` (brotli; 16 and 44 KB gzip), plus
   one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
   resolution, and 14 KB for the same goose built with `--res 32 --views none`.
 - **Loading:** no measurable change to LCP or TBT on a throttled mobile profile. One sprite causes a small layout
@@ -25,8 +25,8 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 - **Memory:** the decoded sprite sheet is the large part: 0.1 to 2 MB at 32 px for most characters, and about
   8 MB for a goose at 64 px (20 MB for the greylag, whose longest animation has almost three times as many frames).
   It is shared by every sprite of that character.
-- **The catch:** a sprite fetches and decodes its bundle as soon as it is in the page, even far below the fold.
-  [Set `src` when it comes near](#keeping-it-small) on long pages.
+- **Below the fold:** by default a sprite fetches and decodes its bundle as soon as it is in the page, even far
+  below the fold. On long pages, [`loading="lazy"`](#keeping-it-small) waits until it comes near.
 
 ## Download size
 
@@ -42,9 +42,9 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 <!-- gen:sizes table=runtime -->
 | File | Raw | gzip | brotli |
 |---|--:|--:|--:|
-| `pixel-sprite.js` | 45.6 KB | 15.2 KB | 13.3 KB |
-| `pixel-stage.js` | 89.0 KB | 28.3 KB | 24.7 KB |
-| both (a page with `<pixel-stage>`) | 134.6 KB | 43.5 KB | 38.0 KB |
+| `pixel-sprite.js` | 47.3 KB | 15.7 KB | 13.8 KB |
+| `pixel-stage.js` | 89.2 KB | 28.4 KB | 24.8 KB |
+| both (a page with `<pixel-stage>`) | 136.6 KB | 44.1 KB | 38.6 KB |
 <!-- /gen -->
 
 The example characters as built for the demos (`pixel bundle` defaults: 16, 32 and 64 px, every view, every skin).
@@ -110,7 +110,11 @@ Requests include the page and a favicon request.
   90 ms) appear on the plain page too.
 - **CLS.** 0.03 for one sprite: before its script runs the element has no size, then takes its box and pushes the
   content below down. The CSS rule in [Keeping it small](#keeping-it-small) brings it to 0.003; a poster image with
-  `width` and `height` also reserves the box from the first paint. The stage adds no shift: its characters are drawn in a layer above the page.
+  `width` and `height` also reserves the box from the first paint. What is left is the device pixel ratio of the
+  profile's phone, 1.75: whole device pixels per sprite pixel make the 64 px fox 73 px tall once it has loaded
+  ([why](runtime.md#device-pixels-and-scaling)). At a device pixel ratio of 1, 2 or 3 the same page shifts by 0.000
+  (measured in Chrome 156 with a `layout-shift` `PerformanceObserver`, which gives the same 0.031 and 0.003 at 1.75).
+  The stage adds no shift: its characters are drawn in a layer above the page.
 - **Bytes.** The 1-sprite page transfers the runtime (15 KB gzip) and the fox's bundle (44 KB gzip); the stage page
   the two runtime files (44 KB) and three bundles (145 KB, 105 KB of it the goose).
 
@@ -169,7 +173,8 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   the 64 px one.
 - **One canvas per sprite**, the displayed size in device pixels × 4 bytes: 256 KB for a 128 × 128 px sprite on a 2x screen.
 - Off-screen sprites keep their decoded sheet and canvas: the 50 off-screen sprites above hold the same memory as
-  10 visible ones.
+  10 visible ones. A sprite with `loading="lazy"` that has not yet come near holds neither (and has downloaded
+  nothing).
 
 ## Keeping it small
 
@@ -188,33 +193,35 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   JavaScript, your bundler can minify them too.
 - **Reserve the box before the script runs.** The element is reserved at `size` × `size` once its script has run;
   before that it is an unknown inline element with no size, and the content below it moves when it appears (CLS 0.03
-  for one 64 px sprite in the [load test](#load-impact)). One CSS rule removes most of it (CLS 0.003):
+  for one 64 px sprite in the [load test](#load-impact)). A CSS rule removes it (0.003 on a phone with a fractional
+  device pixel ratio, 0 otherwise), with one line per `size` you use:
 
   ```css
-  pixel-sprite:not(:defined) { display: inline-block; width: 64px; height: 64px; }
+  pixel-sprite:not(:defined) { display: inline-block; vertical-align: bottom; width: 128px; height: 128px; }
+  pixel-sprite:not(:defined)[size="64"] { width: 64px; height: 64px; }
   ```
 
-  A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
+  `vertical-align: bottom` matches the element's own style; without it a sprite in a line of text still shifts it
+  a little (0.002) when the script runs. For no shift at all after load, use a `size` that is a whole multiple of
+  the sheet it shows (64 for the 32 px sheet, 128 for the 64 px one). A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
   reserves the space too, and shows the character before the bundle arrives and when JavaScript is off.
 - **Reduced motion and the pause button cost nothing per frame.** They stop drawing, which is where the cost is. The stage's
   pause button is on by default; for sprites that loop for more than five seconds, give readers a way to call
   `pause()` (WCAG 2.2.2, see [accessibility](runtime.md#accessibility)).
-- **Characters far down the page load anyway.** A sprite fetches its bundle and decodes its sheet as soon as it is
-  in the document, even when it is far below the fold; only the drawing waits until it scrolls into view. On a long
-  page with characters near the bottom, set `src` when they get close:
+- **Load characters far down the page lazily.** By default a sprite fetches its bundle and decodes its sheet as
+  soon as it is in the document, even when it is far below the fold; only the drawing waits until it scrolls into
+  view. On a long page with characters near the bottom, add `loading="lazy"`:
 
   ```html
-  <pixel-sprite data-src="fox.bundle.json" size="64" alt="A fox"></pixel-sprite>
-  <script type="module">
-    const near = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { e.target.src = e.target.dataset.src; near.unobserve(e.target); }
-    }, { rootMargin: '800px' });
-    document.querySelectorAll('pixel-sprite[data-src]').forEach((el) => near.observe(el));
-  </script>
+  <pixel-sprite src="fox.bundle.json" size="64" alt="A fox" loading="lazy"></pixel-sprite>
   ```
 
-  Without `src` the element waits quietly with its box reserved. For a stage, add the `<pixel-stage>` element (or
-  its script) once the page has loaded, for example in a `load` event listener.
+  It waits, with its box reserved, until it is within one viewport of being seen, then loads
+  ([details](runtime.md#lazy-loading)). Until then it costs no request, no download (the fox's 44 KB gzip, a goose's
+  75 to 105 KB), no decoded sheet (0.4 MB for the fox at `size` 64; 2 MB for a goose at 64, 8 MB at 128) and no canvas.
+  Sprites that share a bundle with one already loaded have nothing left to save. Stage actors always load at once;
+  for a stage, add the `<pixel-stage>` element (or its script) once the page has loaded, for example in a `load`
+  event listener.
 
 ## How it was measured
 

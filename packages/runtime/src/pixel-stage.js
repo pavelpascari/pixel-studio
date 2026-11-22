@@ -525,6 +525,8 @@ export class PixelActor extends Base {
     if (!this.hasAttribute('size')) this.sprite.setAttribute('size', '64');
     this.sprite.setAttribute('states', 'off');   // the stage chooses animations itself
     this.sprite.setAttribute('burst', 'off');    // the stage counts taps and fires the actor's own pixel-burst
+    // `loading` is not forwarded: an actor always loads at once. The stage needs its size and animations to
+    // place it and route it, and it walks on and off the screen; lazy loading is for plain sprites.
   }
   attributeChangedCallback(name, _o, v) {
     if (!this.sprite) return;
