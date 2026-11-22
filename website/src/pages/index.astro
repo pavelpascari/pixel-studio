@@ -224,6 +224,12 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
         <button type="button" data-move="jump">Jump</button>
         <button type="button" data-move="hide">Hide</button>
       </div>
+      {/* Picking a character up has no button: say it, in the words of the device in hand (touch: press and hold;
+          a mouse: drag). Both sentences are in the page; CSS shows the one that fits the pointer. */}
+      <p class="ps-grab-hint">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 1.5a1 1 0 0 1 2 0V7h.5V2.5a1 1 0 0 1 2 0V7h.5V3.5a1 1 0 0 1 2 0V10c0 2.8-1.9 4.5-4.5 4.5C6 14.5 5 13.5 4 12L2.2 9.1a1 1 0 0 1 1.6-1.2L6 10z" /></svg>
+        <span><strong>You can pick it up.</strong> <span class="ps-grab-touch">Press and hold the character, then let go to throw it.</span><span class="ps-grab-mouse">Drag the character with your mouse, then let go to throw it.</span></span>
+      </p>
       <div class="ps-demo-foot">
         <p class="ps-who" aria-live="polite">{cast[0].who}</p>
         <a class="ps-link ps-customize" href={cast[0].studio}><span class="ps-customize-label">{cast[0].customize}</span> <Arrow /></a>
@@ -380,7 +386,7 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
     <div class="ps-detail">
       <div class="ps-detail-text">
         <h3>Sharp at every size</h3>
-        <p>A bundle holds the character at 16, 32 and 64 px. The runtime picks the sharpest one for the size and the screen and scales it in whole device pixels, so it never blurs.</p>
+        <p>A bundle holds the character at 16, 32 and 64 px. The runtime picks the sheet that fits the size best and scales it in whole device pixels for the screen, so it never blurs.</p>
       </div>
       <div class="ps-sizes" role="group" aria-label="The same fox at four sizes">
         {[32, 64, 128, 192].map((size) => (
@@ -437,9 +443,10 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
     secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
-  {/* One control for every character. Its name stays "Pause characters" and aria-pressed says whether they are paused
-      (a name that flipped to "Play" as well would read as "Play characters, pressed"). On phones only the icon shows. */}
-  <button type="button" class="ps-pause" aria-pressed="false">
+  {/* One control for every character. Its label says what it will do ("Pause characters" / "Play characters"), so the
+      state is visible and heard without aria-pressed (a toggling name plus aria-pressed reads as "Play characters,
+      pressed"). data-paused drives the icon and colour. On phones the label is visually hidden; the icon shows. */}
+  <button type="button" class="ps-pause">
     <svg class="ps-pause-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
       <path class="ps-pause-bars" d="M4 3h3v10H4zM9 3h3v10H9z" />
       <path class="ps-pause-play" d="M4.5 2.5v11l9-5.5z" />
@@ -461,11 +468,12 @@ const reactSnippet = `<button id="send">Send a demo letter</button>
 
     // ---- pause: one control for every character (WCAG 2.2.2); the stage's own button is off ----
     const setPaused = (paused) => {
-      pauseButton.setAttribute('aria-pressed', String(paused));
+      pauseButton.toggleAttribute('data-paused', paused);
+      pauseButton.querySelector('.ps-pause-label').textContent = paused ? 'Play characters' : 'Pause characters';
       for (const sprite of $$('pixel-sprite')) sprite.toggleAttribute('paused', paused);
       if (stage?.pause) (paused ? stage.pause() : stage.resume());
     };
-    pauseButton.addEventListener('click', () => setPaused(pauseButton.getAttribute('aria-pressed') !== 'true'));
+    pauseButton.addEventListener('click', () => setPaused(!pauseButton.hasAttribute('data-paused')));
 
     // ---- the hero: pick a character, then walk, jump or hide ----
     const cardA = $('.ps-mini--a'), cardB = $('.ps-mini--b'), crate = $('.ps-crate');

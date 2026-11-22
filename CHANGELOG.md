@@ -80,6 +80,8 @@ anything; each such change is listed under Upgrading.
 - **Runtime:** after a tap shooed a character, a tap anywhere on the page within half a second was swallowed; only
   the click of the tap on the character is now kept from the page.
 - **Runtime:** on iPhones, a tap on a character could open a link underneath it.
+- **Runtime:** on iPhones, a character picked up by press and hold dropped straight away, because iOS takes the touch
+  for its own long press about half a second in. The stage now keeps carrying it with your finger until you let go.
 - **Engine:** a bundle whose state machine played a view that was left out (`--views`) was rejected by the runtime.
   States whose animation is not in the bundle are now dropped, with the transitions to them, and `pixel bundle` names
   them.
@@ -119,6 +121,8 @@ with the next release.
 ### Changed
 - **Website:** the [examples](https://pixel-studio.sh/gallery/) have posters cropped to the characters, and the site
   takes the studio's colours. The header is shorter: Examples, Docs, Blog, Studio.
+- **Website:** the home page's demo says you can pick the characters up (press and hold on a phone, drag with a
+  mouse), and the pause button reads "Play characters" while they are paused.
 
 ## Site update - 2026-11-21
 

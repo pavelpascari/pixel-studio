@@ -597,8 +597,12 @@ export class PixelStage extends Base {
       if (b.burst) a._rage({ ...b, min: det.min, pointerType: type }, local(e)); else a.shoo(local(e));
     };
     // The browser took the pointer (a scroll began, a system gesture): a held character drops where it is.
+    // Except on touch while holding (or about to hold) a character: iOS cancels the pointer stream when its own
+    // long-press begins (about half a second in, just after our 400 ms hold), yet keeps sending touch events for
+    // the same finger. The gesture then carries on from those (see onTouch) until the finger lifts.
     const onCancel = (e) => {
       if (!g || e.pointerId !== g.id) return;
+      if (g.pointerType === 'touch' && (g.grabbed || g.pending) && fingerDown) { g.viaTouch = true; return; }
       const a0 = actor, type = g.pointerType;
       const r = g.cancel();
       finish();
@@ -608,7 +612,20 @@ export class PixelStage extends Base {
     // the decision has to be possible on the first move after the hold; it does nothing otherwise. It is only
     // registered while a finger can pick a character up (see _touchGuard): WebKit decides at touchstart whether
     // a touch's moves can be cancelled, so it cannot be added once a hold completes.
-    this._onTouchMove = (e) => { if (g?.grabbed && e.cancelable) e.preventDefault(); };
+    this._onTouchMove = (e) => {
+      if (g?.viaTouch) { const t = e.touches[0]; if (t) onMove({ pointerId: g.id, clientX: t.clientX, clientY: t.clientY }); }
+      if (g?.grabbed && e.cancelable) e.preventDefault();
+    };
+    // Whether a finger is on the screen (so a cancelled pointer can carry on as touch), and the end of a gesture
+    // that carried on as touch: lifting the finger releases (a throw), a touchcancel drops.
+    let fingerDown = false;
+    const onTouch = (e) => {
+      fingerDown = e.touches.length > 0;
+      if (!g?.viaTouch || e.type === 'touchstart' || fingerDown) return;
+      const t = e.changedTouches[0], at = { pointerId: g.id, clientX: t?.clientX ?? g.last.x, clientY: t?.clientY ?? g.last.y };
+      if (e.type === 'touchend') onUp(at);
+      else { g.viaTouch = false; onCancel(at); }
+    };
     // A long press on a character (held or waiting for the hold) opens no context menu (Android, desktop touch).
     const onMenu = (e) => { if (g && g.mode !== 'none' && g.pointerType !== 'mouse') e.preventDefault(); };
     // The click that follows a tap on a character or a throw does not reach the page; the click of any later press
@@ -620,8 +637,8 @@ export class PixelStage extends Base {
       e.preventDefault(); e.stopPropagation();
     };
     this._inputs = [['pointerdown', onDown], ['pointermove', onMove], ['pointerup', onUp], ['pointercancel', onCancel],
-      ['contextmenu', onMenu], ['click', onClick]];
-    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' ? true : undefined });
+      ['contextmenu', onMenu], ['click', onClick], ['touchstart', onTouch], ['touchend', onTouch], ['touchcancel', onTouch]];
+    for (const [t, fn] of this._inputs) document.addEventListener(t, fn, { capture: true, passive: t === 'pointermove' || t.startsWith('touch') ? true : undefined });
     this._endInput = finish;
     this._touchGuard();
   }

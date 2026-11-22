@@ -45,8 +45,8 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 | File | Raw | gzip | brotli |
 |---|--:|--:|--:|
 | `pixel-sprite.js` | 48.6 KB | 16.1 KB | 14.1 KB |
-| `pixel-stage.js` | 98.5 KB | 31.4 KB | 27.4 KB |
-| both (a page with `<pixel-stage>`) | 147.1 KB | 47.5 KB | 41.5 KB |
+| `pixel-stage.js` | 99.7 KB | 31.9 KB | 27.8 KB |
+| both (a page with `<pixel-stage>`) | 148.3 KB | 48.0 KB | 41.9 KB |
 <!-- /gen -->
 
 The example characters as built for the demos (16, 32 and 64 px, every view, every skin: `buildBundle`'s defaults, or

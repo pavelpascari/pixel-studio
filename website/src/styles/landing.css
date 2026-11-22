@@ -270,6 +270,37 @@ pixel-sprite {
   padding-block: 0.6rem;   /* a 44 px tall target on touch screens, without moving the line */
   margin-block: -0.6rem;
 }
+/* "You can pick it up": the gesture has no button, so it gets a line of its own, worded for the pointer in hand. */
+.ps-grab-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px dashed color-mix(in oklab, var(--site-accent) 55%, var(--site-border));
+  border-radius: var(--site-radius-sm);
+  background: var(--site-accent-soft);
+  color: var(--site-text);
+  line-height: 1.45;
+}
+.ps-grab-hint svg {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.1rem;
+  fill: var(--site-accent-strong);
+}
+.ps-grab-mouse {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ps-grab-touch {
+    display: none;
+  }
+  .ps-grab-mouse {
+    display: inline;
+  }
+}
 .ps-who,
 .ps-still {
   margin: 0;
@@ -744,7 +775,7 @@ pixel-sprite {
   box-shadow: var(--site-shadow);
   cursor: pointer;
 }
-.ps-pause[aria-pressed='true'] {
+.ps-pause[data-paused] {
   border-color: var(--site-accent);
   background: var(--site-accent-soft);
 }
@@ -759,10 +790,10 @@ pixel-sprite {
   fill: currentColor;
 }
 .ps-pause-play,
-.ps-pause[aria-pressed='true'] .ps-pause-bars {
+.ps-pause[data-paused] .ps-pause-bars {
   display: none;
 }
-.ps-pause[aria-pressed='true'] .ps-pause-play {
+.ps-pause[data-paused] .ps-pause-play {
   display: inline;
 }
 /* Phones (and phones held sideways): a 44 px icon button in the corner (inside the safe area), instead of
@@ -777,7 +808,7 @@ pixel-sprite {
     padding: 0;
     background: color-mix(in oklab, var(--site-bg) 88%, transparent);
   }
-  .ps-pause[aria-pressed='true'] {
+  .ps-pause[data-paused] {
     background: var(--site-accent-soft);
   }
   .ps-pause-icon {
