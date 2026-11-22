@@ -8,6 +8,7 @@
 | make characters move realistically | [figures.md](figures.md): figure library, motion models, follow-through, writing a figure |
 | put a character on a web page | [runtime.md](runtime.md): `<pixel-sprite>`, bundles, events, attachment points, state machines, skins, moving sprites at the right speed |
 | let characters walk, climb and hide on a page | [stage.md](stage.md): `<pixel-stage>` and the `data-pixel-*` attributes |
+| know what characters cost a page | [performance.md](performance.md): download sizes, load impact, time per frame, memory, and how to keep them small |
 | use characters in a game engine | [cli.md](cli.md#export): `pixel export` writes Aseprite-format JSON that Phaser and PixiJS load |
 | use the command line | [cli.md](cli.md): every `pixel` command and flag |
 | call the engine from JavaScript | [api.md](api.md): every export, data shapes, examples |

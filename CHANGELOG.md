@@ -6,6 +6,15 @@ Until 1.0, minor versions may change the spec format.
 
 ## [Unreleased]
 
+### Added
+- A performance page (`docs/performance.md`, pixel-studio.sh/docs/reference/performance/): download sizes of the
+  runtime and every example bundle, load impact (Lighthouse, mobile profile), main-thread time per frame for 1, 10
+  and 50 sprites and a stage with three actors, memory, and how to keep each small. The size tables are generated
+  (docs-gen), so the website build fails when they go stale.
+- `scripts/bench/`: the benchmark behind those numbers. `node scripts/bench/sizes.mjs` measures sizes with Node
+  alone; `scripts/bench/browser.mjs` measures load and frame costs in Chrome with Lighthouse and Playwright
+  (installed outside the project, like `scripts/browser-check.mjs`).
+
 ### Changed
 - `examples/fox.json`: the ears swap places. The left ear is now the near one, drawn in front with its cream inner
   (and the ear's follow-through pivot at its base); the right ear is the far one, shaded, behind the head.

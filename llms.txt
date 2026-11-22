@@ -19,5 +19,6 @@
 - [Example characters](/packages/pixel-studio/examples/goose-root.json): goose-base, goose-root, goose-sudo, goose-phreak, goose-kiddie, goose-greylag, moss, fox, pip, robot, slime (`/packages/pixel-studio/examples/<name>.json`).
 - [Runtime](/packages/pixel-studio/docs/runtime.md): `<pixel-sprite>` for putting a character on a web page.
 - [Stage](/packages/pixel-studio/docs/stage.md): `<pixel-stage>`, characters that walk, climb and hide on a page's own elements.
+- [Performance](/packages/pixel-studio/docs/performance.md): measured download sizes, load impact, main-thread time per frame and memory; how to keep them small.
 - [CLI](/packages/pixel-studio/docs/cli.md): `pixel validate | preview | ascii | bundle | export | where | resolve | figures | brief`.
 - [JavaScript API](/packages/pixel-studio/docs/api.md): every export of the engine.

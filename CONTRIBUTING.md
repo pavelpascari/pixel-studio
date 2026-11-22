@@ -36,6 +36,7 @@ JSON spec to pixels. The other references:
 | [docs/cli.md](packages/pixel-studio/docs/cli.md) | the `pixel` CLI |
 | [docs/runtime.md](packages/pixel-studio/docs/runtime.md) | the `<pixel-sprite>` element and the bundle format |
 | [docs/stage.md](packages/pixel-studio/docs/stage.md) | `<pixel-stage>`: characters living on a page |
+| [docs/performance.md](packages/pixel-studio/docs/performance.md) | measured sizes, load and frame costs (`scripts/bench/`) |
 | [docs/playground.md](packages/pixel-studio/docs/playground.md) | the URL-driven playground page |
 | [docs/DESIGN.md](packages/pixel-studio/docs/DESIGN.md) | why the format looks the way it does |
 
