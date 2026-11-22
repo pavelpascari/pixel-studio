@@ -255,9 +255,11 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
   </Section>
 
+  {/* The gosling here and in the details plays a side-view-only bundle, half the size (scripts/build-demo.mjs). The
+      hero's cast shares its default bundles with the "Small" row, so the page downloads each of them once. */}
   <pixel-stage label="characters" controls="none" floor="none">
     <pixel-actor class="ps-hero-actor" src={`${assets}/${cast[0].id}.bundle.json`} size="72" alt={cast[0].alt} start=".ps-mini--a" directed></pixel-actor>
-    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
+    <pixel-actor id="ps-gosling" src={`${assets}/goose-kiddie.lean.bundle.json`} size="64" alt="a gosling in a red cap" start=".ps-react-card" directed></pixel-actor>
   </pixel-stage>
   <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneLetter)} />
   <script is:inline type="application/json" data-pixel-scene set:html={JSON.stringify(sceneHello)} />
@@ -386,7 +388,7 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
       </div>
       <div class="ps-gaits">
         <figure><pixel-sprite src={`${assets}/fox.bundle.json`} anim="gallop" size="112" alt="the fox galloping" /><figcaption>gallop</figcaption></figure>
-        <figure><pixel-sprite src={`${assets}/goose-kiddie.bundle.json`} anim="waddle" size="112" alt="a gosling waddling" /><figcaption>waddle</figcaption></figure>
+        <figure><pixel-sprite src={`${assets}/goose-kiddie.lean.bundle.json`} anim="waddle" size="112" alt="a gosling waddling" /><figcaption>waddle</figcaption></figure>
         <figure><pixel-sprite src={`${assets}/pip.bundle.json`} anim="run" size="112" alt="Pip running" /><figcaption>run</figcaption></figure>
         <figure><pixel-sprite src={`${assets}/moss.bundle.json`} anim="climb" size="112" alt="Moss climbing" /><figcaption>climb</figcaption></figure>
       </div>
@@ -423,7 +425,15 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     secondary={{ label: 'Get started', href: '/docs/reference/getting-started/' }}
   />
 
-  <button type="button" class="ps-pause" aria-pressed="false">Pause characters</button>
+  {/* One control for every character. Its name stays "Pause characters" and aria-pressed says whether they are paused
+      (a name that flipped to "Play" as well would read as "Play characters, pressed"). On phones only the icon shows. */}
+  <button type="button" class="ps-pause" aria-pressed="false">
+    <svg class="ps-pause-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path class="ps-pause-bars" d="M4 3h3v10H4zM9 3h3v10H9z" />
+      <path class="ps-pause-play" d="M4.5 2.5v11l9-5.5z" />
+    </svg>
+    <span class="ps-pause-label">Pause characters</span>
+  </button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
   <script is:inline define:vars={{ cast, play }}>
@@ -440,7 +450,6 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     // ---- pause: one control for every character (WCAG 2.2.2); the stage's own button is off ----
     const setPaused = (paused) => {
       pauseButton.setAttribute('aria-pressed', String(paused));
-      pauseButton.textContent = paused ? 'Play characters' : 'Pause characters';
       for (const sprite of $$('pixel-sprite')) sprite.toggleAttribute('paused', paused);
       if (stage?.pause) (paused ? stage.pause() : stage.resume());
     };

@@ -662,6 +662,9 @@ pixel-sprite {
   right: 1rem;
   bottom: 1rem;
   z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.45rem 0.85rem;
   border: 1px solid var(--site-border);
   border-radius: 999px;
@@ -672,9 +675,54 @@ pixel-sprite {
   box-shadow: var(--site-shadow);
   cursor: pointer;
 }
+.ps-pause[aria-pressed='true'] {
+  border-color: var(--site-accent);
+  background: var(--site-accent-soft);
+}
 .ps-pause:focus-visible {
   outline: 2px solid var(--site-focus);
   outline-offset: 2px;
+}
+.ps-pause-icon {
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+}
+.ps-pause-play,
+.ps-pause[aria-pressed='true'] .ps-pause-bars {
+  display: none;
+}
+.ps-pause[aria-pressed='true'] .ps-pause-play {
+  display: inline;
+}
+/* Phones (and phones held sideways): a 44 px icon button in the corner (inside the safe area), instead of
+   a pill that covered a corner of the hero's demo. Its name is still "Pause characters" (the label, visually hidden). */
+@media (max-width: 40rem), (max-height: 30rem) {
+  .ps-pause {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    background: color-mix(in oklab, var(--site-bg) 88%, transparent);
+  }
+  .ps-pause[aria-pressed='true'] {
+    background: var(--site-accent-soft);
+  }
+  .ps-pause-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+  .ps-pause-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* ---------- narrow screens ---------- */
