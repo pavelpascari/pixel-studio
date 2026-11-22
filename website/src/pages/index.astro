@@ -133,10 +133,10 @@ const stageEmbed = `<script type="module" src="pixel-stage.js"></script>
 const sceneLetter = {
   name: 'the letter',
   cast: { gosling: '#ps-gosling' },
-  trigger: { event: 'submit', on: '#ps-signup', preventDefault: true },
+  trigger: { event: 'click', on: '#ps-send' },
   steps: [
     { actor: 'gosling', perform: 'flap', ms: 900 },
-    { actor: 'gosling', pickUp: '$trigger .ps-letter', speed: 1.7 },
+    { actor: 'gosling', pickUp: '.ps-letter', speed: 1.7 },
     { actor: 'gosling', exit: 'right', speed: 1.9 },
     { wait: 1600 },
     { emit: 'delivered' },
@@ -154,15 +154,16 @@ const sceneHello = {
     { actor: 'gosling', say: 'hello!', ms: 1500 },
   ],
 };
-const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></form>
+const reactSnippet = `<button id="send">Send a demo letter</button>
+<span class="letter" hidden></span>
 
 <script type="application/json" data-pixel-scene>
 {
   "cast": { "gosling": "#gosling" },
-  "trigger": { "event": "submit", "on": "#signup", "preventDefault": true },
+  "trigger": { "event": "click", "on": "#send" },
   "steps": [
     { "actor": "gosling", "perform": "flap", "ms": 900 },
-    { "actor": "gosling", "pickUp": "$trigger .letter", "speed": 1.7 },
+    { "actor": "gosling", "pickUp": ".letter", "speed": 1.7 },
     { "actor": "gosling", "exit": "right", "speed": 1.9 },
     { "wait": 1600 },
     { "emit": "delivered" },
@@ -282,19 +283,18 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     </div>
   </Section>
 
-  <Section id="react" tone="surface" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click, a form sent, a hurried scroll. The response is a scene written as data, with no animation code.">
+  <Section id="react" tone="surface" title="It notices you" intro="Characters respond to the reader and to the page: a tap, a click on a button, a hurried scroll. The response is a scene written as data, with no animation code.">
     <div class="ps-react">
       <div class="ps-react-page">
         <article class="ps-react-card" data-pixel-surface>
           <h3>The newsletter</h3>
           <p>One letter a month, delivered by hand. Or by wing.</p>
-          <form class="ps-react-form" id="ps-signup">
-            <label class="site-visually-hidden" for="ps-email">Email</label>
-            <input id="ps-email" type="email" required placeholder="you@example.com" autocomplete="off" />
-            <button type="submit" class="site-btn site-btn--primary">Subscribe</button>
+          {/* One button, no address field: it is plainly a demo, and nothing leaves the page. */}
+          <div class="ps-react-send">
+            <button type="button" class="site-btn site-btn--primary" id="ps-send">Send a demo letter</button>
             <span class="ps-letter" hidden aria-hidden="true"></span>
-          </form>
-          <p class="ps-react-status" aria-live="polite">Nothing is sent anywhere: this is a demo.</p>
+          </div>
+          <p class="ps-react-status" aria-live="polite"></p>
         </article>
         <button type="button" class="site-btn ps-hello">Say hello</button>
       </div>
@@ -304,14 +304,17 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
         <li><strong>Drag it</strong> with a mouse, and throw it.</li>
         <li><strong>Scroll fast.</strong> It calls after you.</li>
         <li><strong>Say hello.</strong> A click on any element can start a scene.</li>
-        <li><strong>Subscribe.</strong> It posts your letter, and comes back.</li>
+        <li><strong>Send a letter.</strong> It posts it, and comes back.</li>
       </ul>
     </div>
     <div class="ps-react-ground" data-pixel-surface aria-hidden="true"></div>
-    <figure class="ps-code ps-react-code">
-      <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
-      <pre><code>{reactSnippet}</code></pre>
-    </figure>
+    <details class="ps-reveal">
+      <summary><svg class="ps-reveal-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3.5 10.5 8 6 12.5" /></svg>Show scene code</summary>
+      <figure class="ps-code ps-react-code">
+        <figcaption>The letter, as a scene in the page (a <code>trigger</code> arms it):</figcaption>
+        <pre><code>{reactSnippet}</code></pre>
+      </figure>
+    </details>
     <p class="ps-more"><a class="ps-link" href="/docs/reference/stage/#triggers">Scenes and triggers <span aria-hidden="true">→</span></a></p>
   </Section>
 
@@ -437,7 +440,7 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
   </button>
 
   <script is:inline type="module" src="/apps/packages/runtime/src/pixel-stage.js"></script>
-  <script is:inline define:vars={{ cast, play }}>
+  <script is:inline define:vars={{ cast, play, sceneLetterName: sceneLetter.name }}>
     // A classic script (define:vars): everything it touches is in the HTML above it, and it only calls the
     // characters' methods once they exist.
     const $ = (s, root = document) => root.querySelector(s);
@@ -561,18 +564,29 @@ const reactSnippet = `<form id="signup">…<span class="letter" hidden></span></
     });
 
     // ---- it notices you: the scenes are armed by the stage; the page shows the letter and says what happened ----
-    const form = $('#ps-signup'), letter = $('.ps-letter'), status = $('.ps-react-status');
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();   // the scene asks for this too; without the runtime the page must not reload either
+    // The scene's trigger and this listener both hear the click; the stage plays the scene a moment later, once the
+    // letter is showing. Like the stage, the page ignores the button until that scene has ended.
+    const letter = $('.ps-letter'), status = $('.ps-react-status');
+    let posting = false, delivered = false;
+    const clearLetter = () => { letter.hidden = true; letter.style.visibility = ''; };
+    $('#ps-send').addEventListener('click', () => {
+      if (posting) return;
+      posting = true;
+      delivered = false;
       letter.hidden = false;
       status.textContent = 'The gosling is on it.';
     });
     stage.addEventListener('pixel-sceneevent', (e) => {
       if (e.detail?.name !== 'delivered') return;
-      letter.hidden = true;
-      letter.style.visibility = '';
-      form.reset();
-      status.textContent = 'Posted. (Nothing was sent anywhere: this is a demo.)';
+      delivered = true;
+      clearLetter();
+      status.textContent = 'Posted.';
+    });
+    // Cut short (by another scene, say): put things back so the button works again.
+    stage.addEventListener('pixel-sceneend', (e) => {
+      if (e.detail?.scene !== sceneLetterName) return;
+      posting = false;
+      if (!delivered) { clearLetter(); status.textContent = ''; }
     });
     // A fast scroll: once it settles, whoever is on screen calls after the reader (at most every few seconds).
     let hurriedScroll = false, called = -Infinity;
