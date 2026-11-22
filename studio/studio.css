@@ -64,6 +64,7 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 .field textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
 .field input[type=range] { width: 100%; accent-color: var(--accent); }
 .toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); margin: 6px 0; }
+.toggle[hidden] { display: none; }
 .log { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .log li { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; white-space: pre-wrap; font-size: 12px; }
 .log li.err { border-color: var(--err); }

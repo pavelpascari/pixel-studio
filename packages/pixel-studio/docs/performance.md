@@ -16,7 +16,8 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 
 - **Download:** 14 KB of script for `<pixel-sprite>`, 39 KB for `<pixel-stage>` (brotli; 16 and 44 KB gzip), plus
   one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
-  resolution, and 14 KB for the same goose built with `--res 32 --views none`.
+  resolution, 55 KB for the same goose as `pixel bundle` builds it by default (the side view only), and 14 KB with
+  `--res 32` (4 KB with only the three animations a page plays, `--anims idle,waddle,honk`).
 - **Loading:** no measurable change to LCP or TBT on a throttled mobile profile. One sprite causes a small layout
   shift (CLS 0.03) unless its box is reserved in CSS.
 - **Playing:** under 0.1 ms of main thread per frame for one sprite, 0.4 ms for 50, 0.3 ms for a stage with three
@@ -47,7 +48,8 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 | both (a page with `<pixel-stage>`) | 136.6 KB | 44.1 KB | 38.6 KB |
 <!-- /gen -->
 
-The example characters as built for the demos (`pixel bundle` defaults: 16, 32 and 64 px, every view, every skin).
+The example characters as built for the demos (16, 32 and 64 px, every view, every skin: `buildBundle`'s defaults, or
+`pixel bundle --views all`).
 Bundles are mostly PNG data, which is already compressed: gzip and brotli save 30 to 45% (mostly the base64
 overhead), not the two thirds they save on script. A sprite decodes only the one sheet it shows, as RGBA in memory:
 the last two columns (see [Memory](#memory)).
@@ -69,21 +71,26 @@ the last two columns (see [Memory](#memory)).
 <!-- /gen -->
 
 The geese carry front and back views (`idle@front`, `turn@back`, …, used by `<pixel-stage>` to face the viewer) and,
-for `goose-root`, two skins: that is most of their weight. The same goose built with fewer options:
+for `goose-root`, two skins: that is most of their weight. The same goose built with other options ("gzip saved" is
+against the first row, the demo build; `pixel bundle` without `--views` ships the side view only):
 
 <!-- gen:sizes table=goose -->
 | `pixel bundle goose-root.json` with | Animations | Raw | gzip | brotli | gzip saved | Largest sheet decoded |
 |---|--:|--:|--:|--:|--:|--:|
-| (default: `--res 16,32,64`, every view) | 42 | 160.2 KB | 104.9 KB | 102.8 KB |  | 7.9 MB (64 px) |
-| `--res 32` | 42 | 48.4 KB | 25.2 KB | 23.5 KB | 76% | 2.0 MB (32 px) |
-| `--views none` | 17 | 83.4 KB | 56.8 KB | 55.3 KB | 46% | 3.2 MB (64 px) |
-| `--res 32 --views none` | 17 | 25.0 KB | 15.0 KB | 13.7 KB | 86% | 0.8 MB (32 px) |
-| `--res 32 --views none --external` | 17 | 19.5 KB | 12.7 KB | 12.2 KB | 88% | 0.8 MB (32 px) |
+| `--views all` (as built for the demos) | 42 | 160.2 KB | 104.9 KB | 102.8 KB |  | 7.9 MB (64 px) |
+| (default: `--res 16,32,64`, side view only) | 17 | 83.4 KB | 56.8 KB | 55.3 KB | 46% | 3.2 MB (64 px) |
+| `--anims stage` | 14 | 68.6 KB | 47.0 KB | 45.7 KB | 55% | 2.6 MB (64 px) |
+| `--anims idle,waddle,honk` | 5 | 24.2 KB | 16.4 KB | 15.8 KB | 84% | 0.8 MB (64 px) |
+| `--views all --anims stage` | 37 | 138.7 KB | 91.1 KB | 89.2 KB | 13% | 6.9 MB (64 px) |
+| `--res 32 --views all` | 42 | 48.4 KB | 25.2 KB | 23.5 KB | 76% | 2.0 MB (32 px) |
+| `--res 32` | 17 | 25.0 KB | 15.0 KB | 13.7 KB | 86% | 0.8 MB (32 px) |
+| `--res 32 --anims idle,waddle,honk` | 5 | 7.4 KB | 4.6 KB | 4.2 KB | 96% | 0.2 MB (32 px) |
+| `--res 32 --external` | 17 | 19.5 KB | 12.7 KB | 12.2 KB | 88% | 0.8 MB (32 px) |
 <!-- /gen -->
 
 The `--external` row counts the JSON and the one PNG a page downloads (the 32 px sheet); PNG files are served as they
-are, without further compression. A stage actor built with `--views none` cannot turn to face the reader; everything
-else works.
+are, without further compression. A stage actor built without `--views` cannot turn to face the reader; everything
+else works. `--anims stage` keeps what a stage actor plays (here everything but `flap`, `fly` and `hack`).
 
 ## Load impact
 
@@ -169,7 +176,7 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
 - **The decoded sheet.** A sprite decodes only the sheet it shows, once per bundle and resolution, shared by every
   sprite that uses it. In memory it is width × height × 4 bytes, much more than the PNG: the last two columns of
   the [bundles table](#download-size). A 64 px goose sheet with front and back views is about 8 MB decoded; the
-  [goose table](#download-size) shows how `--views none` and `--res 32` shrink it. A 32 px sheet is a quarter of
+  [goose table](#download-size) shows how leaving out views, animations and resolutions shrinks it. A 32 px sheet is a quarter of
   the 64 px one.
 - **One canvas per sprite**, the displayed size in device pixels × 4 bytes: 256 KB for a 128 × 128 px sprite on a 2x screen.
 - Off-screen sprites keep their decoded sheet and canvas: the 50 off-screen sprites above hold the same memory as
@@ -182,8 +189,14 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   ([how the variant is chosen](runtime.md#how-the-resolution-variant-is-chosen)). `pixel bundle --res 32` drops the
   others: three quarters of a goose's bundle. Keep two resolutions if the same character appears at very different
   sizes, or on a page that changes `size`.
-- **Drop views you do not use.** Front and back views are for `<pixel-stage>` turning a character to face the reader.
-  A plain `<pixel-sprite>` that only walks sideways does not need them: `--views none` halves a goose.
+- **Bundle only the animations you use.** A `<pixel-sprite>` that idles, waddles on hover and honks on click needs
+  three of a goose's fourteen animations: `pixel bundle goose.json --anims idle,waddle,honk` is under a third of the
+  side-view bundle. For a `<pixel-stage>` actor, `--anims stage` keeps what the stage plays (one animation per role:
+  idle, walk, run, jump, fall, sit, duck, peek, climb, …). Transition clips between kept animations stay, and a state
+  machine loses the nodes whose animation is gone ([details](cli.md#bundle)).
+- **Ship views only for a stage that turns.** Front and back views are for `<pixel-stage>` turning a character to
+  face the reader, and they double a goose. `pixel bundle` leaves them out unless you ask: `--views all` (or
+  `--views front`) for a stage actor that should turn.
 - **Keeping several resolutions? Use `--external`.** The sheets become PNG files next to the bundle and a page downloads
   only the one it shows. Put them on the same origin, or send `Access-Control-Allow-Origin` ([details](runtime.md#loading-errors-and-fallbacks)).
 - **Share one bundle.** Ten sprites of the same character with the same `src` make one request and decode one sheet.
@@ -231,7 +244,7 @@ this page. Your numbers will differ with the machine; the differences between ro
 
 - **Sizes** (`node scripts/bench/sizes.mjs`, Node only): the runtime files from `packages/runtime/src/`, the bundles
   from `demo/assets/` (`npm run build:demo`), gzip level 9 and brotli quality 11 from `node:zlib`. The goose rows
-  build `goose-root.json` in process with the same `buildBundle` call as `pixel bundle`. "Decoded" is the PNG's
+  build `goose-root.json` in process with the same `buildBundle` options as the `pixel bundle` flags in each row. "Decoded" is the PNG's
   width × height × 4.
 - **Load and runtime** (`scripts/bench/browser.mjs`): a small static page (a heading, three paragraphs, three
   cards; [`scripts/bench/page.html`](../../../scripts/bench/page.html)) with nothing, sprites or a stage added as

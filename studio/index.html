@@ -156,6 +156,10 @@
       <h2>Export for the web</h2>
       <label class="field">Resolutions in the bundle <input id="export-res" value="16,32,64" /></label>
       <p class="small">The bundle holds one sprite sheet per resolution; <code>&lt;pixel-sprite&gt;</code> picks the one that fits the size it is displayed at, like <code>srcset</code>.</p>
+      <label class="field">Animations <input id="export-anims" placeholder="all (or idle,walk, or stage)" /></label>
+      <p class="small">Only these, with their transitions (like <code>pixel bundle --anims</code>); <code>stage</code> keeps what <code>&lt;pixel-stage&gt;</code> plays.</p>
+      <label class="toggle" id="export-views-row" hidden><input id="export-views" type="checkbox" /> front and back views (for a <code>&lt;pixel-stage&gt;</code> character that turns to the reader; about doubles the bundle)</label>
+      <p id="export-error" class="small" role="alert" style="color: var(--err)"></p>
       <div class="row">
         <button id="btn-export-bundle" value="none" class="primary">Download bundle.json</button>
         <button id="btn-export-runtime" value="none">Download pixel-sprite.js</button>

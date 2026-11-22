@@ -1,0 +1,22 @@
+{
+  "name": "tiny",
+  "figure": "blob",
+  "materials": {"goo": {"color": "#3ccf6e"}, "eye": {"color": "#1c1630", "flat": true}},
+  "parts": [
+    {"id": "body", "shapes": [{"type": "ellipse", "cx": 50, "cy": 67, "rx": 30, "ry": 24, "material": "goo"}]},
+    {"id": "top", "shapes": [{"type": "circle", "cx": 50, "cy": 42, "r": 6, "material": "goo"}]}
+  ],
+  "animations": {"idle": {"motion": "idle"}, "hop": {"motion": "hop"}, "travel": {"motion": "travel"}, "fall": {"motion": "fall"}, "peek": {"motion": "peek"}},
+  "mixes": {"travel>idle": {"frames": 2}},
+  "views": {
+    "front": {"figure": "blob", "animations": {"idle": {"motion": "idle"}, "hop": {"motion": "hop"}}, "parts": [
+      {"id": "body", "shapes": [{"type": "ellipse", "cx": 50, "cy": 67, "rx": 30, "ry": 24, "material": "goo"}, {"type": "circle", "cx": 50, "cy": 60, "r": 3, "material": "eye"}]}
+    ]}
+  },
+  "states": {
+    "initial": "idle", "inputs": {"speed": 0, "poke": "trigger"},
+    "nodes": {"idle": {"anim": "idle", "random": [{"anim": "peek", "every": [4, 8]}]}, "move": {"anim": "travel"}, "jump": {"anim": "hop", "then": "previous"}},
+    "transitions": [{"from": "idle", "to": "move", "when": "speed > 0"}, {"from": "move", "to": "idle", "when": "speed == 0"}, {"to": "jump", "when": "poke"}],
+    "interactions": [{"on": "click", "fire": "poke"}]
+  }
+}

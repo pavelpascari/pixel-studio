@@ -98,7 +98,7 @@ into a whole compiled character of its own, so the renderer still sees only plai
 | `textures.js` | Procedural textures sampled in part-local pixel space. | `TEXTURES`, `sampleTexture`, `hash2` |
 | `image.js` | RGBA image helpers and the contact sheet used by `preview`. | `contactSheet`, `createImage`, `blit`, `checker` (not re-exported from `index.js`) |
 | `ascii.js` | A frame as text (one letter per material, `#` outline, `.` empty). | `frameToAscii` |
-| `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
+| `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views or animations. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `selectAnimations`, `keepAnimations`, `pruneStates`, `STAGE_ROLES`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
 | `export.js` | One sheet plus Aseprite "hash" JSON for game engines (Phaser, PixiJS): frames, tags, slices for points, Pixel Studio extras. | `exportSheet` |
 | `mix.js` | Transition clips (`mixes`): a few frames that interpolate the pose from the end of one animation to the start of another, added to the compiled animations as `"from>to"`. | `buildMixes` |
 | `plugins.js` | Extension points: register shapes, textures and motion models; they join the built-in tables so validation and `pixel brief` treat them like built-ins. Read-only snapshots of those tables. | `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`, `shapeTypes`, `textures`, `motionModels`, `leggedModels` |
@@ -594,9 +594,11 @@ Both passes run after shading.
 - **`animationMeta(anim)`** (`render.js`) is the playback description shared by sheets, bundles and
   the CLI's `render` JSON: `frames`, `fps`, `loop`, plus `speed`, `speedY`, `wall`, `mix`
   (`{from, to}`, on transition clips) and `events` when set, and `durations` (ms per frame, `1000/fps × hold`) only when the animation has `holds`.
-- **`buildBundle(compiled, {resolutions = [16, 32, 64], overrides, encode, views, deltas = true})`**
-  (`bundle.js`) first drops the views not listed in `views` (**`keepViews`**: animations named
-  `x@view`), then sorts the resolutions ascending and renders a sheet per resolution. It encodes each
+- **`buildBundle(compiled, {resolutions = [16, 32, 64], overrides, encode, views, animations, deltas = true})`**
+  (`bundle.js`) first keeps only the `animations` asked for (**`selectAnimations`** adds their views, the views'
+  turns and the transitions between kept ones, and expands `"stage"` with **`STAGE_ROLES`**, a copy of the stage's
+  role table; **`keepAnimations`** filters), then drops the views not listed in `views` (**`keepViews`**: animations
+  named `x@view`), then sorts the resolutions ascending and renders a sheet per resolution. It encodes each
   sheet with the host-supplied `encode(w, h, rgba)`: `encodePNG` → data URL in Node, `pngBytes` with
   `CompressionStream` in the studio. Each skin in `compiled.skins` gets the same resolutions again,
   appended as variants tagged `skin`. **`skinDelta(base, skin)`** tries to express a skin sheet as
@@ -604,6 +606,7 @@ Both passes run after shading.
   pixels still different; it gives up (null) if the skin makes an opaque pixel transparent. The delta
   is used when its encoded size is below the full sheet's. It returns
   `{format: 'pixel-sprite/1', name, size, ground, animations, skins?, states?, points?, skinPoints?, variants: [{res, lod, frameW, frameH, image, skin?}]}`.
+  `states` goes through **`pruneStates`**, which drops the nodes whose animation is not in the bundle.
   `ground` is `compiled.ground`, or `groundFromPixels`: the bottom of the lowest opaque row of the
   first frame of the largest sheet, in units. `points` comes from **`bakePoints(compiled)`**, which
   poses every frame with `samplePose` + `worldMatrices` and records `[x, y, rotDeg]` per point, animation

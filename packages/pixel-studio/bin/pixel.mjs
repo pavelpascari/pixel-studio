@@ -10,8 +10,10 @@
 //                                                    sprite sheet PNG + JSON metadata
 //   pixel export   <spec.json> [--res 32] [--out dir] [--format aseprite]
 //                                                    sheet PNG + Aseprite JSON (Phaser, PixiJS)
-//   pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|none] [--external] [--out file.bundle.json]
-//                                                    self-contained web bundle for <pixel-sprite> (all skins);
+//   pixel bundle   <spec.json> [--res 16,32,64] [--views front,back|all] [--anims idle,walk|stage] [--external]
+//                  [--out file.bundle.json]          self-contained web bundle for <pixel-sprite> (all skins);
+//                                                    side view only unless --views; --anims keeps only those
+//                                                    animations (stage: what <pixel-stage> uses);
 //                                                    --external writes the sheets as PNG files beside it
 //   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
 //   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]
@@ -246,9 +248,20 @@ switch (cmd) {
   }
   case 'bundle': {
     const c = compileOrExit(await loadSpec(args._[0]));
-    // --views front | front,back | none: which extra views (front, back, …) to ship; default all.
-    const views = args.views == null ? undefined : String(args.views) === 'none' ? [] : String(args.views).split(',').map((s) => s.trim()).filter(Boolean);
-    const bundle = await buildBundle(c, { resolutions: resList(args.res, '16,32,64'), overrides: overridesFrom(args), encode: pngDataURL, views });
+    // --views front | front,back | all | none: which extra views (front, back, …) to ship; default none (the side
+    // view only): they are for <pixel-stage> turning a character to the reader, and each about doubles the sheets.
+    const has = [...new Set(Object.keys(c.animations).filter((n) => n.startsWith('turn@')).map((n) => n.slice(5)))];
+    if (args.views === true) fail('--views needs a value: front, back, all or none');
+    const asked = args.views == null ? 'none' : String(args.views).trim();
+    const views = asked === 'all' ? undefined : asked === 'none' ? [] : asked.split(',').map((s) => s.trim()).filter(Boolean);
+    for (const v of views ?? []) if (!has.includes(v)) fail(`--views: no view "${v}" (${has.length ? `views: ${has.join(', ')}, all or none` : 'this character has only the side view'})`);
+    if (args.views == null && has.length) console.error(`note: side view only; --views all (or ${has.join(', ')}) adds the character's other views`);
+    // --anims idle,waddle | stage: only those animations, with their views, turns and transitions.
+    if (args.anims === true) fail('--anims needs a list, e.g. --anims idle,walk (or --anims stage)');
+    const animations = args.anims == null ? undefined : String(args.anims).split(',').map((s) => s.trim()).filter(Boolean);
+    const bundle = await buildBundle(c, { resolutions: resList(args.res, '16,32,64'), overrides: overridesFrom(args), encode: pngDataURL, views, animations });
+    const dropped = Object.keys(c.states?.nodes ?? {}).filter((n) => !bundle.states?.nodes[n]);
+    if (dropped.length) console.error(`note: states: ${bundle.states ? `dropped node${dropped.length > 1 ? 's' : ''} ${dropped.join(', ')} (no animation left to play)` : 'dropped the state machine (no node has an animation left)'}`);
     const out = args.out || `${stem(args._[0])}.bundle.json`;
     mkdirSync(dirname(resolve(out)), { recursive: true });
     // --external: sheets as PNG files next to the bundle, so a page downloads only the one it shows.
