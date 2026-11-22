@@ -15,9 +15,8 @@ import { MarginNote } from 'astro-project-site/components';
   handler and the few styles are at the end of the post.
 */}
 
-Pixel Studio makes small animated pixel characters and gives them a home on a website. You describe a character,
-the engine draws it as pixel art at every size, and one HTML element plays it on your page. These six are running
-in this post:
+Pixel Studio makes small animated pixel characters for websites. You describe a character, the engine draws it as
+pixel art at three sizes, and one HTML element plays it on your page. These six are running in this post:
 
 <figure class="ps-post-figure">
   <div class="ps-post-row">
@@ -28,19 +27,18 @@ in this post:
     <pixel-sprite src="/apps/demo/assets/slime.bundle.json" size="64" click-anim="hop" alt="Gloop the slime"></pixel-sprite>
     <pixel-sprite src="/apps/demo/assets/robot.bundle.json" size="64" click-anim="wave" alt="Bolt the robot"></pixel-sprite>
   </div>
-  <figcaption>The example characters that come with the engine. Tap one. The goose honks; tap it fast and it panics.</figcaption>
+  <figcaption>The example characters that ship with the engine. Tap one: the goose honks, and if you tap it fast, it panics.</figcaption>
 </figure>
 
 <p class="ps-post-pause"><button type="button" class="site-btn" data-ps-pause>Pause characters</button></p>
 
-Each of them is one file, and the page you are reading plays them with one script.
+Each is one file, and this page plays all six with one script.
 
 ## A character is a description
 
-You don't paint a Pixel Studio character pixel by pixel. You write it down: a JSON spec of shapes on a skeleton,
-the materials they are made of, and the animations it plays. The engine turns that into pixel art at 16, 32 and
-64 px, with shading, texture, dithering and outlines suited to each size. The smallest keeps the silhouette; the
-largest gets the fur.
+You write a Pixel Studio character as a JSON spec: shapes on a skeleton, the materials they are made of, and the
+animations it plays. The engine turns that into pixel art at 16, 32 and 64 px, with shading, texture, dithering and
+outlines suited to each size. At 16 px it keeps the silhouette, and at 64 px it draws the fur.
 
 <figure class="ps-post-figure">
   <div class="ps-post-row">
@@ -51,11 +49,11 @@ largest gets the fur.
   <figcaption>One spec, three levels of detail: the same fox drawn at 16, 32 and 64 px.</figcaption>
 </figure>
 
-Most of the motion comes with the skeleton. A spec can stand on a figure (a goose, a human, a dog, a chibi or a
-blob) whose motion models make it walk, run, jump and climb. Feet stay planted, heads stay steady, tails follow
-through, and nobody writes a keyframe.<MarginNote kind="field" numbered>The fox's gallop is measured from Muybridge's photographs of running hounds. All the motion data comes from public-domain and openly licensed sources, each one credited in the repository.</MarginNote>
+A spec can stand on a figure (a goose, a human, a dog, a chibi or a blob), and the figure brings most of the
+motion: its motion models make the character walk, run, jump and climb. Feet stay planted, heads stay steady and
+tails follow through, without a keyframe from you.<MarginNote kind="field" numbered>The fox's gallop follows measurements from Muybridge's photographs of running hounds. Each source of motion data is public domain or openly licensed, and the repository credits each one.</MarginNote>
 
-So a new character can be a few lines. This is a whole new goose, a golden one called Marigold:
+A new character can take a few lines. This file is the whole of Marigold, a new golden goose:
 
 ```json
 {
@@ -68,22 +66,24 @@ So a new character can be a few lines. This is a whole new goose, a golden one c
 }
 ```
 
-It gets every motion of the base goose, from idle and waddle to flap and fly. A character can also carry other
-looks, called skins: root, the goose in the hoodie, has a party hat and a red-team colour scheme in the same file.
+Marigold inherits all of the base goose's motions, from idle and waddle to flap and fly. A character can also carry
+other looks, called skins: root, the goose in the hoodie, has a party hat and a red-team colour scheme in the same
+file.
 
 ## Written so an agent can write it
 
-The tagline says "agents describe characters", and it means it. A language model is good at writing a precise
-description and poor at placing pixels, so Pixel Studio asks it for the description. The spec reference is written
-as a brief for an agent. Mistakes come back with a JSON path and a did-you-mean, and `pixel ascii` prints a
-character as text, for an agent that can't see images.
+The tagline says "agents describe characters". A language model is good at writing a precise description and poor
+at placing pixels, so Pixel Studio asks it for the description. The spec reference reads as a brief for an agent.
+The validator answers a mistake with a JSON path and a did-you-mean, and `pixel ascii` prints a character as text
+for an agent that can't see images.
 
-The studio puts this in a loop. Describe a character in a sentence. Claude writes the spec, the engine draws it in
-every animation at every size, and Claude looks at the drawing and revises. Then you ask for changes in plain words
-("make the antenna blink") and it goes round again. When it looks right, you export one bundle file.<MarginNote kind="field" numbered>When a spec Claude writes doesn't validate, the studio hands the errors back for a fix (up to twice) before it draws anything, so what you see is a character, not an error message.</MarginNote>
+In the studio, you describe a character in a sentence. Claude writes the spec, the engine draws it in each
+animation at each size, and Claude looks at the drawing and revises the spec. You ask for changes in plain words
+("make the antenna blink") and the loop runs again. Once the character looks right, you export one bundle file.<MarginNote kind="field" numbered>If a spec from Claude fails validation, the studio sends the errors back for Claude to fix, up to twice, before it draws anything. The first thing you see is a drawn character.</MarginNote>
 
-Creating with Claude uses your own Anthropic API key. It stays in your browser, and requests go straight to the
-API. Without a key, the examples, the editor and the playground all work, and you can edit the JSON yourself.
+Create with Claude runs on your own Anthropic API key. The key stays in your browser, which sends requests to the
+API with no server in between. Without a key you still get the examples, the editor and the playground, and you can
+edit the JSON yourself.
 
 ## One tag on the page
 
@@ -99,57 +99,50 @@ API. Without a key, the examples, the editor and the playground all work, and yo
   <div class="ps-post-row">
     <pixel-sprite src="/apps/demo/assets/goose-root.bundle.json" size="128" skin="party" alt="root, a goose in a party hat: hover or tap it"></pixel-sprite>
   </div>
-  <figcaption>That snippet, running. Hover and it gets back to hacking; tap and it honks.</figcaption>
+  <figcaption>The snippet above, running: hover and root goes back to hacking, tap and it honks.</figcaption>
 </figure>
 
-The behaviour comes with the bundle: this goose carries a small state machine, so the page needs no code for the
-honk. The script is 14 KB over the wire, with no dependencies and no build step. The smaller example characters
-are 9 to 43 KB each; a goose with front and back views and two skins is about 100 KB.
+The behaviour ships in the bundle. This goose carries a small state machine, so your page needs no code for the
+honk. The script weighs 14 KB over the wire, with no dependencies and no build step. The smaller example characters
+weigh 9 to 43 KB each, and a goose with front and back views and two skins about 100 KB.
 
-The element tries to stay out of the way. It stops drawing when it is off-screen, shows a still frame when the
-reader asks for reduced motion, can be paused, and reads its `alt` to screen readers.
+`<pixel-sprite>` stops drawing when it is off-screen and shows a still frame to readers who ask for reduced motion.
+You can pause it, and screen readers read out its `alt`.
 
 ## Characters that live on the page
 
-A sprite plays where you put it. `<pixel-stage>` lets characters move around your layout. Mark elements as surfaces
-and the characters walk along their top edges, jump between them, sit on an edge, and hide behind anything marked as
-a hiding spot. They never block a click.<MarginNote kind="field" label="The goose">I walk on your cards. I do not press your buttons. Mostly.</MarginNote>
+A sprite plays where you put it. With `<pixel-stage>`, characters move around your layout: mark elements as
+surfaces, and the characters walk along their top edges, jump between them, sit on an edge and hide behind anything
+you mark as a hiding spot. Clicks pass through them to the page.<MarginNote kind="field" label="The goose">I walk on your cards and leave your buttons alone. Mostly.</MarginNote>
 
-They react to the reader too: tap one and it startles and runs off; scroll fast and it calls after you. And a page
-can give them something to do. A scene is a short list of steps written as data and started by a click on any
-element, with no animation code. On the [home page](/), a gosling picks up a letter, hurries off to post it,
-and comes back.
+They react to you as well: tap one and it startles and runs off, scroll fast and it calls after you. You can also
+give them a job. You write a scene as a short list of steps, in data with no animation code, and a click on any
+element starts it. On the [home page](/), a gosling picks up a letter, hurries off to post it and comes back.
 
 ## Where it stands
 
-Pixel Studio is open source under the MIT licence, and it is an alpha. It comes as two npm packages, always
-released together under one version:
+Pixel Studio is an alpha, open source under the MIT licence. It ships as two npm packages that share one version
+and release together:
 
 - **`@pixel-studio/runtime`** plays characters: `<pixel-sprite>` and `<pixel-stage>`, all a website needs.
 - **`@pixel-studio/core`** makes them: the engine, the `pixel` command, the figures, the example characters and the
   reference docs.
 
-Until 1.0 the spec format may still change. Every change, and what to update when it does, goes in the
-[changelog](/changelog/). The [guide](/docs/guide/) shows each feature running next to its code, and
-[getting started](/docs/reference/getting-started/) goes from an empty folder to your own goose on a page in five
-steps. The source, issues and discussions are on [GitHub](https://github.com/pavelpascari/pixel-studio).
+The spec format may change before 1.0. The [changelog](/changelog/) lists each change and what you need to
+update. The [guide](/docs/guide/) shows each feature running next to its code, and
+[getting started](/docs/reference/getting-started/) takes you from an empty folder to your own goose on a page in
+five steps. The source, issues and discussions are on [GitHub](https://github.com/pavelpascari/pixel-studio).
 
 ## Try one
 
-The quickest way to see what this is for is the [home page](/). Pick a goose, a fox or Pip, make it walk,
-jump and hide on a small page, then follow "Customize" into the studio and make it yours.
+Start on the [home page](/): pick a goose, a fox or Pip, make it walk, jump and hide on a small page, then follow
+"Customize" into the studio and make it yours.
 
 <style>{`
   .ps-post-figure { margin: 1.75rem 0; text-align: center; }
   .ps-post-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.5rem 0.75rem; }
   .ps-post-figure figcaption { margin-top: 0.6rem; font-size: 0.9rem; color: var(--site-muted); }
   .ps-post-pause { text-align: center; }
-  /* Starlight adds a link after each heading, but its styles for it are not loaded on blog pages: until the
-     template styles it, keep its text for screen readers only and show the icon on hover and focus. */
-  .sl-heading-wrapper { display: flex; align-items: baseline; gap: 0.4rem; }
-  .sl-anchor-link { color: var(--site-muted); opacity: 0; }
-  .sl-heading-wrapper:hover .sl-anchor-link, .sl-anchor-link:focus-visible { opacity: 1; }
-  .sl-anchor-link .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 `}</style>
 
 <script type="module" src="/apps/packages/runtime/src/pixel-sprite.js"></script>
