@@ -59,6 +59,8 @@ anything; each such change is listed under Upgrading.
   playground.
 
 ### Changed
+- **Website:** outside the docs, the header's search is a small button (with the ⌘K / Ctrl K hint on wide screens)
+  instead of a wide field, so the navigation has more room. It opens the same search.
 - **Studio:** the playground's "studio" link opens the character picked in the playground, with its look, animation
   (in the view picked) and size, and follows the choices as they change. The payload's changes stay in the
   playground: the studio does not read them.

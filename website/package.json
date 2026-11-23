@@ -19,7 +19,7 @@
     "@astrojs/rss": "^4.0.19",
     "@astrojs/starlight": "^0.43.1",
     "astro": "^7.3.8",
-    "astro-project-site": "^0.1.0-beta.7",
+    "astro-project-site": "^0.1.0-beta.8",
     "mermaid": "^12.3.0"
   },
   "devDependencies": {
