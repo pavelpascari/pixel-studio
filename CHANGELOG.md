@@ -34,6 +34,8 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.4] - 2026-11-23
+
 ### Changed
 - **Runtime:** a `<pixel-stage>` whose characters are all off-screen stops its frame loop, and starts it again just
   before one scrolls back into view. Characters wandering out of sight wait where they are instead of walking on.
