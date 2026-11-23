@@ -7,7 +7,7 @@ import '../packages/runtime/src/pixel-sprite.js';
 import { initAgent } from './agent.js';
 
 const $ = (s) => document.querySelector(s);
-const EXAMPLES = ['goose-base', 'goose-root', 'goose-sudo', 'goose-phreak', 'goose-kiddie', 'goose-greylag', 'pip', 'fox', 'slime', 'robot'];
+const EXAMPLES = ['goose-base', 'goose-root', 'goose-sudo', 'goose-phreak', 'goose-kiddie', 'goose-greylag', 'moss', 'pip', 'fox', 'slime', 'robot'];
 const LOD_STRIP = [16, 24, 32, 48, 64];
 const STORAGE_KEY = 'pixel-studio:spec';
 // The simple view's animation picker: the common moves, then a character's own (the goose's hack, …), at most
@@ -183,7 +183,7 @@ async function rebuild() {
   renderLodStrip();
   renderSheetView(t0);
   setStatus([
-    { cls: 'ok', text: `ok — ${parsed.spec.extends ? `extends ${parsed.spec.extends} → ` : ''}${parsed.spec.figure ? `figure ${parsed.spec.figure.use ?? parsed.spec.figure} → ` : ''}${state.compiled.parts.length} parts, ${Object.keys(state.compiled.materials).length} materials, ${names.length} animations` },
+    { cls: 'ok', text: `ok — ${parsed.spec.extends ? `extends ${parsed.spec.extends} → ` : ''}${parsed.spec.figure ? `figure ${typeof parsed.spec.figure === 'string' ? parsed.spec.figure : parsed.spec.figure.use ?? '(its own)'} → ` : ''}${state.compiled.parts.length} parts, ${Object.keys(state.compiled.materials).length} materials, ${names.length} animations` },
     ...warnings.map((w) => ({ cls: 'warn', text: `warning ${w.path}: ${w.message}`, onclick: () => selectPath(w.path) })),
   ]);
   refreshWebview();

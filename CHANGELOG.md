@@ -52,6 +52,15 @@ anything; each such change is listed under Upgrading.
 
 ## Site update - 2026-11-23
 
+### Added
+- **Studio:** Moss is among the studio's examples (`/apps/studio/?c=moss`), like the other characters in the
+  playground.
+
+### Changed
+- **Studio:** the playground's "studio" link opens the character picked in the playground, with its look, animation
+  (in the view picked) and size, and follows the choices as they change. The payload's changes stay in the
+  playground: the studio does not read them.
+
 ### Fixed
 - **Website:** on the [examples](https://pixel-studio.sh/gallery/) page, the studio, playground, figure library and
   goose workbench are labelled "Tool" rather than "Demo", which made them read as mock-ups. The kind filter has a
