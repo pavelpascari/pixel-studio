@@ -34,6 +34,12 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+### Changed
+- **Runtime:** a `<pixel-stage>` whose characters are all off-screen stops its frame loop, and starts it again just
+  before one scrolls back into view. Characters wandering out of sight wait where they are instead of walking on.
+  Orders from your code or a scene, falls, `keep-in-view` and returns after `exit()` keep it running until they are
+  done. Measured in the [performance docs](https://pixel-studio.sh/docs/reference/performance/).
+
 ### Fixed
 - **Packages:** both packages contain this changelog as `CHANGELOG.md`, so you can read what changed from
   `node_modules`. `@pixel-studio/core` listed the file but never included it, and `@pixel-studio/runtime` didn't

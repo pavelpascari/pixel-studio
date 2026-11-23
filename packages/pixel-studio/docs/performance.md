@@ -15,7 +15,7 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
 
 ## In short
 
-- **Download:** 14 KB of script for `<pixel-sprite>`, 42 KB for `<pixel-stage>` (brotli; 16 and 48 KB gzip), plus
+- **Download:** 14 KB of script for `<pixel-sprite>`, 43 KB for `<pixel-stage>` (brotli; 16 and 49 KB gzip), plus
   one bundle per character: 9 to 43 KB for the five non-goose examples, 75 to 105 KB for a goose with every view and
   resolution, 55 KB for the same goose as `pixel bundle` builds it by default (the side view only), and 14 KB with
   `--res 32` (4 KB with only the three animations a page plays, `--anims idle,waddle,honk`).
@@ -23,7 +23,8 @@ to loading, what playing costs per frame, and how much memory it takes. Every nu
   shift (CLS 0.03) unless its box is reserved in CSS.
 - **Playing:** under 0.1 ms of main thread per frame for one sprite, 0.4 ms for 50, 0.3 ms for a stage with three
   actors (under 7% of a frame for 50 sprites with the CPU slowed down four times). Off-screen, paused and
-  reduced-motion sprites cost nothing measurable per frame; a playing stage keeps moving its characters off-screen.
+  reduced-motion sprites cost nothing measurable per frame, and neither does a stage whose characters are all
+  off-screen.
 - **Memory:** the decoded sprite sheet is the large part: 0.1 to 2 MB at 32 px for most characters, and about
   8 MB for a goose at 64 px (20 MB for the greylag, whose longest animation has almost three times as many frames).
   It is shared by every sprite of that character.
@@ -45,8 +46,8 @@ imports `pixel-sprite.js`, so a page with a stage loads both.
 | File | Raw | gzip | brotli |
 |---|--:|--:|--:|
 | `pixel-sprite.js` | 48.6 KB | 16.1 KB | 14.1 KB |
-| `pixel-stage.js` | 100.2 KB | 32.1 KB | 27.9 KB |
-| both (a page with `<pixel-stage>`) | 148.8 KB | 48.2 KB | 42.0 KB |
+| `pixel-stage.js` | 103.4 KB | 33.1 KB | 28.8 KB |
+| both (a page with `<pixel-stage>`) | 152.0 KB | 49.2 KB | 42.9 KB |
 <!-- /gen -->
 
 The example characters as built for the demos (16, 32 and 64 px, every view, every skin: `buildBundle`'s defaults, or
@@ -150,8 +151,21 @@ sprite because it also moves the characters across the page and decides what eac
 - **Off-screen and reduced motion cost nothing measurable.** Sprites off-screen (one shared `IntersectionObserver`)
   or under `prefers-reduced-motion` leave the shared frame loop, and the loop stops when it is empty. A paused sprite
   (`paused`, `pause()`) leaves the loop the same way, and so does a paused stage (its button, `stage.pause()`).
-  A playing stage keeps moving its characters while they are off-screen (they go on wandering), so a stage is not
-  free when scrolled away; that case was not measured.
+- **A stage scrolled away costs nothing measurable either.** While all its characters are off-screen and none has
+  something to finish (an order, a fall, `keep-in-view`; see [stage.md](stage.md#phones-accessibility-and-performance)),
+  the stage leaves the frame loop too, and its characters wait where they are. Before this, it kept moving them
+  off-screen. The same page as the stage row, with the cards 12,000 px below the fold and the page left at the top
+  (`stage-3-offscreen`), measured before and after the change on 2026-11-23, in the same session as a plain page:
+
+  | Case | Per frame | Added | Per frame, 4x CPU | Added, 4x CPU | Stage frames run in 4 s |
+  |---|--:|--:|--:|--:|--:|
+  | Plain page | 0.16 ms | | 0.26 ms | | |
+  | Stage, all off-screen, before | 0.33 ms | 0.16 ms (0.9%) | 0.62 ms | 0.34 ms (2.0%) | 240 of 240 |
+  | Stage, all off-screen, after | 0.16 ms | 0.01 ms (0.0%) | 0.23 ms | -0.04 ms (noise) | 0 of 240 |
+
+  The before row's plain page measured 0.17 ms (0.29 ms with 4x CPU); "Added" is against the plain page of its own
+  session. The last column counts the frames on which the stage ran, with a wrapper around `stage.tick` (a separate
+  run, not part of `browser.mjs`). Scrolled back to the cards, the stage ran on every frame again.
 - **The cost grows with the number of characters drawing**, at about 0.007 ms per sprite per frame on this machine
   (0.016 ms with 4x CPU), on top of a fixed cost for the loop and the first sprite.
 - These are main-thread numbers. Compositing the canvases takes GPU and compositor time as well, which is not
@@ -297,5 +311,4 @@ node /path/to/pixel-studio/scripts/bench/browser.mjs --serve           # just se
 It uses the installed Google Chrome; `--chrome <path>` (or `CHROME_PATH`) picks another Chromium.
 
 Not measured: Firefox and Safari (the runtime numbers use a Chrome-only protocol; the runtime is checked for
-behaviour in both, see [runtime.md](runtime.md#testing-on-devices)), real phones, and a stage whose actors are
-all off-screen.
+behaviour in both, see [runtime.md](runtime.md#testing-on-devices)), and real phones.
