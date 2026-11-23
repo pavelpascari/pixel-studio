@@ -29,7 +29,7 @@ globalThis.matchMedia = () => ({ matches: false });
 const buzzes = [];
 Object.defineProperty(globalThis, 'navigator', { value: { vibrate: (ms) => buzzes.push(ms) }, configurable: true });
 
-const { Gesture, GESTURE, throwVelocity, PixelStage } = await import('../src/pixel-stage.js');
+const { Gesture, GESTURE, throwVelocity, PixelStage, PixelActor } = await import('../src/pixel-stage.js');
 const { PixelSprite, TOUCH_HOVER_MS } = await import('../src/pixel-sprite.js');
 
 // ---------- Gesture, pure ----------
@@ -377,4 +377,86 @@ test('grab="off": nothing picks up, for any pointer; taps still shoo', () => {
   }
   assert.deepEqual(log, ['shoo', 'shoo', 'shoo']);
   assert.deepEqual(events.map((e) => `${e.type} ${e.pointerType}`), ['tap mouse', 'tap pen', 'tap touch']);
+});
+
+// ---------- dropped at the page's edges: it settles ----------
+//
+// The stage measures the page with the characters on it (the document's scroll size). A character's box that pokes
+// past the bottom or the right edge makes the page bigger, so the next read moved the floor (or the edge) and the
+// character with it, again at every read: a character dropped where only the floor is below sank down the page, and
+// one dropped past the right edge widened it. A page 800 × 600, read again every frame here as some pages are.
+
+const PAGE = { w: 800, h: 600 };
+/** A fake page read: its content, made bigger by the character's box where that pokes out (as scrollWidth/Height do). */
+function readPage(w, a) {
+  const [L, T] = (a.style.transform ?? 'translate(0px, 0px)').match(/-?[\d.]+/g).map(Number);
+  w.width = Math.max(PAGE.w, L + a.W);
+  w.height = Math.max(PAGE.h, T + a.H);
+  w.platforms = [{ el: null, floor: true, x1: w.left, x2: w.width, y: w.height }];
+}
+/** A 64 px character whose box reaches 6 px below its feet (like most figures: a shadow, round toes), held at x, y. */
+function heldActor(x, y) {
+  const a = Object.create(PixelActor.prototype), events = new EventTarget();
+  Object.assign(a, {
+    x, y, W: 64, H: 64, facing: 1, view: 'side', anims: {}, plan: [], behind: new Set(), activity: 'dragged',
+    _ready: true, _placed: true, style: {}, _box: { style: {} }, _body: { style: {} },
+    sprite: { groundOffset: 58, hasAttribute: () => false, toggleAttribute() {}, play() {}, point: () => null },
+    dispatchEvent: (e) => events.dispatchEvent(e),
+  });
+  const w = { items: [], platforms: [], left: 0, width: PAGE.w, height: PAGE.h, platformOf(el) { return this.platforms.find((p) => (el ? p.el === el : p.floor)); } };
+  a._write(w);                       // drawn where the pointer holds it
+  readPage(w, a);
+  return { a, w };
+}
+/** Let go, then run `frames` frames: read the page, follow it, fall, draw. Returns where it stood at each frame. */
+function dropAndRun({ a, w }, frames = 240) {
+  a._throw(0, 0);
+  const ys = [];
+  for (let i = 0; i < frames; i++) {
+    readPage(w, a);
+    a._worldChanged(w);
+    if (a.activity === 'falling') a._fallStep(1 / 60, w);
+    a._write(w);
+    ys.push(a.activity === 'falling' ? null : a.y);
+  }
+  return ys;
+}
+
+test('drop at the left edge: it lands on the floor inside the page and stays there', () => {
+  const held = heldActor(-40, 300);
+  const ys = dropAndRun(held);
+  const { a, w } = held;
+  assert.equal(a.activity, 'idle');
+  assert.equal(a.x, a.W / 2, 'pulled in to the page\'s left edge');
+  assert.deepEqual([w.width, w.height], [PAGE.w, PAGE.h], 'the page did not grow');
+  const landed = ys.filter((y) => y != null);
+  assert.ok(landed.length > 100, 'it landed');
+  assert.deepEqual(new Set(landed), new Set([PAGE.h]), 'it stood still on the floor: no sinking, no re-landing');
+});
+
+test('drop past the right edge: the same, mirrored; the page does not widen while it is held there', () => {
+  const held = heldActor(PAGE.w + 40, 300);
+  assert.equal(held.w.width, PAGE.w, 'held past the edge, it does not make the page wider');
+  const ys = dropAndRun(held);
+  const { a, w } = held;
+  assert.equal(a.activity, 'idle');
+  assert.equal(a.x, PAGE.w - a.W / 2, 'pulled in to the page\'s right edge');
+  assert.deepEqual([w.width, w.height], [PAGE.w, PAGE.h]);
+  assert.deepEqual(new Set(ys.filter((y) => y != null)), new Set([PAGE.h]));
+});
+
+test('drop below the page\'s bottom: it does not make the page taller while it falls', () => {
+  const held = heldActor(400, PAGE.h + 30);
+  dropAndRun(held, 10);
+  assert.equal(held.a.activity, 'falling');
+  assert.equal(held.w.height, PAGE.h);
+});
+
+test('drop at the left edge of a stage that starts further right: it reaches the page\'s left edge, not the stage\'s', () => {
+  // The stage sits 200 px into the page (in a centred column, say): in its coordinates the page starts at -200.
+  const held = heldActor(-260, 300);
+  held.w.left = -200;
+  dropAndRun(held);
+  assert.equal(held.a.activity, 'idle');
+  assert.equal(held.a.x, -200 + held.a.W / 2);
 });

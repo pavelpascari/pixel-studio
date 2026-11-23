@@ -442,6 +442,10 @@ Only presses on a character's opaque pixels count; everything else reaches the p
 - The pause button is a real `<button>` in the tab order, above the characters, clear of the iPhone home indicator. The
   choice is stored in `localStorage` (`pixel-stage:paused`). This is what WCAG 2.2.2 (Pause, Stop, Hide) asks for.
 - With `prefers-reduced-motion: reduce` the characters are placed and stand still; the setting is watched live.
+- While every character is off-screen, the stage stops its frame loop: characters wandering out of sight wait where
+  they are, and start again just before they scroll back into view (an `IntersectionObserver` with a 100 px margin).
+  The loop keeps running while a character has something to finish: an order from your code or a scene (`goTo()`,
+  `run()`, …), a fall or a jump, `keep-in-view`, a speech bubble, or a return from off the screen after `exit()`.
 - The characters' layer is `aria-hidden`; the button is not.
 - Checked in desktop Chromium and in iOS 18.1 Safari (iPhone 16 simulator). The touch gestures were checked with real
   touch input in Chromium (Pixel 7 emulation: a swipe from a character scrolls, a hold picks up and does not scroll) and

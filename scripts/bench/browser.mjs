@@ -1,13 +1,13 @@
 // What Pixel Studio characters cost a page in a real browser: load impact (Lighthouse, throttled mobile profile, simulated and
 // applied throttling) and
 // runtime cost (main-thread time per frame, JS heap, process memory) for 0, 1, 10 and 50 sprites, 50 off-screen,
-// 50 under reduced motion, and a stage with three actors. The numbers on packages/pixel-studio/docs/performance.md.
+// 50 under reduced motion, and a stage with three actors, on screen and off-screen. The numbers on packages/pixel-studio/docs/performance.md.
 //
 // Lighthouse and Playwright are not dependencies of this project (like scripts/browser-check.mjs): install them in any
 // folder and run this script from there. It drives an installed Google Chrome (or any Chromium: --chrome <path>).
 //
 //   mkdir /tmp/bench && cd /tmp/bench && npm i lighthouse playwright-core
-//   node /path/to/pixel-studio/scripts/bench/browser.mjs [--runs 5] [--only load|runtime] [--chrome <path>] [--json out.json]
+//   node /path/to/pixel-studio/scripts/bench/browser.mjs [--runs 5] [--only load|runtime] [--cases a,b] [--chrome <path>] [--json out.json]
 //   node /path/to/pixel-studio/scripts/bench/browser.mjs --serve [--port 4917]   only serve the test pages
 //
 // Needs demo/assets (npm run build:demo). It serves the repository root itself (gzip, like a static host), on a free
@@ -62,9 +62,14 @@ const CASES = {
   'sprite-50-offscreen': { label: '50 sprites, all off-screen', head: SPRITE_JS, sprites: `<div class="spacer"></div>${foxes(50)}` },
   'sprite-50-reduced': { label: '50 sprites, reduced motion', head: SPRITE_JS, sprites: foxes(50), reducedMotion: 'reduce' },
   'stage-3': { label: 'Stage with 3 actors', head: STAGE_JS, body: STAGE },
+  // The same stage with the cards (and so the actors) far below the fold, the page left at the top.
+  'stage-3-offscreen': { label: 'Stage with 3 actors, all off-screen', head: STAGE_JS, sprites: '<div class="spacer"></div>', body: STAGE },
 };
-const LOAD_CASES = ['plain', 'sprite-1', 'sprite-1-reserved', 'stage-3'];
-const RUNTIME_CASES = Object.keys(CASES).filter((n) => n !== 'sprite-1-reserved');
+// --cases a,b: only these (the plain page is always measured too, as the baseline).
+const PICK = arg('cases')?.split(',');
+const picked = (n) => !PICK || n === 'plain' || PICK.includes(n);
+const LOAD_CASES = ['plain', 'sprite-1', 'sprite-1-reserved', 'stage-3'].filter(picked);
+const RUNTIME_CASES = Object.keys(CASES).filter((n) => n !== 'sprite-1-reserved' && picked(n));
 const TEMPLATE = readFileSync(join(ROOT, 'scripts/bench/page.html'), 'utf8');
 const pageFor = (c) => TEMPLATE.replace('<!-- head -->', c.head ?? '').replace('<!-- sprites -->', c.sprites ?? '').replace('<!-- body -->', c.body ?? '');
 

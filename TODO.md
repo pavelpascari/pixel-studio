@@ -9,13 +9,12 @@ Measured in [docs/performance.md](packages/pixel-studio/docs/performance.md); re
 
 Items marked *(release)* change the published packages, so they ship with the next Pixel Studio release.
 
-- [ ] **Reserve the box.** Give a sprite its size before the element upgrades (a size hint, or the documented CSS
-      rule), so it causes no layout shift: CLS 0.031 for one sprite now, 0.003 with the `:not(:defined)` rule.
+- [ ] **Reserve the box.** The `:not(:defined)` rule leaves CLS 0.003, only on screens with a fractional device
+      pixel ratio (1.75): the sprite is drawn at a whole number of device pixels and grows when the bundle loads. Keep
+      the box at `size` and draw the canvas inside it, or know the size before the bundle loads (see performance.md).
 - [ ] **Minified runtime.** Ship minified `pixel-sprite.js` and `pixel-stage.js` in `@pixel-studio/runtime`, beside
       the readable source: about 40% smaller (brotli 13.3 → 7.6 KB for the sprite, 38 → about 24 KB with the stage).
       Remove the pre-0.2 event names ("legacy name, remove after 0.2.0-alpha") at the same time. *(release)*
-- [ ] **Idle stage.** Stop a stage's frame loop while every actor is off-screen and none keeps itself in view.
-      Measure that case first: it is the one gap in the benchmark.
 - [ ] **Measure more.** Firefox, Safari and real phones.
 
 ## Landing page
