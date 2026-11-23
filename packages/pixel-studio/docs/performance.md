@@ -119,10 +119,18 @@ Requests include the page and a favicon request.
   90 ms) appear on the plain page too.
 - **CLS.** 0.03 for one sprite: before its script runs the element has no size, then takes its box and pushes the
   content below down. The CSS rule in [Keeping it small](#keeping-it-small) brings it to 0.003; a poster image with
-  `width` and `height` also reserves the box from the first paint. What is left is the device pixel ratio of the
-  profile's phone, 1.75: whole device pixels per sprite pixel make the 64 px fox 73 px tall once it has loaded
-  ([why](runtime.md#device-pixels-and-scaling)). At a device pixel ratio of 1, 2 or 3 the same page shifts by 0.000
-  (measured in Chrome 156 with a `layout-shift` `PerformanceObserver`, which gives the same 0.031 and 0.003 at 1.75).
+  `width` and `height` also reserves the box from the first paint. What is left is one shift when the bundle has
+  loaded, caused by the device pixel ratio of the profile's phone, 1.75. The fox at `size` 64 shows its 32 px sheet,
+  and whole device pixels per sprite pixel (4, the nearest to 2 × 1.75 = 3.5) make it 128 device px, 73.14 CSS px
+  ([why](runtime.md#device-pixels-and-scaling)). Its box grows from the reserved 64 × 64 to 73.14 × 73.14 and the
+  cards below move down 9.14 px: 0.0033. It is not sub-pixel rounding or the line box: the reserved box and the
+  defined element match exactly (64.000 px, same position), and at a device pixel ratio of 1, 2 or 3 the page with the
+  rule shifts by 0.000 (measured in Chrome 156 with a `layout-shift` `PerformanceObserver` and the shifts' sources,
+  412 × 823 mobile viewport, on 2026-11-23; at 1.75 it gives the same 0.031 and 0.003 as Lighthouse, and a
+  Lighthouse rerun that day, with Lighthouse 12.8.2, gave 0.032 and 0.003).
+  Removing it would need the box before load to know the size after it, which depends on the bundle's frame size
+  and the screen; or a box that stays at `size` with the canvas drawn larger or smaller inside it. Neither is a
+  small change, so it stays.
   The stage adds no shift: its characters are drawn in a layer above the page.
 - **Bytes.** The 1-sprite page transfers the runtime (15 KB gzip) and the fox's bundle (44 KB gzip); the stage page
   the two runtime files (44 KB) and three bundles (145 KB, 105 KB of it the goose).
@@ -255,8 +263,10 @@ moves by a few MB between runs, so read it to the nearest 5 MB. Most of it is no
   ```
 
   `vertical-align: bottom` matches the element's own style; without it a sprite in a line of text still shifts it
-  a little (0.002) when the script runs. For no shift at all after load, use a `size` that is a whole multiple of
-  the sheet it shows (64 for the 32 px sheet, 128 for the 64 px one). A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
+  a little (0.002) when the script runs. With a `size` that is a whole multiple of the sheet it shows (64 for the
+  32 px sheet, 128 for the 64 px one), nothing shifts after load on screens with a whole-number device pixel ratio
+  (1, 2, 3); on a fractional one (1.75, 2.625) the box still changes by a few pixels when the bundle has loaded
+  ([CLS](#load-impact)). A poster image with `width` and `height` inside the element ([fallbacks](runtime.md#loading-errors-and-fallbacks))
   reserves the space too, and shows the character before the bundle arrives and when JavaScript is off.
 - **Reduced motion and the pause button cost nothing per frame.** They stop drawing, which is where the cost is. The stage's
   pause button is on by default; for sprites that loop for more than five seconds, give readers a way to call
