@@ -3,7 +3,7 @@
 title: Pixel Studio
 description: "Describe a character and Claude writes its spec; the studio renders it, and the render goes back to Claude to critique."
 href: "/apps/studio/"
-kind: demo
+kind: tool
 tags: ["studio"]
 order: 70
 poster: studio-index.jpg

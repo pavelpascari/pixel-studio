@@ -3,7 +3,7 @@
 title: Playground — Pixel Studio
 description: "Try a character's colours, textures, style, skins and animations; the whole setup lives in the URL."
 href: "/apps/studio/play.html"
-kind: demo
+kind: tool
 tags: ["studio"]
 order: 80
 poster: studio-play.jpg

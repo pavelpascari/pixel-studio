@@ -3,7 +3,7 @@
 title: Goose workbench — Pixel Studio
 description: "One goose, large, with every part and rendering setting switchable: tones, outlines, texture, features."
 href: "/apps/studio/goose.html"
-kind: demo
+kind: tool
 tags: ["studio"]
 order: 60
 poster: studio-goose.jpg

@@ -50,6 +50,13 @@ anything; each such change is listed under Upgrading.
   and stayed partly off screen. Characters now stay inside the page, and land between its left and right edges, also
   when the stage itself starts further right than the page's left edge.
 
+## Site update - 2026-11-23
+
+### Fixed
+- **Website:** on the [examples](https://pixel-studio.sh/gallery/) page, the studio, playground, figure library and
+  goose workbench are labelled "Tool" rather than "Demo", which made them read as mock-ups. The kind filter has a
+  "Tool" button for them.
+
 ## [0.2.0-alpha.3] - 2026-11-22
 
 ### Upgrading

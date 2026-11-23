@@ -3,7 +3,7 @@
 title: Figures — Pixel Studio
 description: "The figure library: skeletons with realistic motion models, with foot trails, bone names and onion skinning."
 href: "/apps/studio/figures.html"
-kind: demo
+kind: tool
 tags: ["studio"]
 order: 50
 poster: studio-figures.jpg
