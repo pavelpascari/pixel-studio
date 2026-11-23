@@ -216,6 +216,7 @@ export class World {
     const els = [...document.querySelectorAll(SELECTOR)].filter((el) => !this.stage.contains(el));
     for (const el of els) if (!this._observed.has(el)) { this._ro.observe(el); this._observed.add(el); }
     const de = document.documentElement;
+    this.left = -ox;   // the page's left edge (the stage may sit further right, in a centred column say)
     this.width = Math.max(de.scrollWidth, innerWidth) - ox;
     this.height = Math.max(de.scrollHeight, innerHeight) - oy;
     this.items = [];
@@ -236,7 +237,7 @@ export class World {
     this.platforms = this.items.filter((it) => it.surface && !it.avoid).map((it) => ({
       el: it.el, item: it, animated: it.animated, x1: it.l + Math.min(it.radius, (it.r - it.l) / 4), x2: it.r - Math.min(it.radius, (it.r - it.l) / 4), y: it.t,
     }));
-    if ((this.stage.getAttribute('floor') ?? 'document') !== 'none') this.platforms.push({ el: null, floor: true, x1: 0, x2: this.width, y: this.height });
+    if ((this.stage.getAttribute('floor') ?? 'document') !== 'none') this.platforms.push({ el: null, floor: true, x1: this.left, x2: this.width, y: this.height });
     this.dirty = false;
     this.version++;
   }
@@ -687,8 +688,9 @@ export class PixelActor extends Base {
         background:#fff;color:#222;border:2px solid #222;border-radius:8px;padding:3px 7px;opacity:0;transition:opacity .15s}
       .say.on{opacity:1}
       .say:not(.on){display:none}
-    </style><div class="body"><pixel-sprite part="sprite"></pixel-sprite><slot name="carry"></slot></div><div class="say" part="bubble"></div>`;
+    </style><div class="box"><div class="body"><pixel-sprite part="sprite"></pixel-sprite><slot name="carry"></slot></div></div><div class="say" part="bubble"></div>`;
     this.sprite = root.querySelector('pixel-sprite');
+    this._box = root.querySelector('.box');   // clips the body where it is slid out past the page's edge (see _write)
     this._body = root.querySelector('.body');
     this._bubble = root.querySelector('.say');
     this.x = 0; this.y = 0; this.facing = 1; this.activity = 'idle'; this.view = 'side';
@@ -1519,7 +1521,7 @@ export class PixelActor extends Base {
     const y0 = this.y;
     this._vy = Math.min(vmax, this._vy + g * dt);
     this._vx *= Math.max(0, 1 - 0.8 * dt);   // a little air drag on throws
-    this.x = Math.max(this.W / 2, Math.min(w.width - this.W / 2, this.x + this._vx * dt));
+    this.x = Math.max((w.left ?? 0) + this.W / 2, Math.min(w.width - this.W / 2, this.x + this._vx * dt));   // inside the page
     this.y += this._vy * dt;
     // Land on the first platform crossed from above (no tunnelling through thin cards).
     let land = null;
@@ -1703,20 +1705,20 @@ export class PixelActor extends Base {
   _write(w) {
     const gy = this.sprite.groundOffset ?? this.H;
     let L = snap(this.x - this.W / 2), T = snap(this.y - gy);
-    // Walking off (or in from) the page's right or bottom edge: keep the box inside the page and slide the
-    // body out of it instead, clipped, so the page never grows a scrollbar.
+    // Past the page's right or bottom edge (walking off it, held or falling past it, or just the few pixels of
+    // box below the feet of a character on the floor): keep the box inside the page and slide the body out of it
+    // instead, clipped. The page is measured with the characters on it, so a box poking out would make it bigger:
+    // a scrollbar, and at the next read a lower floor (or a wider page) that the character follows, read after read.
     let sx = 0, sy = 0;
-    if (this.offstage || this.activity === 'leaving' || this._step?.free) {
-      if (L + this.W > w.width) { sx = L + this.W - w.width; L -= sx; }
-      if (T + this.H > w.height) { sy = T + this.H - w.height; T -= sy; }
-    }
+    if (L + this.W > w.width) { sx = L + this.W - w.width; L -= sx; }
+    if (T + this.H > w.height) { sy = T + this.H - w.height; T -= sy; }
     const shift = sx || sy ? `${sx}px ${sy}px` : '';
-    if (shift !== (this._shift ?? '')) { this._body.style.translate = shift; this.style.overflow = shift ? 'clip' : ''; this._shift = shift; }
+    if (shift !== (this._shift ?? '')) { this._body.style.translate = shift; this._box.style.overflow = shift ? 'clip' : ''; this._shift = shift; }
     if (this._carry) {
       const c = this._carry, at = this._carryAt(c), k = Math.min(1, (performance.now() - c.t0) / 280);
       let x = at.x, y = at.y;
       if (k < 1) {
-        const e = 1 - (1 - k) ** 2, x0 = c.from.x - L, y0 = c.from.y - T;
+        const e = 1 - (1 - k) ** 2, x0 = c.from.x - L - sx, y0 = c.from.y - T - sy;   // in the body's coordinates
         x = x0 + (x - x0) * e; y = y0 + (y - y0) * e - Math.sin(Math.PI * k) * this.H * 0.3;
       }
       c.clone.style.transformOrigin = `${at.gx}px ${at.gy}px`;
@@ -1744,8 +1746,8 @@ export class PixelActor extends Base {
       const y = top ?? Math.min(...[beak?.y, head?.y].filter((v) => v != null), p.y);
       // Kept inside the page: a bubble poking past its right edge would add a scrollbar.
       const half = (this._bubbleW ??= this._bubble.offsetWidth) / 2;
-      const bx = Math.max(half - L, Math.min(w.width - L - half, p.x));
-      this._bubble.style.left = `${bx}px`; this._bubble.style.top = `${y - 4}px`;
+      const bx = Math.max(half - L, Math.min(w.width - L - half, p.x + sx));
+      this._bubble.style.left = `${bx}px`; this._bubble.style.top = `${y + sy - 4}px`;
     }
   }
 }

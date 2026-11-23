@@ -38,6 +38,11 @@ anything; each such change is listed under Upgrading.
 - **Packages:** both packages contain this changelog as `CHANGELOG.md`, so you can read what changed from
   `node_modules`. `@pixel-studio/core` listed the file but never included it, and `@pixel-studio/runtime` didn't
   list it.
+- **Runtime:** a `<pixel-stage>` character dropped at the edge of the page, where only the floor was below it, did
+  not settle: its own box reached a few pixels below the page, so each time the stage read the page again the floor
+  was lower, and the character sank with it while the page grew. Dropped past the right edge, it made the page wider
+  and stayed partly off screen. Characters now stay inside the page, and land between its left and right edges, also
+  when the stage itself starts further right than the page's left edge.
 
 ## [0.2.0-alpha.3] - 2026-11-22
 
