@@ -65,6 +65,10 @@ anything; each such change is listed under Upgrading.
 - **Website:** on the [examples](https://pixel-studio.sh/gallery/) page, the studio, playground, figure library and
   goose workbench are labelled "Tool" rather than "Demo", which made them read as mock-ups. The kind filter has a
   "Tool" button for them.
+- **Studio:** the export snippets name only animations the exported bundle holds. With animations or views left
+  out, `anim`, `hover-anim` and `click-anim` could name ones that were dropped; now they are the first three
+  side-view animations kept, the snippet follows the dialog's choices as you change them, and the inline snippet
+  gets a `click-anim` like the other.
 
 ## [0.2.0-alpha.3] - 2026-11-22
 

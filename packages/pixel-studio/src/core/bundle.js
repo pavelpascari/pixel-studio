@@ -24,8 +24,7 @@ const r2 = (v) => Math.round(v * 100) / 100;
  */
 export async function buildBundle(compiled, { resolutions = [16, 32, 64], overrides = {}, encode, views, animations: only, deltas = true } = {}) {
   if (typeof encode !== 'function') throw new Error('buildBundle needs an encode(w, h, rgba) function that returns an image URL (see encodePNG for Node)');
-  if (only != null) compiled = keepAnimations(compiled, selectAnimations(compiled, only));
-  compiled = keepViews(compiled, views);
+  compiled = narrow(compiled, { views, animations: only });
   const variants = [];
   let animations = null, top = null;
   const sheets = new Map();
@@ -74,6 +73,34 @@ export async function buildBundle(compiled, { resolutions = [16, 32, 64], overri
   }
   bundle.variants = variants;
   return bundle;
+}
+
+/** The compiled spec cut down to what a bundle with these options ships (see buildBundle `views` and `animations`). */
+function narrow(compiled, { views, animations } = {}) {
+  if (animations != null) compiled = keepAnimations(compiled, selectAnimations(compiled, animations));
+  return keepViews(compiled, views);
+}
+
+/**
+ * The names of the animations buildBundle(compiled, {views, animations}) ships, in bundle order, without rendering
+ * anything: for tools that describe a bundle before building it (the studio's embed snippet). Throws as buildBundle
+ * does on a name the character does not have.
+ */
+export function bundleAnimations(compiled, { views, animations } = {}) {
+  return Object.keys(narrow(compiled, { views, animations }).animations);
+}
+
+/**
+ * Which of a bundle's animations a `<pixel-sprite>` snippet names: `anim`, the first side-view animation, then
+ * `hover` and `click`, the next two, when there are that many. Views ("idle@front") and transitions ("waddle>idle")
+ * are never suggested: they play as part of other animations.
+ * @param {string[]} names the bundle's animation names, in bundle order
+ * @returns {{anim: string, hover?: string, click?: string}}
+ */
+export function embedAnimations(names) {
+  const own = names.filter((n) => !n.includes('@') && !n.includes('>'));
+  const [anim = names[0], hover, click] = own;
+  return { anim, ...(hover && { hover }), ...(click && { click }) };
 }
 
 /**

@@ -2,7 +2,7 @@ import {
   validate, compile, renderAnimation, renderSheet, resolveStyle, buildBundle, contactSheet, DETAIL_NAMES, pngBytes,
   resolveSpec, checkBounds,
 } from '../packages/pixel-studio/src/core/index.js';
-import { samplePose, sampleValue, frameTime, worldMatrices } from '../packages/pixel-studio/src/core/internal.js';
+import { samplePose, sampleValue, frameTime, worldMatrices, bundleAnimations, embedAnimations } from '../packages/pixel-studio/src/core/internal.js';
 import '../packages/runtime/src/pixel-sprite.js';
 import { initAgent } from './agent.js';
 
@@ -477,32 +477,44 @@ function mountWebview() {
 
 // ---------- export ----------
 // Like `pixel bundle`: the side view unless the views are asked for, and only the animations named (if any).
+function exportOptions() {
+  const animations = $('#export-anims').value.split(',').map((s) => s.trim()).filter(Boolean);
+  return { views: $('#export-views').checked ? undefined : [], animations: animations.length ? animations : undefined };
+}
 async function exportBundle() {
   const resolutions = $('#export-res').value.split(',').map(Number).filter((n) => n > 0);
-  const animations = $('#export-anims').value.split(',').map((s) => s.trim()).filter(Boolean);
   $('#export-error').textContent = '';
   try {
-    return await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet,
-      views: $('#export-views').checked ? undefined : [], animations: animations.length ? animations : undefined });
+    return await buildBundle(state.compiled, { resolutions, overrides: { ...globalOverrides(), flip: undefined }, encode: encodeSheet, ...exportOptions() });
   } catch (e) {
     $('#export-error').textContent = e.message;
     throw e;
   }
 }
-function openExport() {
-  if (!state.compiled) return;
-  const name = slug(state.compiled.name);
-  const anims = Object.keys(state.compiled.animations);
-  const skin = state.skin ? ` skin="${attr(state.skin)}"` : '';
+/** The <pixel-sprite> attributes for a bundle with these animations: only ones it holds (see embedAnimations). */
+function spriteAttrs(names, sep) {
+  const { anim, hover, click } = embedAnimations(names);
+  return `anim="${attr(anim)}" size="128"${state.skin ? ` skin="${attr(state.skin)}"` : ''}`
+    + `${hover ? `${sep}hover-anim="${attr(hover)}"` : ''}${click ? ` click-anim="${attr(click)}"` : ''}`;
+}
+/** The snippet for the bundle file, naming only animations the bundle the dialog would export holds. */
+function updateEmbed() {
+  let names;
+  try { names = bundleAnimations(state.compiled, exportOptions()); }
+  catch (e) { $('#export-error').textContent = e.message; return; }
+  $('#export-error').textContent = '';
   $('#embed-src').textContent =
 `<script type="module" src="/pixel-sprite.js"></script>
 
-<pixel-sprite src="/sprites/${name}.bundle.json"
-              anim="${attr(anims[0])}" size="128"${skin}${anims[1] ? `\n              hover-anim="${attr(anims[1])}"` : ''}${anims[2] ? ` click-anim="${attr(anims[2])}"` : ''}
-              alt="${state.compiled.name.replace(/"/g, '&quot;')}"></pixel-sprite>`;
+<pixel-sprite src="/sprites/${slug(state.compiled.name)}.bundle.json"
+              ${spriteAttrs(names, '\n              ')}
+              alt="${attr(state.compiled.name)}"></pixel-sprite>`;
+}
+function openExport() {
+  if (!state.compiled) return;
   $('#inline-size').textContent = '';
-  $('#export-error').textContent = '';
-  $('#export-views-row').hidden = !anims.some((n) => n.startsWith('turn@'));
+  $('#export-views-row').hidden = !Object.keys(state.compiled.animations).some((n) => n.startsWith('turn@'));
+  updateEmbed();
   $('#export-dialog').showModal();
 }
 
@@ -625,12 +637,13 @@ async function init() {
   $('#btn-copy-inline').onclick = async (e) => {
     e.preventDefault();
     const b = await exportBundle();
-    const anims = Object.keys(b.animations);
     const runtime = await (await fetch('../packages/runtime/src/pixel-sprite.js')).text();
-    const snippet = `<pixel-sprite anim="${attr(anims[0])}" size="128"${state.skin ? ` skin="${attr(state.skin)}"` : ''}${anims[1] ? ` hover-anim="${attr(anims[1])}"` : ''}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
+    const snippet = `<pixel-sprite ${spriteAttrs(Object.keys(b.animations), ' ')}>\n<script type="application/json">${safeJSON(b)}</script>\n</pixel-sprite>\n<script type="module">\n${runtime}\n</script>`;
     await navigator.clipboard.writeText(snippet);
     $('#inline-size').textContent = `copied · ${(snippet.length / 1024).toFixed(1)} KB`;
   };
+  $('#export-anims').addEventListener('input', updateEmbed);
+  $('#export-views').addEventListener('change', updateEmbed);
   $('#wv-hover').onchange = mountWebview;
   $('#wv-click').onchange = mountWebview;
 
