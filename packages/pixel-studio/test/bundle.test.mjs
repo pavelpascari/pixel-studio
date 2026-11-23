@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { compile, buildBundle, resolveSpec } from '../src/core/index.js';
-import { selectAnimations, pruneStates, STAGE_ROLES } from '../src/core/bundle.js';
+import { selectAnimations, pruneStates, STAGE_ROLES, bundleAnimations, embedAnimations } from '../src/core/bundle.js';
 import { checkBundle } from '../../runtime/src/pixel-sprite.js';
 
 const read = (dir, f) => JSON.parse(readFileSync(new URL(`../${dir}/${f}`, import.meta.url), 'utf8'));
@@ -104,6 +104,27 @@ test('buildBundle keeps every view and animation by default (the demos and stage
   const b = await buildBundle(await tiny(), { resolutions: [16], encode });
   assert.deepEqual(names(b), Object.keys((await tiny()).animations));
   assert.ok(b.animations['idle@front'] && b.animations['turn@front']);
+});
+
+test('bundleAnimations names what buildBundle ships, for every views and animations option', async () => {
+  const c = await tiny();
+  for (const opts of [{}, { views: [] }, { views: false }, { animations: ['idle', 'travel'] }, { views: [], animations: ['hop', 'fall'] }, { animations: 'stage' }]) {
+    assert.deepEqual(bundleAnimations(c, opts), names(await buildBundle(c, { resolutions: [16], encode, ...opts })), JSON.stringify(opts));
+  }
+  assert.throws(() => bundleAnimations(c, { animations: ['quack'] }), /no animation "quack"/);
+});
+
+test('embedAnimations: the snippet names side-view animations the bundle holds, never a view or a transition', async () => {
+  const c = await goose();
+  assert.deepEqual(embedAnimations(Object.keys(c.animations)), { anim: 'idle', hover: 'waddle', click: 'run' });
+  // `pixel bundle --anims hack`: one animation, so no hover or click (the goose's waddle and run are not there).
+  assert.deepEqual(embedAnimations(bundleAnimations(c, { animations: ['hack'] })), { anim: 'hack' });
+  // Two kept, with every view: the front and back versions and the transitions are not suggested.
+  const two = bundleAnimations(c, { animations: ['idle', 'waddle'] });
+  assert.ok(two.includes('idle@front') && two.includes('waddle>idle'));
+  assert.deepEqual(embedAnimations(two), { anim: 'idle', hover: 'waddle' });
+  // Only view animations (a hand-made list): fall back to the first name rather than naming nothing.
+  assert.deepEqual(embedAnimations(['idle@front', 'turn@front']), { anim: 'idle@front' });
 });
 
 // ---------- the CLI ----------

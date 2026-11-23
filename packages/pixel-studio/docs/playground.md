@@ -31,6 +31,10 @@ The full character format is [SPEC.md](SPEC.md).
 Unknown values never break the page: it falls back and says so under **Messages** (and in
 `playground.warnings`). Textures only show from detail 2 (about 21 px and up).
 
+The page's **studio** link follows these choices: it opens the character in the studio with the same look,
+animation (in its view) and size, `index.html?c=goose-root&skin=party&anim=waddle@front&res=64`. The studio does not
+read the payload, so its changes stay here.
+
 ## The payload
 
 `#spec=` holds a JSON object, written either way:

@@ -67,7 +67,7 @@
 <header>
   <a class="home" href="https://pixel-studio.sh/" data-site="/" title="Pixel Studio website"><span class="logo" aria-hidden="true"></span>Pixel Studio</a>
   <h1>Playground</h1>
-  <p>Colours, textures, style, skins and animations, all kept in the link. <a href="../packages/pixel-studio/docs/playground.md">Payload guide</a> · <a href="play.schema.json">schema</a> · <a href="../packages/pixel-studio/docs/SPEC.md">full spec</a> · <a href="index.html">studio</a> · <a href="https://pixel-studio.sh/docs/" data-site="/docs/">docs</a> · <a href="https://pixel-studio.sh/changelog/" data-site="/changelog/">what's new</a></p>
+  <p>Colours, textures, style, skins and animations, all kept in the link. <a href="../packages/pixel-studio/docs/playground.md">Payload guide</a> · <a href="play.schema.json">schema</a> · <a href="../packages/pixel-studio/docs/SPEC.md">full spec</a> · <a href="index.html" id="studioLink">studio</a> · <a href="https://pixel-studio.sh/docs/" data-site="/docs/">docs</a> · <a href="https://pixel-studio.sh/changelog/" data-site="/changelog/">what's new</a></p>
 </header>
 <main>
   <section id="stageCol">
@@ -206,8 +206,24 @@ async function link({ readable = false } = {}) {
   if (!Object.keys(S.spec).length) return base;
   return `${base}#spec=${readable ? encodeURIComponent(JSON.stringify(S.spec)) : await encodeSpec(S.spec)}`;
 }
+/**
+ * The studio link opens the character picked here, in the studio's simple view (it reads ?c=, &skin=, &anim= and
+ * &res=; anim is the name with its view, "waddle@front"). The studio cannot take a payload: a character written (or
+ * extended) in the payload has no name the studio knows, so then the link opens the studio as it is.
+ */
+function studioLink() {
+  const a = $('#studioLink');
+  if (!compiled || isFull(S.spec) || S.spec.extends) { a.href = 'index.html'; a.title = 'Open the studio'; return; }
+  const p = new URLSearchParams({ c: S.c });
+  if (S.skin) p.set('skin', S.skin);
+  p.set('anim', animName());
+  p.set('res', S.res);
+  a.href = `index.html?${p}`;
+  a.title = `Open ${S.c} in the studio${Object.keys(S.spec).length ? ' (without the payload\'s changes)' : ''}`;
+}
 let persistN = 0;
 async function persist() {
+  studioLink();
   const n = ++persistN, url = await link();
   if (n === persistN) history.replaceState(null, '', url);
   $('#linkLen').textContent = `${url.length} characters`;

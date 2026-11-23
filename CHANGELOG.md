@@ -50,6 +50,26 @@ anything; each such change is listed under Upgrading.
   and stayed partly off screen. Characters now stay inside the page, and land between its left and right edges, also
   when the stage itself starts further right than the page's left edge.
 
+## Site update - 2026-11-23
+
+### Added
+- **Studio:** Moss is among the studio's examples (`/apps/studio/?c=moss`), like the other characters in the
+  playground.
+
+### Changed
+- **Studio:** the playground's "studio" link opens the character picked in the playground, with its look, animation
+  (in the view picked) and size, and follows the choices as they change. The payload's changes stay in the
+  playground: the studio does not read them.
+
+### Fixed
+- **Website:** on the [examples](https://pixel-studio.sh/gallery/) page, the studio, playground, figure library and
+  goose workbench are labelled "Tool" rather than "Demo", which made them read as mock-ups. The kind filter has a
+  "Tool" button for them.
+- **Studio:** the export snippets name only animations the exported bundle holds. With animations or views left
+  out, `anim`, `hover-anim` and `click-anim` could name ones that were dropped; now they are the first three
+  side-view animations kept, the snippet follows the dialog's choices as you change them, and the inline snippet
+  gets a `click-anim` like the other.
+
 ## [0.2.0-alpha.3] - 2026-11-22
 
 ### Upgrading
