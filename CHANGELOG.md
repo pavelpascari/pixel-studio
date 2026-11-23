@@ -34,6 +34,11 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+### Fixed
+- **Packages:** both packages contain this changelog as `CHANGELOG.md`, so you can read what changed from
+  `node_modules`. `@pixel-studio/core` listed the file but never included it, and `@pixel-studio/runtime` didn't
+  list it.
+
 ## [0.2.0-alpha.3] - 2026-11-22
 
 ### Upgrading

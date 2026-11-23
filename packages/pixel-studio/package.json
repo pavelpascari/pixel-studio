@@ -44,7 +44,9 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "prepack": "cp ../../CHANGELOG.md CHANGELOG.md",
+    "postpack": "rm -f CHANGELOG.md"
   },
   "dependencies": {
     "@pixel-studio/runtime": "0.2.0-alpha.3"

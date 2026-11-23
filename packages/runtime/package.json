@@ -25,11 +25,14 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "src"
+    "src",
+    "CHANGELOG.md"
   ],
   "sideEffects": true,
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "prepack": "cp ../../CHANGELOG.md CHANGELOG.md",
+    "postpack": "rm -f CHANGELOG.md"
   },
   "publishConfig": {
     "access": "public"
