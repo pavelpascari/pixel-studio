@@ -15,6 +15,11 @@
 //                                                    side view only unless --views; --anims keeps only those
 //                                                    animations (stage: what <pixel-stage> uses);
 //                                                    --external writes the sheets as PNG files beside it
+//   pixel import   <sheet.json|sheet.png|folder> [--format aseprite|grid|frames] [--out file.bundle.json]
+//                  [--frame 32x32] [--anims idle:4,walk:8] [--fps 10|walk=12] [--loop jump=false]
+//                  [--speed walk=40] [--speed-y climb=20] [--ground 30] [--name fox] [--external] [--check]
+//                                                    a hand-drawn sheet (Aseprite JSON, a PNG grid, or a folder of
+//                                                    frame PNGs) as a web bundle; --check only reports
 //   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
 //   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]
 //                                                    world positions of part pivots (or of a point on a part)
@@ -27,21 +32,22 @@
 //   pixel brief                                      print the agent brief (spec format docs)
 //   pixel help                                       this text
 //
-//   --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures and motion models first
+//   --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures, motion models and importers first
 //   errors print as one line and exit 1; PIXEL_DEBUG=1 adds the stack trace
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { basename, dirname, join, resolve, relative, sep, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   validate, compile, renderSheet, renderAnimation, renderFrame, resolveStyle,
   contactSheet, frameToAscii, buildBundle, exportSheet, usePlugin, registeredPlugins, DETAIL_NAMES, resolveSpec, checkBounds, MAX_RES,
+  importSheet, bundleImport,
 } from '../src/core/index.js';
 import { samplePose, worldMatrices } from '../src/core/internal.js';
-import { encodePNG } from '../src/node/png.js';
+import { encodePNG, decodePNG } from '../src/node/png.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const BOOLEAN_FLAGS = new Set(['flip', 'external']); // never take the next argument as their value
+const BOOLEAN_FLAGS = new Set(['flip', 'external', 'check']); // never take the next argument as their value
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -141,6 +147,50 @@ function animOrExit(c, name) {
 }
 const stem = (p) => basename(p).replace(/\.json$/, '');
 const pngDataURL = (w, h, rgba) => 'data:image/png;base64,' + encodePNG(w, h, rgba).toString('base64');
+
+/** Write a bundle's data-URL sheets as PNG files beside `out` and point the bundle at them (--external). */
+function externalSheets(bundle, out) {
+  const name = basename(out).replace(/\.bundle\.json$|\.json$/, '');
+  for (const v of bundle.variants) for (const key of ['image', 'overlay']) {
+    if (typeof v[key] !== 'string' || !v[key].startsWith('data:image/png;base64,')) continue;
+    // Skin names come from the spec: keep them to a safe slug so the file stays beside the bundle.
+    const slug = (x) => String(x).replace(/[^A-Za-z0-9_-]+/g, '_');
+    const file = `${slug(name)}.${Number(v.res)}${v.skin ? `.${slug(v.skin)}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
+    const dir = dirname(resolve(out)), target = resolve(dir, file);
+    if (basename(file) !== file || dirname(target) !== dir) fail(`--external: refusing to write ${file} outside ${dir}`);
+    writeFileSync(target, Buffer.from(v[key].slice(22), 'base64'));
+    v[key] = file;
+  }
+}
+
+/**
+ * A per-animation flag: "10" → 10 for all; "walk=12,idle=6" → {walk: 12, idle: 6}; "8,walk=12" → {'*': 8, walk: 12}.
+ * `parse` turns one value into what the option wants (or calls fail).
+ */
+function perAnim(v, flag, parse) {
+  if (v == null) return undefined;
+  if (v === true) fail(`--${flag} needs a value, e.g. --${flag} walk=${flag === 'loop' ? 'false' : '12'}`);
+  const out = {};
+  for (const item of String(v).split(',').map((s) => s.trim()).filter(Boolean)) {
+    const eq = item.indexOf('=');
+    if (eq < 0) out['*'] = parse(item); else out[item.slice(0, eq).trim()] = parse(item.slice(eq + 1).trim());
+  }
+  const keys = Object.keys(out);
+  return keys.length === 1 && keys[0] === '*' ? out['*'] : out;
+}
+const numberOf = (flag) => (s) => { const n = Number(s); if (s === '' || !Number.isFinite(n) || n < 0) fail(`--${flag} takes numbers (got "${s}")`); return n; };
+const boolOf = (flag) => (s) => { if (s !== 'true' && s !== 'false') fail(`--${flag} takes true or false (got "${s}")`); return s === 'true'; };
+
+/** A file ({name, bytes}) or a folder ({name, entries}: every file inside, as paths relative to it). */
+function importSource(path) {
+  let st;
+  try { st = statSync(path); } catch { fail(`cannot read ${path}: no such file or folder`); }
+  if (!st.isDirectory()) return { name: basename(path), bytes: readFileSync(path), dir: dirname(resolve(path)) };
+  const root = resolve(path), entries = [];
+  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { if (e.name.startsWith('.')) continue; const p = join(d, e.name); if (e.isDirectory()) walk(p); else entries.push(relative(root, p).split(sep).join('/')); } };
+  walk(root);
+  return { name: basename(root), entries: entries.sort(), dir: root };
+}
 
 // Anything that throws becomes one line on stderr and exit code 1 (PIXEL_DEBUG=1 shows the stack).
 // A closed pipe (`pixel ascii … | head`) is not an error, and the handler must never run twice: writing the
@@ -265,22 +315,56 @@ switch (cmd) {
     const out = args.out || `${stem(args._[0])}.bundle.json`;
     mkdirSync(dirname(resolve(out)), { recursive: true });
     // --external: sheets as PNG files next to the bundle, so a page downloads only the one it shows.
-    if (args.external) {
-      const name = basename(out).replace(/\.bundle\.json$|\.json$/, '');
-      for (const v of bundle.variants) for (const key of ['image', 'overlay']) {
-        if (typeof v[key] !== 'string' || !v[key].startsWith('data:image/png;base64,')) continue;
-        // Skin names come from the spec: keep them to a safe slug so the file stays beside the bundle.
-        const slug = (x) => String(x).replace(/[^A-Za-z0-9_-]+/g, '_');
-        const file = `${slug(name)}.${Number(v.res)}${v.skin ? `.${slug(v.skin)}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
-        const dir = dirname(resolve(out)), target = resolve(dir, file);
-        if (basename(file) !== file || dirname(target) !== dir) fail(`--external: refusing to write ${file} outside ${dir}`);
-        writeFileSync(target, Buffer.from(v[key].slice(22), 'base64'));
-        v[key] = file;
-      }
-    }
+    if (args.external) externalSheets(bundle, out);
     const json = JSON.stringify(bundle);
     writeFileSync(out, json);
     console.log(`wrote ${out} (${(json.length / 1024).toFixed(1)} KB, variants: ${bundle.variants.map((v) => v.skin ? `${v.res} (${v.skin})` : v.res).join(', ')})`);
+    break;
+  }
+  case 'import': {
+    if (!args._[0]) fail('missing <sheet.json|sheet.png|folder>');
+    const src = importSource(args._[0]);
+    const imported = await importSheet(src, {
+      format: args.format === true ? fail('--format needs a value: aseprite, grid or frames') : args.format,
+      // Files the sheet names (an Aseprite sheet's PNG, a folder's frames) are read from beside it or inside it.
+      readFile: (rel) => {
+        // Aseprite may write the sheet's absolute path: look for that file beside the JSON instead.
+        if (isAbsolute(rel)) rel = basename(rel);
+        const target = resolve(src.dir, rel);
+        if (relative(src.dir, target).startsWith('..')) throw new Error(`refusing to read ${rel}: outside ${src.dir}`);
+        try { return readFileSync(target); } catch (e) { throw new Error(`cannot read ${rel} (named by ${src.name}): ${e.code === 'ENOENT' ? 'no such file' : e.message}`); }
+      },
+      decodePNG: (bytes) => { try { return decodePNG(bytes); } catch (e) { throw new Error(`${src.name}: ${e.message}`); } },
+      options: { frame: args.frame, anims: args.anims },
+    });
+    const { bundle, report } = await bundleImport(imported, {
+      encode: pngDataURL,
+      name: typeof args.name === 'string' ? args.name : undefined,
+      fps: perAnim(args.fps, 'fps', numberOf('fps')),
+      loop: perAnim(args.loop, 'loop', boolOf('loop')),
+      speed: perAnim(args.speed, 'speed', numberOf('speed')),
+      speedY: perAnim(args['speed-y'], 'speed-y', numberOf('speed-y')),
+      ground: numFlag(args, 'ground'),
+    });
+    console.log(`read ${src.name} (${imported.format}): ${report.animations.length} animation${report.animations.length > 1 ? 's' : ''}, ${report.frameW}x${report.frameH} frames, sheet ${report.width}x${report.height}`);
+    for (const a of report.animations) {
+      const timing = a.durations ? `${a.fps} fps with holds` : `${a.fps} fps`;
+      const extras = [a.loop ? 'loops' : 'once', a.speed && `speed ${a.speed} px/s`, a.speedY && `climbs ${a.speedY} px/s`, a.events && `${a.events.length} events`].filter(Boolean);
+      console.log(`  ${a.name.padEnd(10)} ${String(a.frames).padStart(3)} frames  ${timing}, ${extras.join(', ')}`);
+    }
+    console.log(`  ground    row ${report.ground} (${{ option: 'from --ground', file: 'from the file', pixels: "the idle's lowest pixel; --ground to change" }[report.groundFrom]})`);
+    if (bundle.points) console.log(`  points    ${Object.keys(bundle.points).join(', ')}`);
+    const roles = Object.entries(report.roles).map(([r, n]) => (r === n ? r : `${r}=${n}`));
+    console.log(`  stage     ${roles.length ? roles.join(' ') : 'no animation <pixel-stage> looks for'}`);
+    for (const n of report.notes) console.error(`note: ${n}`);
+    for (const h of report.hints) console.error(`hint: ${h}`);
+    if (args.check) break;
+    const out = typeof args.out === 'string' ? args.out : `${src.name.replace(/\.(json|png)$/i, '')}.bundle.json`;
+    mkdirSync(dirname(resolve(out)), { recursive: true });
+    if (args.external) externalSheets(bundle, out);
+    const json = JSON.stringify(bundle);
+    writeFileSync(out, json);
+    console.log(`wrote ${out} (${(json.length / 1024).toFixed(1)} KB)`);
     break;
   }
   case 'resolve': {

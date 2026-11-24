@@ -29,7 +29,7 @@ node bin/pixel.mjs <command> [args]
 - Flags can be written `--name value`, `--name=value`, or `--name` alone (which means `true`). A value is taken from the next argument only if that argument does not start with `--`.
 - `--flip` is a pure switch and never takes the next argument, so `render --flip examples/fox.json` works. `--flip=false` turns it off.
 - `--skin <name>` makes `preview`, `ascii`, `render`, `export` and `where` use one of the spec's `skins` ([SPEC.md](SPEC.md)) instead of the default look. A name the spec does not define prints `error   unknown skin "<name>" (skins: <names or none>)` and exits with 1. `bundle` ignores `--skin` because it always bakes every skin; `validate` and `resolve` ignore it too.
-- `--plugin ./a.mjs[,./b.mjs]` loads plug-in modules before the command runs: their shapes, textures and motion models become valid in specs, and `brief` lists them for agents. A plug-in default-exports `setup({ registerShape, registerTexture, registerMotion })`; see [api.md](api.md#plug-ins) and `examples/plugins/extras.mjs`. A plug-in that fails to load prints `error: --plugin <path>: <message>` and exits with 1.
+- `--plugin ./a.mjs[,./b.mjs]` loads plug-in modules before the command runs: their shapes, textures and motion models become valid in specs, their importers become `import` formats, and `brief` lists them for agents. A plug-in default-exports `setup({ registerShape, registerTexture, registerMotion, registerImporter })`; see [api.md](api.md#plug-ins) and `examples/plugins/extras.mjs`. A plug-in that fails to load prints `error: --plugin <path>: <message>` and exits with 1.
 - Unknown flags are ignored.
 
 ## Exit codes and output streams
@@ -347,6 +347,96 @@ $ node bin/pixel.mjs bundle examples/fox.json --res abc
 error: --res must be whole numbers 1..512, e.g. 16,32,64 (got "abc")
 ```
 
+## import
+
+```
+node bin/pixel.mjs import <sheet.json|sheet.png|folder> [--format aseprite|grid|frames] [--out file.bundle.json]
+                          [--frame 32x32] [--anims idle:4,walk:8] [--fps 10|walk=12] [--loop jump=false]
+                          [--speed walk=40] [--speed-y climb=20] [--ground 30] [--name Fox] [--external] [--check]
+```
+
+Turns a hand-drawn sprite sheet into a `pixel-sprite/1` bundle, so [`<pixel-sprite>`](runtime.md) and
+[`<pixel-stage>`](stage.md) play it like a generated character ([`importSheet`](api.md#importsheet) and
+[`bundleImport`](api.md#bundleimport) in the API). The format is detected from what you give it:
+
+- **`aseprite`**, a `.json` sheet in Aseprite's hash or array layout, as written by Aseprite's *Export Sprite Sheet*
+  (with *JSON Data*), LibreSprite, TexturePacker or [`pixel export`](#export). The PNG it names in `meta.image` is read
+  from beside the JSON. Tags become animations (`reverse` and `pingpong` directions are played out; a tag with
+  `repeat` plays once), frame durations become the frame rate, or holds when they differ, and slices become
+  attachment points: a 1×1 slice is the point, a larger one its pivot or else its centre. Trimmed and rotated frames
+  are restored to their full size. A sheet without tags becomes one animation, `idle`. A sheet written by
+  `pixel export` comes back as the bundle `pixel bundle --res <res>` makes, with its speeds, events and foot line.
+- **`grid`**, a `.png` laid out as a grid with one animation per row. `--frame 32x32` (or `--frame 32` for square frames) gives the
+  cell size, and `--anims idle:4,walk:8` names the rows from the top, with each one's frame count. Leave out a count
+  (`--anims idle,walk`) to use the row up to its last cell that is not empty. Without `--frame`, frames are taken
+  to be square, as tall as the sheet divided by the number of rows. Without `--anims`, the rows are named `row1`,
+  `row2`, …, or `idle` when there is one row. This covers Piskel's PNG export and sheets drawn in any editor.
+- **`frames`**, a folder of PNGs, one per frame: `walk_0.png`, `walk_1.png`, … (also `walk-1`, `walk 1`, `walk1`) or
+  `walk/0.png`, `walk/1.png`, …. Frames are ordered by their number and grouped into animations by name or by
+  subfolder. A PNG without a number is a one-frame animation. Frames of different sizes are placed bottom-centre in
+  frames the size of the largest.
+
+All frames share one size in the bundle, and one unit is one frame pixel, so `size` is `[frameW, frameH]` and
+speeds are in frame pixels per second. A drawing doesn't say how fast a character moves or where its feet are,
+so the command works them out or takes them from flags:
+
+| Flag | Default | Description |
+|---|---|---|
+| `--format` | detected | `aseprite`, `grid`, `frames`, or a [plug-in importer](api.md#plug-ins). Needed only when detection guesses wrong. |
+| `--frame` | square frames | `grid` only: the cell size, `WIDTHxHEIGHT` or one number for square cells. |
+| `--anims` | `row1`, `row2`, … | `grid` only: the animation in each row, from the top, as `name` or `name:frames`. Rows below the last one named are left out, with a note. |
+| `--fps` | from the file, else `10` | Frames per second: one number for every animation (`--fps 8`), per animation (`--fps walk=12,idle=6`), or both (`--fps 8,walk=12`). Setting it drops the file's holds for that animation. |
+| `--loop` | `true` (a tag with `repeat`: `false`) | Whether an animation loops, per animation: `--loop jump=false,land=false`. |
+| `--speed` | none | Walking speed in frame px per second, per animation: `--speed walk=40,run=90`. A stage moves the character at this speed, so the feet don't slide. Measure it from your drawing as one stride's length in px × fps ÷ frames per stride. |
+| `--speed-y` | none | Climbing speed in frame px per second (for `climb`). |
+| `--ground` | from the pixels | The foot line, in px from the top of the frame. By default it is the line below the lowest opaque pixel in the first frame of `idle` (or of the first animation). |
+| `--name` | from the file | The bundle's `name`. |
+| `--external` | off | Write the sheet as a PNG file next to the bundle (`<name>.<frame height>.png`) instead of embedding it, as for [`bundle`](#bundle). |
+| `--check` | off | Only print the report; write nothing. |
+| `--out` | `<input name>.bundle.json` in the current directory | Output file. Parent directories are created. |
+
+The report says what was read, how each animation plays, where the foot line came from, the attachment points, and
+which animation `<pixel-stage>` plays for each role (`run=trot` means the stage runs with `trot`). On stderr,
+`note:` lines say what the importer assumed. `hint:` lines say what the bundle lacks for `<pixel-stage>`: a speed for
+the animation it walks or runs with, an `idle`, or attachment points.
+
+A sheet from [`export`](#export) imported back, then the same PNG read as a plain grid (its first three rows):
+
+```
+$ node bin/pixel.mjs export examples/fox.json --out $OUT/export
+$ node bin/pixel.mjs import $OUT/export/fox.32.json
+read fox.32.json (aseprite): 9 animations, 32x32 frames, sheet 384x288
+  idle        12 frames  8 fps, loops
+  walk         8 frames  10 fps, loops, speed 16.61 px/s, 4 events
+  trot         8 frames  16 fps, loops, speed 41.74 px/s, 4 events
+  gallop       6 frames  24 fps, loops, speed 162.91 px/s, 4 events
+  leap         8 frames  12 fps, once, 2 events
+  jump        10 frames  10 fps, once, 2 events
+  fall         6 frames  10 fps, loops
+  duck         8 frames  6 fps, loops
+  peek        12 frames  6 fps, loops
+  ground    row 28.96 (from the file)
+  points    nose, head, tail
+  stage     idle walk run=trot jump fall duck peek
+wrote fox.32.bundle.json (14.0 KB)
+
+$ node bin/pixel.mjs import $OUT/export/fox.32.png --frame 32 --anims idle,walk:8,trot --speed walk=16,trot=42 --check
+read fox.32.png (grid): 3 animations, 32x32 frames, sheet 384x96
+  idle        12 frames  10 fps, loops
+  walk         8 frames  10 fps, loops, speed 16 px/s
+  trot         8 frames  10 fps, loops, speed 42 px/s
+  ground    row 31 (the idle's lowest pixel; --ground to change)
+  stage     idle walk run=trot
+note: the sheet has 9 rows; imported the first 3
+hint: no attachment points (Aseprite slices named e.g. "head"): hats and props cannot follow the character
+```
+
+The grid's foot line is the line under the paws' lowest pixel (row 31). The generated fox's own foot line, read from the JSON, is about two pixels higher, so its paws sink a little into the floor. `--ground` sets either one.
+
+Errors print as one line and exit with 1: an unreadable file, a sheet whose PNG is missing, a frame size that does
+not divide the sheet when none was given, a count larger than the row, a flag value that is not a number (`--fps
+takes numbers (got "fast")`), or a per-animation flag naming an animation the sheet does not have.
+
 ## resolve
 
 ```
@@ -519,6 +609,11 @@ Pixel Studio CLI — the agent's hands and eyes.
                                                    side view only unless --views; --anims keeps only those
                                                    animations (stage: what <pixel-stage> uses);
                                                    --external writes the sheets as PNG files beside it
+  pixel import   <sheet.json|sheet.png|folder> [--format aseprite|grid|frames] [--out file.bundle.json]
+                 [--frame 32x32] [--anims idle:4,walk:8] [--fps 10|walk=12] [--loop jump=false]
+                 [--speed walk=40] [--speed-y climb=20] [--ground 30] [--name fox] [--external] [--check]
+                                                   a hand-drawn sheet (Aseprite JSON, a PNG grid, or a folder of
+                                                   frame PNGs) as a web bundle; --check only reports
   pixel resolve  <variant.json> [--out full.json]   print a variant ("extends") merged with its base
   pixel where    <spec.json> [--anim a] [--frame f] [--part id --point x,y]
                                                    world positions of part pivots (or of a point on a part)
@@ -531,7 +626,7 @@ Pixel Studio CLI — the agent's hands and eyes.
   pixel brief                                      print the agent brief (spec format docs)
   pixel help                                       this text
 
-  --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures and motion models first
+  --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures, motion models and importers first
   errors print as one line and exit 1; PIXEL_DEBUG=1 adds the stack trace
 ```
 
