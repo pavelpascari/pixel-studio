@@ -34,7 +34,7 @@
 //
 //   --plugin ./a.mjs,./b.mjs (any command): register plug-in shapes, textures, motion models and importers first
 //   errors print as one line and exit 1; PIXEL_DEBUG=1 adds the stack trace
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, resolve, relative, sep, isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -187,7 +187,7 @@ function importSource(path) {
   try { st = statSync(path); } catch { fail(`cannot read ${path}: no such file or folder`); }
   if (!st.isDirectory()) return { name: basename(path), bytes: readFileSync(path), dir: dirname(resolve(path)) };
   const root = resolve(path), entries = [];
-  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { if (e.name.startsWith('.')) continue; const p = join(d, e.name); if (e.isDirectory()) walk(p); else entries.push(relative(root, p).split(sep).join('/')); } };
+  const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { if (e.name.startsWith('.')) continue; const p = join(d, e.name); if (e.isSymbolicLink()) continue; if (e.isDirectory()) walk(p); else if (e.isFile()) entries.push(relative(root, p).split(sep).join('/')); } };
   walk(root);
   return { name: basename(root), entries: entries.sort(), dir: root };
 }
@@ -330,9 +330,12 @@ switch (cmd) {
       readFile: (rel) => {
         // Aseprite may write the sheet's absolute path: look for that file beside the JSON instead.
         if (isAbsolute(rel)) rel = basename(rel);
-        const target = resolve(src.dir, rel);
-        if (relative(src.dir, target).startsWith('..')) throw new Error(`refusing to read ${rel}: outside ${src.dir}`);
-        try { return readFileSync(target); } catch (e) { throw new Error(`cannot read ${rel} (named by ${src.name}): ${e.code === 'ENOENT' ? 'no such file' : e.message}`); }
+        // Only files inside the sheet's folder, also after following symlinks: a sheet cannot name ../../secret.
+        let target;
+        try { target = realpathSync(resolve(src.dir, rel)); } catch (e) { throw new Error(`cannot read ${rel} (named by ${src.name}): ${e.code === 'ENOENT' ? 'no such file' : e.message}`); }
+        const inside = relative(realpathSync(src.dir), target);
+        if (!inside || inside.startsWith('..') || isAbsolute(inside)) throw new Error(`refusing to read ${rel}: outside ${src.dir}`);
+        return readFileSync(target);
       },
       decodePNG: (bytes) => { try { return decodePNG(bytes); } catch (e) { throw new Error(`${src.name}: ${e.message}`); } },
       options: { frame: args.frame, anims: args.anims },

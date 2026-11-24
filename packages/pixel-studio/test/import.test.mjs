@@ -1,7 +1,7 @@
 // Importing hand-drawn sheets: the PNG decoder, the aseprite / grid / frames importers, bundleImport and `pixel import`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, existsSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
@@ -311,6 +311,16 @@ test('pixel import: aseprite and grid sheets, --check, --external and flag error
     const bad = pixel('import', join(dir, 'hero.json'), '--fps', 'walk=fast');
     assert.equal(bad.status, 1);
     assert.match(bad.stderr, /--fps takes numbers \(got "fast"\)/);
+    // A sheet may only name files inside its folder, also through a symlink.
+    mkdirSync(join(dir, 'art'));
+    writeFileSync(join(dir, 'secret.png'), files['sheet.png']);
+    symlinkSync(join(dir, 'secret.png'), join(dir, 'art', 'link.png'));
+    for (const image of ['../secret.png', 'link.png']) {
+      writeFileSync(join(dir, 'art', 'evil.json'), JSON.stringify({ ...json, meta: { ...json.meta, image } }));
+      const evil = pixel('import', join(dir, 'art', 'evil.json'), '--check');
+      assert.equal(evil.status, 1, image);
+      assert.match(evil.stderr, /refusing to read/, image);
+    }
     const missing = pixel('import', join(dir, 'nope.json'));
     assert.match(missing.stderr, /no such file or folder/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
