@@ -140,6 +140,8 @@ function animOrExit(c, name) {
   return key;
 }
 const stem = (p) => basename(p).replace(/\.json$/, '');
+// Skin names come from the spec: keep them to a safe slug in file names, so a file stays where it was asked to go.
+const slug = (x) => String(x).replace(/[^A-Za-z0-9_-]+/g, '_');
 const pngDataURL = (w, h, rgba) => 'data:image/png;base64,' + encodePNG(w, h, rgba).toString('base64');
 
 // Anything that throws becomes one line on stderr and exit code 1 (PIXEL_DEBUG=1 shows the stack).
@@ -239,7 +241,7 @@ switch (cmd) {
     if ((args.format ?? 'aseprite') !== 'aseprite') { console.error('error   --format: only "aseprite" (also read by Phaser and PixiJS)'); process.exit(1); }
     const dir = args.out || '.';
     mkdirSync(dir, { recursive: true });
-    const base = `${stem(args._[0])}${args.skin ? `.${args.skin}` : ''}.${res}`;
+    const base = `${stem(args._[0])}${args.skin ? `.${slug(args.skin)}` : ''}.${res}`;
     const ex = exportSheet(c, res, { image: `${base}.png`, overrides: overridesFrom(args) });
     writeFileSync(join(dir, `${base}.png`), encodePNG(ex.width, ex.height, ex.rgba));
     writeFileSync(join(dir, `${base}.json`), JSON.stringify(ex.json, null, 2));
@@ -269,8 +271,6 @@ switch (cmd) {
       const name = basename(out).replace(/\.bundle\.json$|\.json$/, '');
       for (const v of bundle.variants) for (const key of ['image', 'overlay']) {
         if (typeof v[key] !== 'string' || !v[key].startsWith('data:image/png;base64,')) continue;
-        // Skin names come from the spec: keep them to a safe slug so the file stays beside the bundle.
-        const slug = (x) => String(x).replace(/[^A-Za-z0-9_-]+/g, '_');
         const file = `${slug(name)}.${Number(v.res)}${v.skin ? `.${slug(v.skin)}` : ''}${key === 'overlay' ? '.overlay' : ''}.png`;
         const dir = dirname(resolve(out)), target = resolve(dir, file);
         if (basename(file) !== file || dirname(target) !== dir) fail(`--external: refusing to write ${file} outside ${dir}`);
