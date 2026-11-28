@@ -49,6 +49,11 @@ anything; each such change is listed under Upgrading.
   wrote `goose.red team.32.png`, and a skin name with `../` in it could write outside `--out`. Skin names in file
   names are now made safe the same way `pixel bundle --external` does it: `goose.red_team.32.png`.
 
+## Site update - 2026-11-28
+
+### Added
+- **Website:** the footer carries the "Made by P/P" rubber stamp, which links to [P/P Studio](https://ppascari.com).
+
 ## [0.2.0-alpha.4] - 2026-11-23
 
 ### Changed
