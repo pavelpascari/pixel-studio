@@ -82,6 +82,8 @@ export default defineConfig({
       linksValidator: { exclude: ['/changelog', '/changelog/', '/changelog/#*', '/changelog/rss.xml'] },
       // from LICENSE
       footer: { note: 'Released under the MIT licence.' },
+      // The footer with the "Made by P/P" rubber stamp beside it (the built-in footer, wrapped).
+      components: { Footer: './src/components/Footer.astro' },
       // A default social image (1200×630) in public/:
       // ogImage: '/og.png',
     }),

@@ -1,0 +1,119 @@
+---
+// The site footer (`components.Footer`): astro-project-site's own footer, with the "Made by P/P" rubber stamp beside
+// it. The stamp is the one in the P/P Studio site's footer (pp-studio, ContactFooter.astro), in the same stamp red,
+// and links there. The red passes the 3:1 non-text contrast on both footers (3.99:1 dark, 3.62:1 light); its
+// lettering is a logotype.
+import { SiteFooter } from 'astro-project-site/components';
+
+interface Props {
+  variant?: 'page' | 'docs';
+  navLabel?: string;
+}
+const { variant = 'page', navLabel } = Astro.props;
+---
+
+<div class="pp-footer" data-variant={variant}>
+  <div class="row">
+    <div class="main"><SiteFooter variant={variant} navLabel={navLabel} /></div>
+    <a class="stamp" href="https://ppascari.com" aria-label="Made by P/P Studio, Berlin (a rubber stamp)">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs><path id="pp-stamp-ring" d="M60 60m-43 0a43 43 0 1 1 86 0a43 43 0 1 1 -86 0"></path></defs>
+        <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="290 6 40 4"></circle>
+        <circle cx="60" cy="60" r="33" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+        <text font-family="IBM Plex Mono, ui-monospace, monospace" font-size="10.5" letter-spacing="2.6" fill="currentColor" font-weight="600">
+          <textPath href="#pp-stamp-ring">MADE BY P/P · BERLIN · MADE BY P/P ·</textPath>
+        </text>
+        <path
+          fill="currentColor"
+          transform="rotate(12 60 60) translate(45 41) scale(1.25)"
+          d="M12 27.2c-1.6-.4-2.6-2.9-2.8-6.1-.2-2.3-.6-3.9-1.9-5.8L1.6 6.9c-.5-.8.3-1.7 1.1-1.2l5.6 3.2c.7.4 1.4-.1 1.4-.8L10.6 1.6c.1-.9 1.4-1 1.6-.1l1.4 6.5c.2.7.9 1 1.5.6l5.6-3.6c.8-.5 1.7.4 1.2 1.2l-5.4 8.7c-1.2 1.8-1.6 3.5-1.8 5.9-.2 3.6-1.3 6.3-2.7 6.4z"
+        ></path>
+      </svg>
+    </a>
+  </div>
+</div>
+
+<style>
+  /* The band (border and surface) moves from the built-in footer to this wrapper, so the stamp sits inside it. */
+  .pp-footer {
+    margin-top: auto;
+  }
+  .pp-footer[data-variant='page'] {
+    border-top: 1px solid var(--site-border);
+    background: var(--site-surface);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--site-space);
+  }
+  [data-variant='page'] .row {
+    max-width: var(--site-max-width);
+    margin-inline: auto;
+    padding-inline-end: var(--site-space);
+  }
+  .main {
+    flex: 1;
+    min-width: 0;
+  }
+  .pp-footer .row :global(.site-footer) {
+    margin-top: 0;
+    border-top: 0;
+    background: none;
+  }
+
+  .stamp {
+    --stamp: #d94b32;
+    flex: none;
+    display: block;
+    width: 112px;
+    height: 112px;
+    color: var(--stamp);
+    border-radius: 50%;
+  }
+  [data-variant='docs'] .stamp {
+    width: 88px;
+    height: 88px;
+    margin-top: 3rem; /* level with the docs footer, which starts 3rem down */
+  }
+  .stamp svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-9deg);
+    transition: transform 0.25s;
+  }
+  .stamp:hover svg,
+  .stamp:focus-visible svg {
+    transform: rotate(-3deg) scale(1.03);
+  }
+  .stamp:focus-visible {
+    outline: 2px solid var(--site-focus);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp svg {
+      transition: none;
+    }
+  }
+  @media (max-width: 40rem) {
+    .row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    [data-variant='page'] .row {
+      padding: 0 0 calc(var(--site-space) * 2);
+    }
+    [data-variant='page'] .stamp {
+      margin-inline-start: var(--site-space); /* in line with the footer's text, inside its padding */
+    }
+    [data-variant='docs'] .stamp {
+      margin-top: 1rem;
+    }
+  }
+  @media print {
+    .stamp {
+      display: none;
+    }
+  }
+</style>
