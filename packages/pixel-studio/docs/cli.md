@@ -242,7 +242,7 @@ Phaser 3 reads it with `this.load.aseprite(key, png, json)` and `this.anims.crea
 |---|---|---|
 | `--res` | `32` | A single resolution, as for `render`. |
 | `--out` | `.` | Output directory. Created if missing. |
-| `--skin` | default look | Export one of the spec's skins; its name goes into the file names. |
+| `--skin` | default look | Export one of the spec's skins; its name goes into the file names, with anything other than letters, digits, `_` and `-` replaced by `_` (skin `red team` writes `<spec name>.red_team.<res>.png`). |
 | `--format` | `aseprite` | The only format. Any other value prints `error   --format: only "aseprite" (also read by Phaser and PixiJS)` and exits with 1. |
 | style flags | | See [Style override flags](#style-override-flags). |
 

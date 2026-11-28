@@ -44,6 +44,11 @@ anything; each such change is listed under Upgrading.
 - **Engine:** `importSheet` and `bundleImport` do the same in code, in Node and in browsers, and `registerImporter`
   lets a plug-in add a sheet format. `pngPixels` (and `decodePNG` in `@pixel-studio/core/node/png`) read PNG files.
 
+### Fixed
+- **CLI:** `pixel export --skin` put the skin's name into the file names as it was, so a skin called `red team`
+  wrote `goose.red team.32.png`, and a skin name with `../` in it could write outside `--out`. Skin names in file
+  names are now made safe the same way `pixel bundle --external` does it: `goose.red_team.32.png`.
+
 ## [0.2.0-alpha.4] - 2026-11-23
 
 ### Changed
