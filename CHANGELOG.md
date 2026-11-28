@@ -34,6 +34,8 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+## [0.2.0-alpha.5] - 2026-11-28
+
 ### Added
 - **CLI:** `pixel import` turns a hand-drawn sprite sheet into a bundle that `<pixel-sprite>` and `<pixel-stage>`
   play like a generated character. It reads Aseprite JSON sheets (also from LibreSprite, TexturePacker and
