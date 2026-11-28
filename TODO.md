@@ -30,6 +30,11 @@ Items marked *(release)* change the published packages, so they ship with the ne
 
 ## Studio
 
+- [ ] **Import in the studio.** Drop an Aseprite JSON with its PNG, a PNG grid or a folder of frames on the studio and
+  see the character play its animations right away, with the import report beside it (missing speeds, the foot line),
+  then download the bundle or the embed snippet. `importSheet` and `bundleImport` already run in browsers
+  (`pngPixels` with `DecompressionStream`); this is the drop zone, the preview and the fields for speed and ground.
+
 - [ ] **Entry view from the landing page.** Open with the character picked there, the preview as the main element,
       a few common actions and one next step (customise, create with Claude, export); the full spec and rendering
       controls one click away. Today only the playground link carries the choice (`?c=…&skin=…&anim=…`).

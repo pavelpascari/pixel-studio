@@ -62,10 +62,11 @@ Units and conventions used throughout:
 - [Motion](#motion): `generateMotion`, `motionModels()`, `leggedModels()`
 - [Bundles](#bundles): `buildBundle`, `BUNDLE_FORMAT`; internal: `bakePoints`
 - Transition clips (internal): [`buildMixes`](#buildmixes)
-- [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`
+- [Plug-ins](#plug-ins): `registerShape`, `registerTexture`, `registerMotion`, `registerImporter`, `registeredPlugins`, `usePlugin`
 - [Game-engine export](#game-engine-export): `exportSheet`
+- [Importing hand-drawn sheets](#importing-hand-drawn-sheets): `importSheet`, `bundleImport`, `importers()`
 - [Colours and constants](#colours-and-constants): `parseHex`, `toHex`, `buildRamp`, `shapeTypes()`, `textures()`
-- [Node: PNG encoding](#node-png-encoding): `encodePNG`, and the host-neutral `pngBytes`; internal: `paletteOf`
+- [Node: PNG files](#node-png-files): `encodePNG`, `decodePNG`, and the host-neutral `pngBytes`, `pngPixels`; internal: `paletteOf`
 - [Internal helpers](#internal-helpers)
 
 ## Typical pipeline
@@ -1697,6 +1698,92 @@ console.log(json.meta.frameTags[1]);
 // { name: 'jump', from: 4, to: 9, direction: 'forward', color: '#000000ff', repeat: '1' }
 ```
 
+## Importing hand-drawn sheets
+
+Sprite sheets drawn by hand (in Aseprite, LibreSprite, Piskel or any editor) become `pixel-sprite/1` bundles that
+the runtime plays like generated characters. Two steps: `importSheet` reads a source into frames with an importer,
+and `bundleImport` packs the frames into a bundle. The host supplies file access, PNG decoding and encoding, so both
+run in Node and in browsers. `pixel import` ([cli.md](cli.md#import)) is these two calls.
+
+```js
+import { readFileSync } from 'node:fs';
+import { importSheet, bundleImport } from '@pixel-studio/core';
+import { encodePNG, decodePNG } from '@pixel-studio/core/node/png';
+
+const imported = await importSheet({ name: 'fox.json', bytes: readFileSync('art/fox.json') }, {
+  readFile: (path) => readFileSync(`art/${path}`),   // the PNG the JSON names
+  decodePNG,
+});
+const { bundle, report } = await bundleImport(imported, {
+  encode: (w, h, rgba) => `data:image/png;base64,${encodePNG(w, h, rgba).toString('base64')}`,
+  speed: { walk: 40 },
+});
+```
+
+### `importSheet`
+
+```ts
+importSheet(source: { name: string, bytes: Uint8Array } | { name: string, entries: string[] }, {
+  format?: string, readFile?: (path: string) => Uint8Array | Promise<Uint8Array>,
+  decodePNG: (bytes: Uint8Array) => { width, height, rgba } | Promise<…>, options?: object, warn?: (message: string) => void,
+}): Promise<Imported>
+```
+
+Reads a source with the importer named by `format`, or else the first whose `detect` accepts it (plug-ins first,
+then `aseprite`, `grid`, `frames`). A source is a file (`bytes`) or a folder (`entries`: the paths of the files in
+it, relative to it, with `/`). `readFile` reads paths relative to the source: the PNG an Aseprite JSON names, or a
+folder's frames. `options` go to the importer: `grid` reads `frame` (`"32x32"`, `32` or `[32, 32]`) and `anims`
+(`"idle:4,walk:8"` or a list). What the built-in importers read is described under [`pixel import`](cli.md#import).
+
+**Returns** `Imported`:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `format` | string | The importer used. |
+| `name` | string | From the file (an Aseprite sheet from `pixel export` keeps the character's name). |
+| `animations` | `{ name, frames: { w, h, rgba, duration? }[], fps?, loop?, speed?, speedY?, wall?, events? }[]` | In sheet order. `duration` is in ms. Speeds are in frame px per second. |
+| `points` | `{ [point]: { [anim]: [x, y][] } }` | Attachment points per animation and frame, in frame px. Optional. |
+| `ground` | number | The foot line in frame px, when the file says. Optional. |
+| `notes` | string[] | What the importer assumed (also passed to `warn`). |
+
+An importer's `read` returns the same object without `format` and `notes`; the function `ctx.warn(message)` adds a note.
+`ctx` also has `options`, `readFile` and `decodePNG`, both made asynchronous.
+
+**Errors**: no importer accepts the source (`cannot tell how to import x.zip: …`), an unknown `format`, an
+importer's own errors (a missing PNG, a frame size that does not fit), and results without animations, with
+duplicate names, more than 256 frames or a frame that is not `{w, h, rgba}`.
+
+### `bundleImport`
+
+```ts
+bundleImport(imported: Imported, {
+  encode: (w, h, rgba) => string | Promise<string>, name?: string, ground?: number,
+  fps?: PerAnim<number>, loop?: PerAnim<boolean>, speed?: PerAnim<number>, speedY?: PerAnim<number>,
+}): Promise<{ bundle, report }>
+// PerAnim<T> = T | { [anim: string]: T, '*'?: T }   ('*' is the value for the animations not named)
+```
+
+Packs the frames one animation per row, every frame the size of the largest (smaller frames stand bottom-centre),
+into one variant whose `res` is the frame height. One unit is one frame pixel: `size` is `[frameW, frameH]`.
+Each animation's timing comes from the `fps` option (dropping holds), else the `fps` the file gave, else its frame
+durations (one rate when they are all equal, `durations` when not), else 10 fps. The `ground` option, else the
+file's, else the line under the lowest opaque pixel of the first frame of `idle` (or of the first animation), is the
+foot line. Points become `[x, y, 0]`.
+
+`report` holds `frameW`, `frameH`, the sheet's `width` and `height`, `ground` and `groundFrom` (`'option'`, `'file'`
+or `'pixels'`), `animations` (each one's bundle entry with its `name`), `roles` (which animation `<pixel-stage>`
+plays for each role it finds), `notes`, and `hints`: what the bundle lacks for the stage (an `idle`, a `speed` for
+the walking and running animations, a `speedY` for `climb`, attachment points).
+
+**Errors**: a per-animation option naming an animation the sheet does not have, an fps outside 0..60, a speed that
+is not a non-negative number, a `ground` outside the frame.
+
+### `importers`
+
+```ts
+importers(): readonly string[]   // ['aseprite', 'grid', 'frames', ...registered]
+```
+
 ## Colours and constants
 
 ### `parseHex`
@@ -1768,7 +1855,7 @@ themselves are private to the engine, so changing a copy cannot break `validate`
 `DETAIL_PRESETS` (and each preset) and `DETAIL_NAMES` are frozen. Before 0.2.0-alpha the registries were exported
 as live arrays (`TEXTURES`, `SHAPE_TYPES`, `MOTION_MODELS`, `LEGGED_MODELS`).
 
-## Node: PNG encoding
+## Node: PNG files
 
 ### `encodePNG`
 
@@ -1802,6 +1889,15 @@ console.log(png.subarray(1, 4).toString('ascii'), png.length);  // PNG 83 (one c
 ```
 
 
+### `decodePNG`
+
+```ts
+import { decodePNG } from '@pixel-studio/core/node/png';
+decodePNG(bytes: Uint8Array | Buffer): { width: number, height: number, rgba: Uint8Array }
+```
+
+[`pngPixels`](#pngpixels) with `node:zlib`. Node only.
+
 ### `pngBytes`
 
 ```ts
@@ -1821,6 +1917,26 @@ const png = await pngBytes(sheet.width, sheet.height, sheet.rgba, deflate);
 
 Sheets come out 35–45% smaller than with `canvas.toDataURL()` (which writes RGBA). The studio uses
 this for its bundles.
+
+### `pngPixels`
+
+```ts
+import { pngPixels } from './src/core/index.js';
+pngPixels(bytes: Uint8Array, inflate: (z: Uint8Array) => Uint8Array | Promise<Uint8Array>): { width, height, rgba } | Promise<…>
+```
+
+The decoder behind `decodePNG`, for any host: you supply zlib. Reads every PNG colour type and bit depth,
+palettes with `tRNS`, colour-key transparency and interlaced (Adam7) images, into 8-bit RGBA (16-bit samples keep
+their high byte). Returns synchronously when `inflate` does. In a browser:
+
+```js
+const inflate = async (z) => new Uint8Array(await new Response(
+  new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+const { width, height, rgba } = await pngPixels(new Uint8Array(await file.arrayBuffer()), inflate);
+```
+
+**Errors**: `not a PNG file`, a file cut short, an invalid colour type or bit depth, a palette image without a
+palette, an unknown row filter, images over 64 megapixels.
 
 ### `paletteOf`
 
@@ -1874,7 +1990,8 @@ before specs that use them are validated. Bundles stay pure data, so pages need 
 registerShape(type: string, { required?: string[], keys?: string[], compile(shape): { sdf(x, y): number, R: number, bbox: [x0, y0, x1, y1] }, describe?: string }): void
 registerTexture(name: string, fn: (x: number, y: number, scale: number) => number, { describe?: string }?): void
 registerMotion(name: string, { generate(ctx): { tracks, speed?, speedY?, wall?, events?: { u, name, data? }[] }, legged?: boolean, describe?: string }): void
-registeredPlugins(): { kind: 'shape' | 'texture' | 'motion', name, describe, ... }[]
+registerImporter(name: string, { detect(source): boolean, read(source, ctx): Promise<Imported>, describe?: string }): void
+registeredPlugins(): { kind: 'shape' | 'texture' | 'motion' | 'importer', name, describe, ... }[]
 usePlugin(module: { default: (api) => void } | ((api) => void)): Promise<void>
 ```
 
@@ -1887,6 +2004,10 @@ usePlugin(module: { default: (api) => void } | ((api) => void)): Promise<void>
   `rot` (added to the rest pose) and `sx`, `sy` (multiplied), each a number or an array of exactly `samples` values
   (`frames × 4` for loops, `(frames − 1) × 4 + 1` otherwise). Events use normalized time `u` (0..1) and become frame
   numbers like the built-in models' events. `legged: true` requires `rig.legs`.
+- **Importers** read a sprite sheet format for [`importSheet`](#importsheet) and `pixel import`. `detect(source)` says
+  whether the importer reads a source; registered importers are asked before the built-in ones, and a `detect` that
+  throws counts as no. `read(source, ctx)` returns the frames (see [`importSheet`](#importsheet) for `source`, `ctx`
+  and what to return). The name becomes a `--format` value.
 - Names start with a letter and use letters, digits, `_` or `-`. Registering the same definition again under its name
   (the same function, or a function with the same source, and the same `required`/`keys`/`legged`) is a no-op, so a dev
   server can re-run a plug-in's setup; a different definition under a taken name throws.

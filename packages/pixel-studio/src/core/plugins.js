@@ -1,20 +1,22 @@
-// Extension points: add shapes, textures and motion models without forking the engine.
+// Extension points: add shapes, textures, motion models and sheet importers without forking the engine.
 // Registrations are build-time JavaScript (CLI, studio, Node); bundles stay pure data, so the
 // web runtime needs nothing. Registered names validate like built-in ones (JSON paths,
 // did-you-mean) and are listed by `pixel brief`, so agents can use them.
 //
-//   import { registerShape, registerTexture, registerMotion } from '@pixel-studio/core';
+//   import { registerShape, registerTexture, registerMotion, registerImporter } from '@pixel-studio/core';
 //   registerShape('star', { required: ['cx', 'cy', 'r'], keys: ['r2', 'points'], compile: (s) => ({ sdf, R, bbox }) });
 //   registerTexture('feathers', (x, y, scale) => value);           // -1..1 brightness offset
 //   registerMotion('float', { legged: false, generate: ({ parts, rig, params, samples, loop }) => ({ tracks }) });
+//   registerImporter('mytool', { detect: (source) => bool, read: async (source, ctx) => ({ animations }) });
 //
 // The CLI loads plug-in files with --plugin ./my-plugin.mjs; such a file default-exports
-// `function setup({ registerShape, registerTexture, registerMotion }) { ... }`.
+// `function setup({ registerShape, registerTexture, registerMotion, registerImporter }) { ... }`.
 // Registering the same definition again under its name is a no-op (a dev server re-running setup); a different
 // definition under a taken name throws. The registries stay private: shapeTypes() etc. hand out frozen copies.
 import { SHAPE_TYPES, SHAPE_REQUIRED, SHAPE_KEYS, customShapes } from './shapes.js';
 import { TEXTURES, customTextures } from './textures.js';
 import { MOTION_MODELS, LEGGED_MODELS, customMotions } from './motion.js';
+import { addImporter, importerNames } from './import.js';
 
 const NAME = /^[A-Za-z][\w-]*$/;
 const described = [];
@@ -85,12 +87,26 @@ export function registerMotion(name, { generate, legged = false, describe = '' }
   described.push({ kind: 'motion', name, describe, legged });
 }
 
+/**
+ * A new sheet importer, for `importSheet` and `pixel import`. detect(source) says whether it reads a source
+ * ({name, bytes} for a file, {name, entries} for a folder); read(source, {options, readFile, decodePNG, warn}) returns
+ * { animations: [{name, frames: [{w, h, rgba, duration?}], fps?, loop?, speed?}], points?, ground?, name? }.
+ * Registered importers are tried before the built-in ones.
+ */
+export function registerImporter(name, { detect, read, describe = '' } = {}) {
+  if (!addImporter(name, { detect, read, describe })) return;
+  described.push({ kind: 'importer', name, describe });
+}
+
+/** Every importer name: the built-ins (aseprite, grid, frames) and registered ones. */
+export const importers = () => importerNames();
+
 /** Everything registered so far: [{kind, name, describe, ...}]. */
 export function registeredPlugins() { return described.map((d) => ({ ...d })); }
 
 /** Load a plug-in module (default export: setup function receiving the register functions). */
 export async function usePlugin(mod) {
   const setup = mod?.default ?? mod;
-  if (typeof setup !== 'function') throw new Error('a plug-in module must default-export a function setup({ registerShape, registerTexture, registerMotion })');
-  await setup({ registerShape, registerTexture, registerMotion });
+  if (typeof setup !== 'function') throw new Error('a plug-in module must default-export a function setup({ registerShape, registerTexture, registerMotion, registerImporter })');
+  await setup({ registerShape, registerTexture, registerMotion, registerImporter });
 }

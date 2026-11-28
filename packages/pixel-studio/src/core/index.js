@@ -12,8 +12,9 @@ export { resolveSpec } from './extend.js';
 export { resolveFigure } from './figure.js';
 export { generateMotion } from './motion.js';
 export { exportSheet } from './export.js';
-export { pngBytes } from './png.js';
+export { pngBytes, pngPixels } from './png.js';
+export { importSheet, bundleImport } from './import.js';
 export {
-  registerShape, registerTexture, registerMotion, registeredPlugins, usePlugin,
-  shapeTypes, textures, motionModels, leggedModels,
+  registerShape, registerTexture, registerMotion, registerImporter, registeredPlugins, usePlugin,
+  shapeTypes, textures, motionModels, leggedModels, importers,
 } from './plugins.js';
