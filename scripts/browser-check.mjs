@@ -22,7 +22,9 @@ const PAGES = ['index', 'sprite', 'events', 'states', 'moving', 'stage', 'author
 const EXPECTED = /missing\.bundle|does-not-exist|404|Failed to load resource/;   // the checks' own deliberate failures
 let failed = false;
 for (const name of arg('browsers', 'firefox,webkit').split(',')) {
-  const browser = await pw[name].launch();
+  // Firefox blocks WebGL on GPU-less machines (CI runners have only a software renderer), and the guide's PixiJS
+  // example needs it: PixiJS 8 has no canvas fallback. Allow the software renderer.
+  const browser = await pw[name].launch(name === 'firefox' ? { firefoxUserPrefs: { 'webgl.force-enabled': true } } : {});
   const report = [];
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   await page.goto(`${BASE}/test/browser/runtime.html`);
