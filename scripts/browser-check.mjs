@@ -1,11 +1,13 @@
 // Run the in-browser runtime checks and every page of the website's guide (live examples and editable
-// characters) in real browser engines (Firefox and WebKit by default; add chromium with --browsers). Playwright is
-// not a dependency of this project: install it in any folder and run this script from there, with the dev server
-// running (npm run studio) and the website served (in website/: npm run build && npm run preview):
+// characters) in real browser engines (Firefox and WebKit by default; add chromium with --browsers). CI runs it in
+// all three (the browser job in .github/workflows/ci.yml). Playwright is not a dependency of the packages:
+// test/browser/package.json pins it, and the script is run from there, with the dev server running (npm run studio)
+// and the website served (in website/: npm run build && npm run preview):
 //
-//   mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
-//   node /path/to/pixel-studio/scripts/browser-check.mjs [--base http://localhost:5173] [--site http://localhost:4321]
-//        [--browsers firefox,webkit,chromium]
+//   cd test/browser && npm ci && npx playwright install chromium firefox webkit
+//   npm test -- [--base http://localhost:5173] [--site http://localhost:4321] [--browsers firefox,webkit,chromium]
+//
+// (Run from any other folder where playwright is installed, it uses that one.)
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
