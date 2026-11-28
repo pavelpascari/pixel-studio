@@ -111,3 +111,106 @@ export function pngBytes(w, h, rgba, deflate) {
   const z = deflate(raw);
   return typeof z?.then === 'function' ? z.then(finish) : finish(z);
 }
+
+// ---------- decoding: for importing hand-drawn sheets ----------
+
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const CHANNELS = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };   // colour type → samples per pixel
+// Adam7 passes: [x0, y0, dx, dy]
+const ADAM7 = [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]];
+
+/**
+ * RGBA pixels from PNG file bytes: {width, height, rgba}; a Promise of them when `inflate` is asynchronous.
+ * Every colour type and bit depth, palettes with tRNS, and interlaced images; 16-bit samples keep their high byte.
+ * The host supplies zlib: `inflate(bytes) → bytes` (node:zlib's inflateSync) or a Promise of them
+ * (DecompressionStream('deflate') in browsers).
+ */
+export function pngPixels(bytes, inflate) {
+  if (typeof inflate !== 'function') throw new Error('pngPixels needs an inflate(bytes) → bytes function (zlib format)');
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  if (b.length < 8 || PNG_SIGNATURE.some((v, i) => b[i] !== v)) throw new Error('not a PNG file');
+  const u32at = (i) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
+  let at = 8, ihdr = null, plte = null, trns = null;
+  const idat = [];
+  while (at + 8 <= b.length) {
+    const len = u32at(at), type = String.fromCharCode(b[at + 4], b[at + 5], b[at + 6], b[at + 7]);
+    const data = b.subarray(at + 8, at + 8 + len);
+    if (data.length !== len) throw new Error(`PNG is cut short (in its ${type} chunk)`);
+    if (type === 'IHDR') ihdr = data;
+    else if (type === 'PLTE') plte = data;
+    else if (type === 'tRNS') trns = data;
+    else if (type === 'IDAT') idat.push(data);
+    else if (type === 'IEND') break;
+    at += 12 + len;
+  }
+  if (!ihdr || !idat.length) throw new Error('PNG has no image data');
+  const width = u32at(ihdr.byteOffset - b.byteOffset), height = u32at(ihdr.byteOffset - b.byteOffset + 4);
+  const [depth, colourType, , , interlace] = ihdr.subarray(8, 13);
+  const channels = CHANNELS[colourType];
+  if (!channels || ![1, 2, 4, 8, 16].includes(depth)) throw new Error(`PNG colour type ${colourType} with ${depth}-bit samples is not valid`);
+  if (colourType === 3 && !plte) throw new Error('PNG palette image has no PLTE chunk');
+  if (!width || !height || width * height > 64 * 1024 * 1024) throw new Error(`PNG is ${width}x${height}: too large to import`);
+  const z = new Uint8Array(idat.reduce((s, d) => s + d.length, 0));
+  let o = 0;
+  for (const d of idat) { z.set(d, o); o += d.length; }
+  const finish = (raw) => ({ width, height, rgba: unfilter(raw instanceof Uint8Array ? raw : new Uint8Array(raw), { width, height, depth, colourType, channels, interlace, plte, trns }) });
+  const raw = inflate(z);
+  return typeof raw?.then === 'function' ? raw.then(finish) : finish(raw);
+}
+
+function unfilter(raw, { width, height, depth, colourType, channels, interlace, plte, trns }) {
+  const rgba = new Uint8Array(width * height * 4);
+  const bpp = Math.max(1, (channels * depth) >> 3);   // bytes to the left pixel, for the filters
+  const max = (1 << depth) - 1;
+  // Colour key transparency (tRNS for grey and RGB images), in sample values.
+  const key = trns && colourType === 0 ? [(trns[0] << 8) | trns[1]] : trns && colourType === 2 ? [0, 2, 4].map((i) => (trns[i] << 8) | trns[i + 1]) : null;
+  let at = 0;
+  const pass = (x0, y0, dx, dy) => {
+    const w = Math.ceil((width - x0) / dx), h = Math.ceil((height - y0) / dy);
+    if (w <= 0 || h <= 0) return;
+    const stride = Math.ceil((w * channels * depth) / 8);
+    let prev = new Uint8Array(stride), line = new Uint8Array(stride);
+    for (let y = 0; y < h; y++) {
+      if (at + 1 + stride > raw.length) throw new Error('PNG image data is cut short');
+      const filter = raw[at++];
+      for (let i = 0; i < stride; i++) {
+        const x = raw[at + i], a = i >= bpp ? line[i - bpp] : 0, up = prev[i], c = i >= bpp ? prev[i - bpp] : 0;
+        let v;
+        if (filter === 0) v = x;
+        else if (filter === 1) v = x + a;
+        else if (filter === 2) v = x + up;
+        else if (filter === 3) v = x + ((a + up) >> 1);
+        else if (filter === 4) { const p = a + up - c, pa = Math.abs(p - a), pb = Math.abs(p - up), pc = Math.abs(p - c); v = x + (pa <= pb && pa <= pc ? a : pb <= pc ? up : c); }
+        else throw new Error(`PNG uses unknown filter ${filter}`);
+        line[i] = v & 255;
+      }
+      at += stride;
+      const sample = (n) => {   // the n-th sample of the line
+        if (depth === 8) return line[n];
+        if (depth === 16) return (line[n * 2] << 8) | line[n * 2 + 1];
+        const bit = n * depth;
+        return (line[bit >> 3] >> (8 - depth - (bit & 7))) & max;
+      };
+      for (let x = 0; x < w; x++) {
+        const o = (((y0 + y * dy) * width) + x0 + x * dx) * 4, s = x * channels;
+        let r, g, bl, al = 255;
+        if (colourType === 3) {
+          const p = sample(s);
+          if (p * 3 + 2 >= plte.length) throw new Error(`PNG pixel uses palette entry ${p}, past the end of the palette`);
+          r = plte[p * 3]; g = plte[p * 3 + 1]; bl = plte[p * 3 + 2]; al = trns && p < trns.length ? trns[p] : 255;
+        } else {
+          const vals = Array.from({ length: channels }, (_, k) => sample(s + k));
+          const to8 = (v) => (depth === 16 ? v >> 8 : depth === 8 ? v : Math.round((v * 255) / max));
+          if (colourType === 0 || colourType === 4) { r = g = bl = to8(vals[0]); if (colourType === 4) al = to8(vals[1]); }
+          else { [r, g, bl] = vals.slice(0, 3).map(to8); if (colourType === 6) al = to8(vals[3]); }
+          if (key && (colourType === 0 ? vals[0] === key[0] : vals[0] === key[0] && vals[1] === key[1] && vals[2] === key[2])) al = 0;
+        }
+        rgba[o] = r; rgba[o + 1] = g; rgba[o + 2] = bl; rgba[o + 3] = al;
+      }
+      [prev, line] = [line, prev];
+    }
+  };
+  if (interlace === 1) for (const p of ADAM7) pass(...p);
+  else pass(0, 0, 1, 1);
+  return rgba;
+}

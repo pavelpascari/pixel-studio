@@ -100,9 +100,10 @@ into a whole compiled character of its own, so the renderer still sees only plai
 | `ascii.js` | A frame as text (one letter per material, `#` outline, `.` empty). | `frameToAscii` |
 | `bundle.js` | Render one sheet per resolution (and per skin, stored as a colour swap + overlay of the default sheet when smaller) and package them for the runtime with `size`, `ground`, baked points and `states`; optionally without some views or animations. | `buildBundle`, `bakePoints`, `skinDelta`, `keepViews`, `selectAnimations`, `keepAnimations`, `pruneStates`, `STAGE_ROLES`, `BUNDLE_FORMAT` (`'pixel-sprite/1'`) |
 | `export.js` | One sheet plus Aseprite "hash" JSON for game engines (Phaser, PixiJS): frames, tags, slices for points, Pixel Studio extras. | `exportSheet` |
+| `import.js` | Hand-drawn sheets in: importers (`aseprite`, `grid`, `frames`, and plug-ins) read a source into frames; `bundleImport` packs them one animation per row into a `pixel-sprite/1` bundle, working out the foot line and frame rates and reporting what `<pixel-stage>` still needs. | `importSheet`, `bundleImport`, `addImporter`, `importerNames`, `pickImporter`, `cropFrame`, `parseSize` |
 | `mix.js` | Transition clips (`mixes`): a few frames that interpolate the pose from the end of one animation to the start of another, added to the compiled animations as `"from>to"`. | `buildMixes` |
-| `plugins.js` | Extension points: register shapes, textures and motion models; they join the built-in tables so validation and `pixel brief` treat them like built-ins. Read-only snapshots of those tables. | `registerShape`, `registerTexture`, `registerMotion`, `registeredPlugins`, `usePlugin`, `shapeTypes`, `textures`, `motionModels`, `leggedModels` |
-| `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. | `pngBytes`, `paletteOf` |
+| `plugins.js` | Extension points: register shapes, textures, motion models and sheet importers; they join the built-in tables so validation and `pixel brief` treat them like built-ins. Read-only snapshots of those tables. | `registerShape`, `registerTexture`, `registerMotion`, `registerImporter`, `registeredPlugins`, `usePlugin`, `shapeTypes`, `textures`, `motionModels`, `leggedModels`, `importers` |
+| `png.js` | PNG bytes for any host (zlib injected): indexed (PLTE + tRNS, 1–8 bits) up to 256 colours, else RGBA8 with per-row filters. And back: any PNG (every colour type and depth, interlaced) to RGBA, for importing. | `pngBytes`, `pngPixels`, `paletteOf` |
 
 ### Everything else
 
@@ -731,7 +732,8 @@ wave phases, unvalidated style/material/track values, CLI argument handling, `re
 `customMotions`). Plug-in motions return per-sample tracks, normalized and checked by `pluginMotion` in `motion.js`. The CLI
 loads plug-in modules with `--plugin` (`usePlugin`); `examples/plugins/extras.mjs` is a working example, tested in
 `test/plugins.test.mjs` (in its own process, since registries are global). Bundles stay data-only, so the runtime is
-unaffected. The recipes below are for changing the engine itself.
+unaffected. `registerImporter` adds a sheet format to `importSheet` and `pixel import`: importers live in
+`import.js`'s own registry, and plug-in ones are asked before the built-ins. The recipes below are for changing the engine itself.
 
 In every recipe, run `npm test` and then render something with `node bin/pixel.mjs preview <spec>`
 to look at the result. Rendering changes are visual; the tests only catch structure and regressions.

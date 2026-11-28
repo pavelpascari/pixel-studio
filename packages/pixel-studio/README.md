@@ -69,6 +69,7 @@ npx pixel where    examples/goose-root.json --anim honk     # world positions of
 npx pixel resolve  examples/goose-sudo.json                 # a variant merged with its base
 npx pixel bundle   examples/fox.json --out fox.bundle.json
 npx pixel export   examples/fox.json --res 32 --out game/   # PNG + Aseprite JSON (Phaser, PixiJS)
+npx pixel import   art/hero.json --speed walk=40             # a hand-drawn sheet (Aseprite, PNG grid, frames) → bundle
 npx pixel figures                                           # the skeleton library
 npx pixel brief                                             # the agent brief (system prompt)
 ```

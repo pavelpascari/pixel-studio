@@ -34,6 +34,16 @@ anything; each such change is listed under Upgrading.
 
 ## [Unreleased]
 
+### Added
+- **CLI:** `pixel import` turns a hand-drawn sprite sheet into a bundle that `<pixel-sprite>` and `<pixel-stage>`
+  play like a generated character. It reads Aseprite JSON sheets (also from LibreSprite, TexturePacker and
+  `pixel export`), a PNG drawn as a grid with one animation per row, or a folder of frame PNGs. Tags, frame times and
+  slices become animations, holds and attachment points. The foot line is found from the pixels, and you add walking
+  speeds with `--speed walk=40`. The command lists what a stage still needs. See
+  [`pixel import`](https://pixel-studio.sh/docs/reference/cli/#import).
+- **Engine:** `importSheet` and `bundleImport` do the same in code, in Node and in browsers, and `registerImporter`
+  lets a plug-in add a sheet format. `pngPixels` (and `decodePNG` in `@pixel-studio/core/node/png`) read PNG files.
+
 ### Fixed
 - **CLI:** `pixel export --skin` put the skin's name into the file names as it was, so a skin called `red team`
   wrote `goose.red team.32.png`, and a skin name with `../` in it could write outside `--out`. Skin names in file
