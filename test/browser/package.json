@@ -1,0 +1,12 @@
+{
+  "name": "pixel-studio-browser-checks",
+  "private": true,
+  "description": "Pins the Playwright that scripts/browser-check.mjs runs with (in CI and locally). Kept out of the root package so the packages and their tests have no third-party dependencies.",
+  "type": "module",
+  "scripts": {
+    "test": "node ../../scripts/browser-check.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

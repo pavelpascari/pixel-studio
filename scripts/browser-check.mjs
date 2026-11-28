@@ -1,11 +1,13 @@
 // Run the in-browser runtime checks and every page of the website's guide (live examples and editable
-// characters) in real browser engines (Firefox and WebKit by default; add chromium with --browsers). Playwright is
-// not a dependency of this project: install it in any folder and run this script from there, with the dev server
-// running (npm run studio) and the website served (in website/: npm run build && npm run preview):
+// characters) in real browser engines (Firefox and WebKit by default; add chromium with --browsers). CI runs it in
+// all three (the browser job in .github/workflows/ci.yml). Playwright is not a dependency of the packages:
+// test/browser/package.json pins it, and the script is run from there, with the dev server running (npm run studio)
+// and the website served (in website/: npm run build && npm run preview):
 //
-//   mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
-//   node /path/to/pixel-studio/scripts/browser-check.mjs [--base http://localhost:5173] [--site http://localhost:4321]
-//        [--browsers firefox,webkit,chromium]
+//   cd test/browser && npm ci && npx playwright install chromium firefox webkit
+//   npm test -- [--base http://localhost:5173] [--site http://localhost:4321] [--browsers firefox,webkit,chromium]
+//
+// (Run from any other folder where playwright is installed, it uses that one.)
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
@@ -24,6 +26,10 @@ for (const name of arg('browsers', 'firefox,webkit').split(',')) {
   const report = [];
   const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
   await page.goto(`${BASE}/test/browser/runtime.html`);
+  // The guide's PixiJS example needs WebGL (PixiJS 8 has no canvas fallback), which headless Firefox on a GPU-less CI
+  // runner does not have. Without WebGL that one error is reported as skipped, not as a failure.
+  const webgl = await page.evaluate(() => !!document.createElement('canvas').getContext('webgl'));
+  const NEEDS_WEBGL = /CanvasRenderer is not yet implemented/;
   await page.waitForFunction(() => !/running/.test(document.getElementById('summary').textContent), null, { timeout: 180000 });
   const summary = await page.evaluate(() => document.getElementById('summary').textContent);
   if (!/^all \d+ checks passed$/.test(summary)) { failed = true; report.push(`runtime checks: ${summary}`); } else report.push(summary);
@@ -44,10 +50,14 @@ for (const name of arg('browsers', 'firefox,webkit').split(',')) {
       ...[...document.querySelectorAll('pixel-sprite')].filter((s) => s.status !== 'ready' && !/missing/.test(s.getAttribute('src'))).map((s) => `sprite ${s.getAttribute('src')}: ${s.status}`),
       ...[...document.querySelectorAll('.ps-status')].filter((s) => !s.classList.contains('ok')).map((s) => `playground: ${s.textContent.slice(0, 100)}`),
     ]);
+    if (!webgl && errs.some((e) => NEEDS_WEBGL.test(e))) {
+      errs.splice(0, errs.length, ...errs.filter((e) => !NEEDS_WEBGL.test(e)));
+      report.push(`guide/${p}: PixiJS example skipped (no WebGL in this browser)`);
+    }
     if (errs.length || bad.length) { failed = true; report.push(`guide/${p}: ${[...errs, ...bad].join(' | ')}`); }
     await pg.close();
   }
-  console.log(`${name}: ${report.join('\n  ')}${report.length === 1 ? '\n  guide: all pages clean' : ''}`);
+  console.log(`${name}: ${report.join('\n  ')}${report.every((r) => !r.startsWith('guide/') || r.includes('skipped')) ? '\n  guide: all pages clean' : ''}`);
   await browser.close();
 }
 process.exit(failed ? 1 : 0);

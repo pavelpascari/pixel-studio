@@ -127,12 +127,13 @@ By contributing you agree that your contributions are licensed under the [MIT Li
 ## Browser checks
 
 `test/browser/runtime.html` checks the runtime in a real browser (open it on any device while `npm run studio` runs).
-To run it, and every page of the website's guide, in Firefox and WebKit, serve both (`npm run studio` here, and
-`npm run build && npm run preview` in `website/`), install Playwright anywhere outside the project and run the script
-from there:
+CI runs it, and every page of the website's guide, in headless Chromium, Firefox and WebKit (the `browser` job). To
+do the same locally, serve both (`npm run studio` here, and `npm run build && npm run preview` in `website/`), then
+run the checks from `test/browser/`, which pins the Playwright version (it is not a dependency of the packages):
 
 ```bash
-mkdir /tmp/pw && cd /tmp/pw && npm i playwright && npx playwright install firefox webkit
-node /path/to/pixel-studio/scripts/browser-check.mjs   # --browsers firefox,webkit,chromium  --base http://localhost:5173  --site http://localhost:4321
+cd test/browser && npm ci && npx playwright install chromium firefox webkit
+npm test -- --browsers chromium,firefox,webkit   # also --base http://localhost:5173  --site http://localhost:4321
 ```
 
+Without `--browsers` it runs Firefox and WebKit.

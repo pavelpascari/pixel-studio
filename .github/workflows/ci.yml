@@ -1,5 +1,6 @@
 # Pixel Studio's CI: both packages' tests on the oldest and newest supported Node, the Markdown links, the packed
-# packages installed and used from a fresh folder, and the website (pixel-studio.sh) built from this commit.
+# packages installed and used from a fresh folder, the website (pixel-studio.sh) built from this commit, and the
+# runtime and the guide pages in three browser engines.
 name: CI
 
 on:
@@ -87,3 +88,45 @@ jobs:
       - name: Build
         working-directory: website
         run: npm run build
+
+  # The <pixel-sprite> checks page (test/browser/runtime.html) and every guide page of the website, in headless
+  # Chromium, Firefox and WebKit (scripts/browser-check.mjs). Playwright is pinned in test/browser/package.json, not in
+  # the packages.
+  browser:
+    name: browser (chromium, firefox, webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read # check out the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # As in the website job: this job holds no secrets and publishes nothing, and npm ci checks every package
+      # against the lock files' integrity hashes.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm # zizmor: ignore[cache-poisoning]
+          cache-dependency-path: |
+            website/package-lock.json
+            test/browser/package-lock.json
+      - run: npm ci
+      # prebuild builds demo/assets, which the checks page plays.
+      - name: Website build
+        working-directory: website
+        run: npm ci && npm run build
+      - name: Playwright and its browsers
+        working-directory: test/browser
+        run: npm ci && npx playwright install --with-deps chromium firefox webkit
+      - name: Serve the repository and the website
+        run: |
+          node scripts/serve.mjs > "$RUNNER_TEMP/serve.log" 2>&1 &
+          (cd website && npx astro preview --port 4321 > "$RUNNER_TEMP/preview.log" 2>&1 &)
+          for url in http://127.0.0.1:5173/test/browser/runtime.html http://localhost:4321/docs/guide/; do
+            for _ in $(seq 60); do curl -fs -o /dev/null "$url" && break; sleep 1; done
+            curl -fs -o /dev/null "$url" || { echo "$url did not come up"; cat "$RUNNER_TEMP"/*.log; exit 1; }
+          done
+      - name: Browser checks
+        working-directory: test/browser
+        run: npm test -- --base http://127.0.0.1:5173 --site http://localhost:4321 --browsers chromium,firefox,webkit
